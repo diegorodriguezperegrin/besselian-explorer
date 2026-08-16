@@ -1005,14 +1005,26 @@
             });
         }
 
-        fetch('eclipse_besselian_from_mysqldump2.csv')
+        const CSV_LOCAL_PATH = 'eclipse_besselian_from_mysqldump2.csv';
+        const CSV_CDN_URL = 'https://cdn.jsdelivr.net/gh/diegorodriguezperegrin/besselian-explorer@main/eclipse_besselian_from_mysqldump2.csv';
+
+        fetch(CSV_LOCAL_PATH)
             .then(res => {
-                if(!res.ok) throw new Error("Fetch no disponible");
+                if(!res.ok) throw new Error("Fetch local no disponible");
                 return res.text();
             })
             .then(data => loadCSVData(data))
             .catch(err => {
-                console.log("Usando presets iniciales.");
+                console.log("Cargando CSV desde CDN GitHub/jsDelivr...");
+                fetch(CSV_CDN_URL)
+                    .then(res => {
+                        if(!res.ok) throw new Error("Fetch CDN no disponible");
+                        return res.text();
+                    })
+                    .then(data => loadCSVData(data))
+                    .catch(e => {
+                        console.log("Usando presets iniciales.");
+                    });
             });
 
         document.getElementById('csv-file-input').addEventListener('change', function(e) {
