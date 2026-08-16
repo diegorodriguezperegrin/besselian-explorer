@@ -775,7 +775,7 @@
             </label>
             <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                 <input type="checkbox" id="chk-show-labels" checked style="width: auto;">
-                <span>Rótulos (Tiempo y Magnitud)</span>
+                <span>Rótulos (Tiempo y Ocultación)</span>
             </label>
             <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                 <input type="checkbox" id="chk-show-graticule" style="width: auto;">
@@ -875,7 +875,7 @@
             const ctx = canvas.getContext('2d');
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            ctx.font = 'bold 28px "Space Grotesk", -apple-system, sans-serif';
+            ctx.font = 'normal 26px "Space Grotesk", -apple-system, sans-serif';
             const textWidth = ctx.measureText(text).width;
             const padX = 14;
             const boxW = Math.min(250, textWidth + padX * 2);
@@ -1331,7 +1331,7 @@
             }
         }
 
-        function createSegmentedLine(coordList, colorHex, radius = EARTH_RADIUS * 1.004, linewidth = 2) {
+        function createSegmentedLine(coordList, colorHex, radius = EARTH_RADIUS * 1.004, linewidth = 1, opacity = 1.0) {
             const segmentPoints = [];
             const maxSegmentDist3D = 6.0; // Distancia máxima en unidades 3D (~750 km) para descartar saltos artificiales
 
@@ -1352,7 +1352,12 @@
 
             if (segmentPoints.length > 0) {
                 const geometry = new THREE.BufferGeometry().setFromPoints(segmentPoints);
-                const material = new THREE.LineBasicMaterial({ color: colorHex, linewidth: linewidth });
+                const material = new THREE.LineBasicMaterial({ 
+                    color: colorHex, 
+                    linewidth: linewidth,
+                    transparent: opacity < 1.0,
+                    opacity: opacity
+                });
                 const lineSegs = new THREE.LineSegments(geometry, material);
                 lineSegs.renderOrder = 1;
                 return lineSegs;
@@ -1675,11 +1680,10 @@
                         }
                     }
 
-                    const lineWidth = frac === 0.0 ? 2 : 1;
-                    const lineN = createSegmentedLine(isoNorthCoords, 0xeab308, EARTH_RADIUS * 1.004, lineWidth);
+                    const lineN = createSegmentedLine(isoNorthCoords, 0xeab308, EARTH_RADIUS * 1.004, 1, 0.70);
                     if (lineN) isomagnitudesGroup.add(lineN);
 
-                    const lineS = createSegmentedLine(isoSouthCoords, 0xeab308, EARTH_RADIUS * 1.004, lineWidth);
+                    const lineS = createSegmentedLine(isoSouthCoords, 0xeab308, EARTH_RADIUS * 1.004, 1, 0.70);
                     if (lineS) isomagnitudesGroup.add(lineS);
 
                     // Rótulos de Magnitud estilo NASA / Espenak (ej. 0.20, 0.40, 0.60, 0.80)
@@ -1938,7 +1942,7 @@
                     }
 
                     if (pts.length > 1) {
-                        const utLineMesh = createSegmentedLine(pts, 0x10b981, EARTH_RADIUS * 1.0036, 2);
+                        const utLineMesh = createSegmentedLine(pts, 0x10b981, EARTH_RADIUS * 1.0036, 1, 0.70);
                         if (utLineMesh) utLinesGroup.add(utLineMesh);
 
                         // Si el extremo en +0.75 cayó fuera de la Tierra, tomar el punto más exterior disponible
