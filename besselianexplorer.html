@@ -178,11 +178,12 @@
             transform: scale(1.06);
         }
 
-        /* Floating Reopen Buttons */
+        /* Floating Reopen Buttons (Visibles en la parte superior cuando los paneles están cerrados) */
         .reopen-btn {
             position: absolute;
-            z-index: 20;
-            background: var(--bg-panel);
+            top: 15px;
+            z-index: 40;
+            background: rgba(12, 16, 25, 0.94);
             border: 1px solid var(--border-color);
             color: var(--text-primary);
             padding: 8px 14px;
@@ -191,8 +192,8 @@
             font-family: var(--font-heading);
             font-size: 0.85rem;
             font-weight: 600;
-            backdrop-filter: blur(12px);
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(16px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7);
             display: none;
             align-items: center;
             gap: 8px;
@@ -201,67 +202,28 @@
         .reopen-btn:hover {
             border-color: var(--accent-blue);
             color: var(--accent-blue);
+            background: rgba(15, 23, 42, 0.98);
         }
         #btn-reopen-left {
-            top: 15px;
             left: 15px;
         }
         #btn-reopen-right {
-            top: 15px;
             right: 15px;
-        }
-
-
-        /* Mobile Bottom Floating Dock */
-        .mobile-dock {
-            display: none;
-            position: fixed;
-            bottom: 16px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 100;
-            background: rgba(12, 16, 25, 0.90);
-            backdrop-filter: blur(20px);
-            border: 1px solid var(--border-color);
-            border-radius: 30px;
-            padding: 6px 10px;
-            box-shadow: 0 12px 36px rgba(0, 0, 0, 0.85);
-            gap: 6px;
-        }
-
-        .mobile-dock-btn {
-            background: transparent;
-            border: none;
-            color: var(--text-secondary);
-            padding: 8px 13px;
-            border-radius: 20px;
-            font-size: 0.78rem;
-            font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            transition: var(--transition-smooth);
-            font-family: var(--font-body);
-        }
-
-        .mobile-dock-btn.active, .mobile-dock-btn:hover {
-            background: rgba(56, 189, 248, 0.18);
-            color: var(--accent-blue);
-        }
-
-        .mobile-dock-btn.mobile-dock-globe.active {
-            background: linear-gradient(135deg, var(--accent-blue), var(--accent-indigo));
-            color: #ffffff;
         }
 
         /* Responsive Mobile Rules */
         @media (max-width: 768px) {
-            .mobile-dock {
-                display: flex;
-            }
             .reopen-btn {
-                display: none !important;
+                top: 10px;
+                padding: 7px 12px;
+                font-size: 0.8rem;
+                border-radius: 10px;
+            }
+            #btn-reopen-left {
+                left: 10px;
+            }
+            #btn-reopen-right {
+                right: 10px;
             }
             .sidebar-panel, .settings-panel {
                 width: calc(100vw - 20px);
@@ -269,26 +231,69 @@
                 top: 10px;
                 left: 10px;
                 right: 10px;
-                max-height: calc(100dvh - 82px);
-                padding: 12px 14px;
+                max-height: calc(100dvh - 20px);
+                padding: 10px 12px 14px 12px;
                 z-index: 50;
+                gap: 8px;
             }
             .panel-header {
                 position: sticky;
-                top: -12px;
-                margin-top: -12px;
-                margin-left: -14px;
-                margin-right: -14px;
-                padding: 12px 14px 8px 14px;
+                top: -10px;
+                margin-top: -10px;
+                margin-left: -12px;
+                margin-right: -12px;
+                padding: 10px 12px 6px 12px;
                 background: rgba(12, 16, 25, 0.98);
                 backdrop-filter: blur(20px);
                 border-bottom: 1px solid var(--border-color);
                 z-index: 55;
             }
             .panel-toggle {
-                width: 38px;
-                height: 38px;
-                font-size: 1.1rem;
+                width: 34px;
+                height: 34px;
+                font-size: 1rem;
+            }
+            .preset-chip {
+                padding: 4px 10px;
+                font-size: 0.75rem;
+            }
+            .stat-row {
+                font-size: 0.74rem;
+                padding: 2px 0;
+            }
+        }
+
+        /* Pantallas con poca altura vertical (laptops, móvil horizontal, iframes incrustados) */
+        @media (max-height: 700px) {
+            .sidebar-panel, .settings-panel {
+                padding: 8px 12px 14px 12px;
+                gap: 6px;
+                max-height: calc(100vh - 20px);
+            }
+            .panel-header {
+                padding: 8px 12px 6px 12px;
+            }
+            .panel-header h1 {
+                font-size: 0.95rem;
+            }
+            .panel-player-section {
+                padding: 8px 10px;
+                gap: 5px;
+            }
+            .section-title {
+                font-size: 0.78rem;
+                margin-top: 2px;
+            }
+            .stat-grid {
+                gap: 2px 8px;
+            }
+            .stat-row {
+                font-size: 0.72rem;
+                padding: 1px 0;
+            }
+            .preset-chip {
+                padding: 3px 8px;
+                font-size: 0.72rem;
             }
         }
 
@@ -611,23 +616,7 @@
     <!-- 3D Canvas -->
     <div id="webgl-container"></div>
 
-    <!-- Mobile Bottom Navigation Dock (Always accessible on phone screens) -->
-    <div class="mobile-dock" id="mobile-dock">
-        <button class="mobile-dock-btn" id="dock-btn-eclipses" title="Ver Eclipses y Datos">
-            <i class="fa-solid fa-moon"></i>
-            <span>Eclipses</span>
-        </button>
-        <button class="mobile-dock-btn" id="dock-btn-view" title="Ver Ajustes y Simulación">
-            <i class="fa-solid fa-sliders"></i>
-            <span>Visualización</span>
-        </button>
-        <button class="mobile-dock-btn mobile-dock-globe active" id="dock-btn-globe" title="Ver Globo 3D">
-            <i class="fa-solid fa-earth-americas"></i>
-            <span>Globo 3D</span>
-        </button>
-    </div>
-
-    <!-- Floating Reopen Buttons (Visible when panels are closed on Desktop) -->
+    <!-- Floating Reopen Buttons (Visibles en las esquinas superiores cuando los paneles están cerrados) -->
     <button class="reopen-btn" id="btn-reopen-left" title="Abrir Panel de Eclipses y Datos">
         <i class="fa-solid fa-moon"></i>
         <span>Eclipses</span>
@@ -2094,26 +2083,13 @@
         });
 
 
-        // Control de Colapso y Reapertura de Paneles (Izquierdo y Derecho con soporte móvil total)
+        // Control de Colapso y Reapertura de Paneles (Izquierdo y Derecho)
         const panelLeft = document.getElementById('sidebar-panel');
         const panelRight = document.getElementById('settings-panel');
         const btnToggleLeft = document.getElementById('btn-toggle-left');
         const btnToggleRight = document.getElementById('btn-toggle-right');
         const btnReopenLeft = document.getElementById('btn-reopen-left');
         const btnReopenRight = document.getElementById('btn-reopen-right');
-
-        const dockBtnEclipses = document.getElementById('dock-btn-eclipses');
-        const dockBtnView = document.getElementById('dock-btn-view');
-        const dockBtnGlobe = document.getElementById('dock-btn-globe');
-
-        function updateMobileDockState() {
-            const leftOpen = panelLeft && panelLeft.style.display !== 'none';
-            const rightOpen = panelRight && panelRight.style.display !== 'none';
-
-            dockBtnEclipses?.classList.toggle('active', leftOpen);
-            dockBtnView?.classList.toggle('active', rightOpen);
-            dockBtnGlobe?.classList.toggle('active', !leftOpen && !rightOpen);
-        }
 
         function openLeftPanel() {
             if (panelLeft) panelLeft.style.display = 'flex';
@@ -2122,13 +2098,11 @@
                 panelRight.style.display = 'none';
                 if (btnReopenRight) btnReopenRight.style.display = 'inline-flex';
             }
-            updateMobileDockState();
         }
 
         function closeLeftPanel() {
             if (panelLeft) panelLeft.style.display = 'none';
             if (btnReopenLeft) btnReopenLeft.style.display = 'inline-flex';
-            updateMobileDockState();
         }
 
         function openRightPanel() {
@@ -2138,18 +2112,11 @@
                 panelLeft.style.display = 'none';
                 if (btnReopenLeft) btnReopenLeft.style.display = 'inline-flex';
             }
-            updateMobileDockState();
         }
 
         function closeRightPanel() {
             if (panelRight) panelRight.style.display = 'none';
             if (btnReopenRight) btnReopenRight.style.display = 'inline-flex';
-            updateMobileDockState();
-        }
-
-        function closeAllPanels() {
-            closeLeftPanel();
-            closeRightPanel();
         }
 
         btnToggleLeft?.addEventListener('click', closeLeftPanel);
@@ -2158,29 +2125,10 @@
         btnToggleRight?.addEventListener('click', closeRightPanel);
         btnReopenRight?.addEventListener('click', openRightPanel);
 
-        dockBtnEclipses?.addEventListener('click', () => {
-            if (panelLeft && panelLeft.style.display !== 'none') {
-                closeLeftPanel();
-            } else {
-                openLeftPanel();
-            }
-        });
-
-        dockBtnView?.addEventListener('click', () => {
-            if (panelRight && panelRight.style.display !== 'none') {
-                closeRightPanel();
-            } else {
-                openRightPanel();
-            }
-        });
-
-        dockBtnGlobe?.addEventListener('click', closeAllPanels);
-
-        // Si se carga inicialmente en pantalla pequeña, cerrar paneles para vista limpia
+        // Si se carga inicialmente en pantalla pequeña, cerrar paneles para dejar ver el globo con los botones superiores
         if (window.innerWidth <= 768) {
-            closeAllPanels();
-        } else {
-            updateMobileDockState();
+            closeLeftPanel();
+            closeRightPanel();
         }
 
         // -------------------------------------------------------------
