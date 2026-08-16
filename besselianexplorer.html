@@ -622,8 +622,11 @@
             <div class="preset-chip" data-cat="9570">22 Jul 2028 (Total Australia)</div>
         </div>
 
-        <div class="section-title">
-            <i class="fa-solid fa-magnifying-glass"></i> Buscar por Año en CSV
+        <div class="section-title" style="display: flex; justify-content: space-between; align-items: center;">
+            <span><i class="fa-solid fa-magnifying-glass"></i> Buscar por Año</span>
+            <span id="csv-status-badge" style="font-size: 0.72rem; color: var(--text-secondary); font-weight: 600; text-transform: none; letter-spacing: 0;">
+                <i class="fa-solid fa-circle-notch fa-spin"></i> Cargando...
+            </span>
         </div>
 
         <div class="search-box">
@@ -994,13 +997,21 @@
                 skipEmptyLines: true,
                 complete: function(results) {
                     eclipseData = results.data;
-                    statusIndicator.innerHTML = `<i class="fa-solid fa-check-circle"></i> ${eclipseData.length} eclipses cargados`;
-                    statusIndicator.style.color = 'var(--accent-green)';
-                    filterEclipsesByYear(2026);
+                    const badge = document.getElementById('csv-status-badge');
+                    if (badge) {
+                        badge.innerHTML = `<i class="fa-solid fa-check-circle"></i> ${eclipseData.length.toLocaleString()} eclipses`;
+                        badge.style.color = 'var(--accent-green)';
+                    }
+                    console.log(`Catálogo cargado: ${eclipseData.length} eclipses.`);
+                    filterEclipsesByYear(parseInt(yearInput.value) || 2026);
                 },
                 error: function(err) {
-                    statusIndicator.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Error al leer CSV`;
-                    statusIndicator.style.color = 'var(--solar-red)';
+                    console.error("Error al procesar CSV:", err);
+                    const badge = document.getElementById('csv-status-badge');
+                    if (badge) {
+                        badge.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Error CSV`;
+                        badge.style.color = 'var(--solar-red)';
+                    }
                 }
             });
         }
@@ -1024,6 +1035,11 @@
                     .then(data => loadCSVData(data))
                     .catch(e => {
                         console.log("Usando presets iniciales.");
+                        const badge = document.getElementById('csv-status-badge');
+                        if (badge) {
+                            badge.innerHTML = `<i class="fa-solid fa-star"></i> Presets activos`;
+                            badge.style.color = 'var(--accent-blue)';
+                        }
                     });
             });
 
@@ -1058,12 +1074,21 @@
             if (matches.length > 0) {
                 populateSelect(matches);
                 selectEclipse(matches[0]);
+            } else {
+                eclipseSelect.innerHTML = `<option value="">No hay eclipses registrados en ${targetYear}</option>`;
             }
         }
 
         searchBtn.addEventListener('click', () => {
             const yr = parseInt(yearInput.value);
             if (!isNaN(yr)) filterEclipsesByYear(yr);
+        });
+
+        yearInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const yr = parseInt(yearInput.value);
+                if (!isNaN(yr)) filterEclipsesByYear(yr);
+            }
         });
 
         eclipseSelect.addEventListener('change', (e) => {
