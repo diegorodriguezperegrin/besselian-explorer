@@ -643,8 +643,8 @@
         </div>
 
         <div class="quick-presets">
-            <div class="preset-chip active" data-cat="9566">12 Ago 2026 (Total España)</div>
-            <div class="preset-chip" data-cat="9568">2 Ago 2027 (Total España/Sur)</div>
+            <div class="preset-chip" data-cat="9566">12 Ago 2026 (Total España)</div>
+            <div class="preset-chip active" data-cat="9568">2 Ago 2027 (Total España/Sur)</div>
             <div class="preset-chip" data-cat="9569">26 Ene 2028 (Anular España)</div>
         </div>
 
@@ -656,7 +656,7 @@
         </div>
 
         <div class="search-box">
-            <input type="number" id="year-input" placeholder="Año (ej. 2026)" value="2026">
+            <input type="number" id="year-input" placeholder="Año (ej. 2027)" value="2027">
             <button class="btn" id="btn-search"><i class="fa-solid fa-arrow-right"></i> Buscar</button>
         </div>
 
@@ -666,33 +666,33 @@
 
         <div class="eclipse-card" id="eclipse-details">
             <div class="eclipse-card-header">
-                <div class="eclipse-date" id="card-date">2026-08-12</div>
+                <div class="eclipse-date" id="card-date">2027-08-02</div>
                 <div class="type-badge type-T" id="card-type">TOTAL</div>
             </div>
             <div class="stat-grid">
                 <div class="stat-item">
                     <div class="stat-label">Serie Saros</div>
-                    <div class="stat-value" id="card-saros">126</div>
+                    <div class="stat-value" id="card-saros">136</div>
                 </div>
                 <div class="stat-item">
                     <div class="stat-label">Gamma (&gamma;)</div>
-                    <div class="stat-value" id="card-gamma">0.8977</div>
+                    <div class="stat-value" id="card-gamma">0.1421</div>
                 </div>
                 <div class="stat-item">
                     <div class="stat-label">Magnitud</div>
-                    <div class="stat-value" id="card-magnitude">1.0386</div>
+                    <div class="stat-value" id="card-magnitude">1.0790</div>
                 </div>
                 <div class="stat-item">
                     <div class="stat-label">Duración Central</div>
-                    <div class="stat-value" id="card-duration">02m18s</div>
+                    <div class="stat-value" id="card-duration">06m23s</div>
                 </div>
                 <div class="stat-item">
                     <div class="stat-label">Latitud Máxima</div>
-                    <div class="stat-value" id="card-lat">65.2N</div>
+                    <div class="stat-value" id="card-lat">25.5N</div>
                 </div>
                 <div class="stat-item">
                     <div class="stat-label">Longitud Máxima</div>
-                    <div class="stat-value" id="card-lng">25.2W</div>
+                    <div class="stat-value" id="card-lng">33.2E</div>
                 </div>
             </div>
         </div>
@@ -998,11 +998,9 @@
         // 3. CARGA Y SELECCIÓN DE DATOS
         // -------------------------------------------------------------
         let eclipseData = [...PRESET_ECLIPSES];
-        let currentEclipse = PRESET_ECLIPSES[0];
+        let currentEclipse = PRESET_ECLIPSES.find(e => e.cat_no === 9568) || PRESET_ECLIPSES[1];
         let isPlaying = false;
         let playInterval = null;
-
-        const statusIndicator = document.getElementById('status-indicator');
 
         function loadCSVData(csvContent) {
             Papa.parse(csvContent, {
@@ -1017,7 +1015,13 @@
                         badge.style.color = 'var(--accent-green)';
                     }
                     console.log(`Catálogo cargado: ${eclipseData.length} eclipses.`);
-                    filterEclipsesByYear(parseInt(yearInput.value) || 2026);
+                    const targetYear = parseInt(yearInput.value) || 2027;
+                    filterEclipsesByYear(targetYear);
+                    const found2027 = eclipseData.find(e => e.cat_no === 9568);
+                    if (found2027 && targetYear === 2027) {
+                        selectEclipse(found2027);
+                        eclipseSelect.value = 9568;
+                    }
                 },
                 error: function(err) {
                     console.error("Error al procesar CSV:", err);
@@ -1967,9 +1971,11 @@
 
         playBtn.addEventListener('click', toggleSimulation);
 
-        // Inicializar selección por defecto
+        // Inicializar selección por defecto: 2 de Agosto de 2027
         populateSelect(PRESET_ECLIPSES);
-        selectEclipse(PRESET_ECLIPSES[0]);
+        const defaultPreset = PRESET_ECLIPSES.find(e => e.cat_no === 9568) || PRESET_ECLIPSES[1];
+        selectEclipse(defaultPreset);
+        eclipseSelect.value = 9568;
 
         // -------------------------------------------------------------
         // 6. BUCLE PRINCIPAL DE ANIMACIÓN 3D
