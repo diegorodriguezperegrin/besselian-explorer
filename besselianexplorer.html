@@ -696,10 +696,6 @@
                 </div>
             </div>
         </div>
-
-        <button class="btn btn-secondary" id="btn-close-left-bottom" style="width: 100%; margin-top: 10px; padding: 10px 14px; font-size: 0.85rem;">
-            <i class="fa-solid fa-earth-americas"></i> Ver Globo 3D (Cerrar Panel)
-        </button>
     </div>
 
     <!-- RIGHT PANEL: Timeline Player Simulation, Layers, and Visual Legend -->
@@ -773,10 +769,6 @@
                 <span><strong>Amarillo:</strong> Isomagnitudes (0%, 20%, 40%, 60%, 80%)</span>
             </div>
         </div>
-
-        <button class="btn btn-secondary" id="btn-close-right-bottom" style="width: 100%; margin-top: 6px; padding: 10px 14px; font-size: 0.85rem;">
-            <i class="fa-solid fa-earth-americas"></i> Ver Globo 3D (Cerrar Panel)
-        </button>
     </div>
 
     <script>
@@ -1842,8 +1834,6 @@
         const btnToggleRight = document.getElementById('btn-toggle-right');
         const btnReopenLeft = document.getElementById('btn-reopen-left');
         const btnReopenRight = document.getElementById('btn-reopen-right');
-        const btnCloseLeftBottom = document.getElementById('btn-close-left-bottom');
-        const btnCloseRightBottom = document.getElementById('btn-close-right-bottom');
 
         const dockBtnEclipses = document.getElementById('dock-btn-eclipses');
         const dockBtnView = document.getElementById('dock-btn-view');
@@ -1897,11 +1887,9 @@
 
         btnToggleLeft?.addEventListener('click', closeLeftPanel);
         btnReopenLeft?.addEventListener('click', openLeftPanel);
-        btnCloseLeftBottom?.addEventListener('click', closeLeftPanel);
 
         btnToggleRight?.addEventListener('click', closeRightPanel);
         btnReopenRight?.addEventListener('click', openRightPanel);
-        btnCloseRightBottom?.addEventListener('click', closeRightPanel);
 
         dockBtnEclipses?.addEventListener('click', () => {
             if (panelLeft && panelLeft.style.display !== 'none') {
