@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Missió: La Lluna! - Cosmos Mataró</title>
+  <link rel="stylesheet" href="lluna.css">
+</head>
+<body>
+
+  <!-- Main Comic Container -->
+  <div class="comic-book-container">
+    
+    <!-- Header with Rocket Tracker -->
+    <header class="comic-header">
+      <div style="display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap;">
+        <h1 class="presentation-title">Missió: La Lluna! 🌙</h1>
+        <a href="simulador3D.html" target="_blank" style="background: var(--comic-orange, #ff5722); border: 3px solid var(--comic-black, #1a1a1a); color: var(--comic-black, #1a1a1a); font-family: 'Outfit', sans-serif; font-size: 0.85rem; font-weight: 800; text-decoration: none; padding: 6px 14px; border-radius: 8px; box-shadow: 3px 3px 0 var(--comic-black, #1a1a1a); transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;" onmouseover="this.style.transform='translate(-1px, -1px)'; this.style.boxShadow='4px 4px 0 var(--comic-black, #1a1a1a)';" onmouseout="this.style.transform='none'; this.style.boxShadow='3px 3px 0 var(--comic-black, #1a1a1a)';">
+          <span>🌌</span> Simulador 3D
+        </a>
+      </div>
+      
+      <!-- Progress tracker (rocket flying to the Moon) -->
+      <div class="rocket-tracker-container" id="tracker">
+        <span class="badge-earth">🌍</span>
+        <div class="rocket-path-bg"></div>
+        <div class="rocket-progress-bar" id="progressBar"></div>
+        <div class="rocket-icon-indicator" id="rocketIndicator">🚀</div>
+        <span class="badge-moon">🌙</span>
+      </div>
+      
+      <div class="page-counter-badge" id="pageBadge">Pàgina 1 / 26</div>
+    </header>
+
+    <!-- Main Comic Body containing slides -->
+    <main class="comic-body">
+
+      <!-- Slide 1: Benvinguts a la NIT d'ESTELS 2026! (Logos Slide) -->
+      <section class="slide active" id="slide-1">
+        <div class="sound-effect top-right">BENVINGUTS!</div>
+        <div class="comic-grid comic-grid-1" style="flex-grow: 1; align-items: center; justify-content: center;">
+          <div class="comic-panel yellow" style="text-align: center; padding: 40px; display: flex; flex-direction: column; justify-content: space-around; align-items: center; min-height: 500px;">
+            <h2 class="panel-title" style="font-size: 3rem; color: var(--comic-purple-dark); border-bottom: none; margin-bottom: 40px; line-height: 1.3;">
+              Benvinguts a la<br><span style="font-size: 4rem; color: var(--comic-orange); text-shadow: 2px 2px 0 var(--comic-black);">NIT d'ESTELS 2026!</span> 🌌✨
+            </h2>
+            
+            <!-- Logos Container -->
+            <div class="logos-container" style="display: flex; gap: 40px; justify-content: center; align-items: center; flex-wrap: wrap; margin: 30px 0; background: rgba(255,255,255,0.8); padding: 30px; border: 4px solid var(--comic-black); border-radius: 20px; box-shadow: 6px 6px 0 var(--comic-black);">
+              <img src="1 logo orrius.png" alt="Logo Orrius" style="max-height: 130px; object-fit: contain; filter: drop-shadow(2px 2px 0px var(--comic-black));">
+              <img src="2 logo eo.png" alt="Logo EO" style="max-height: 130px; object-fit: contain; filter: drop-shadow(2px 2px 0px var(--comic-black));">
+              <img src="3 logo cosmos.png" alt="Logo Cosmos" style="max-height: 130px; object-fit: contain; filter: drop-shadow(2px 2px 0px var(--comic-black));">
+            </div>
+            
+            <p class="panel-text" style="font-size: 1.8rem; font-weight: 700; color: var(--comic-black); margin-top: 30px;">
+              Premeu **SEGÜENT** o la tecla **ENTER** per començar la missió lunar! 🚀
+            </p>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- Slide 2: Welcome -->
+      <section class="slide" id="slide-2">
+        <div class="sound-effect top-right">HOLA!</div>
+        <div class="comic-grid comic-grid-2-1">
+          <div class="comic-panel yellow">
+            <h2 class="panel-title">Benvinguts a l'espai!</h2>
+            <p class="panel-text" style="font-size: 1.6rem; font-weight: 600;">Sóc en <strong>Lluneta</strong>, la vostra veïna del cel nocturn!</p>
+            <ul class="comic-list star">
+              <li>Avui descobrirem tots els meus secrets!</li>
+              <li>Viatjarem en el temps i enlairarem coets!</li>
+              <li>Ens prepararem per al <strong>proper gran eclipsi de Sol a Catalunya!</strong></li>
+            </ul>
+          </div>
+          <div class="comic-panel blue">
+            <div class="vector-container floating-element">
+              <!-- SVG Lluneta Mascot -->
+              <svg viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="42" fill="#ffd000" stroke="#1a1a1a" stroke-width="4" />
+                <circle cx="28" cy="30" r="6" fill="#e5b800" opacity="0.6" />
+                <circle cx="70" cy="35" r="7" fill="#e5b800" opacity="0.6" />
+                <circle cx="35" cy="70" r="8" fill="#e5b800" opacity="0.6" />
+                <circle cx="65" cy="68" r="5" fill="#e5b800" opacity="0.6" />
+                <!-- Cute Face -->
+                <circle cx="38" cy="48" r="4" fill="#1a1a1a" />
+                <circle cx="62" cy="48" r="4" fill="#1a1a1a" />
+                <circle cx="32" cy="53" r="5" fill="#ff7979" opacity="0.8" />
+                <circle cx="68" cy="53" r="5" fill="#ff7979" opacity="0.8" />
+                <path d="M 44 58 Q 50 65 56 58" fill="none" stroke="#1a1a1a" stroke-width="3" stroke-linecap="round" />
+              </svg>
+            </div>
+            <div class="character-box">
+              <div class="speech-bubble">
+                <p class="bubble-text">Enlairem el coet en 3, 2, 1... 🚀</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 3: What is the Moon? -->
+      <section class="slide" id="slide-3">
+        <div class="sound-effect top-right">UAU!</div>
+        <div class="comic-grid comic-grid-2">
+          <div class="comic-panel dark">
+            <h2 class="panel-title" style="color: var(--comic-yellow);">Què és la Lluna?</h2>
+            <p class="panel-text">La Lluna és un <strong>satèl·lit natural</strong>: una gran esfera de roca que gira al voltant de la Terra.</p>
+            <ul class="comic-list star" style="color: #fffbc2;">
+              <li>Distància: <strong>384.000 km</strong> 🌍 ➔ 🌙</li>
+              <li>Mida: <strong>4 vegades més petita</strong> en diàmetre.</li>
+              <li>Dins la Terra hi cabrien <strong>49 Llunes desfetes</strong> (o <strong>37 de senceres</strong>!).</li>
+            </ul>
+            <div style="text-align: center; margin-top: auto;">
+              <img src="realistic_moon.png" alt="Foto real de la Lluna" style="width: 100%; max-height: 180px; object-fit: contain; border: 3px solid var(--comic-black); border-radius: 12px; box-shadow: 3px 3px 0 var(--comic-black);">
+            </div>
+          </div>
+          <div class="comic-panel yellow">
+            <h2 class="panel-title">Súper salts lunars!</h2>
+            <p class="panel-text">Com que és més petita que la Terra, té **molt menys gravetat**.</p>
+            <ul class="comic-list star">
+              <li>Pesaries molt menys!</li>
+              <li><strong>Saltaries 6 vegades més alt!</strong> Seria com volar!</li>
+            </ul>
+            
+            <div class="vector-container">
+              <!-- SVG Cute Astronaut Jumping on Moon -->
+              <svg viewBox="0 0 100 100">
+                <rect x="0" y="80" width="100" height="20" fill="#bdc3c7" stroke="#1a1a1a" stroke-width="3"/>
+                <circle cx="20" cy="90" r="4" fill="#7f8c8d" />
+                <circle cx="80" cy="88" r="6" fill="#7f8c8d" />
+                <!-- Astronaut jumping -->
+                <g class="floating-element">
+                  <!-- Suit -->
+                  <circle cx="50" cy="40" r="16" fill="#fff" stroke="#1a1a1a" stroke-width="3" />
+                  <rect x="42" y="53" width="16" height="20" rx="4" fill="#fff" stroke="#1a1a1a" stroke-width="3" />
+                  <!-- Visor -->
+                  <ellipse cx="50" cy="38" rx="11" ry="8" fill="#2980b9" stroke="#1a1a1a" stroke-width="2" />
+                  <!-- Highlight on visor -->
+                  <ellipse cx="47" cy="36" rx="4" ry="2" fill="#3498db" />
+                  <!-- Legs -->
+                  <line x1="45" y1="73" x2="40" y2="82" stroke="#1a1a1a" stroke-width="3" stroke-linecap="round"/>
+                  <line x1="55" y1="73" x2="60" y2="80" stroke="#1a1a1a" stroke-width="3" stroke-linecap="round"/>
+                  <!-- Arms -->
+                  <path d="M 42 56 Q 30 50 35 42" fill="none" stroke="#1a1a1a" stroke-width="3" stroke-linecap="round"/>
+                  <path d="M 58 56 Q 70 50 65 42" fill="none" stroke="#1a1a1a" stroke-width="3" stroke-linecap="round"/>
+                </g>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 4: Full-screen image break (Lunar surface - crater Tycho) -->
+      <section class="slide full-image-slide" id="slide-4">
+        <img src="lunar_surface.png" alt="Superfície real de la Lluna amb cràters">
+      </section>
+
+      <!-- Slide 5: History & Mythology -->
+      <section class="slide" id="slide-5">
+        <div class="comic-grid comic-grid-1-2">
+          <div class="comic-panel purple">
+            <div class="vector-container">
+              <!-- Owl Doctor Astro Mascot -->
+              <svg viewBox="0 0 100 100">
+                <ellipse cx="50" cy="55" rx="35" ry="38" fill="#be2edd" stroke="#1a1a1a" stroke-width="4" />
+                <ellipse cx="50" cy="62" rx="22" ry="24" fill="#f7e6ff" stroke="#1a1a1a" stroke-width="3" />
+                <!-- Eyes -->
+                <circle cx="34" cy="36" r="14" fill="#fff" stroke="#1a1a1a" stroke-width="3" />
+                <circle cx="66" cy="36" r="14" fill="#fff" stroke="#1a1a1a" stroke-width="3" />
+                <circle cx="34" cy="36" r="5" fill="#1a1a1a" />
+                <circle cx="66" cy="36" r="5" fill="#1a1a1a" />
+                <!-- Glasses -->
+                <rect x="16" y="32" width="34" height="8" rx="4" fill="none" stroke="#1a1a1a" stroke-width="3" />
+                <rect x="50" y="32" width="34" height="8" rx="4" fill="none" stroke="#1a1a1a" stroke-width="3" />
+                <line x1="45" y1="36" x2="55" y2="36" stroke="#1a1a1a" stroke-width="3" />
+                <!-- Beak -->
+                <polygon points="50,44 46,51 54,51" fill="#ffd000" stroke="#1a1a1a" stroke-width="3" />
+                <!-- Graduation Cap -->
+                <polygon points="50,8 78,16 50,24 22,16" fill="#130f40" stroke="#1a1a1a" stroke-width="3" />
+                <rect x="47" y="16" width="6" height="8" fill="#130f40" stroke="#1a1a1a" stroke-width="2" />
+                <path d="M 78 16 L 80 32 L 83 32" fill="none" stroke="#ffd000" stroke-width="2" stroke-linecap="round" />
+              </svg>
+            </div>
+            <div class="character-box">
+              <div class="speech-bubble">
+                <p class="bubble-text">Abans no teníem rellotges, i miràvem molt el cel! 🌌</p>
+              </div>
+            </div>
+          </div>
+          <div class="comic-panel white">
+            <h2 class="panel-title">La Lluna al llarg de la història</h2>
+            <p class="panel-text">Com hem vist la Lluna al llarg del temps?</p>
+            
+            <div style="display: grid; grid-template-columns: 1fr; gap: 20px; margin-top: 10px;">
+              <div style="background: #fffbc2; border: 3px solid var(--comic-black); border-radius: 12px; padding: 15px; box-shadow: 4px 4px 0 var(--comic-black);">
+                <strong style="color: var(--comic-purple-dark); font-size: 1.4rem;">Deesses de la nit 🌟</strong>
+                <p style="font-size: 1.2rem; margin: 5px 0 0 0; line-height: 1.4;">Els grecs la consideraven la deessa **Selene** i els romans **Diana**.</p>
+              </div>
+              <div style="background: #e0f7fa; border: 3px solid var(--comic-black); border-radius: 12px; padding: 15px; box-shadow: 4px 4px 0 var(--comic-black);">
+                <strong style="color: var(--comic-blue); font-size: 1.4rem;">El primer calendari 📅</strong>
+                <p style="font-size: 1.2rem; margin: 5px 0 0 0; line-height: 1.4;">Servia per a comptar els mesos i saber quan calia cultivar el camp.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 6: Galileo's Telescope -->
+      <section class="slide" id="slide-6">
+        <div class="sound-effect top-right">PATAPAM!</div>
+        <div class="comic-grid comic-grid-2">
+          <div class="comic-panel white">
+            <h2 class="panel-title">L'ull de Galileu</h2>
+            <p class="panel-text">L'any **1609**, el científic **Galileu Galilei** va construir un telescopi i la va mirar de prop.</p>
+            <p class="panel-text" style="font-weight: 700; color: var(--comic-purple-dark); background: var(--comic-yellow-light); padding: 10px; border-radius: 8px; border-left: 6px solid var(--comic-yellow);">¡La Lluna no és llisa ni perfecta! Té muntanyes i forats!</p>
+          </div>
+          <div class="comic-panel blue">
+            <h2 class="panel-title">Què va veure?</h2>
+            <ul class="comic-list star" style="margin-top: 5px;">
+              <li><strong>Cràters:</strong> Grans forats fets per meteorits.</li>
+              <li><strong>Mars lunars:</strong> Planures de lava volcànica molt antiga i freda. (Buit d'aigua!).</li>
+            </ul>
+            <div class="vector-container">
+              <!-- Galileo telescope SVG -->
+              <svg viewBox="0 0 120 100">
+                <!-- Galileo -->
+                <circle cx="35" cy="50" r="12" fill="#fcd34d" stroke="#1a1a1a" stroke-width="3" />
+                <path d="M 28 55 Q 35 60 42 55" fill="none" stroke="#1a1a1a" stroke-width="2" />
+                <path d="M 23 48 C 23 35, 47 35, 47 48" fill="#fff" stroke="#1a1a1a" stroke-width="3" /> <!-- Beard -->
+                <circle cx="30" cy="47" r="2" fill="#1a1a1a" />
+                <circle cx="40" cy="47" r="2" fill="#1a1a1a" />
+                <!-- Telescope -->
+                <polygon points="38,47 90,32 91,37 39,52" fill="#d97706" stroke="#1a1a1a" stroke-width="3" />
+                <!-- Tripod -->
+                <line x1="60" y1="44" x2="50" y2="85" stroke="#1a1a1a" stroke-width="3" stroke-linecap="round" />
+                <line x1="60" y1="44" x2="70" y2="85" stroke="#1a1a1a" stroke-width="3" stroke-linecap="round" />
+                <circle cx="60" cy="44" r="3" fill="#1a1a1a" />
+                <!-- Star in sky -->
+                <polygon class="floating-element" points="105,15 107,20 112,21 108,25 109,30 105,27 101,30 102,25 98,21 103,20" fill="#ffd000" stroke="#1a1a1a" stroke-width="1.5" />
+              </svg>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 7: Full-screen image break (Galileo's original drawings) -->
+      <section class="slide full-image-slide" id="slide-7">
+        <img src="galileo_sketch.png" alt="Dibuixos originals de la Lluna de Galileu Galilei (1609)">
+      </section>
+
+      <!-- Slide 8: The Apollo 11 Mission -->
+      <section class="slide" id="slide-8">
+        <div class="sound-effect top-right">UN PETIT PAS!</div>
+        <div class="comic-grid comic-grid-2-1">
+          <div class="comic-panel dark">
+            <h2 class="panel-title" style="color: var(--comic-yellow);">El gran salt a la Lluna</h2>
+            <p class="panel-text">El **21 de juliol de 1969**, la nau **Apollo 11** aterra a la Lluna!</p>
+            <p class="panel-text" style="font-weight: 700; color: var(--comic-yellow);">Neil Armstrong:</p>
+            <p class="panel-text" style="font-style: italic; color: #fff; text-align: center; background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px; border: 2px dashed var(--comic-yellow);">"Un petit pas per a un home, un gran pas per a la humanitat."</p>
+          </div>
+          <div class="comic-panel white">
+            <h2 class="panel-title">Petjades eternes!</h2>
+            <p class="panel-text">A la Lluna **no hi ha aire ni vent**.</p>
+            <p class="panel-text" style="font-weight: 700; color: var(--comic-orange);">¡Les petjades dels astronautes segueixen allà 55 anys després!</p>
+            <div style="display: flex; gap: 15px; align-items: center; justify-content: center; height: 180px; margin-top: 5px;">
+              <!-- Boot print SVG -->
+              <svg viewBox="0 0 100 100" style="height: 100%; border: 3px solid var(--comic-black); border-radius: 12px; background: #95a5a6; box-shadow: 2px 2px 0 var(--comic-black); flex-grow: 1; max-width: 45%;">
+                <!-- Footprint shape -->
+                <g fill="#7f8c8d">
+                  <ellipse cx="50" cy="40" rx="18" ry="22" />
+                  <rect x="36" y="55" width="28" height="20" rx="4" />
+                  <!-- horizontal bars (tread pattern) -->
+                  <rect x="36" y="24" width="28" height="3" fill="#555" />
+                  <rect x="34" y="32" width="32" height="3" fill="#555" />
+                  <rect x="32" y="40" width="36" height="3" fill="#555" />
+                  <rect x="34" y="48" width="32" height="3" fill="#555" />
+                  <rect x="38" y="58" width="24" height="3" fill="#555" />
+                  <rect x="38" y="66" width="24" height="3" fill="#555" />
+                </g>
+              </svg>
+              <!-- Real photo of the astronaut walking on the Moon -->
+              <img src="apollo_landing.png" alt="Astronauta a la Lluna" style="height: 100%; width: auto; max-width: 50%; object-fit: cover; border: 3px solid var(--comic-black); border-radius: 12px; box-shadow: 2px 2px 0 var(--comic-black); flex-grow: 1;">
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 9: Full-screen image break (Earthrise from Apollo orbit) -->
+      <section class="slide full-image-slide" id="slide-9">
+        <img src="apollo_earthrise.png" alt="Sortida de la Terra vista des de l'òrbita de la Lluna">
+      </section>
+
+      <!-- Slide 10: Modern Missions -->
+      <section class="slide" id="slide-10">
+        <div class="sound-effect top-right">ARTEMIS!</div>
+        <div class="comic-grid comic-grid-1-2">
+          <div class="comic-panel yellow">
+            <div class="vector-container floating-element">
+              <!-- Moon base SVG -->
+              <svg viewBox="0 0 100 100">
+                <!-- Stars -->
+                <circle cx="15" cy="15" r="1.5" fill="#1a1a1a" />
+                <circle cx="85" cy="20" r="1" fill="#1a1a1a" />
+                <circle cx="50" cy="10" r="2" fill="#1a1a1a" />
+                <!-- Moon surface -->
+                <path d="M 0 85 Q 50 75 100 85 L 100 100 L 0 100 Z" fill="#bdc3c7" stroke="#1a1a1a" stroke-width="3" />
+                <!-- Dome base -->
+                <path d="M 25 80 A 25 25 0 0 1 75 80 Z" fill="#e0f7fa" stroke="#1a1a1a" stroke-width="3" />
+                <!-- Window lines -->
+                <path d="M 35 70 Q 50 60 65 70" fill="none" stroke="#1a1a1a" stroke-width="2" />
+                <line x1="50" y1="55" x2="50" y2="80" stroke="#1a1a1a" stroke-width="2" />
+                <!-- Solar panel -->
+                <rect x="75" y="65" width="20" height="15" fill="#3498db" stroke="#1a1a1a" stroke-width="2" />
+                <line x1="85" y1="80" x2="85" y2="65" stroke="#1a1a1a" stroke-width="2" />
+                <line x1="75" y1="72" x2="95" y2="72" stroke="#1a1a1a" stroke-width="1" />
+              </svg>
+            </div>
+            <div class="character-box">
+              <div class="speech-bubble">
+                <p class="bubble-text">Tornem a la Lluna molt aviat! 🏠🌙</p>
+              </div>
+            </div>
+          </div>
+          <div class="comic-panel white">
+            <h2 class="panel-title">Missions modernes: Artemis</h2>
+            <p class="panel-text">El nou pla de l'espai té objectius fantàstics:</p>
+            <ul class="comic-list star">
+              <li><strong>Més igualtat:</strong> Hi viatjarà la primera dona i primer astronauta de color.</li>
+              <li><strong>Una base permanent:</strong> Cúpoles per a viure-hi i investigar durant mesos.</li>
+              <li><strong>La porta a Mart:</strong> La Lluna serà la parada per anar més lluny! 🚀🔴</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 11: Formation of the Moon -->
+      <section class="slide" id="slide-11">
+        <div class="sound-effect top-right">CRASH!</div>
+        <div class="comic-grid comic-grid-2">
+          <div class="comic-panel orange">
+            <h2 class="panel-title">Com va néixer la Lluna?</h2>
+            <p class="panel-text">Fa uns 4.500 milions d'anys, un petit planeta anomenat **Theia** va xocar contra la Terra!</p>
+            <p class="panel-text" style="font-weight: 700; color: var(--comic-purple-dark);">¡El xoc més fort de la història de la Terra! 💥</p>
+          </div>
+          <div class="comic-panel white">
+            <h2 class="panel-title">El ball de roques</h2>
+            <p class="panel-text">El xoc va llançar milions de roques a l'espai.</p>
+            <ul class="comic-list star">
+              <li>Van formar un anell de pols al voltant de la Terra.</li>
+              <li>La gravetat les va ajuntar... i va néixer la **Lluna**!</li>
+            </ul>
+            <div class="vector-container">
+              <!-- Earth and Theia colliding SVG -->
+              <svg viewBox="0 0 120 100">
+                <!-- Earth (blue/green) -->
+                <circle cx="45" cy="55" r="22" fill="#3498db" stroke="#1a1a1a" stroke-width="3" />
+                <path d="M 30 45 Q 40 40 45 50" fill="none" stroke="#2ecc71" stroke-width="4" stroke-linecap="round" />
+                <path d="M 38 65 Q 48 70 52 60" fill="none" stroke="#2ecc71" stroke-width="4" stroke-linecap="round" />
+                <!-- Theia (red/orange, crashing in) -->
+                <circle cx="75" cy="40" r="14" fill="#e74c3c" stroke="#1a1a1a" stroke-width="3" />
+                <circle cx="70" cy="35" r="3" fill="#f39c12" />
+                <!-- Crash sparks/explosions -->
+                <path d="M 55 40 L 62 30 L 59 45 L 70 48 L 56 52 L 64 65 L 50 56" fill="#f1c40f" stroke="#1a1a1a" stroke-width="2" />
+                <!-- Motion lines -->
+                <line x1="93" y1="28" x2="84" y2="34" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round" />
+                <line x1="88" y1="22" x2="81" y2="30" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round" />
+              </svg>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 12: Full-screen image break (Crescent Moon) -->
+      <section class="slide full-image-slide" id="slide-12">
+        <img src="crescent_moon.png" alt="Lluna creixent real en alta definició">
+      </section>
+
+      <!-- Slide 13: Moon Phases (Interactive) -->
+      <section class="slide" id="slide-13">
+        <div class="comic-grid comic-grid-1-2">
+          <div class="comic-panel blue">
+            <h2 class="panel-title">El ball de les Fases</h2>
+            <p class="panel-text">La Lluna no té llum pròpia: **reflecteix la llum del Sol**.</p>
+            <p class="panel-text">Com que gira al voltant de la Terra, des de casa la veiem canviar de forma cada dia!</p>
+            <p class="panel-text" style="font-weight: 700; color: var(--comic-purple-dark); background: #fff; padding: 12px; border-radius: 8px; border: 2px solid var(--comic-black);">¡Es reprodueix automàticament en bucle per a toda la sala! 🔄</p>
+          </div>
+          
+          <!-- Interactive Widget Panel -->
+          <div class="comic-panel dark" style="align-items: center; justify-content: space-around; padding: 15px;">
+            <h2 class="panel-title" style="color: var(--comic-yellow); border-bottom-color: var(--comic-yellow);">Simulador de Fases</h2>
+            
+            <div class="phase-visualizer-container" style="width: 95%; padding: 15px; display: flex; flex-direction: column; align-items: center;">
+              <div class="phase-moon-display" style="width: 260px; height: 260px; margin-bottom: 10px;">
+                <!-- Light path controlled by JS -->
+                <svg viewBox="0 0 100 100" style="width: 100%; height: 100%;">
+                  <!-- Shadow base (dark side) -->
+                  <circle cx="50" cy="50" r="48" fill="#1b213b" />
+                  <!-- Lit surface -->
+                  <path id="interactive-moon-light" d="" fill="#ffd000" />
+                  <!-- Cute Face Overlay -->
+                  <g>
+                    <circle cx="36" cy="45" r="4" fill="#1a1a1a" />
+                    <circle cx="64" cy="45" r="4" fill="#1a1a1a" />
+                    <circle cx="28" cy="52" r="5" fill="#ff7979" opacity="0.6" />
+                    <circle cx="72" cy="52" r="5" fill="#ff7979" opacity="0.6" />
+                    <path d="M 44 56 Q 50 63 56 56" fill="none" stroke="#1a1a1a" stroke-width="3" stroke-linecap="round" />
+                  </g>
+                </svg>
+              </div>
+              <div class="phase-info-label" id="phaseName" style="font-size: 1.6rem; min-height: 45px; margin-bottom: 5px;">Lluna Nova 🌑 (Tot fosc!)</div>
+              <div id="lunarAgeLabel" style="font-size: 1.6rem; font-weight: 700; color: var(--comic-yellow); margin-bottom: 15px; text-shadow: 1px 1px 0 #000; text-align: center;">Edat lunar: 0,0 dies</div>
+              <input type="range" class="phase-slider-input" id="phaseSlider" min="0" max="100" value="0" style="width: 90%; height: 16px;">
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 14: Mnemonic Rule -->
+      <section class="slide" id="slide-14">
+        <div class="sound-effect top-right">MENTIDERA!</div>
+        <div class="comic-grid comic-grid-2">
+          <div class="comic-panel yellow">
+            <h2 class="panel-title">La Lluna és mentidera!</h2>
+            <p class="panel-text">Com sabem si la Lluna creix o decreix? Hi ha un truc genial en català:</p>
+            <div style="background: #fff; border: 3px solid var(--comic-black); border-radius: 12px; padding: 20px; box-shadow: 4px 4px 0 var(--comic-black); margin-top: 15px; text-align: center;">
+              <span style="font-size: 1.6rem; font-weight: 700; color: var(--comic-purple-dark);">"Si fa forma de C, DECREIX.<br>Si fa forma de D, CREIX!" 😜</span>
+            </div>
+          </div>
+          <div class="comic-panel white">
+            <h2 class="panel-title">Com funciona?</h2>
+            
+            <div style="display: flex; flex-direction: column; gap: 20px; margin-top: 10px;">
+              <div style="display: flex; align-items: center; gap: 20px; background: #ffe8e8; border: 3px solid var(--comic-black); border-radius: 12px; padding: 12px;">
+                <!-- C shaped moon SVG -->
+                <svg viewBox="0 0 50 50" width="60" height="60" style="flex-shrink:0;">
+                  <circle cx="25" cy="25" r="22" fill="#2c3e50" />
+                  <path d="M 25 3 A 22 22 0 0 0 25 47 A 15 22 0 0 1 25 3" fill="#ffd000" />
+                </svg>
+                <div>
+                  <strong style="color: var(--comic-orange); font-size: 1.4rem;">Forma de C (Decreix)</strong>
+                  <p style="font-size: 1.15rem; margin: 3px 0 0 0;">Sembla Creixent... ¡però es fa petita!</p>
+                </div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 20px; background: #e0f7fa; border: 3px solid var(--comic-black); border-radius: 12px; padding: 12px;">
+                <!-- D shaped moon SVG -->
+                <svg viewBox="0 0 50 50" width="60" height="60" style="flex-shrink:0;">
+                  <circle cx="25" cy="25" r="22" fill="#2c3e50" />
+                  <path d="M 25 3 A 22 22 0 0 1 25 47 A 15 22 0 0 1 25 3" fill="#ffd000" />
+                </svg>
+                <div>
+                  <strong style="color: var(--comic-blue); font-size: 1.4rem;">Forma de D (Creix)</strong>
+                  <p style="font-size: 1.15rem; margin: 3px 0 0 0;">Sembla Decreixent... ¡però es fa gran!</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 15: Solar Eclipse Explanation -->
+      <section class="slide" id="slide-15">
+        <div class="sound-effect top-right">ZAP!</div>
+        <div class="comic-grid comic-grid-2">
+          <div class="comic-panel dark">
+            <h2 class="panel-title" style="color: var(--comic-yellow); border-bottom-color: var(--comic-yellow);">Què és un eclipsi de Sol?</h2>
+            <p class="panel-text">La Lluna es posa **exactament entre la Terra i el Sol**.</p>
+            <p class="panel-text">Tapa completament la llum del Sol durant uns minuts!</p>
+            <div style="text-align: center; margin-top: auto;">
+              <img src="solar_corona.png" alt="Corona Solar en un eclipsi total" style="width: 100%; max-height: 180px; object-fit: cover; border: 3px solid var(--comic-black); border-radius: 12px; box-shadow: 3px 3px 0 var(--comic-black);">
+            </div>
+          </div>
+          <div class="comic-panel white" style="justify-content: space-between;">
+            <div>
+              <h2 class="panel-title">El dia es fa nit!</h2>
+              <p class="panel-text">El cel es torna fosc, baixen les temperatures, es veuen les estrelles i els ocells van a dormir!</p>
+            </div>
+            
+            <!-- Eclipse simulation element -->
+            <div class="eclipse-simulation" style="height: 240px;">
+              <div class="eclipse-sun"></div>
+              <div class="eclipse-corona"></div>
+              <div class="eclipse-moon-shadow"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 16: The upcoming August 2026 Eclipse in Catalonia -->
+      <section class="slide" id="slide-16">
+        <div class="sound-effect top-right">AL·LUCINANT!</div>
+        <div class="comic-grid comic-grid-2-1">
+          <div class="comic-panel blue">
+            <h2 class="panel-title">El gran eclipsi de 2026!</h2>
+            <p class="panel-text" style="font-size: 1.5rem; font-weight: 600;">Data: **12 d'agost de 2026** per la tarda.</p>
+            
+            <div style="background: #fff; border: 3px solid var(--comic-black); border-radius: 12px; padding: 15px; box-shadow: 4px 4px 0 var(--comic-black); margin-top: 10px;">
+              <strong style="color: var(--comic-purple-dark); font-size: 1.3rem;">Foscor Total 🌑</strong>
+              <p style="font-size: 1.15rem; margin: 3px 0 0 0;">Al **sud de Catalunya** (Tarragona i sud de Lleida).</p>
+            </div>
+            
+            <div style="background: #fff; border: 3px solid var(--comic-black); border-radius: 12px; padding: 15px; box-shadow: 4px 4px 0 var(--comic-black); margin-top: 10px;">
+              <strong style="color: var(--comic-orange); font-size: 1.3rem;">Foscor Parcial al 99% 🌤️</strong>
+              <p style="font-size: 1.15rem; margin: 3px 0 0 0;">A Barcelona, Girona i el nord.</p>
+            </div>
+          </div>
+          
+          <div class="comic-panel yellow">
+            <h2 class="panel-title">Dades clau</h2>
+            <ul class="comic-list star" style="padding-left: 0;">
+              <li><strong>Hora punta:</strong> A les **20:29 h** (posta de sol).</li>
+              <li><strong>Oest (ponent):</strong> Cal un lloc amb vistes lliures cap a l'oest!</li>
+            </ul>
+            <div class="vector-container" style="min-height: 150px;">
+              <!-- Map of Catalonia simplified SVG -->
+              <svg viewBox="0 0 100 80">
+                <!-- Simple Catalonia silhouette -->
+                <path d="M 15 20 Q 25 10 40 15 Q 60 5 80 18 Q 95 30 85 45 Q 75 50 65 65 Q 50 68 40 75 Q 35 60 25 55 Q 10 50 15 35 Z" fill="#ffeaa7" stroke="#1a1a1a" stroke-width="3" />
+                <!-- Eclipse track line -->
+                <path d="M 5 60 L 95 38" stroke="var(--comic-purple-dark)" stroke-width="4" stroke-dasharray="4,4" />
+                <!-- Barcelona mark -->
+                <circle cx="75" cy="46" r="3.5" fill="#e74c3c" stroke="#1a1a1a" stroke-width="1.5" />
+                <text x="79" y="50" font-size="6" font-family="'Fredoka', sans-serif" font-weight="bold" fill="#1a1a1a">BCN</text>
+                <!-- Tarragona mark -->
+                <circle cx="58" cy="58" r="4.5" fill="#2ecc71" stroke="#1a1a1a" stroke-width="1.5" />
+                <text x="44" y="66" font-size="7" font-family="'Fredoka', sans-serif" font-weight="bold" fill="var(--comic-purple-dark)">TOTAL 🌑</text>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 17: Full-screen image break (Eclipse Landscape) -->
+      <section class="slide full-image-slide" id="slide-17">
+        <img src="eclipse_landscape.png" alt="Eclipsi solar total sobre el paisatge">
+      </section>
+
+      <!-- Slide 18: Safety Glasses & Interactive Quiz -->
+      <section class="slide" id="slide-18">
+        <div class="comic-grid comic-grid-2">
+          <div class="comic-panel orange">
+            <h2 class="panel-title">Súper ulls de seguretat!</h2>
+            <p class="panel-text" style="color: var(--comic-black); font-weight: 700;">⚠️ ATENCIÓ! ⚠️</p>
+            <p class="panel-text">Mai miris al Sol directament, et faries mal als ulls!</p>
+            <ul class="comic-list glasses">
+              <li><strong>NO</strong> facis servir ulleres de sol normals ni filtres casolans.</li>
+              <li>Utilitza sempre **ulleres homologades d'eclipsi (ISO 12312-2)**.</li>
+            </ul>
+            <div class="vector-container" style="min-height: 120px;">
+              <!-- Safety Glasses SVG -->
+              <svg viewBox="0 0 100 45">
+                <rect x="5" y="10" width="90" height="25" rx="5" fill="#e74c3c" stroke="#1a1a1a" stroke-width="3" />
+                <!-- Filters -->
+                <rect x="15" y="14" width="28" height="17" rx="3" fill="#2d3436" stroke="#1a1a1a" stroke-width="2" />
+                <rect x="57" y="14" width="28" height="17" rx="3" fill="#2d3436" stroke="#1a1a1a" stroke-width="2" />
+                <line x1="43" y1="20" x2="57" y2="20" stroke="#1a1a1a" stroke-width="3" />
+                <!-- Cool decoration star -->
+                <polygon points="50,5 52,9 57,9 53,12 55,16 50,13 45,16 47,12 43,9 48,9" fill="#f1c40f" />
+              </svg>
+            </div>
+          </div>
+          
+          <!-- Interactive Quiz Panel -->
+          <div class="comic-panel white" id="quizPanel">
+            <h2 class="panel-title" style="color: var(--comic-purple-dark);">Joc: Ets un súper astrònom?</h2>
+            
+            <div class="quiz-question-box" id="quizQuestionBox">
+              <p class="quiz-question-text" id="questionText" style="font-size: 1.4rem;">Pregunta 1: Com sabem si la Lluna està creixent (s'està fent gran)?</p>
+              
+              <div class="quiz-options-container" id="optionsContainer" style="gap: 15px;">
+                <!-- Options populated by JS -->
+              </div>
+            </div>
+            
+            <div class="quiz-feedback-box" id="quizFeedback" style="font-size: 1.35rem; min-height: 50px;"></div>
+            
+            <!-- Final success screen (hidden by default) -->
+            <div id="quizSuccessScreen" class="success-card" style="display: none;">
+              <div class="success-icon">🏆</div>
+              <h3 style="font-size: 1.8rem;">Felicitats, súper astrònoms!</h3>
+              <p style="font-size: 1.3rem;">Heu completat la missió amb èxit. Ara ja esteu preparats pel gran eclipsi de 2026!</p>
+              <button class="btn-comic btn-comic-next" onclick="resetQuiz()">Torna a jugar! 🔄</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 19: Pareidolia (What we see on the Moon) -->
+      <section class="slide" id="slide-19">
+        <div class="comic-grid comic-grid-2">
+          <div class="comic-panel dark">
+            <h2 class="panel-title" style="color: var(--comic-yellow);">Què veiem a la Lluna?</h2>
+            <p class="panel-text" style="font-size: 1.5rem; font-weight: 600;">La Lluna i la Pareidòlia 👁️</p>
+            <ul class="comic-list star" style="color: #fffbc2;">
+              <li>El nostre cervell sempre busca formes conegudes a les taques de la Lluna.</li>
+              <li>Això s'anomena **pareidòlia**!</li>
+            </ul>
+          </div>
+          <div class="comic-panel yellow">
+            <h2 class="panel-title">Mites i Llegendes</h2>
+            <p class="panel-text">Cada cultura té la seva història sobre el que veu:</p>
+            <ul class="comic-list star">
+              <li>A Àsia i Amèrica hi veuen un **conill**. 🐰</li>
+              <li>A Europa hi veiem la **cara d'un home**. 👨</li>
+              <li>Altres històries descriuen una **bella dona** o deessa. 👩✨</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 20: Full-screen image break (The Moon Rabbit) -->
+      <section class="slide full-image-slide" id="slide-20">
+        <img src="lunar_rabbit.png" alt="Representació del Conill de la Lluna en la cultura popular">
+      </section>
+
+      <!-- Slide 21: Full-screen image break (Man in the Moon Face) -->
+      <section class="slide full-image-slide" id="slide-21">
+        <img src="man_in_moon.png" alt="Representació de la cara de l'Home de la Lluna">
+      </section>
+
+      <!-- Slide 22: Full-screen image break (Moon Goddess Chang'e) -->
+      <section class="slide full-image-slide" id="slide-22">
+        <img src="moon_goddess.png" alt="Representació de la Deessa de la Lluna Chang'e">
+      </section>
+
+      <!-- Slide 23: Full-screen image break (George Méliès' Voyage dans la Lluna) -->
+      <section class="slide full-image-slide" id="slide-23">
+        <img src="pop_melies_moon.png" alt="La cara de la Lluna amb el coet a l'ull (Le Voyage dans la Lune, 1902)">
+      </section>
+
+      <!-- Slide 24: Full-screen image break (E.T. silueta de la bicicleta creuant la Lluna) -->
+      <section class="slide full-image-slide" id="slide-24">
+        <img src="pop_et_moon.png" alt="Silueta emblemàtica de la bicicleta volant creuant la gran Lluna plena">
+      </section>
+
+      <!-- Slide 25: Full-screen image break (DreamWorks noi pescant des de la Lluna creixent) -->
+      <section class="slide full-image-slide" id="slide-25">
+        <img src="pop_dreamworks_moon.png" alt="Noi pescant des de la punta d'una Lluna creixent daurada en un cel estrellat">
+      </section>
+
+      <!-- Slide 26: Closing / Invitation -->
+      <section class="slide" id="slide-26">
+        <div class="sound-effect top-right">FI! 🌟</div>
+        <div class="comic-grid comic-grid-1-2">
+          <div class="comic-panel yellow" style="justify-content: center; align-items: center;">
+            <div class="vector-container floating-element" style="min-height: 220px; max-height: 280px;">
+              <!-- SVG Lluneta pointing up/happy -->
+              <svg viewBox="0 0 100 100" style="width: 100%; height: 100%;">
+                <circle cx="50" cy="50" r="42" fill="#ffd000" stroke="#1a1a1a" stroke-width="4" />
+                <circle cx="28" cy="30" r="6" fill="#e5b800" opacity="0.6" />
+                <circle cx="70" cy="35" r="7" fill="#e5b800" opacity="0.6" />
+                <circle cx="35" cy="70" r="8" fill="#e5b800" opacity="0.6" />
+                <!-- Cute Face -->
+                <circle cx="38" cy="48" r="4" fill="#1a1a1a" />
+                <circle cx="62" cy="48" r="4" fill="#1a1a1a" />
+                <circle cx="32" cy="53" r="5" fill="#ff7979" opacity="0.8" />
+                <circle cx="68" cy="53" r="5" fill="#ff7979" opacity="0.8" />
+                <path d="M 44 58 Q 50 65 56 58" fill="none" stroke="#1a1a1a" stroke-width="3" stroke-linecap="round" />
+                <polygon points="80,15 82,20 87,21 83,25 84,30 80,27 76,30 77,25 73,21 78,20" fill="#fff" stroke="#1a1a1a" stroke-width="1.5" />
+              </svg>
+            </div>
+          </div>
+          <div class="comic-panel dark" style="justify-content: center; align-items: center; text-align: center; padding: 40px 20px;">
+            <h2 class="panel-title" style="font-size: 2.8rem; color: var(--comic-yellow); border-bottom: none; margin-bottom: 30px;">I ara, vinga...</h2>
+            <p class="panel-text" style="font-size: 2.2rem; font-weight: 700; line-height: 1.6; color: var(--comic-white);">
+              ...anem a veure-la nosaltres mateixos! 🔭✨
+            </p>
+            <div style="font-size: 5rem; margin-top: 20px;">🌍 ❤️ 🌙</div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Comic Footer Navigation -->
+    <footer class="comic-footer">
+      <button class="btn-comic btn-comic-prev" id="prevBtn" onclick="prevSlide()">⬅️ ENRERE</button>
+      <button class="btn-comic btn-comic-next" id="nextBtn" onclick="nextSlide()">SEGÜENT 🚀</button>
+    </footer>
+
+  </div>
+
+  <script>
+    // Slide Navigation Logic
+    let currentSlide = 1;
+    const totalSlides = 26;
+
+    function showSlide(index) {
+      if (index < 1 || index > totalSlides) return;
+      
+      // Update active slide class
+      document.querySelectorAll('.slide').forEach(slide => slide.classList.remove('active'));
+      document.getElementById(`slide-${index}`).classList.add('active');
+      
+      // Update page counter
+      document.getElementById('pageBadge').innerText = `Pàgina ${index} / ${totalSlides}`;
+      
+      // Update button states
+      document.getElementById('prevBtn').disabled = (index === 1);
+      
+      // If we are on the last slide, change Next button to read "Fi" or keep disabled/reset
+      const nextBtn = document.getElementById('nextBtn');
+      if (index === totalSlides) {
+        nextBtn.innerHTML = "FI 🌟";
+        nextBtn.disabled = true;
+      } else {
+        nextBtn.innerHTML = "SEGÜENT 🚀";
+        nextBtn.disabled = false;
+      }
+      
+      // Update Rocket Progress Tracker
+      const percent = ((index - 1) / (totalSlides - 1)) * 100;
+      document.getElementById('progressBar').style.width = `${percent}%`;
+      document.getElementById('rocketIndicator').style.left = `calc(${percent}% - 2px)`; // offset for icon width center
+      
+      // Start or stop phase animation loop based on slide index
+      if (index === 13) {
+        startPhaseLoop();
+      } else {
+        stopPhaseLoop();
+      }
+      
+      currentSlide = index;
+    }
+
+    function nextSlide() {
+      if (currentSlide < totalSlides) {
+        showSlide(currentSlide + 1);
+      }
+    }
+
+    function prevSlide() {
+      if (currentSlide > 1) {
+        showSlide(currentSlide - 1);
+      }
+    }
+
+    // Keyboard controls
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === 'Enter') {
+        nextSlide();
+      } else if (e.key === 'ArrowLeft') {
+        prevSlide();
+      }
+    });
+
+    // Full-image slides click navigation: Click left 30% to go back, right 70% to go forward
+    document.querySelectorAll('.full-image-slide').forEach(slide => {
+      slide.addEventListener('click', (e) => {
+        const width = window.innerWidth;
+        if (e.clientX < width * 0.3) {
+          prevSlide();
+        } else {
+          nextSlide();
+        }
+      });
+    });
+
+    // --- Interactive Moon Phase Simulator ---
+    const phaseSlider = document.getElementById('phaseSlider');
+    const phaseNameLabel = document.getElementById('phaseName');
+    const moonLightPath = document.getElementById('interactive-moon-light');
+
+    const phases = [
+      { name: "Lluna Nova 🌑 (Amagada al cel)", pct: 0 },
+      { name: "Quart Creixent 🌙 (Forma de D)", pct: 25 },
+      { name: "Lluna Plena 🌕 (Brilla sencera!)", pct: 50 },
+      { name: "Quart Decreixent 🌜 (Forma de C)", pct: 75 },
+      { name: "Lluna Nova 🌑 (De tornada)", pct: 100 }
+    ];
+
+    function getMoonPath(percent) {
+      const r = 48;
+      const cx = 50;
+      const cy = 50;
+      
+      if (percent === 0 || percent === 100) return "";
+      
+      let rx = 0;
+      let sweep1 = 0;
+      let sweep2 = 0;
+      
+      if (percent < 50) {
+        sweep1 = 1;
+        if (percent <= 25) {
+          rx = r - (percent / 25) * r;
+          sweep2 = 0;
+        } else {
+          rx = ((percent - 25) / 25) * r;
+          sweep2 = 1;
+        }
+        return `M ${cx} ${cy - r} A ${r} ${r} 0 0 ${sweep1} ${cx} ${cy + r} A ${rx} ${r} 0 0 ${sweep2} ${cx} ${cy - r}`;
+      } else {
+        sweep1 = 0;
+        if (percent <= 75) {
+          rx = r - ((percent - 50) / 25) * r;
+          sweep2 = 0;
+        } else {
+          rx = ((percent - 75) / 25) * r;
+          sweep2 = 1;
+        }
+        return `M ${cx} ${cy - r} A ${r} ${r} 0 0 ${sweep1} ${cx} ${cy + r} A ${rx} ${r} 0 0 ${sweep2} ${cx} ${cy - r}`;
+      }
+    }
+
+    function updatePhaseVisualizer() {
+      const val = parseInt(phaseSlider.value);
+      
+      // Determine phase name label
+      let currentPhaseText = "";
+      if (val === 0 || val === 100) {
+        currentPhaseText = "Lluna Nova 🌑 (Tot fosc!)";
+      } else if (val < 25) {
+        currentPhaseText = "Lluna Creixent 🌙 (Es va fent gran)";
+      } else if (val === 25) {
+        currentPhaseText = "Quart Creixent 🌓 (Exactament la meitat creixent)";
+      } else if (val < 50) {
+        currentPhaseText = "Lluna Creixent Giba 🌔 (Quasi plena!)";
+      } else if (val === 50) {
+        currentPhaseText = "Lluna Plena 🌕 (Brilla rodona i sencera!)";
+      } else if (val < 75) {
+        currentPhaseText = "Lluna Decreixent Giba 🌖 (Es comença a apagar)";
+      } else if (val === 75) {
+        currentPhaseText = "Quart Decreixent 🌗 (La meitat decreixent)";
+      } else {
+        currentPhaseText = "Lluna Decreixent 🌜 (Ja no queda gaire!)";
+      }
+      
+      phaseNameLabel.innerText = currentPhaseText;
+      
+      // Update Lunar Age in Days (0 to 29.5)
+      const age = ((val / 100) * 29.53).toFixed(1).replace('.', ',');
+      document.getElementById('lunarAgeLabel').innerText = `Edat lunar: ${age} dies`;
+      
+      // Update SVG path
+      const pathD = getMoonPath(val);
+      moonLightPath.setAttribute('d', pathD);
+    }
+
+    phaseSlider.addEventListener('input', updatePhaseVisualizer);
+    
+    // --- Phase Loop Automatic Animation ---
+    let phaseInterval = null;
+    function startPhaseLoop() {
+      if (phaseInterval) return;
+      phaseInterval = setInterval(() => {
+        let val = parseInt(phaseSlider.value);
+        val = (val + 1) % 101;
+        phaseSlider.value = val;
+        updatePhaseVisualizer();
+      }, 70);
+    }
+    
+    function stopPhaseLoop() {
+      if (phaseInterval) {
+        clearInterval(phaseInterval);
+        phaseInterval = null;
+      }
+    }
+
+    // Initialize simulator
+    updatePhaseVisualizer();
+
+
+    // --- Interactive Quiz Logic ---
+    const quizQuestions = [
+      {
+        question: "Pregunta 1: Què és la Lluna?",
+        options: [
+          { text: "Un planeta verd amb marcianos 👽", correct: false },
+          { text: "Una estrella molt brillant que fa calor ☀️", correct: false },
+          { text: "Un satèl·lit natural fet de roca 🌙", correct: true },
+          { text: "Una bola de formatge gegant flotant 🧀", correct: false }
+        ]
+      },
+      {
+        question: "Pregunta 2: Si saltes a la Lluna, què passaria?",
+        options: [
+          { text: "Cauries a l'instant per la gravetat alta", correct: false },
+          { text: "Saltaries 6 vegades més alt com un superheroi! 🚀", correct: true },
+          { text: "Et quedaries flotant per sempre cap al Sol", correct: false },
+          { text: "Et faries gegant de cop", correct: false }
+        ]
+      },
+      {
+        question: "Pregunta 3: Com recordem la regla mnemotècnica de la Lluna mentidera?",
+        options: [
+          { text: "Si fa forma d'estrella, s'està cremant", correct: false },
+          { text: "Si fa forma de C, creix. Si fa forma de D, decreix", correct: false },
+          { text: "Si fa forma de C, decreix. Si fa forma de D, creix! 😜", correct: true },
+          { text: "La Lluna mai menteix, és molt honesta", correct: false }
+        ]
+      },
+      {
+        question: "Pregunta 4: Què hem de fer per veure l'eclipsi del 12 d'agost de 2026 de forma segura?",
+        options: [
+          { text: "Mirar directament amb ulleres de sol normals 😎", correct: false },
+          { text: "Utilitzar ulleres homologades d'eclipsi amb filtre ISO 🕶️", correct: true },
+          { text: "Mirar a través del reflex de l'aigua d'una galleda", correct: false },
+          { text: "Tancar els ulls i imaginar-nos-ho", correct: false }
+        ]
+      }
+    ];
+
+    let currentQuestionIndex = 0;
+
+    function loadQuestion(index) {
+      const feedbackBox = document.getElementById('quizFeedback');
+      feedbackBox.innerText = "";
+      feedbackBox.className = "quiz-feedback-box";
+      
+      if (index >= quizQuestions.length) {
+        // Show success screen
+        document.getElementById('quizQuestionBox').style.display = 'none';
+        document.getElementById('quizSuccessScreen').style.display = 'block';
+        return;
+      }
+      
+      const currentQ = quizQuestions[index];
+      document.getElementById('questionText').innerText = currentQ.question;
+      
+      const optionsContainer = document.getElementById('optionsContainer');
+      optionsContainer.innerHTML = "";
+      
+      currentQ.options.forEach((opt, optIdx) => {
+        const btn = document.createElement('button');
+        btn.className = "quiz-option-btn";
+        btn.innerHTML = opt.text;
+        btn.onclick = () => selectOption(btn, opt.correct);
+        optionsContainer.appendChild(btn);
+      });
+    }
+
+    function selectOption(button, isCorrect) {
+      const feedbackBox = document.getElementById('quizFeedback');
+      const buttons = document.querySelectorAll('.quiz-option-btn');
+      
+      // Disable all buttons in this question to prevent double clicking
+      buttons.forEach(btn => btn.disabled = true);
+      
+      if (isCorrect) {
+        button.classList.add('correct');
+        feedbackBox.innerText = "¡Molt bé! Resposta correcta! 🎉";
+        feedbackBox.className = "quiz-feedback-box correct-animation";
+        
+        // Wait and load next question
+        setTimeout(() => {
+          currentQuestionIndex++;
+          loadQuestion(currentQuestionIndex);
+        }, 1800);
+      } else {
+        button.classList.add('wrong');
+        feedbackBox.innerText = "¡Oh, no és correcta! Torna-ho a provar... 🤔";
+        feedbackBox.className = "quiz-feedback-box wrong-animation";
+        
+        // Let them try again after a short delay by re-enabling buttons
+        setTimeout(() => {
+          buttons.forEach(btn => {
+            btn.disabled = false;
+            btn.classList.remove('wrong');
+          });
+          feedbackBox.innerText = "";
+          feedbackBox.className = "quiz-feedback-box";
+        }, 1800);
+      }
+    }
+
+    function resetQuiz() {
+      currentQuestionIndex = 0;
+      document.getElementById('quizQuestionBox').style.display = 'flex';
+      document.getElementById('quizSuccessScreen').style.display = 'none';
+      loadQuestion(0);
+    }
+
+    // Initialize Quiz
+    loadQuestion(0);
+
+  </script>
+</body>
+</html>
