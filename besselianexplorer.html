@@ -211,29 +211,6 @@
             right: 15px;
         }
 
-        /* Visual Legend Section */
-        .legend-list {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 12px;
-            font-size: 0.8rem;
-        }
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            color: var(--text-secondary);
-        }
-        .legend-color {
-            width: 18px;
-            height: 4px;
-            border-radius: 2px;
-            flex-shrink: 0;
-        }
 
         /* Mobile Bottom Floating Dock */
         .mobile-dock {
@@ -327,9 +304,46 @@
             gap: 8px;
         }
 
-        .search-box {
+        /* Autocomplete Search Dropdown */
+        .search-autocomplete-wrapper {
+            position: relative;
+        }
+
+        .autocomplete-list {
+            display: none;
+            position: absolute;
+            top: calc(100% + 4px);
+            left: 0;
+            right: 0;
+            max-height: 230px;
+            overflow-y: auto;
+            background: rgba(15, 23, 42, 0.98);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--accent-blue);
+            border-radius: 10px;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.85);
+            z-index: 100;
+        }
+
+        .autocomplete-item {
             display: flex;
-            gap: 8px;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            cursor: pointer;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 0.82rem;
+            color: #f8fafc;
+            transition: background 0.15s;
+        }
+
+        .autocomplete-item:hover, .autocomplete-item.selected {
+            background: rgba(56, 189, 248, 0.22);
+            color: var(--accent-blue);
+        }
+
+        .autocomplete-item:last-child {
+            border-bottom: none;
         }
 
         input[type="text"], input[type="number"], select {
@@ -434,30 +448,13 @@
         .eclipse-card {
             background: rgba(255, 255, 255, 0.03);
             border: 1px solid var(--border-color);
-            border-radius: 14px;
-            padding: 16px;
+            border-radius: 12px;
+            padding: 10px 12px;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 4px;
         }
 
-        .eclipse-card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .eclipse-date {
-            font-family: var(--font-heading);
-            font-size: 1.2rem;
-            font-weight: 700;
-            color: #fff;
-        }
-        .type-badge {
-            padding: 4px 10px;
-            border-radius: 8px;
-            font-weight: 700;
-            font-size: 0.8rem;
-        }
         .type-T { background: rgba(239, 68, 68, 0.25); color: #fca5a5; border: 1px solid #ef4444; }
         .type-A { background: rgba(245, 158, 11, 0.25); color: #fcd34d; border: 1px solid #f59e0b; }
         .type-H { background: rgba(168, 85, 247, 0.25); color: #e9d5ff; border: 1px solid #a855f7; }
@@ -466,22 +463,34 @@
         .stat-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            margin-top: 4px;
+            gap: 4px 10px;
         }
-        .stat-item {
-            background: rgba(0, 0, 0, 0.35);
-            padding: 8px 10px;
-            border-radius: 8px;
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 3px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            font-size: 0.78rem;
         }
-        .stat-label {
-            font-size: 0.7rem;
+        .stat-lbl {
             color: var(--text-secondary);
+            font-size: 0.75rem;
+            font-weight: 500;
         }
-        .stat-value {
-            font-size: 0.9rem;
+        .stat-val {
+            color: #f8fafc;
             font-weight: 600;
-            color: var(--text-primary);
+            font-size: 0.78rem;
+            text-align: right;
+            font-family: var(--font-body);
+        }
+        .type-badge-sm {
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 700;
+            font-size: 0.7rem;
+            letter-spacing: 0.4px;
         }
 
         /* Integrated Timeline Player Section */
@@ -655,44 +664,58 @@
             </span>
         </div>
 
-        <div class="search-box">
-            <input type="number" id="year-input" placeholder="Año (ej. 2027)" value="2027">
-            <button class="btn" id="btn-search"><i class="fa-solid fa-arrow-right"></i> Buscar</button>
+        <div class="search-row" style="display: flex; gap: 8px; align-items: center; margin-bottom: 6px;">
+            <div style="width: 85px; flex-shrink: 0;">
+                <input type="number" id="year-input" placeholder="Año" value="2027" style="padding: 8px 6px; font-size: 0.88rem; font-weight: 700; text-align: center; background: #0f172a; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 10px;">
+            </div>
+            <div style="flex: 1; min-width: 0;">
+                <select id="eclipse-select" style="padding: 8px 30px 8px 12px; font-size: 0.84rem; font-weight: 600; background-color: #0f172a; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 10px; color: #f8fafc;">
+                    <option value="">Selecciona fecha...</option>
+                </select>
+            </div>
         </div>
 
-        <select id="eclipse-select">
-            <option value="">Selecciona un eclipse...</option>
-        </select>
-
         <div class="eclipse-card" id="eclipse-details">
-            <div class="eclipse-card-header">
-                <div class="eclipse-date" id="card-date">2027-08-02</div>
-                <div class="type-badge type-T" id="card-type">TOTAL</div>
-            </div>
             <div class="stat-grid">
-                <div class="stat-item">
-                    <div class="stat-label">Serie Saros</div>
-                    <div class="stat-value" id="card-saros">136</div>
+                <div class="stat-row">
+                    <span class="stat-lbl">Tipo:</span>
+                    <span class="stat-val type-badge-sm type-T" id="card-type">TOTAL</span>
                 </div>
-                <div class="stat-item">
-                    <div class="stat-label">Gamma (&gamma;)</div>
-                    <div class="stat-value" id="card-gamma">0.1421</div>
+                <div class="stat-row">
+                    <span class="stat-lbl">Saros:</span>
+                    <span class="stat-val" id="card-saros">136 <small style="color:var(--text-secondary); font-size:0.7rem;">(38/71)</small></span>
                 </div>
-                <div class="stat-item">
-                    <div class="stat-label">Magnitud</div>
-                    <div class="stat-value" id="card-magnitude">1.0790</div>
+                <div class="stat-row">
+                    <span class="stat-lbl">Magnitud:</span>
+                    <span class="stat-val" id="card-magnitude">1.0790</span>
                 </div>
-                <div class="stat-item">
-                    <div class="stat-label">Duración Central</div>
-                    <div class="stat-value" id="card-duration">06m23s</div>
+                <div class="stat-row">
+                    <span class="stat-lbl">Gamma (&gamma;):</span>
+                    <span class="stat-val" id="card-gamma">0.1421</span>
                 </div>
-                <div class="stat-item">
-                    <div class="stat-label">Latitud Máxima</div>
-                    <div class="stat-value" id="card-lat">25.5N</div>
+                <div class="stat-row">
+                    <span class="stat-lbl">Duración:</span>
+                    <span class="stat-val" id="card-duration">06m23s</span>
                 </div>
-                <div class="stat-item">
-                    <div class="stat-label">Longitud Máxima</div>
-                    <div class="stat-value" id="card-lng">33.2E</div>
+                <div class="stat-row">
+                    <span class="stat-lbl">Franja:</span>
+                    <span class="stat-val" id="card-width">258 km</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-lbl">Altura Sol:</span>
+                    <span class="stat-val" id="card-sun-alt">81.7°</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-lbl">Hora Máx:</span>
+                    <span class="stat-val" id="card-time-ge">10:06 UT</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-lbl">Máx:</span>
+                    <span class="stat-val" id="card-coords">25.5N 33.2E</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-lbl">&Delta;T (dt):</span>
+                    <span class="stat-val" id="card-dt">76.0 s</span>
                 </div>
             </div>
         </div>
@@ -732,42 +755,32 @@
         <div style="display: flex; flex-direction: column; gap: 10px; background: rgba(255,255,255,0.03); padding: 14px; border-radius: 12px; border: 1px solid var(--border-color); font-size: 0.85rem;">
             <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                 <input type="checkbox" id="chk-show-shadow" style="width: auto;">
-                <span>Gradiente Penumbral (Shader GPU)</span>
+                <span>Gradiente penumbral</span>
             </label>
             <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                 <input type="checkbox" id="chk-show-totality" checked style="width: auto;">
-                <span>Franja de Totalidad (Límites Norte/Sur)</span>
+                <span>Franja de totalidad</span>
             </label>
             <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                 <input type="checkbox" id="chk-show-isomagnitudes" checked style="width: auto;">
-                <span>Isolíneas de Ocultación (%)</span>
+                <span>Isolíneas de ocultación (%)</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <input type="checkbox" id="chk-show-subsolar" checked style="width: auto;">
+                <span>Punto subsolar (Sol en el cenit)</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <input type="checkbox" id="chk-show-ut-lines" checked style="width: auto;">
+                <span>Líneas de tiempo (UT)</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <input type="checkbox" id="chk-show-labels" checked style="width: auto;">
+                <span>Rótulos (Tiempo y Magnitud)</span>
             </label>
             <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                 <input type="checkbox" id="chk-show-graticule" style="width: auto;">
                 <span>Red Geográfica (Lat / Lng)</span>
             </label>
-        </div>
-
-        <div class="section-title">
-            <i class="fa-solid fa-palette"></i> Guía Visual de Curvas
-        </div>
-        <div class="legend-list">
-            <div class="legend-item">
-                <div class="legend-color" style="background: #ef4444;"></div>
-                <span><strong>Rojo:</strong> Límites de Totalidad / Anularidad</span>
-            </div>
-            <div class="legend-item">
-                <div class="legend-color" style="background: #38bdf8;"></div>
-                <span><strong>Azul cielo:</strong> Máximo en Horizonte (Espenak)</span>
-            </div>
-            <div class="legend-item">
-                <div class="legend-color" style="background: #f97316;"></div>
-                <span><strong>Naranja:</strong> Terminadores Amanecer / Atardecer (8)</span>
-            </div>
-            <div class="legend-item">
-                <div class="legend-color" style="background: #eab308;"></div>
-                <span><strong>Amarillo:</strong> Isomagnitudes (0%, 20%, 40%, 60%, 80%)</span>
-            </div>
         </div>
     </div>
 
@@ -853,6 +866,80 @@
         });
         const atmosphereMesh = new THREE.Mesh(atmosphereGeometry, atmosphereMaterial);
         earthGroup.add(atmosphereMesh);
+
+        // Generador de Rótulos de Texto Flotantes 3D estilo NASA / Espenak (Fondo blanco, texto negro, sin borde)
+        function createTextSprite(text, color = '#000000', bgColor = '#ffffff', scaleFactor = 1.0) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 256;
+            canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            ctx.font = 'bold 28px "Space Grotesk", -apple-system, sans-serif';
+            const textWidth = ctx.measureText(text).width;
+            const padX = 14;
+            const boxW = Math.min(250, textWidth + padX * 2);
+            const boxH = 46;
+            const boxX = (256 - boxW) / 2;
+            const boxY = (64 - boxH) / 2;
+            const r = 8;
+
+            if (bgColor) {
+                ctx.fillStyle = bgColor;
+                ctx.beginPath();
+                ctx.moveTo(boxX + r, boxY);
+                ctx.lineTo(boxX + boxW - r, boxY);
+                ctx.quadraticCurveTo(boxX + boxW, boxY, boxX + boxW, boxY + r);
+                ctx.lineTo(boxX + boxW, boxY + boxH - r);
+                ctx.quadraticCurveTo(boxX + boxW, boxY + boxH, boxX + boxW - r, boxY + boxH);
+                ctx.lineTo(boxX + r, boxY + boxH);
+                ctx.quadraticCurveTo(boxX, boxY + boxH, boxX, boxY + boxH - r);
+                ctx.lineTo(boxX, boxY + r);
+                ctx.quadraticCurveTo(boxX, boxY, boxX + r, boxY);
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            ctx.fillStyle = color;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(text, 128, 32);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.needsUpdate = true;
+            const material = new THREE.SpriteMaterial({ 
+                map: texture, 
+                transparent: true, 
+                depthTest: true 
+            });
+            const sprite = new THREE.Sprite(material);
+            sprite.scale.set(6.0 * scaleFactor, 1.5 * scaleFactor, 1);
+            return sprite;
+        }
+
+        // Marcador 3D del Punto Subsolar (☀️ Cenit Solar)
+        function createSubsolarMarker() {
+            const group = new THREE.Group();
+
+            // 1. Núcleo solar esférico dorado brillante
+            const coreGeo = new THREE.SphereGeometry(1.3, 24, 24);
+            const coreMat = new THREE.MeshBasicMaterial({ color: 0xffea00 });
+            const coreMesh = new THREE.Mesh(coreGeo, coreMat);
+            group.add(coreMesh);
+
+            // 2. Rayo cenital vertical hacia el Sol (apuntando al cenit)
+            const rayGeo = new THREE.CylinderGeometry(0.12, 0.12, 5.0, 8);
+            const rayMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.9 });
+            const rayMesh = new THREE.Mesh(rayGeo, rayMat);
+            rayMesh.position.y = 2.5;
+            group.add(rayMesh);
+
+            group.visible = true;
+            return group;
+        }
+
+        const subsolarMarkerGroup = createSubsolarMarker();
+        earthGroup.add(subsolarMarkerGroup);
 
         // -------------------------------------------------------------
         // SHADER GPU DE SOMBRA SOBRE LA CARA DIURNA
@@ -1007,12 +1094,13 @@
                         badge.style.color = 'var(--accent-green)';
                     }
                     console.log(`Catálogo cargado: ${eclipseData.length} eclipses.`);
-                    const targetYear = parseInt(yearInput.value) || 2027;
+                    const defaultCat = 9568; // 2 de Agosto de 2027
+                    const found2027 = eclipseData.find(e => e.cat_no === defaultCat);
+                    const targetYear = parseInt(yearInput?.value) || 2027;
                     filterEclipsesByYear(targetYear);
-                    const found2027 = eclipseData.find(e => e.cat_no === 9568);
                     if (found2027 && targetYear === 2027) {
                         selectEclipse(found2027);
-                        eclipseSelect.value = 9568;
+                        if (eclipseSelect) eclipseSelect.value = 9568;
                     }
                 },
                 error: function(err) {
@@ -1053,19 +1141,17 @@
                     });
             });
 
-
-
         const yearInput = document.getElementById('year-input');
-        const searchBtn = document.getElementById('btn-search');
         const eclipseSelect = document.getElementById('eclipse-select');
+        const MONTH_NAMES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
         function populateSelect(list) {
             eclipseSelect.innerHTML = '';
             list.forEach(e => {
                 const opt = document.createElement('option');
-                const typeName = e.eclipse_type === 'T' ? 'Total' : e.eclipse_type === 'A' ? 'Anular' : e.eclipse_type === 'H' ? 'Híbrido' : 'Parcial';
+                const mName = MONTH_NAMES[(e.month || 1) - 1] || e.month;
                 opt.value = e.cat_no;
-                opt.text = `${e.year}-${String(e.month).padStart(2,'0')}-${String(e.day).padStart(2,'0')} (${typeName}) - Saros ${e.saros}`;
+                opt.text = `${e.day} de ${mName}`;
                 eclipseSelect.add(opt);
             });
         }
@@ -1076,23 +1162,19 @@
                 populateSelect(matches);
                 selectEclipse(matches[0]);
             } else {
-                eclipseSelect.innerHTML = `<option value="">No hay eclipses registrados en ${targetYear}</option>`;
+                eclipseSelect.innerHTML = `<option value="">Sin eclipses en ${targetYear}</option>`;
             }
         }
 
-        searchBtn.addEventListener('click', () => {
-            const yr = parseInt(yearInput.value);
-            if (!isNaN(yr)) filterEclipsesByYear(yr);
-        });
-
-        yearInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                const yr = parseInt(yearInput.value);
+        yearInput?.addEventListener('input', (e) => {
+            const val = e.target.value.trim();
+            if (val.length >= 1) {
+                const yr = parseInt(val);
                 if (!isNaN(yr)) filterEclipsesByYear(yr);
             }
         });
 
-        eclipseSelect.addEventListener('change', (e) => {
+        eclipseSelect?.addEventListener('change', (e) => {
             const catNo = parseFloat(e.target.value);
             const found = eclipseData.find(item => item.cat_no === catNo);
             if (found) selectEclipse(found);
@@ -1106,8 +1188,10 @@
                 const catNo = parseFloat(this.dataset.cat);
                 const found = eclipseData.find(item => item.cat_no === catNo);
                 if (found) {
-                    yearInput.value = found.year;
+                    if (yearInput) yearInput.value = found.year;
+                    filterEclipsesByYear(found.year);
                     selectEclipse(found);
+                    if (eclipseSelect) eclipseSelect.value = catNo;
                 }
             });
         });
@@ -1119,18 +1203,54 @@
             currentEclipse = eclipse;
             if (!eclipse) return;
 
-            document.getElementById('card-date').innerText = `${eclipse.year}-${String(eclipse.month).padStart(2,'0')}-${String(eclipse.day).padStart(2,'0')}`;
-            
             const typeBadge = document.getElementById('card-type');
-            typeBadge.innerText = eclipse.eclipse_type === 'T' ? 'TOTAL' : eclipse.eclipse_type === 'A' ? 'ANULAR' : eclipse.eclipse_type === 'H' ? 'HÍBRIDO' : 'PARCIAL';
-            typeBadge.className = `type-badge type-${eclipse.eclipse_type}`;
+            if (typeBadge) {
+                typeBadge.innerText = eclipse.eclipse_type === 'T' ? 'TOTAL' : eclipse.eclipse_type === 'A' ? 'ANULAR' : eclipse.eclipse_type === 'H' ? 'HÍBRIDO' : 'PARCIAL';
+                typeBadge.className = `stat-val type-badge-sm type-${eclipse.eclipse_type}`;
+            }
 
-            document.getElementById('card-saros').innerText = eclipse.saros;
-            document.getElementById('card-gamma').innerText = eclipse.gamma != null ? eclipse.gamma.toFixed(4) : '--';
-            document.getElementById('card-magnitude').innerText = eclipse.magnitude != null ? eclipse.magnitude.toFixed(4) : '--';
-            document.getElementById('card-duration').innerText = eclipse.central_duration || (eclipse.duration_secs ? eclipse.duration_secs + 's' : '--');
-            document.getElementById('card-lat').innerText = eclipse.lat_ge || '--';
-            document.getElementById('card-lng').innerText = eclipse.lng_ge || '--';
+            const sarosElem = document.getElementById('card-saros');
+            if (sarosElem) {
+                const seq = (eclipse.nSeq && eclipse.nSer) ? ` <small style="color:var(--text-secondary); font-size:0.7rem;">(${eclipse.nSeq}/${eclipse.nSer})</small>` : '';
+                sarosElem.innerHTML = `${eclipse.saros || '--'}${seq}`;
+            }
+
+            const gammaElem = document.getElementById('card-gamma');
+            if (gammaElem) gammaElem.innerText = eclipse.gamma != null ? eclipse.gamma.toFixed(4) : '--';
+
+            const magElem = document.getElementById('card-magnitude');
+            if (magElem) magElem.innerText = eclipse.magnitude != null ? eclipse.magnitude.toFixed(4) : '--';
+
+            const durElem = document.getElementById('card-duration');
+            if (durElem) durElem.innerText = eclipse.central_duration || (eclipse.duration_secs ? eclipse.duration_secs + 's' : '--');
+
+            const widthElem = document.getElementById('card-width');
+            if (widthElem) widthElem.innerText = (eclipse.path_width != null && eclipse.path_width > 0) ? `${Math.round(eclipse.path_width)} km` : '--';
+
+            const altElem = document.getElementById('card-sun-alt');
+            if (altElem) altElem.innerText = eclipse.sun_alt != null ? `${eclipse.sun_alt.toFixed(1)}°` : '--';
+
+            const timeElem = document.getElementById('card-time-ge');
+            if (timeElem) {
+                if (eclipse.td_ge) {
+                    const parts = eclipse.td_ge.split(':').map(Number);
+                    const h = parts[0] || 0, m = parts[1] || 0, s = parts[2] || 0;
+                    let totalSec = h * 3600 + m * 60 + s - (eclipse.dt || 0);
+                    while (totalSec < 0) totalSec += 86400;
+                    while (totalSec >= 86400) totalSec -= 86400;
+                    const utH = Math.floor(totalSec / 3600);
+                    const utM = Math.floor((totalSec % 3600) / 60);
+                    timeElem.innerText = `${String(utH).padStart(2,'0')}:${String(utM).padStart(2,'0')} UT`;
+                } else {
+                    timeElem.innerText = '--';
+                }
+            }
+
+            const coordsElem = document.getElementById('card-coords');
+            if (coordsElem) coordsElem.innerText = (eclipse.lat_ge && eclipse.lng_ge) ? `${eclipse.lat_ge} ${eclipse.lng_ge}` : '--';
+
+            const dtElem = document.getElementById('card-dt');
+            if (dtElem) dtElem.innerText = eclipse.dt != null ? `${eclipse.dt}s` : '--';
 
             const x0_calc = eclipse.x0 || 0, x1_calc = eclipse.x1 || 0;
             const y0_calc = eclipse.y0 || 0, y1_calc = eclipse.y1 || 0;
@@ -1162,6 +1282,8 @@
         let totalitySouthLine = null;
         let isomagnitudesGroup = null;
         let graticuleGroup = null;
+        let utLinesGroup = null;
+
 
         function createGraticule() {
             const group = new THREE.Group();
@@ -1281,6 +1403,10 @@
             if (totalityNorthLine) earthGroup.remove(totalityNorthLine);
             if (totalitySouthLine) earthGroup.remove(totalitySouthLine);
             if (isomagnitudesGroup) earthGroup.remove(isomagnitudesGroup);
+            if (utLinesGroup) {
+                earthGroup.remove(utLinesGroup);
+                utLinesGroup = null;
+            }
 
             // Cálculo dinámico riguroso del intervalo de tiempo de penumbra para cualquier eclipse
             const x0 = eclipse.x0 || 0, x1 = eclipse.x1 || 0;
@@ -1555,6 +1681,34 @@
 
                     const lineS = createSegmentedLine(isoSouthCoords, 0xeab308, EARTH_RADIUS * 1.004, lineWidth);
                     if (lineS) isomagnitudesGroup.add(lineS);
+
+                    // Rótulos de Magnitud estilo NASA / Espenak (ej. 0.20, 0.40, 0.60, 0.80)
+                    const showLabels = document.getElementById('chk-show-labels')?.checked ?? true;
+                    if (showLabels && frac > 0) {
+                        const magText = frac.toFixed(2);
+                        if (isoNorthCoords.length > 8) {
+                            const midPtN = isoNorthCoords[Math.floor(isoNorthCoords.length * 0.5)];
+                            if (midPtN) {
+                                const spriteN = createTextSprite(magText, '#000000', '#ffffff', 0.65);
+                                if (spriteN) {
+                                    const posN = latLngToVector3(midPtN.lat, midPtN.lng, EARTH_RADIUS * 1.015);
+                                    spriteN.position.copy(posN);
+                                    isomagnitudesGroup.add(spriteN);
+                                }
+                            }
+                        }
+                        if (isoSouthCoords.length > 8) {
+                            const midPtS = isoSouthCoords[Math.floor(isoSouthCoords.length * 0.5)];
+                            if (midPtS) {
+                                const spriteS = createTextSprite(magText, '#000000', '#ffffff', 0.65);
+                                if (spriteS) {
+                                    const posS = latLngToVector3(midPtS.lat, midPtS.lng, EARTH_RADIUS * 1.015);
+                                    spriteS.position.copy(posS);
+                                    isomagnitudesGroup.add(spriteS);
+                                }
+                            }
+                        }
+                    }
                 });
 
                 // =========================================================================
@@ -1739,6 +1893,78 @@
 
                 earthGroup.add(isomagnitudesGroup);
             }
+
+            // -------------------------------------------------------------
+            // LÍNEAS DE TIEMPO UNIVERSAL (HORAS UT) - ESTILO CANON NASA/ESPENAK
+            // -------------------------------------------------------------
+            const showUtLines = document.getElementById('chk-show-ut-lines')?.checked ?? true;
+            if (showUtLines) {
+                utLinesGroup = new THREE.Group();
+
+                const dtHours = (eclipse.dt || 0) / 3600;
+                const utMin = (eclipse.t0 || 12) + tLoopMin - dtHours;
+                const utMax = (eclipse.t0 || 12) + tLoopMax - dtHours;
+
+                const stepHours = (utMax - utMin < 2.5) ? 0.25 : 0.5;
+                const startHalfHour = Math.ceil(utMin / stepHours) * stepHours;
+                const endHalfHour = Math.floor(utMax / stepHours) * stepHours;
+
+                for (let ut = startHalfHour; ut <= endHalfHour; ut += stepHours) {
+                    const t = ut + dtHours - (eclipse.t0 || 12);
+                    const x = (eclipse.x0 || 0) + (eclipse.x1 || 0)*t + (eclipse.x2 || 0)*t*t + (eclipse.x3 || 0)*t*t*t;
+                    const y = (eclipse.y0 || 0) + (eclipse.y1 || 0)*t + (eclipse.y2 || 0)*t*t + (eclipse.y3 || 0)*t*t*t;
+                    const x1 = (eclipse.x1 || 0) + 2*(eclipse.x2 || 0)*t + 3*(eclipse.x3 || 0)*t*t;
+                    const y1 = (eclipse.y1 || 0) + 2*(eclipse.y2 || 0)*t + 3*(eclipse.y3 || 0)*t*t;
+                    const v = Math.sqrt(x1*x1 + y1*y1) || 0.5;
+                    const L1 = (eclipse.l10 || 0.54) + (eclipse.l11 || 0)*t;
+
+                    const pts = [];
+                    const numSubSteps = 30;
+                    let labelPt = null;
+                    for (let step = -numSubSteps; step <= numSubSteps; step++) {
+                        const lam = (step / numSubSteps) * L1;
+                        const px = x - lam * (y1 / v);
+                        const py = y + lam * (x1 / v);
+                        if (px*px + py*py <= 0.999) {
+                            const ll = besselianXYToLatLng(eclipse, t, px, py);
+                            if (ll) {
+                                pts.push(ll);
+                                // Seleccionar punto en el extremo exterior (fuera de la franja de totalidad, lambda >= 0.75*L1)
+                                if (step === Math.round(numSubSteps * 0.75)) {
+                                    labelPt = ll;
+                                }
+                            }
+                        }
+                    }
+
+                    if (pts.length > 1) {
+                        const utLineMesh = createSegmentedLine(pts, 0x10b981, EARTH_RADIUS * 1.0036, 2);
+                        if (utLineMesh) utLinesGroup.add(utLineMesh);
+
+                        // Si el extremo en +0.75 cayó fuera de la Tierra, tomar el punto más exterior disponible
+                        if (!labelPt && pts.length > 0) {
+                            labelPt = pts[pts.length - 2] || pts[pts.length - 1];
+                        }
+
+                        // Etiqueta flotante de Hora UT (ej. "21:30 UT") colocada en el exterior
+                        const utH = Math.floor((ut % 24 + 24) % 24);
+                        const utM = Math.round(((ut - Math.floor(ut)) * 60 + 60) % 60);
+                        const labelText = `${String(utH).padStart(2,'0')}:${String(utM).padStart(2,'0')} UT`;
+                        
+                        const showLabels = document.getElementById('chk-show-labels')?.checked ?? true;
+                        if (showLabels && labelPt) {
+                            const textSprite = createTextSprite(labelText, '#000000', '#ffffff', 0.75);
+                            if (textSprite) {
+                                const spritePos = latLngToVector3(labelPt.lat, labelPt.lng, EARTH_RADIUS * 1.018);
+                                textSprite.position.copy(spritePos);
+                                utLinesGroup.add(textSprite);
+                            }
+                        }
+                    }
+                }
+
+                earthGroup.add(utLinesGroup);
+            }
         }
 
         function updateShadowAtTime(t) {
@@ -1757,6 +1983,18 @@
             // Posicionar Luz Solar Físicamente en la Cara Diurna (d, -mu)
             const sunVecWorld = latLngToVector3(dDeg, -muDeg, 400);
             sunLight.position.copy(sunVecWorld);
+
+            // Actualizar Marcador 3D del Punto Subsolar (☀️ Sol en el Cenit)
+            if (subsolarMarkerGroup) {
+                const showSubsolar = document.getElementById('chk-show-subsolar')?.checked ?? true;
+                subsolarMarkerGroup.visible = showSubsolar;
+                if (showSubsolar) {
+                    const normVec = latLngToVector3(dDeg, -muDeg, 1.0).normalize();
+                    const pos = normVec.clone().multiplyScalar(EARTH_RADIUS * 1.004);
+                    subsolarMarkerGroup.position.copy(pos);
+                    subsolarMarkerGroup.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), normVec);
+                }
+            }
 
             // Vectores ortonormales exactos del Plano Fundamental Besseliano (w, u, v)
             const wLocal = latLngToVector3(dDeg, -muDeg, 1.0).normalize();
@@ -1783,17 +2021,30 @@
         }
 
         function recenterEarth(lat, lng) {
-            const targetPos = latLngToVector3(lat, lng, 200);
-            
+            const currentDist = camera.position.length() || 200;
+            const targetPos = latLngToVector3(lat, lng, currentDist);
             const startPos = camera.position.clone();
             let progress = 0;
             
+            if (startPos.distanceTo(targetPos) < 0.1) return;
+
             function animateCamera() {
-                progress += 0.05;
-                if (progress <= 1) {
-                    camera.position.lerpVectors(startPos, targetPos, progress);
+                progress += 0.04;
+                if (progress < 1) {
+                    // Easing sinusoidal suave (aceleración y frenado natural)
+                    const ease = 0.5 * (1 - Math.cos(Math.PI * progress));
+                    const tempPos = new THREE.Vector3().lerpVectors(startPos, targetPos, ease);
+                    if (tempPos.lengthSq() > 0.0001) {
+                        tempPos.normalize().multiplyScalar(currentDist);
+                        camera.position.copy(tempPos);
+                    }
+                    camera.lookAt(0, 0, 0);
                     controls.update();
                     requestAnimationFrame(animateCamera);
+                } else {
+                    camera.position.copy(targetPos);
+                    camera.lookAt(0, 0, 0);
+                    controls.update();
                 }
             }
             animateCamera();
@@ -1819,6 +2070,18 @@
         });
 
         document.getElementById('chk-show-isomagnitudes')?.addEventListener('change', () => {
+            if (currentEclipse) drawShadowPath(currentEclipse);
+        });
+
+        document.getElementById('chk-show-subsolar')?.addEventListener('change', (e) => {
+            if (subsolarMarkerGroup) subsolarMarkerGroup.visible = e.target.checked;
+        });
+
+        document.getElementById('chk-show-ut-lines')?.addEventListener('change', () => {
+            if (currentEclipse) drawShadowPath(currentEclipse);
+        });
+
+        document.getElementById('chk-show-labels')?.addEventListener('change', () => {
             if (currentEclipse) drawShadowPath(currentEclipse);
         });
 
@@ -1932,19 +2195,27 @@
             isPlaying = true;
             playBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
 
-            timeSlider.value = currentEclipse.tmin != null ? currentEclipse.tmin : -2.5;
+            const minT = parseFloat(timeSlider.min) || (currentEclipse?.tmin != null ? currentEclipse.tmin : -2.5);
+            const maxT = parseFloat(timeSlider.max) || (currentEclipse?.tmax != null ? currentEclipse.tmax : 2.5);
+            
+            // Si el cursor ya está al final, reiniciar desde el principio
+            if (parseFloat(timeSlider.value) >= maxT - 0.04) {
+                timeSlider.value = minT;
+            }
 
             playInterval = setInterval(() => {
-                let val = parseFloat(timeSlider.value) + 0.02;
-                const maxVal = currentEclipse.tmax != null ? currentEclipse.tmax : 2.5;
-                const minVal = currentEclipse.tmin != null ? currentEclipse.tmin : -2.5;
+                const minRange = parseFloat(timeSlider.min) || (currentEclipse?.tmin != null ? currentEclipse.tmin : -2.5);
+                const maxRange = parseFloat(timeSlider.max) || (currentEclipse?.tmax != null ? currentEclipse.tmax : 2.5);
 
-                if (val > maxVal) {
-                    val = minVal;
+                let val = parseFloat(timeSlider.value) + 0.02;
+
+                // Reproducción en bucle infinito continuo
+                if (val > maxRange) {
+                    val = minRange;
                 }
-                timeSlider.value = val;
+                timeSlider.value = val.toFixed(2);
                 updateShadowAtTime(val);
-            }, 40);
+            }, 35);
         }
 
         function toggleSimulation() {
