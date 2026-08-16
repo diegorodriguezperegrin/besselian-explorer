@@ -334,19 +334,47 @@
 
         input[type="text"], input[type="number"], select {
             width: 100%;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--border-color);
-            color: var(--text-primary);
+            background: #111827;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            color: #f8fafc;
             padding: 10px 14px;
             border-radius: 10px;
             font-family: var(--font-body);
-            font-size: 0.9rem;
+            font-size: 0.88rem;
             outline: none;
-            transition: border-color 0.2s;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        select {
+            cursor: pointer;
+            background-color: #0f172a;
+            background-image: url("data:image/svg+xml;utf8,<svg fill='%2338bdf8' height='20' viewBox='0 0 24 24' width='20' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            padding-right: 32px;
+            border: 1px solid rgba(56, 189, 248, 0.35);
+            font-weight: 500;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+        }
+
+        select option {
+            background-color: #0f172a;
+            color: #f8fafc;
+            padding: 10px;
+            font-size: 0.88rem;
+        }
+
+        select option:checked {
+            background-color: #0369a1;
+            color: #38bdf8;
+            font-weight: 700;
         }
 
         input:focus, select:focus {
             border-color: var(--accent-blue);
+            box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
         }
 
         .btn {
@@ -635,10 +663,6 @@
         <select id="eclipse-select">
             <option value="">Selecciona un eclipse...</option>
         </select>
-
-        <div class="section-title">
-            <i class="fa-solid fa-circle-info"></i> Datos del Eclipse Seleccionado
-        </div>
 
         <div class="eclipse-card" id="eclipse-details">
             <div class="eclipse-card-header">
