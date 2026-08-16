@@ -673,15 +673,7 @@
             </div>
         </div>
 
-        <div class="section-title">
-            <i class="fa-solid fa-folder-open"></i> Cargar CSV Completo (11,900 Eclipses)
-        </div>
-        <div class="file-input-wrapper">
-            <button class="btn btn-secondary" style="width: 100%;"><i class="fa-solid fa-upload"></i> Cargar eclipse_besselian_from_mysqldump2.csv</button>
-            <input type="file" id="csv-file-input" accept=".csv">
-        </div>
-
-        <button class="btn btn-secondary" id="btn-close-left-bottom" style="width: 100%; margin-top: 6px; padding: 10px 14px; font-size: 0.85rem;">
+        <button class="btn btn-secondary" id="btn-close-left-bottom" style="width: 100%; margin-top: 10px; padding: 10px 14px; font-size: 0.85rem;">
             <i class="fa-solid fa-earth-americas"></i> Ver Globo 3D (Cerrar Panel)
         </button>
     </div>
@@ -1041,16 +1033,7 @@
                     });
             });
 
-        document.getElementById('csv-file-input').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(evt) {
-                    loadCSVData(evt.target.result);
-                };
-                reader.readAsText(file);
-            }
-        });
+
 
         const yearInput = document.getElementById('year-input');
         const searchBtn = document.getElementById('btn-search');
