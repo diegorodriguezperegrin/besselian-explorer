@@ -171,16 +171,14 @@
 
         .section-title {
             font-family: var(--font-heading);
-            font-size: 0.76rem;
-            font-weight: 700;
-            color: #cbd5e1;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-secondary);
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            padding-bottom: 0.2rem;
-            margin-bottom: 0.1rem;
+            letter-spacing: 0.05em;
             display: flex;
-            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
         }
 
         /* Custom Slider Controls */
@@ -1047,8 +1045,8 @@
         </div>
 
         <div class="section-title" style="margin-top: 4px;">
-            <span><i class="fa-solid fa-sliders" style="margin-right: 6px; color: var(--accent-blue);"></i> Parámetros orbitales</span>
-            <span class="info-icon" title="Parámetros de inclinación orbital, oblicuidad axial, excentricidad y movimientos de precesión">?</span>
+            <i class="fa-solid fa-sliders"></i> Parámetros orbitales
+            <span class="info-icon" style="margin-left: auto;" title="Parámetros de inclinación orbital, oblicuidad axial, excentricidad y movimientos de precesión">?</span>
         </div>
 
         <div class="panel-section" id="section-precession-container">
@@ -1133,7 +1131,7 @@
 
             <!-- 1. Reproducción -->
             <div class="section-title" style="margin-top: 4px;">
-                <i class="fa-solid fa-play" style="margin-right: 6px; color: var(--accent-blue);"></i> Reproducción
+                <i class="fa-solid fa-circle-play"></i> Reproducción
             </div>
             <div class="panel-section">
                 <div class="btn-group">
@@ -1149,7 +1147,7 @@
 
             <!-- 2. Capas -->
             <div class="section-title" style="margin-top: 4px;">
-                <i class="fa-solid fa-layer-group" style="margin-right: 6px; color: var(--accent-blue);"></i> Capas
+                <i class="fa-solid fa-layer-group"></i> Capas
             </div>
             <div class="panel-section">
                 <label class="checkbox-row">
