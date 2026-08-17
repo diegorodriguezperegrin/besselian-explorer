@@ -327,47 +327,7 @@
             gap: 8px;
         }
 
-        /* Autocomplete Search Dropdown */
-        .search-autocomplete-wrapper {
-            position: relative;
-        }
-
-        .autocomplete-list {
-            display: none;
-            position: absolute;
-            top: calc(100% + 4px);
-            left: 0;
-            right: 0;
-            max-height: 230px;
-            overflow-y: auto;
-            background: rgba(15, 23, 42, 0.98);
-            backdrop-filter: blur(16px);
-            border: 1px solid var(--accent-blue);
-            border-radius: 10px;
-            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.85);
-            z-index: 100;
-        }
-
-        .autocomplete-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 12px;
-            cursor: pointer;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            font-size: 0.82rem;
-            color: #f8fafc;
-            transition: background 0.15s;
-        }
-
-        .autocomplete-item:hover, .autocomplete-item.selected {
-            background: rgba(56, 189, 248, 0.22);
-            color: var(--accent-blue);
-        }
-
-        .autocomplete-item:last-child {
-            border-bottom: none;
-        }
+        
 
         input[type="text"], input[type="number"], select {
             width: 100%;
@@ -757,7 +717,7 @@
         </div>
 
         <div class="section-title" style="margin-top: 4px;">
-            <i class="fa-solid fa-layer-group"></i> Capas de Visualización 3D
+            <i class="fa-solid fa-layer-group"></i> Capas
         </div>
         <div style="display: flex; flex-direction: column; gap: 10px; background: rgba(255,255,255,0.03); padding: 14px; border-radius: 12px; border: 1px solid var(--border-color); font-size: 0.85rem;">
             <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
@@ -829,6 +789,7 @@
             controls.rotateSpeed = 0.8;
             controls.minDistance = 70;
             controls.maxDistance = 400;
+            controls.addEventListener('start', () => { cameraTransition = null; });
         } else {
             controls = { update: () => {} };
         }
@@ -1034,6 +995,20 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
 
+        // Resiliencia ante pérdida transitoria de contexto WebGL en móviles / cambio de pestaña
+        renderer.domElement.addEventListener('webglcontextlost', (e) => {
+            e.preventDefault();
+            console.warn('[WebGL] Contexto GPU suspendido/perdido temporalmente.');
+        }, false);
+
+        renderer.domElement.addEventListener('webglcontextrestored', () => {
+            console.log('[WebGL] Contexto GPU restaurado.');
+            if (currentEclipse) {
+                drawShadowPath(currentEclipse);
+                updateShadowAtTime(parseFloat(document.getElementById('time-slider')?.value) || 0);
+            }
+        }, false);
+
         // -------------------------------------------------------------
         // 2. TRANSFORMACIÓN MATEMÁTICA Y POSICIONAMIENTO DEL SOL
         // -------------------------------------------------------------
@@ -1162,8 +1137,10 @@
             list.forEach(e => {
                 const opt = document.createElement('option');
                 const mName = MONTH_NAMES[(e.month || 1) - 1] || e.month;
+                const typeCode = (e.eclipse_type || '').toUpperCase();
+                const typeName = typeCode.startsWith('T') ? 'Total' : typeCode.startsWith('A') ? 'Anular' : typeCode.startsWith('H') ? 'Híbrido' : 'Parcial';
                 opt.value = e.cat_no;
-                opt.text = `${e.day} de ${mName}`;
+                opt.text = `${e.day} de ${mName} (${typeName})`;
                 eclipseSelect.add(opt);
             });
         }
@@ -1281,12 +1258,17 @@
             const deltaT = Math.sqrt(Math.max(0, rPenumbra*rPenumbra - rMin_sq)) / v_calc;
 
             const slider = document.getElementById('time-slider');
-            slider.min = (tClosest - deltaT - 0.1).toFixed(2);
-            slider.max = (tClosest + deltaT + 0.1).toFixed(2);
-            slider.value = 0;
+            const minT = parseFloat((tClosest - deltaT - 0.1).toFixed(2));
+            const maxT = parseFloat((tClosest + deltaT + 0.1).toFixed(2));
+            slider.min = minT;
+            slider.max = maxT;
+            
+            // Inicializar la sombra exactamente en el momento de máximo eclipse (tClosest)
+            const tInit = (tClosest >= minT && tClosest <= maxT) ? parseFloat(tClosest.toFixed(2)) : 0;
+            slider.value = tInit;
 
             drawShadowPath(eclipse);
-            updateShadowAtTime(0);
+            updateShadowAtTime(tInit);
 
             const maxLat = eclipse.lat_dd_ge || 0;
             const maxLng = eclipse.lng_dd_ge || 0;
@@ -1537,37 +1519,35 @@
             });
 
             // 2. Límites Extremos Norte y Sur de Totalidad / Anularidad (Rojo)
-            const totNorthCoords = computeTrajectoryWithExactBounds(t => {
-                const x = (eclipse.x0 || 0) + (eclipse.x1 || 0)*t + (eclipse.x2 || 0)*t*t + (eclipse.x3 || 0)*t*t*t;
-                const y = (eclipse.y0 || 0) + (eclipse.y1 || 0)*t + (eclipse.y2 || 0)*t*t + (eclipse.y3 || 0)*t*t*t;
-                const dx = (eclipse.x1 || 0) + 2*(eclipse.x2 || 0)*t + 3*(eclipse.x3 || 0)*t*t;
-                const dy = (eclipse.y1 || 0) + 2*(eclipse.y2 || 0)*t + 3*(eclipse.y3 || 0)*t*t;
-                const l2 = Math.abs((eclipse.l20 || 0.008) + (eclipse.l21 || 0)*t);
-                if (l2 <= 0.0001) return null;
-                const vlen = Math.sqrt(dx*dx + dy*dy) || 1;
-                const px = x + l2 * (-dy / vlen), py = y + l2 * (dx / vlen);
-                return { x: px, y: py, r2: px*px + py*py, t };
-            });
-
-            const totSouthCoords = computeTrajectoryWithExactBounds(t => {
-                const x = (eclipse.x0 || 0) + (eclipse.x1 || 0)*t + (eclipse.x2 || 0)*t*t + (eclipse.x3 || 0)*t*t*t;
-                const y = (eclipse.y0 || 0) + (eclipse.y1 || 0)*t + (eclipse.y2 || 0)*t*t + (eclipse.y3 || 0)*t*t*t;
-                const dx = (eclipse.x1 || 0) + 2*(eclipse.x2 || 0)*t + 3*(eclipse.x3 || 0)*t*t;
-                const dy = (eclipse.y1 || 0) + 2*(eclipse.y2 || 0)*t + 3*(eclipse.y3 || 0)*t*t;
-                const l2 = Math.abs((eclipse.l20 || 0.008) + (eclipse.l21 || 0)*t);
-                if (l2 <= 0.0001) return null;
-                const vlen = Math.sqrt(dx*dx + dy*dy) || 1;
-                const px = x - l2 * (-dy / vlen), py = y - l2 * (dx / vlen);
-                return { x: px, y: py, r2: px*px + py*py, t };
-            });
-
-            // 1. Línea Central de Totalidad (Naranja #f97316)
-            pathLine = createSegmentedLine(centerCoords, 0xf97316, EARTH_RADIUS * 1.004, 3);
-            if (pathLine) earthGroup.add(pathLine);
-
-            // 2. Líneas de Límite Extremo de la Franja de Totalidad/Anularidad (Rojo #ef4444)
+            const typeCode = (eclipse.eclipse_type || '').toUpperCase();
+            const isCentral = !typeCode.startsWith('P');
             const showTotalityBand = document.getElementById('chk-show-totality')?.checked;
-            if (showTotalityBand !== false) {
+
+            if (isCentral && showTotalityBand !== false) {
+                const totNorthCoords = computeTrajectoryWithExactBounds(t => {
+                    const x = (eclipse.x0 || 0) + (eclipse.x1 || 0)*t + (eclipse.x2 || 0)*t*t + (eclipse.x3 || 0)*t*t*t;
+                    const y = (eclipse.y0 || 0) + (eclipse.y1 || 0)*t + (eclipse.y2 || 0)*t*t + (eclipse.y3 || 0)*t*t*t;
+                    const dx = (eclipse.x1 || 0) + 2*(eclipse.x2 || 0)*t + 3*(eclipse.x3 || 0)*t*t;
+                    const dy = (eclipse.y1 || 0) + 2*(eclipse.y2 || 0)*t + 3*(eclipse.y3 || 0)*t*t;
+                    const l2 = Math.abs((eclipse.l20 || 0.008) + (eclipse.l21 || 0)*t);
+                    if (l2 <= 0.0001) return null;
+                    const vlen = Math.sqrt(dx*dx + dy*dy) || 1;
+                    const px = x + l2 * (-dy / vlen), py = y + l2 * (dx / vlen);
+                    return { x: px, y: py, r2: px*px + py*py, t };
+                });
+
+                const totSouthCoords = computeTrajectoryWithExactBounds(t => {
+                    const x = (eclipse.x0 || 0) + (eclipse.x1 || 0)*t + (eclipse.x2 || 0)*t*t + (eclipse.x3 || 0)*t*t*t;
+                    const y = (eclipse.y0 || 0) + (eclipse.y1 || 0)*t + (eclipse.y2 || 0)*t*t + (eclipse.y3 || 0)*t*t*t;
+                    const dx = (eclipse.x1 || 0) + 2*(eclipse.x2 || 0)*t + 3*(eclipse.x3 || 0)*t*t;
+                    const dy = (eclipse.y1 || 0) + 2*(eclipse.y2 || 0)*t + 3*(eclipse.y3 || 0)*t*t;
+                    const l2 = Math.abs((eclipse.l20 || 0.008) + (eclipse.l21 || 0)*t);
+                    if (l2 <= 0.0001) return null;
+                    const vlen = Math.sqrt(dx*dx + dy*dy) || 1;
+                    const px = x - l2 * (-dy / vlen), py = y - l2 * (dx / vlen);
+                    return { x: px, y: py, r2: px*px + py*py, t };
+                });
+
                 totalityNorthLine = createSegmentedLine(totNorthCoords, 0xef4444, EARTH_RADIUS * 1.004, 2);
                 if (totalityNorthLine) earthGroup.add(totalityNorthLine);
 
