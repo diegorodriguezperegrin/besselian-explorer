@@ -626,7 +626,7 @@
 
         <div class="section-title" style="display: flex; justify-content: space-between; align-items: center;">
             <span><i class="fa-solid fa-magnifying-glass"></i> Buscar por Año</span>
-            <span id="csv-status-badge" style="font-size: 0.72rem; color: var(--text-secondary); font-weight: 600; text-transform: none; letter-spacing: 0;">
+            <span id="csv-status-badge" style="font-size: 0.72rem; color: var(--text-secondary); font-weight: 600; text-transform: none; letter-spacing: 0; cursor: help;" title="Five Millennium Catalog of Solar Eclipses (-1999 a +3000) · Fred Espenak &amp; Jean Meeus (NASA GSFC)">
                 <i class="fa-solid fa-circle-notch fa-spin"></i> Cargando...
             </span>
         </div>
@@ -685,6 +685,11 @@
                     <span class="stat-val" id="card-dt">76.0 s</span>
                 </div>
             </div>
+        </div>
+
+        <div style="margin-top: 2px; padding: 6px 4px 0 4px; border-top: 1px solid rgba(255,255,255,0.06); font-size: 0.70rem; color: var(--text-secondary); text-align: center; line-height: 1.35;">
+            Datos: <em>Five Millennium Catalog of Solar Eclipses</em><br>
+            <strong style="color: #cbd5e1; font-weight: 600;">Fred Espenak &amp; Jean Meeus · NASA GSFC</strong>
         </div>
     </div>
 
@@ -1080,6 +1085,8 @@
                     if (badge) {
                         badge.innerHTML = `<i class="fa-solid fa-check-circle"></i> ${eclipseData.length.toLocaleString()} eclipses`;
                         badge.style.color = 'var(--accent-green)';
+                        badge.title = 'Five Millennium Catalog of Solar Eclipses (-1999 a +3000) · Fred Espenak & Jean Meeus (NASA GSFC)';
+                        badge.style.cursor = 'help';
                     }
                     console.log(`Catálogo cargado: ${eclipseData.length} eclipses.`);
                     const defaultCat = 9568; // 2 de Agosto de 2027
