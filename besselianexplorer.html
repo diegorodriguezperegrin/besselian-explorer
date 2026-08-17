@@ -229,6 +229,26 @@
             right: 15px;
         }
 
+        /* Checkbox Controls matching Simulador 3D */
+        .checkbox-row {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.76rem;
+            color: var(--text-primary);
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .checkbox-row input {
+            cursor: pointer;
+            accent-color: var(--accent-blue);
+            width: 13px;
+            height: 13px;
+            margin: 0;
+            flex-shrink: 0;
+        }
+
         /* Responsive Mobile Rules */
         @media (max-width: 768px) {
             .reopen-btn {
@@ -725,33 +745,33 @@
         <div class="section-title" style="margin-top: 4px;">
             <i class="fa-solid fa-layer-group"></i> Capas
         </div>
-        <div style="display: flex; flex-direction: column; gap: 10px; background: rgba(255,255,255,0.03); padding: 14px; border-radius: 12px; border: 1px solid var(--border-color); font-size: 0.85rem;">
-            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                <input type="checkbox" id="chk-show-shadow" style="width: auto;">
+        <div class="panel-section" style="display: flex; flex-direction: column; gap: 0.45rem; background: rgba(255,255,255,0.03); padding: 0.5rem 0.65rem; border-radius: 12px; border: 1px solid var(--border-color);">
+            <label class="checkbox-row">
+                <input type="checkbox" id="chk-show-shadow">
                 <span>Gradiente penumbral</span>
             </label>
-            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                <input type="checkbox" id="chk-show-totality" checked style="width: auto;">
+            <label class="checkbox-row">
+                <input type="checkbox" id="chk-show-totality" checked>
                 <span>Franja de totalidad</span>
             </label>
-            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                <input type="checkbox" id="chk-show-subsolar" checked style="width: auto;">
+            <label class="checkbox-row">
+                <input type="checkbox" id="chk-show-subsolar" checked>
                 <span>Punto subsolar (Sol en el cenit)</span>
             </label>
-            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                <input type="checkbox" id="chk-show-graticule" style="width: auto;">
+            <label class="checkbox-row">
+                <input type="checkbox" id="chk-show-graticule">
                 <span>Red geográfica (Lat / Lon)</span>
             </label>
-            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                <input type="checkbox" id="chk-daylight-mode" style="width: auto;">
+            <label class="checkbox-row">
+                <input type="checkbox" id="chk-daylight-mode">
                 <span>Iluminación global (sin noche)</span>
             </label>
-            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                <input type="checkbox" id="chk-show-isomagnitudes" checked style="width: auto;">
+            <label class="checkbox-row">
+                <input type="checkbox" id="chk-show-isomagnitudes" checked>
                 <span>Líneas de ocultación (%) y tiempo (UT)</span>
             </label>
-            <label id="lbl-show-labels" style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding-left: 18px; transition: var(--transition-smooth);">
-                <input type="checkbox" id="chk-show-labels" checked style="width: auto;">
+            <label class="checkbox-row" id="lbl-show-labels" style="padding-left: 14px; transition: var(--transition-smooth);">
+                <input type="checkbox" id="chk-show-labels" checked>
                 <span>Rótulos</span>
             </label>
         </div>
