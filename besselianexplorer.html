@@ -1054,7 +1054,12 @@
 
             const validR2 = Math.min(0.999999, r2);
             const d = ((eclipse.d0 || 0) + (eclipse.d1 || 0)*t + (eclipse.d2 || 0)*t*t) * Math.PI / 180;
-            const mu = ((eclipse.mu0 || 0) + (eclipse.mu1 || 0)*t + (eclipse.mu2 || 0)*t*t) * Math.PI / 180;
+            let muDeg = (eclipse.mu0 || 0) + (eclipse.mu1 || 0)*t + (eclipse.mu2 || 0)*t*t;
+            if (eclipse.dt) {
+                // Conversión rigurosa de ángulo horario de efemérides (TD) a meridiano de Greenwich en UT mediante Delta T
+                muDeg -= 1.0027379 * (eclipse.dt / 240);
+            }
+            const mu = muDeg * Math.PI / 180;
 
             const z1 = Math.sqrt(Math.max(0, 1.0 - validR2));
             const sinD = Math.sin(d), cosD = Math.cos(d);
@@ -2033,7 +2038,11 @@
             const y = (e.y0 || 0) + (e.y1 || 0)*t + (e.y2 || 0)*t*t + (e.y3 || 0)*t*t*t;
             
             const dDeg = (e.d0 || 0) + (e.d1 || 0)*t;
-            const muDeg = (e.mu0 || 0) + (e.mu1 || 0)*t;
+            let muDeg = (e.mu0 || 0) + (e.mu1 || 0)*t;
+            if (e.dt) {
+                // Orientación astronómica exacta del Sol y el punto subsolar en UT mediante Delta T
+                muDeg -= 1.0027379 * (e.dt / 240);
+            }
 
             const l1 = (e.l10 || 0.54) + (e.l11 || 0)*t; 
             const l2 = Math.abs((e.l20 || 0.01) + (e.l21 || 0)*t);
