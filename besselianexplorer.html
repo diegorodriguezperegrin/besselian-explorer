@@ -1322,9 +1322,11 @@
         function dispose3DObject(obj) {
             if (!obj) return;
             
-            // Recorrer recursivamente todos los hijos
-            while (obj.children && obj.children.length > 0) {
-                dispose3DObject(obj.children[0]);
+            // Recorrer recursivamente todos los hijos en orden inverso
+            if (obj.children && obj.children.length > 0) {
+                for (let i = obj.children.length - 1; i >= 0; i--) {
+                    dispose3DObject(obj.children[i]);
+                }
             }
             
             // Liberar geometría GPU
@@ -2037,6 +2039,8 @@
             }
         }
 
+        let currentTValEl = null;
+
         function updateShadowAtTime(t) {
             if (!currentEclipse) return;
 
@@ -2093,7 +2097,10 @@
             const utH = Math.floor((utHour % 24 + 24) % 24);
             const utM = Math.floor(((utHour - Math.floor(utHour)) * 60 + 60) % 60);
 
-            document.getElementById('current-t-val').innerText = `t = ${t > 0 ? '+' : ''}${t.toFixed(2)}h (${String(utH).padStart(2,'0')}:${String(utM).padStart(2,'0')} UT)`;
+            if (!currentTValEl) currentTValEl = document.getElementById('current-t-val');
+            if (currentTValEl) {
+                currentTValEl.innerText = `t = ${t > 0 ? '+' : ''}${t.toFixed(2)}h (${String(utH).padStart(2,'0')}:${String(utM).padStart(2,'0')} UT)`;
+            }
         }
 
         let cameraTransition = null;

@@ -65,6 +65,9 @@
             box-sizing: border-box;
             margin: 0;
             padding: 0;
+        }
+
+        button, .btn, .panel-toggle, .reopen-btn, input[type="range"], .checkbox-row {
             user-select: none;
         }
 
@@ -1810,13 +1813,12 @@
         // --- GESTIÓN ROBUSTA DE MEMORIA VRAM (GPU DISPOSAL) ---
         function dispose3DObject(obj) {
             if (!obj) return;
-            if (obj.children) {
-                while (obj.children.length > 0) {
-                    dispose3DObject(obj.children[0]);
-                    obj.remove(obj.children[0]);
+            if (obj.children && obj.children.length > 0) {
+                for (let i = obj.children.length - 1; i >= 0; i--) {
+                    dispose3DObject(obj.children[i]);
                 }
             }
-            if (obj.geometry) {
+            if (obj.geometry && typeof obj.geometry.dispose === 'function') {
                 obj.geometry.dispose();
             }
             if (obj.material) {
@@ -1825,6 +1827,9 @@
                 } else {
                     disposeMaterial(obj.material);
                 }
+            }
+            if (obj.parent) {
+                obj.parent.remove(obj);
             }
         }
 
@@ -2974,9 +2979,11 @@
                 states.precessionEarth -= BASE_SPEEDS.precessionEarth * multipliers.precessionEarth * cosObliq * tf * dt;
             } // else: keep current value — deactivating only pauses, does not reset
             
-            // Continuous physical update of lunar precessions (Nodal & Apsidal)
-            states.precessionMoon -= BASE_SPEEDS.precessionMoon * multipliers.precessionMoon * tf * dt;
-            states.apsidesMoon += BASE_SPEEDS.apsidesMoon * multipliers.apsidesMoon * tf * dt;
+            // Lunar precessions (Nodal & Apsidal) only advance when activated
+            if (showHelpers.precessionMoon) {
+                states.precessionMoon -= BASE_SPEEDS.precessionMoon * multipliers.precessionMoon * tf * dt;
+                states.apsidesMoon += BASE_SPEEDS.apsidesMoon * multipliers.apsidesMoon * tf * dt;
+            }
             
             if (isTidalLocked) {
                 // Synchronous rotation: Moon's spin matches its orbital position to always face Earth (direct / counter-clockwise)
@@ -3136,6 +3143,12 @@
         }
 
         // --- 8. TELEMETRÍA (FASES Y ECLIPSES) ---
+        let _valYearDayEl = null;
+        let _valShadowActiveEl = null;
+        let _valShadowDiffEl = null;
+        let _valShadowNodesEl = null;
+        let _eventLogContainerEl = null;
+
         function runTelemetry(earthPos) {
             // Get Moon world position into static vector
             moonMesh.getWorldPosition(_vMoonPos);
@@ -3144,8 +3157,9 @@
             const currentYear = Math.floor(states.days / 365) + 1;
             const dayOfYear = (states.days % 365) + 1;
             
-            // Update Year/Day counter in the header
-            document.getElementById('val-year-day').innerText = MESSAGES.yearDay(currentYear, dayOfYear);
+            // Update Year/Day counter in the header (cached)
+            if (!_valYearDayEl) _valYearDayEl = document.getElementById('val-year-day');
+            if (_valYearDayEl) _valYearDayEl.innerText = MESSAGES.yearDay(currentYear, dayOfYear);
             
             // 1. Detect Year Change - Add New Year entry (don't clear log anymore)
             if (currentYear !== lastLoggedYear) {
@@ -3209,20 +3223,18 @@
             const earthR = currentScale.earthRadius;
             const moonR = currentScale.moonRadius;
             
-            // Perpendicular distance of the Moon from the Sun-Earth line (for Solar Eclipse)
+            // Distancia perpendicular de la Luna respecto al eje Sol-Tierra (para Eclipse Solar)
             const SM_proj = _vMoonPos.dot(_vSE_dir);
             _vPerp.copy(_vMoonPos).sub(_vSE_dir.clone().multiplyScalar(SM_proj));
             const perpDistSunLine = _vPerp.length();
             
             let currentEclipseType = "Ninguno";
             
-            // Solar Eclipse: Moon is between Sun and Earth (New Moon)
-            // and its shadow cylinder intersects Earth's sphere based on on-screen sizes
+            // Eclipse Solar: La Luna se encuentra entre el Sol y la Tierra (Luna Nueva)
             const isSolarNewMoon = SM_proj > 0 && SM_proj < distSunEarth;
             const isSolarGeometryIntersection = perpDistSunLine < (earthR + moonR);
             
-            // Lunar Eclipse: Moon is on Earth's shadow side (Full Moon)
-            // and the Moon's sphere intersects Earth's shadow cylinder based on on-screen sizes
+            // Eclipse Lunar: La Luna se encuentra en la sombra de la Tierra (Luna Llena)
             const isLunarFullMoon = p > 0;
             const isLunarGeometryIntersection = perpDist < (earthR + moonR);
             
@@ -3232,8 +3244,7 @@
                 currentEclipseType = "☀️ Eclipse Solar";
             }
             
-            // Restore natural shadow casting in Three.js (no dynamic override needed
-            // since visual shadows and telemetry now share the exact same on-screen geometry!)
+            // Restore natural shadow casting in Three.js
             if (moonMesh) {
                 moonMesh.castShadow = true;
             }
@@ -3241,32 +3252,32 @@
                 earthMesh.castShadow = true;
             }
             
-            // Update Telemetry Panel values in the sidebar
-            const shadowActiveEl = document.getElementById('val-shadow-active');
-            if (shadowActiveEl) {
+            // Update Telemetry Panel values in the sidebar (cached)
+            if (!_valShadowActiveEl) _valShadowActiveEl = document.getElementById('val-shadow-active');
+            if (_valShadowActiveEl) {
                 if (currentEclipseType === "☀️ Eclipse Solar") {
-                    shadowActiveEl.innerText = 'Sí (Solar)';
-                    shadowActiveEl.style.color = 'var(--accent-green)';
+                    _valShadowActiveEl.innerText = 'Sí (Solar)';
+                    _valShadowActiveEl.style.color = 'var(--accent-green)';
                 } else if (currentEclipseType === "🌔 Eclipse Lunar") {
-                    shadowActiveEl.innerText = 'Sí (Lunar)';
-                    shadowActiveEl.style.color = 'var(--accent-blue)';
+                    _valShadowActiveEl.innerText = 'Sí (Lunar)';
+                    _valShadowActiveEl.style.color = 'var(--accent-blue)';
                 } else {
-                    shadowActiveEl.innerText = 'No';
-                    shadowActiveEl.style.color = 'var(--solar-orange)';
+                    _valShadowActiveEl.innerText = 'No';
+                    _valShadowActiveEl.style.color = 'var(--solar-orange)';
                 }
             }
             
-            const shadowDiffEl = document.getElementById('val-shadow-diff');
-            if (shadowDiffEl) {
+            if (!_valShadowDiffEl) _valShadowDiffEl = document.getElementById('val-shadow-diff');
+            if (_valShadowDiffEl) {
                 const currentDist = (p > 0) ? perpDist : perpDistSunLine;
-                shadowDiffEl.innerText = `${currentDist.toFixed(2)} u (Máx: ${(earthR + moonR).toFixed(1)})`;
+                _valShadowDiffEl.innerText = `${currentDist.toFixed(2)} u (Máx: ${(earthR + moonR).toFixed(1)})`;
             }
             
-            const shadowNodesEl = document.getElementById('val-shadow-nodes');
-            if (shadowNodesEl) {
+            if (!_valShadowNodesEl) _valShadowNodesEl = document.getElementById('val-shadow-nodes');
+            if (_valShadowNodesEl) {
                 let nodeDiff = Math.abs(states.orbitEarth - states.precessionMoon) % Math.PI;
                 if (nodeDiff > Math.PI / 2) nodeDiff = Math.PI - nodeDiff;
-                shadowNodesEl.innerText = `${(nodeDiff * 180 / Math.PI).toFixed(1)}°`;
+                _valShadowNodesEl.innerText = `${(nodeDiff * 180 / Math.PI).toFixed(1)}°`;
             }
             
             if (currentEclipseType !== lastEclipseState) {
@@ -3280,12 +3291,10 @@
             }
         }
 
-
-
         // Add an entry to the scrollable event log
         function addLogEntry(day, text) {
-            const container = document.getElementById('event-log-container');
-            if (!container) return;
+            if (!_eventLogContainerEl) _eventLogContainerEl = document.getElementById('event-log-container');
+            if (!_eventLogContainerEl) return;
             
             const entry = document.createElement('div');
             entry.style.padding = '1px 0px';
@@ -3298,18 +3307,18 @@
             entry.innerHTML = `<strong style="color: var(--solar-yellow); font-family: var(--font-heading); margin-right: 4px;">${MESSAGES.dayLogPrefix(day)}</strong> ${text}`;
             
             // Prepend so the newest event is always at the top
-            container.prepend(entry);
+            _eventLogContainerEl.prepend(entry);
             
             // Limit the event log to the 10 most recent events
-            while (container.children.length > 10) {
-                container.removeChild(container.lastChild);
+            while (_eventLogContainerEl.children.length > 10) {
+                _eventLogContainerEl.removeChild(_eventLogContainerEl.lastChild);
             }
         }
 
         // Clear the entire event log
         function clearEventLog() {
-            const container = document.getElementById('event-log-container');
-            if (container) container.innerHTML = "";
+            if (!_eventLogContainerEl) _eventLogContainerEl = document.getElementById('event-log-container');
+            if (_eventLogContainerEl) _eventLogContainerEl.innerHTML = "";
             lastMoonPhase = "";
             lastEclipseState = "Ninguno";
         }
