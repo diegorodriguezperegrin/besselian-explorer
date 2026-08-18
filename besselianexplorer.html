@@ -1474,12 +1474,24 @@
             return p_mid ? { t: t_mid, x: p_mid.x, y: p_mid.y } : null;
         }
 
-        function drawShadowPath(eclipse) {
-            if (pathLine) { dispose3DObject(pathLine); pathLine = null; }
-            if (totalityNorthLine) { dispose3DObject(totalityNorthLine); totalityNorthLine = null; }
-            if (totalitySouthLine) { dispose3DObject(totalitySouthLine); totalitySouthLine = null; }
-            if (isomagnitudesGroup) { dispose3DObject(isomagnitudesGroup); isomagnitudesGroup = null; }
-            if (utLinesGroup) { dispose3DObject(utLinesGroup); utLinesGroup = null; }
+        // Cache global para precomputar toda la geometría polinomial e integración numérica una sola vez por eclipse
+        let cachedEclipseGeometry = {
+            eclipseKey: null,
+            centerCoords: [],
+            totNorthCoords: [],
+            totSouthCoords: [],
+            isoLines: [],
+            sunriseLoop: [],
+            sunsetLoop: [],
+            fullEspenakLoop: [],
+            utLines: []
+        };
+
+        function precomputeEclipseGeometry(eclipse) {
+            const key = `${eclipse.catalog_number || ''}_${eclipse.date || ''}_${eclipse.eclipse_type || ''}_${eclipse.t0 || ''}_${eclipse.dt || ''}`;
+            if (cachedEclipseGeometry.eclipseKey === key) {
+                return cachedEclipseGeometry;
+            }
 
             // Cálculo dinámico riguroso del intervalo de tiempo de penumbra para cualquier eclipse
             const x0 = eclipse.x0 || 0, x1 = eclipse.x1 || 0;
@@ -1499,14 +1511,10 @@
             const dt = 0.004; // 250 divisiones por hora (~14 segundos de paso, máxima resolución)
             const numSteps = Math.ceil((tLoopMax - tLoopMin) / dt);
 
-            const tmin = eclipse.tmin != null ? eclipse.tmin : (tClosest - 2.5);
-            const tmax = eclipse.tmax != null ? eclipse.tmax : (tClosest + 2.5);
-
             // Helper para calcular cualquier trayectoria con intersección exacta en el borde (r2 = 1.0)
             const computeTrajectoryWithExactBounds = (getPointFn) => {
                 const coords = [];
                 let prev = null;
-
                 const tTrajMin = tClosest - deltaT - 0.3;
                 const tTrajMax = tClosest + deltaT + 0.3;
                 const dtTraj = 0.004;
@@ -1551,10 +1559,11 @@
             // 2. Límites Extremos Norte y Sur de Totalidad / Anularidad (Rojo)
             const typeCode = (eclipse.eclipse_type || '').toUpperCase();
             const isCentral = !typeCode.startsWith('P');
-            const showTotalityBand = document.getElementById('chk-show-totality')?.checked;
+            let totNorthCoords = [];
+            let totSouthCoords = [];
 
-            if (isCentral && showTotalityBand !== false) {
-                const totNorthCoords = computeTrajectoryWithExactBounds(t => {
+            if (isCentral) {
+                totNorthCoords = computeTrajectoryWithExactBounds(t => {
                     const x = (eclipse.x0 || 0) + (eclipse.x1 || 0)*t + (eclipse.x2 || 0)*t*t + (eclipse.x3 || 0)*t*t*t;
                     const y = (eclipse.y0 || 0) + (eclipse.y1 || 0)*t + (eclipse.y2 || 0)*t*t + (eclipse.y3 || 0)*t*t*t;
                     const dx = (eclipse.x1 || 0) + 2*(eclipse.x2 || 0)*t + 3*(eclipse.x3 || 0)*t*t;
@@ -1566,7 +1575,7 @@
                     return { x: px, y: py, r2: px*px + py*py, t };
                 });
 
-                const totSouthCoords = computeTrajectoryWithExactBounds(t => {
+                totSouthCoords = computeTrajectoryWithExactBounds(t => {
                     const x = (eclipse.x0 || 0) + (eclipse.x1 || 0)*t + (eclipse.x2 || 0)*t*t + (eclipse.x3 || 0)*t*t*t;
                     const y = (eclipse.y0 || 0) + (eclipse.y1 || 0)*t + (eclipse.y2 || 0)*t*t + (eclipse.y3 || 0)*t*t*t;
                     const dx = (eclipse.x1 || 0) + 2*(eclipse.x2 || 0)*t + 3*(eclipse.x3 || 0)*t*t;
@@ -1577,463 +1586,529 @@
                     const px = x - l2 * (-dy / vlen), py = y - l2 * (dx / vlen);
                     return { x: px, y: py, r2: px*px + py*py, t };
                 });
-
-                totalityNorthLine = createSegmentedLine(totNorthCoords, 0xef4444, EARTH_RADIUS * 1.004, 2);
-                if (totalityNorthLine) earthGroup.add(totalityNorthLine);
-
-                totalitySouthLine = createSegmentedLine(totSouthCoords, 0xef4444, EARTH_RADIUS * 1.004, 2);
-                if (totalitySouthLine) earthGroup.add(totalitySouthLine);
             }
 
-            // 4. ISOMAGNITUDES Opcionales y Figura del 8 (Terminadores Amanecer/Atardecer)
-            const showIsomagnitudes = document.getElementById('chk-show-isomagnitudes')?.checked;
-            if (showIsomagnitudes) {
-                isomagnitudesGroup = new THREE.Group();
-                const magFracs = [0.0, 0.20, 0.40, 0.60, 0.80]; // Isolíneas del 0%, 20%, 40%, 60% y 80%
-                magFracs.forEach(frac => {
-                    let isoNorthCoords = [];
-                    let isoSouthCoords = [];
-                    let prevN = null, prevS = null;
+            // 3. ISOMAGNITUDES Opcionales y Figura del 8 (Terminadores Amanecer/Atardecer)
+            const isoLines = [];
+            const magFracs = [0.0, 0.20, 0.40, 0.60, 0.80];
+            magFracs.forEach(frac => {
+                let isoNorthCoords = [];
+                let isoSouthCoords = [];
+                let prevN = null, prevS = null;
 
-                    const pointAtNorth = (t_val) => {
-                        const x = (eclipse.x0 || 0) + (eclipse.x1 || 0)*t_val + (eclipse.x2 || 0)*t_val*t_val + (eclipse.x3 || 0)*t_val*t_val*t_val;
-                        const y = (eclipse.y0 || 0) + (eclipse.y1 || 0)*t_val + (eclipse.y2 || 0)*t_val*t_val + (eclipse.y3 || 0)*t_val*t_val*t_val;
-                        const dx = (eclipse.x1 || 0) + 2*(eclipse.x2 || 0)*t_val + 3*(eclipse.x3 || 0)*t_val*t_val;
-                        const dy = (eclipse.y1 || 0) + 2*(eclipse.y2 || 0)*t_val + 3*(eclipse.y3 || 0)*t_val*t_val;
-                        const l1 = (eclipse.l10 || 0.54) + (eclipse.l11 || 0)*t_val;
-                        const dist = l1 * (1.0 - frac);
-                        const vlen = Math.sqrt(dx*dx + dy*dy) || 1;
-                        const pxN = x + dist * (-dy / vlen);
-                        const pyN = y + dist * (dx / vlen);
-                        return { x: pxN, y: pyN, r2: pxN*pxN + pyN*pyN, t: t_val };
-                    };
+                const pointAtNorth = (t_val) => {
+                    const x = (eclipse.x0 || 0) + (eclipse.x1 || 0)*t_val + (eclipse.x2 || 0)*t_val*t_val + (eclipse.x3 || 0)*t_val*t_val*t_val;
+                    const y = (eclipse.y0 || 0) + (eclipse.y1 || 0)*t_val + (eclipse.y2 || 0)*t_val*t_val + (eclipse.y3 || 0)*t_val*t_val*t_val;
+                    const dx = (eclipse.x1 || 0) + 2*(eclipse.x2 || 0)*t_val + 3*(eclipse.x3 || 0)*t_val*t_val;
+                    const dy = (eclipse.y1 || 0) + 2*(eclipse.y2 || 0)*t_val + 3*(eclipse.y3 || 0)*t_val*t_val;
+                    const l1 = (eclipse.l10 || 0.54) + (eclipse.l11 || 0)*t_val;
+                    const dist = l1 * (1.0 - frac);
+                    const vlen = Math.sqrt(dx*dx + dy*dy) || 1;
+                    const pxN = x + dist * (-dy / vlen);
+                    const pyN = y + dist * (dx / vlen);
+                    return { x: pxN, y: pyN, r2: pxN*pxN + pyN*pyN, t: t_val };
+                };
 
-                    const pointAtSouth = (t_val) => {
-                        const x = (eclipse.x0 || 0) + (eclipse.x1 || 0)*t_val + (eclipse.x2 || 0)*t_val*t_val + (eclipse.x3 || 0)*t_val*t_val*t_val;
-                        const y = (eclipse.y0 || 0) + (eclipse.y1 || 0)*t_val + (eclipse.y2 || 0)*t_val*t_val + (eclipse.y3 || 0)*t_val*t_val*t_val;
-                        const dx = (eclipse.x1 || 0) + 2*(eclipse.x2 || 0)*t_val + 3*(eclipse.x3 || 0)*t_val*t_val;
-                        const dy = (eclipse.y1 || 0) + 2*(eclipse.y2 || 0)*t_val + 3*(eclipse.y3 || 0)*t_val*t_val;
-                        const l1 = (eclipse.l10 || 0.54) + (eclipse.l11 || 0)*t_val;
-                        const dist = l1 * (1.0 - frac);
-                        const vlen = Math.sqrt(dx*dx + dy*dy) || 1;
-                        const pxS = x - dist * (-dy / vlen);
-                        const pyS = y - dist * (dx / vlen);
-                        return { x: pxS, y: pyS, r2: pxS*pxS + pyS*pyS, t: t_val };
-                    };
+                const pointAtSouth = (t_val) => {
+                    const x = (eclipse.x0 || 0) + (eclipse.x1 || 0)*t_val + (eclipse.x2 || 0)*t_val*t_val + (eclipse.x3 || 0)*t_val*t_val*t_val;
+                    const y = (eclipse.y0 || 0) + (eclipse.y1 || 0)*t_val + (eclipse.y2 || 0)*t_val*t_val + (eclipse.y3 || 0)*t_val*t_val*t_val;
+                    const dx = (eclipse.x1 || 0) + 2*(eclipse.x2 || 0)*t_val + 3*(eclipse.x3 || 0)*t_val*t_val;
+                    const dy = (eclipse.y1 || 0) + 2*(eclipse.y2 || 0)*t_val + 3*(eclipse.y3 || 0)*t_val*t_val;
+                    const l1 = (eclipse.l10 || 0.54) + (eclipse.l11 || 0)*t_val;
+                    const dist = l1 * (1.0 - frac);
+                    const vlen = Math.sqrt(dx*dx + dy*dy) || 1;
+                    const pxS = x - dist * (-dy / vlen);
+                    const pyS = y - dist * (dx / vlen);
+                    return { x: pxS, y: pyS, r2: pxS*pxS + pyS*pyS, t: t_val };
+                };
 
-                    let edgeEntryN = null, edgeExitN = null;
-                    let edgeEntryS = null, edgeExitS = null;
+                let edgeEntryN = null, edgeExitN = null;
+                let edgeEntryS = null, edgeExitS = null;
 
-                    for (let i = 0; i <= numSteps; i++) {
-                        const t = tLoopMin + i * dt;
-                        const currN = pointAtNorth(t);
-                        const currS = pointAtSouth(t);
+                for (let i = 0; i <= numSteps; i++) {
+                    const t = tLoopMin + i * dt;
+                    const currN = pointAtNorth(t);
+                    const currS = pointAtSouth(t);
 
-                        if (currN.r2 <= 1.0) {
-                            if (prevN && prevN.r2 > 1.0) {
-                                const edge = getEdgeIntersection(prevN, currN, pointAtNorth);
-                                if (edge) {
-                                    edgeEntryN = edge;
-                                    const ptEdge = besselianXYToLatLng(eclipse, edge.t, edge.x, edge.y);
-                                    if (ptEdge) isoNorthCoords.push(ptEdge);
-                                }
-                            }
-                            const ptN = besselianXYToLatLng(eclipse, t, currN.x, currN.y);
-                            if (ptN) isoNorthCoords.push(ptN);
-                        } else if (prevN && prevN.r2 <= 1.0) {
+                    if (currN.r2 <= 1.0) {
+                        if (prevN && prevN.r2 > 1.0) {
                             const edge = getEdgeIntersection(prevN, currN, pointAtNorth);
                             if (edge) {
-                                edgeExitN = edge;
+                                edgeEntryN = edge;
                                 const ptEdge = besselianXYToLatLng(eclipse, edge.t, edge.x, edge.y);
                                 if (ptEdge) isoNorthCoords.push(ptEdge);
                             }
                         }
+                        const ptN = besselianXYToLatLng(eclipse, t, currN.x, currN.y);
+                        if (ptN) isoNorthCoords.push(ptN);
+                    } else if (prevN && prevN.r2 <= 1.0) {
+                        const edge = getEdgeIntersection(prevN, currN, pointAtNorth);
+                        if (edge) {
+                            edgeExitN = edge;
+                            const ptEdge = besselianXYToLatLng(eclipse, edge.t, edge.x, edge.y);
+                            if (ptEdge) isoNorthCoords.push(ptEdge);
+                        }
+                    }
 
-                        if (currS.r2 <= 1.0) {
-                            if (prevS && prevS.r2 > 1.0) {
-                                const edge = getEdgeIntersection(prevS, currS, pointAtSouth);
-                                if (edge) {
-                                    edgeEntryS = edge;
-                                    const ptEdge = besselianXYToLatLng(eclipse, edge.t, edge.x, edge.y);
-                                    if (ptEdge) isoSouthCoords.push(ptEdge);
-                                }
-                            }
-                            const ptS = besselianXYToLatLng(eclipse, t, currS.x, currS.y);
-                            if (ptS) isoSouthCoords.push(ptS);
-                        } else if (prevS && prevS.r2 <= 1.0) {
+                    if (currS.r2 <= 1.0) {
+                        if (prevS && prevS.r2 > 1.0) {
                             const edge = getEdgeIntersection(prevS, currS, pointAtSouth);
                             if (edge) {
-                                edgeExitS = edge;
+                                edgeEntryS = edge;
                                 const ptEdge = besselianXYToLatLng(eclipse, edge.t, edge.x, edge.y);
                                 if (ptEdge) isoSouthCoords.push(ptEdge);
                             }
                         }
-
-                        prevN = currN;
-                        prevS = currS;
-                    }
-
-                    // Conectar la envolvente límite de 0% exactamente con los ápices de los lóbulos de amanecer y atardecer
-                    if (frac === 0.0) {
-                        if (edgeEntryN) {
-                            const leadInN = [];
-                            for (let t = tLoopMin; t <= edgeEntryN.t; t += dt) {
-                                const x = (eclipse.x0||0) + (eclipse.x1||0)*t + (eclipse.x2||0)*t*t;
-                                const y = (eclipse.y0||0) + (eclipse.y1||0)*t + (eclipse.y2||0)*t*t;
-                                const l1 = (eclipse.l10||0.54) + (eclipse.l11||0)*t;
-                                const R = Math.hypot(x, y);
-                                if (R <= 1 + l1 && R >= Math.abs(1 - l1)) {
-                                    const a = (1 - l1*l1 + R*R) / (2 * R);
-                                    const h = Math.sqrt(Math.max(0, 1 - a*a));
-                                    const x3 = a * x / R + h * y / R, y3 = a * y / R - h * x / R;
-                                    const pt = besselianXYToLatLng(eclipse, t, x3, y3);
-                                    if (pt) leadInN.push(pt);
-                                }
-                            }
-                            isoNorthCoords = leadInN.concat(isoNorthCoords);
-                        }
-                        if (edgeExitN) {
-                            const leadOutN = [];
-                            for (let t = edgeExitN.t; t <= tLoopMax; t += dt) {
-                                const x = (eclipse.x0||0) + (eclipse.x1||0)*t + (eclipse.x2||0)*t*t;
-                                const y = (eclipse.y0||0) + (eclipse.y1||0)*t + (eclipse.y2||0)*t*t;
-                                const l1 = (eclipse.l10||0.54) + (eclipse.l11||0)*t;
-                                const R = Math.hypot(x, y);
-                                if (R <= 1 + l1 && R >= Math.abs(1 - l1)) {
-                                    const a = (1 - l1*l1 + R*R) / (2 * R);
-                                    const h = Math.sqrt(Math.max(0, 1 - a*a));
-                                    const x4 = a * x / R - h * y / R, y4 = a * y / R + h * x / R;
-                                    const pt = besselianXYToLatLng(eclipse, t, x4, y4);
-                                    if (pt) leadOutN.push(pt);
-                                }
-                            }
-                            isoNorthCoords = isoNorthCoords.concat(leadOutN);
-                        }
-
-                        if (edgeEntryS) {
-                            const leadInS = [];
-                            for (let t = tLoopMin; t <= edgeEntryS.t; t += dt) {
-                                const x = (eclipse.x0||0) + (eclipse.x1||0)*t + (eclipse.x2||0)*t*t;
-                                const y = (eclipse.y0||0) + (eclipse.y1||0)*t + (eclipse.y2||0)*t*t;
-                                const l1 = (eclipse.l10||0.54) + (eclipse.l11||0)*t;
-                                const R = Math.hypot(x, y);
-                                if (R <= 1 + l1 && R >= Math.abs(1 - l1)) {
-                                    const a = (1 - l1*l1 + R*R) / (2 * R);
-                                    const h = Math.sqrt(Math.max(0, 1 - a*a));
-                                    const x4 = a * x / R - h * y / R, y4 = a * y / R + h * x / R;
-                                    const pt = besselianXYToLatLng(eclipse, t, x4, y4);
-                                    if (pt) leadInS.push(pt);
-                                }
-                            }
-                            isoSouthCoords = leadInS.concat(isoSouthCoords);
-                        }
-                        if (edgeExitS) {
-                            const leadOutS = [];
-                            for (let t = edgeExitS.t; t <= tLoopMax; t += dt) {
-                                const x = (eclipse.x0||0) + (eclipse.x1||0)*t + (eclipse.x2||0)*t*t;
-                                const y = (eclipse.y0||0) + (eclipse.y1||0)*t + (eclipse.y2||0)*t*t;
-                                const l1 = (eclipse.l10||0.54) + (eclipse.l11||0)*t;
-                                const R = Math.hypot(x, y);
-                                if (R <= 1 + l1 && R >= Math.abs(1 - l1)) {
-                                    const a = (1 - l1*l1 + R*R) / (2 * R);
-                                    const h = Math.sqrt(Math.max(0, 1 - a*a));
-                                    const x3 = a * x / R + h * y / R, y3 = a * y / R - h * x / R;
-                                    const pt = besselianXYToLatLng(eclipse, t, x3, y3);
-                                    if (pt) leadOutS.push(pt);
-                                }
-                            }
-                            isoSouthCoords = isoSouthCoords.concat(leadOutS);
+                        const ptS = besselianXYToLatLng(eclipse, t, currS.x, currS.y);
+                        if (ptS) isoSouthCoords.push(ptS);
+                    } else if (prevS && prevS.r2 <= 1.0) {
+                        const edge = getEdgeIntersection(prevS, currS, pointAtSouth);
+                        if (edge) {
+                            edgeExitS = edge;
+                            const ptEdge = besselianXYToLatLng(eclipse, edge.t, edge.x, edge.y);
+                            if (ptEdge) isoSouthCoords.push(ptEdge);
                         }
                     }
 
-                    const lineN = createSegmentedLine(isoNorthCoords, 0xeab308, EARTH_RADIUS * 1.004, 1, 0.70);
-                    if (lineN) isomagnitudesGroup.add(lineN);
+                    prevN = currN;
+                    prevS = currS;
+                }
 
-                    const lineS = createSegmentedLine(isoSouthCoords, 0xeab308, EARTH_RADIUS * 1.004, 1, 0.70);
-                    if (lineS) isomagnitudesGroup.add(lineS);
-
-                    // Rótulos de Magnitud estilo NASA / Espenak (ej. 0.20, 0.40, 0.60, 0.80)
-                    const showLabels = showIsomagnitudes && (document.getElementById('chk-show-labels')?.checked ?? true);
-                    if (showLabels && frac > 0) {
-                        const magText = frac.toFixed(2);
-                        if (isoNorthCoords.length > 8) {
-                            const midPtN = isoNorthCoords[Math.floor(isoNorthCoords.length * 0.5)];
-                            if (midPtN) {
-                                const spriteN = createTextSprite(magText, '#000000', '#ffffff', 0.65);
-                                if (spriteN) {
-                                    const posN = latLngToVector3(midPtN.lat, midPtN.lng, EARTH_RADIUS * 1.015);
-                                    spriteN.position.copy(posN);
-                                    isomagnitudesGroup.add(spriteN);
-                                }
+                if (frac === 0.0) {
+                    if (edgeEntryN) {
+                        const leadInN = [];
+                        for (let t = tLoopMin; t <= edgeEntryN.t; t += dt) {
+                            const x = (eclipse.x0||0) + (eclipse.x1||0)*t + (eclipse.x2||0)*t*t;
+                            const y = (eclipse.y0||0) + (eclipse.y1||0)*t + (eclipse.y2||0)*t*t;
+                            const l1 = (eclipse.l10||0.54) + (eclipse.l11||0)*t;
+                            const R = Math.hypot(x, y);
+                            if (R <= 1 + l1 && R >= Math.abs(1 - l1)) {
+                                const a = (1 - l1*l1 + R*R) / (2 * R);
+                                const h = Math.sqrt(Math.max(0, 1 - a*a));
+                                const x3 = a * x / R + h * y / R, y3 = a * y / R - h * x / R;
+                                const pt = besselianXYToLatLng(eclipse, t, x3, y3);
+                                if (pt) leadInN.push(pt);
                             }
                         }
-                        if (isoSouthCoords.length > 8) {
-                            const midPtS = isoSouthCoords[Math.floor(isoSouthCoords.length * 0.5)];
-                            if (midPtS) {
-                                const spriteS = createTextSprite(magText, '#000000', '#ffffff', 0.65);
-                                if (spriteS) {
-                                    const posS = latLngToVector3(midPtS.lat, midPtS.lng, EARTH_RADIUS * 1.015);
-                                    spriteS.position.copy(posS);
-                                    isomagnitudesGroup.add(spriteS);
-                                }
+                        isoNorthCoords = leadInN.concat(isoNorthCoords);
+                    }
+                    if (edgeExitN) {
+                        const leadOutN = [];
+                        for (let t = edgeExitN.t; t <= tLoopMax; t += dt) {
+                            const x = (eclipse.x0||0) + (eclipse.x1||0)*t + (eclipse.x2||0)*t*t;
+                            const y = (eclipse.y0||0) + (eclipse.y1||0)*t + (eclipse.y2||0)*t*t;
+                            const l1 = (eclipse.l10||0.54) + (eclipse.l11||0)*t;
+                            const R = Math.hypot(x, y);
+                            if (R <= 1 + l1 && R >= Math.abs(1 - l1)) {
+                                const a = (1 - l1*l1 + R*R) / (2 * R);
+                                const h = Math.sqrt(Math.max(0, 1 - a*a));
+                                const x4 = a * x / R - h * y / R, y4 = a * y / R + h * x / R;
+                                const pt = besselianXYToLatLng(eclipse, t, x4, y4);
+                                if (pt) leadOutN.push(pt);
+                            }
+                        }
+                        isoNorthCoords = isoNorthCoords.concat(leadOutN);
+                    }
+
+                    if (edgeEntryS) {
+                        const leadInS = [];
+                        for (let t = tLoopMin; t <= edgeEntryS.t; t += dt) {
+                            const x = (eclipse.x0||0) + (eclipse.x1||0)*t + (eclipse.x2||0)*t*t;
+                            const y = (eclipse.y0||0) + (eclipse.y1||0)*t + (eclipse.y2||0)*t*t;
+                            const l1 = (eclipse.l10||0.54) + (eclipse.l11||0)*t;
+                            const R = Math.hypot(x, y);
+                            if (R <= 1 + l1 && R >= Math.abs(1 - l1)) {
+                                const a = (1 - l1*l1 + R*R) / (2 * R);
+                                const h = Math.sqrt(Math.max(0, 1 - a*a));
+                                const x4 = a * x / R - h * y / R, y4 = a * y / R + h * x / R;
+                                const pt = besselianXYToLatLng(eclipse, t, x4, y4);
+                                if (pt) leadInS.push(pt);
+                            }
+                        }
+                        isoSouthCoords = leadInS.concat(isoSouthCoords);
+                    }
+                    if (edgeExitS) {
+                        const leadOutS = [];
+                        for (let t = edgeExitS.t; t <= tLoopMax; t += dt) {
+                            const x = (eclipse.x0||0) + (eclipse.x1||0)*t + (eclipse.x2||0)*t*t;
+                            const y = (eclipse.y0||0) + (eclipse.y1||0)*t + (eclipse.y2||0)*t*t;
+                            const l1 = (eclipse.l10||0.54) + (eclipse.l11||0)*t;
+                            const R = Math.hypot(x, y);
+                            if (R <= 1 + l1 && R >= Math.abs(1 - l1)) {
+                                const a = (1 - l1*l1 + R*R) / (2 * R);
+                                const h = Math.sqrt(Math.max(0, 1 - a*a));
+                                const x3 = a * x / R + h * y / R, y3 = a * y / R - h * x / R;
+                                const pt = besselianXYToLatLng(eclipse, t, x3, y3);
+                                if (pt) leadOutS.push(pt);
+                            }
+                        }
+                        isoSouthCoords = isoSouthCoords.concat(leadOutS);
+                    }
+                }
+
+                let midPtN = null, midPtS = null;
+                let magText = null;
+                if (frac > 0) {
+                    magText = frac.toFixed(2);
+                    if (isoNorthCoords.length > 8) midPtN = isoNorthCoords[Math.floor(isoNorthCoords.length * 0.5)];
+                    if (isoSouthCoords.length > 8) midPtS = isoSouthCoords[Math.floor(isoSouthCoords.length * 0.5)];
+                }
+
+                isoLines.push({
+                    frac,
+                    isoNorthCoords,
+                    isoSouthCoords,
+                    magText,
+                    midPtN,
+                    midPtS
+                });
+            });
+
+            // Lóbulos del terminador y máximo en horizonte
+            const sunriseBranch1 = [], sunriseBranch2 = [];
+            const sunsetBranch1 = [], sunsetBranch2 = [];
+
+            const findLimbContactPoint = (tA, tB, isOuter) => {
+                let a = tA, b = tB;
+                for (let k = 0; k < 35; k++) {
+                    const m = 0.5 * (a + b);
+                    const xm = (eclipse.x0||0) + (eclipse.x1||0)*m + (eclipse.x2||0)*m*m + (eclipse.x3||0)*m*m*m;
+                    const ym = (eclipse.y0||0) + (eclipse.y1||0)*m + (eclipse.y2||0)*m*m + (eclipse.y3||0)*m*m*m;
+                    const l1m = (eclipse.l10||0.54) + (eclipse.l11||0)*m;
+                    const rm = Math.sqrt(xm*xm + ym*ym);
+                    const target = isOuter ? (1.0 + l1m) : Math.abs(1.0 - l1m);
+                    const fm = rm - target;
+
+                    const xa = (eclipse.x0||0) + (eclipse.x1||0)*a + (eclipse.x2||0)*a*a + (eclipse.x3||0)*a*a*a;
+                    const ya = (eclipse.y0||0) + (eclipse.y1||0)*a + (eclipse.y2||0)*a*a + (eclipse.y3||0)*a*a*a;
+                    const l1a = (eclipse.l10||0.54) + (eclipse.l11||0)*a;
+                    const ra = Math.sqrt(xa*xa + ya*ya);
+                    const targetA = isOuter ? (1.0 + l1a) : Math.abs(1.0 - l1a);
+                    const fa = ra - targetA;
+
+                    if ((fm > 0) === (fa > 0)) a = m;
+                    else b = m;
+                }
+                const tMid = 0.5 * (a + b);
+                const xMid = (eclipse.x0||0) + (eclipse.x1||0)*tMid + (eclipse.x2||0)*tMid*tMid + (eclipse.x3||0)*tMid*tMid*tMid;
+                const yMid = (eclipse.y0||0) + (eclipse.y1||0)*tMid + (eclipse.y2||0)*tMid*tMid + (eclipse.y3||0)*tMid*tMid*tMid;
+                const RMid = Math.sqrt(xMid*xMid + yMid*yMid);
+                if (RMid === 0) return null;
+                return besselianXYToLatLng(eclipse, tMid, xMid / RMid, yMid / RMid);
+            };
+
+            let prevSunriseInside = false;
+            let prevSunsetInside = false;
+            let prevT = tLoopMin;
+
+            for (let i = 0; i <= numSteps; i++) {
+                const t = tLoopMin + i * dt;
+                const x = (eclipse.x0 || 0) + (eclipse.x1 || 0)*t + (eclipse.x2 || 0)*t*t + (eclipse.x3 || 0)*t*t*t;
+                const y = (eclipse.y0 || 0) + (eclipse.y1 || 0)*t + (eclipse.y2 || 0)*t*t + (eclipse.y3 || 0)*t*t*t;
+                const l1 = (eclipse.l10 || 0.54) + (eclipse.l11 || 0)*t;
+
+                const R = Math.sqrt(x*x + y*y);
+                const isSunrise = (t < tClosest);
+                const inside = (R <= 1 + l1 && R >= Math.abs(1 - l1));
+
+                if (isSunrise) {
+                    if (inside && !prevSunriseInside) {
+                        const ptOuter = findLimbContactPoint(prevT, t, true);
+                        if (ptOuter) {
+                            sunriseBranch1.push(ptOuter);
+                            sunriseBranch2.push(ptOuter);
+                        }
+                    } else if (!inside && prevSunriseInside) {
+                        const ptInner = findLimbContactPoint(prevT, t, false);
+                        if (ptInner) {
+                            sunriseBranch1.push(ptInner);
+                            sunriseBranch2.push(ptInner);
+                        }
+                    }
+                    prevSunriseInside = inside;
+                } else {
+                    if (inside && !prevSunsetInside) {
+                        const ptInner = findLimbContactPoint(prevT, t, false);
+                        if (ptInner) {
+                            sunsetBranch1.push(ptInner);
+                            sunsetBranch2.push(ptInner);
+                        }
+                    } else if (!inside && prevSunsetInside) {
+                        const ptOuter = findLimbContactPoint(prevT, t, true);
+                        if (ptOuter) {
+                            sunsetBranch1.push(ptOuter);
+                            sunsetBranch2.push(ptOuter);
+                        }
+                    }
+                    prevSunsetInside = inside;
+                }
+
+                if (inside) {
+                    const a = (1 - l1*l1 + R*R) / (2 * R);
+                    const h2 = Math.max(0, 1 - a*a);
+                    const h = Math.sqrt(h2);
+                    const x2 = a * x / R;
+                    const y2 = a * y / R;
+                    
+                    const x3 = x2 + h * y / R;
+                    const y3 = y2 - h * x / R;
+                    
+                    const x4 = x2 - h * y / R;
+                    const y4 = y2 + h * x / R;
+
+                    const pt1 = besselianXYToLatLng(eclipse, t, x3, y3);
+                    const pt2 = besselianXYToLatLng(eclipse, t, x4, y4);
+
+                    if (isSunrise) {
+                        if (pt1) sunriseBranch1.push(pt1);
+                        if (pt2) sunriseBranch2.push(pt2);
+                    } else {
+                        if (pt1) sunsetBranch1.push(pt1);
+                        if (pt2) sunsetBranch2.push(pt2);
+                    }
+                }
+
+                prevT = t;
+            }
+
+            let sunriseLoop = [];
+            if (sunriseBranch1.length > 0 && sunriseBranch2.length > 0) {
+                sunriseLoop = sunriseBranch1.concat(sunriseBranch2.reverse());
+                sunriseLoop.push(sunriseLoop[0]);
+            }
+
+            let sunsetLoop = [];
+            if (sunsetBranch1.length > 0 && sunsetBranch2.length > 0) {
+                sunsetLoop = sunsetBranch1.concat(sunsetBranch2.reverse());
+                sunsetLoop.push(sunsetLoop[0]);
+            }
+
+            // Máximo eclipse en horizonte (Espenak analítica)
+            const sunrise1 = [], sunrise2 = [];
+            const sunset1 = [], sunset2 = [];
+            const dtEspenak = 0.002;
+            const numStepsEspenak = Math.ceil((tLoopMax - tLoopMin) / dtEspenak);
+
+            for (let i = 0; i <= numStepsEspenak; i++) {
+                const t = tLoopMin + i * dtEspenak;
+                const x = (eclipse.x0||0)+(eclipse.x1||0)*t+(eclipse.x2||0)*t*t+(eclipse.x3||0)*t*t*t;
+                const y = (eclipse.y0||0)+(eclipse.y1||0)*t+(eclipse.y2||0)*t*t+(eclipse.y3||0)*t*t*t;
+                const u = (eclipse.x1||0)+2*(eclipse.x2||0)*t+3*(eclipse.x3||0)*t*t;
+                const v = (eclipse.y1||0)+2*(eclipse.y2||0)*t+3*(eclipse.y3||0)*t*t;
+                const l1 = (eclipse.l10||0.54)+(eclipse.l11||0)*t;
+                const dDeg = (eclipse.d0||0)+(eclipse.d1||0)*t+(eclipse.d2||0)*t*t;
+                const omega = Math.sin(dDeg * Math.PI / 180) * (eclipse.mu1||15.004) * Math.PI / 180;
+                const u_eff = u + omega * y;
+                const v_eff = v - omega * x;
+                const c = u*x + v*y;
+                const veff2 = u_eff*u_eff + v_eff*v_eff;
+                if (veff2 === 0) continue;
+                const x_proj = c * u_eff / veff2;
+                const y_proj = c * v_eff / veff2;
+                const h2 = 1.0 - (x_proj*x_proj + y_proj*y_proj);
+                if (h2 < 0) continue;
+                const h = Math.sqrt(h2), Veff = Math.sqrt(veff2);
+                const xi1 = x_proj - h * v_eff / Veff,  eta1 = y_proj + h * u_eff / Veff;
+                const xi2 = x_proj + h * v_eff / Veff,  eta2 = y_proj - h * u_eff / Veff;
+
+                const isSunrise = (t < tClosest);
+                if (Math.sqrt((xi1-x)*(xi1-x)+(eta1-y)*(eta1-y)) <= l1 + 0.005) {
+                    const pt = besselianXYToLatLng(eclipse, t, xi1, eta1);
+                    if (pt) {
+                        if (isSunrise) sunrise1.push(pt);
+                        else sunset1.push(pt);
+                    }
+                }
+                if (Math.sqrt((xi2-x)*(xi2-x)+(eta2-y)*(eta2-y)) <= l1 + 0.005) {
+                    const pt = besselianXYToLatLng(eclipse, t, xi2, eta2);
+                    if (pt) {
+                        if (isSunrise) sunrise2.push(pt);
+                        else sunset2.push(pt);
+                    }
+                }
+            }
+
+            const fullEspenakLoop = sunrise1.slice().reverse()
+                .concat(sunrise2)
+                .concat(sunset2)
+                .concat(sunset1.slice().reverse());
+
+            // Líneas de Tiempo Universal (Horas UT)
+            const utLines = [];
+            const dtHours = (eclipse.dt || 0) / 3600;
+            const utMin = (eclipse.t0 || 12) + tLoopMin - dtHours;
+            const utMax = (eclipse.t0 || 12) + tLoopMax - dtHours;
+            const stepHours = (utMax - utMin < 2.5) ? 0.25 : 0.5;
+            const startHalfHour = Math.ceil(utMin / stepHours) * stepHours;
+            const endHalfHour = Math.floor(utMax / stepHours) * stepHours;
+
+            for (let ut = startHalfHour; ut <= endHalfHour; ut += stepHours) {
+                const t = ut + dtHours - (eclipse.t0 || 12);
+                const x = (eclipse.x0 || 0) + (eclipse.x1 || 0)*t + (eclipse.x2 || 0)*t*t + (eclipse.x3 || 0)*t*t*t;
+                const y = (eclipse.y0 || 0) + (eclipse.y1 || 0)*t + (eclipse.y2 || 0)*t*t + (eclipse.y3 || 0)*t*t*t;
+                const x1 = (eclipse.x1 || 0) + 2*(eclipse.x2 || 0)*t + 3*(eclipse.x3 || 0)*t*t;
+                const y1 = (eclipse.y1 || 0) + 2*(eclipse.y2 || 0)*t + 3*(eclipse.y3 || 0)*t*t;
+                const v = Math.sqrt(x1*x1 + y1*y1) || 0.5;
+                const L1 = (eclipse.l10 || 0.54) + (eclipse.l11 || 0)*t;
+
+                const pts = [];
+                const numSubSteps = 30;
+                let labelPt = null;
+                for (let step = -numSubSteps; step <= numSubSteps; step++) {
+                    const lam = (step / numSubSteps) * L1;
+                    const px = x - lam * (y1 / v);
+                    const py = y + lam * (x1 / v);
+                    if (px*px + py*py <= 0.999) {
+                        const ll = besselianXYToLatLng(eclipse, t, px, py);
+                        if (ll) {
+                            pts.push(ll);
+                            if (step === Math.round(numSubSteps * 0.75)) {
+                                labelPt = ll;
+                            }
+                        }
+                    }
+                }
+
+                if (pts.length > 1) {
+                    if (!labelPt && pts.length > 0) {
+                        labelPt = pts[pts.length - 2] || pts[pts.length - 1];
+                    }
+                    const utH = Math.floor((ut % 24 + 24) % 24);
+                    const utM = Math.round(((ut - Math.floor(ut)) * 60 + 60) % 60);
+                    const labelText = `${String(utH).padStart(2,'0')}:${String(utM).padStart(2,'0')} UT`;
+                    utLines.push({
+                        pts,
+                        labelPt,
+                        labelText
+                    });
+                }
+            }
+
+            cachedEclipseGeometry = {
+                eclipseKey: key,
+                centerCoords,
+                totNorthCoords,
+                totSouthCoords,
+                isoLines,
+                sunriseLoop,
+                sunsetLoop,
+                fullEspenakLoop,
+                utLines
+            };
+
+            return cachedEclipseGeometry;
+        }
+
+        function drawShadowPath(eclipse) {
+            if (pathLine) { dispose3DObject(pathLine); pathLine = null; }
+            if (totalityNorthLine) { dispose3DObject(totalityNorthLine); totalityNorthLine = null; }
+            if (totalitySouthLine) { dispose3DObject(totalitySouthLine); totalitySouthLine = null; }
+            if (isomagnitudesGroup) { dispose3DObject(isomagnitudesGroup); isomagnitudesGroup = null; }
+            if (utLinesGroup) { dispose3DObject(utLinesGroup); utLinesGroup = null; }
+
+            const data = precomputeEclipseGeometry(eclipse);
+
+            // 1. Trayectoria Central (Naranja #f97316)
+            if (data.centerCoords && data.centerCoords.length > 1) {
+                pathLine = createSegmentedLine(data.centerCoords, 0xf97316, EARTH_RADIUS * 1.004, 3);
+                if (pathLine) earthGroup.add(pathLine);
+            }
+
+            // 2. Límites Extremos Norte y Sur de Totalidad / Anularidad (Rojo #ef4444)
+            const typeCode = (eclipse.eclipse_type || '').toUpperCase();
+            const isCentral = !typeCode.startsWith('P');
+            const showTotalityBand = document.getElementById('chk-show-totality')?.checked;
+
+            if (isCentral && showTotalityBand !== false) {
+                if (data.totNorthCoords && data.totNorthCoords.length > 1) {
+                    totalityNorthLine = createSegmentedLine(data.totNorthCoords, 0xef4444, EARTH_RADIUS * 1.004, 2);
+                    if (totalityNorthLine) earthGroup.add(totalityNorthLine);
+                }
+
+                if (data.totSouthCoords && data.totSouthCoords.length > 1) {
+                    totalitySouthLine = createSegmentedLine(data.totSouthCoords, 0xef4444, EARTH_RADIUS * 1.004, 2);
+                    if (totalitySouthLine) earthGroup.add(totalitySouthLine);
+                }
+            }
+
+            // 3. ISOMAGNITUDES Opcionales y Figura del 8 (Terminadores Amanecer/Atardecer)
+            const showIsomagnitudes = document.getElementById('chk-show-isomagnitudes')?.checked;
+            const showLabels = showIsomagnitudes && (document.getElementById('chk-show-labels')?.checked ?? true);
+
+            if (showIsomagnitudes) {
+                isomagnitudesGroup = new THREE.Group();
+
+                data.isoLines.forEach(iso => {
+                    if (iso.isoNorthCoords && iso.isoNorthCoords.length > 1) {
+                        const lineN = createSegmentedLine(iso.isoNorthCoords, 0xeab308, EARTH_RADIUS * 1.004, 1, 0.70);
+                        if (lineN) isomagnitudesGroup.add(lineN);
+                    }
+                    if (iso.isoSouthCoords && iso.isoSouthCoords.length > 1) {
+                        const lineS = createSegmentedLine(iso.isoSouthCoords, 0xeab308, EARTH_RADIUS * 1.004, 1, 0.70);
+                        if (lineS) isomagnitudesGroup.add(lineS);
+                    }
+
+                    if (showLabels && iso.magText) {
+                        if (iso.midPtN) {
+                            const spriteN = createTextSprite(iso.magText, '#000000', '#ffffff', 0.65);
+                            if (spriteN) {
+                                const posN = latLngToVector3(iso.midPtN.lat, iso.midPtN.lng, EARTH_RADIUS * 1.015);
+                                spriteN.position.copy(posN);
+                                isomagnitudesGroup.add(spriteN);
+                            }
+                        }
+                        if (iso.midPtS) {
+                            const spriteS = createTextSprite(iso.magText, '#000000', '#ffffff', 0.65);
+                            if (spriteS) {
+                                const posS = latLngToVector3(iso.midPtS.lat, iso.midPtS.lng, EARTH_RADIUS * 1.015);
+                                spriteS.position.copy(posS);
+                                isomagnitudesGroup.add(spriteS);
                             }
                         }
                     }
                 });
 
-                // =========================================================================
-                // LÓBULOS DEL TERMINADOR (NARANJA) Y MÁXIMO EN HORIZONTE (CIAN)
-                // Estándar de la NASA / Xavier Jubier: La línea cian conecta el ápice (0%) con la central (100%)
-                // =========================================================================
-                const sunriseBranch1 = [], sunriseBranch2 = [];
-                const sunsetBranch1 = [], sunsetBranch2 = [];
-
-                // Helper de bisección para encontrar el punto exacto en el limbo (h=0) donde R(t) = targetRadius(t)
-                const findLimbContactPoint = (tA, tB, isOuter) => {
-                    let a = tA, b = tB;
-                    for (let k = 0; k < 35; k++) {
-                        const m = 0.5 * (a + b);
-                        const xm = (eclipse.x0||0) + (eclipse.x1||0)*m + (eclipse.x2||0)*m*m + (eclipse.x3||0)*m*m*m;
-                        const ym = (eclipse.y0||0) + (eclipse.y1||0)*m + (eclipse.y2||0)*m*m + (eclipse.y3||0)*m*m*m;
-                        const l1m = (eclipse.l10||0.54) + (eclipse.l11||0)*m;
-                        const rm = Math.sqrt(xm*xm + ym*ym);
-                        const target = isOuter ? (1.0 + l1m) : Math.abs(1.0 - l1m);
-                        const fm = rm - target;
-
-                        const xa = (eclipse.x0||0) + (eclipse.x1||0)*a + (eclipse.x2||0)*a*a + (eclipse.x3||0)*a*a*a;
-                        const ya = (eclipse.y0||0) + (eclipse.y1||0)*a + (eclipse.y2||0)*a*a + (eclipse.y3||0)*a*a*a;
-                        const l1a = (eclipse.l10||0.54) + (eclipse.l11||0)*a;
-                        const ra = Math.sqrt(xa*xa + ya*ya);
-                        const targetA = isOuter ? (1.0 + l1a) : Math.abs(1.0 - l1a);
-                        const fa = ra - targetA;
-
-                        if ((fm > 0) === (fa > 0)) a = m;
-                        else b = m;
-                    }
-                    const tMid = 0.5 * (a + b);
-                    const xMid = (eclipse.x0||0) + (eclipse.x1||0)*tMid + (eclipse.x2||0)*tMid*tMid + (eclipse.x3||0)*tMid*tMid*tMid;
-                    const yMid = (eclipse.y0||0) + (eclipse.y1||0)*tMid + (eclipse.y2||0)*tMid*tMid + (eclipse.y3||0)*tMid*tMid*tMid;
-                    const RMid = Math.sqrt(xMid*xMid + yMid*yMid);
-                    if (RMid === 0) return null;
-                    return besselianXYToLatLng(eclipse, tMid, xMid / RMid, yMid / RMid);
-                };
-
-                let prevSunriseInside = false;
-                let prevSunsetInside = false;
-                let prevT = tLoopMin;
-
-                for (let i = 0; i <= numSteps; i++) {
-                    const t = tLoopMin + i * dt;
-                    const x = (eclipse.x0 || 0) + (eclipse.x1 || 0)*t + (eclipse.x2 || 0)*t*t + (eclipse.x3 || 0)*t*t*t;
-                    const y = (eclipse.y0 || 0) + (eclipse.y1 || 0)*t + (eclipse.y2 || 0)*t*t + (eclipse.y3 || 0)*t*t*t;
-                    const l1 = (eclipse.l10 || 0.54) + (eclipse.l11 || 0)*t;
-
-                    const R = Math.sqrt(x*x + y*y);
-                    const isSunrise = (t < tClosest);
-                    const inside = (R <= 1 + l1 && R >= Math.abs(1 - l1));
-
-                    if (isSunrise) {
-                        if (inside && !prevSunriseInside) {
-                            const ptOuter = findLimbContactPoint(prevT, t, true);
-                            if (ptOuter) {
-                                sunriseBranch1.push(ptOuter);
-                                sunriseBranch2.push(ptOuter);
-                            }
-                        } else if (!inside && prevSunriseInside) {
-                            const ptInner = findLimbContactPoint(prevT, t, false);
-                            if (ptInner) {
-                                sunriseBranch1.push(ptInner);
-                                sunriseBranch2.push(ptInner);
-                            }
-                        }
-                        prevSunriseInside = inside;
-                    } else {
-                        if (inside && !prevSunsetInside) {
-                            const ptInner = findLimbContactPoint(prevT, t, false);
-                            if (ptInner) {
-                                sunsetBranch1.push(ptInner);
-                                sunsetBranch2.push(ptInner);
-                            }
-                        } else if (!inside && prevSunsetInside) {
-                            const ptOuter = findLimbContactPoint(prevT, t, true);
-                            if (ptOuter) {
-                                sunsetBranch1.push(ptOuter);
-                                sunsetBranch2.push(ptOuter);
-                            }
-                        }
-                        prevSunsetInside = inside;
-                    }
-
-                    if (inside) {
-                        const a = (1 - l1*l1 + R*R) / (2 * R);
-                        const h2 = Math.max(0, 1 - a*a);
-                        const h = Math.sqrt(h2);
-                        const x2 = a * x / R;
-                        const y2 = a * y / R;
-                        
-                        const x3 = x2 + h * y / R;
-                        const y3 = y2 - h * x / R;
-                        
-                        const x4 = x2 - h * y / R;
-                        const y4 = y2 + h * x / R;
-
-                        const pt1 = besselianXYToLatLng(eclipse, t, x3, y3);
-                        const pt2 = besselianXYToLatLng(eclipse, t, x4, y4);
-
-                        if (isSunrise) {
-                            if (pt1) sunriseBranch1.push(pt1);
-                            if (pt2) sunriseBranch2.push(pt2);
-                        } else {
-                            if (pt1) sunsetBranch1.push(pt1);
-                            if (pt2) sunsetBranch2.push(pt2);
-                        }
-                    }
-
-                    prevT = t;
-                }
-
                 // Renderizar Lóbulo de Amanecer (Naranja #f97316)
-                if (sunriseBranch1.length > 0 && sunriseBranch2.length > 0) {
-                    const sunriseLoop = sunriseBranch1.concat(sunriseBranch2.reverse());
-                    sunriseLoop.push(sunriseLoop[0]);
-                    const lineSunriseTerm = createSegmentedLine(sunriseLoop, 0xf97316, EARTH_RADIUS * 1.004, 2);
+                if (data.sunriseLoop && data.sunriseLoop.length > 1) {
+                    const lineSunriseTerm = createSegmentedLine(data.sunriseLoop, 0xf97316, EARTH_RADIUS * 1.004, 2);
                     if (lineSunriseTerm) isomagnitudesGroup.add(lineSunriseTerm);
                 }
 
                 // Renderizar Lóbulo de Atardecer (Naranja #f97316)
-                if (sunsetBranch1.length > 0 && sunsetBranch2.length > 0) {
-                    const sunsetLoop = sunsetBranch1.concat(sunsetBranch2.reverse());
-                    sunsetLoop.push(sunsetLoop[0]);
-                    const lineSunsetTerm = createSegmentedLine(sunsetLoop, 0xf97316, EARTH_RADIUS * 1.004, 2);
+                if (data.sunsetLoop && data.sunsetLoop.length > 1) {
+                    const lineSunsetTerm = createSegmentedLine(data.sunsetLoop, 0xf97316, EARTH_RADIUS * 1.004, 2);
                     if (lineSunsetTerm) isomagnitudesGroup.add(lineSunsetTerm);
                 }
 
-                // CURVA DE MÁXIMO ECLIPSE EN HORIZONTE (ESPENAK ANALÍTICA CIAN #38bdf8)
-                const sunrise1 = [], sunrise2 = [];
-                const sunset1 = [], sunset2 = [];
-                const dtEspenak = 0.002; // 500 divisiones por hora (~7.2s por paso, altísima resolución sub-arcosegundo)
-                const numStepsEspenak = Math.ceil((tLoopMax - tLoopMin) / dtEspenak);
-
-                for (let i = 0; i <= numStepsEspenak; i++) {
-                    const t = tLoopMin + i * dtEspenak;
-                    const x = (eclipse.x0||0)+(eclipse.x1||0)*t+(eclipse.x2||0)*t*t+(eclipse.x3||0)*t*t*t;
-                    const y = (eclipse.y0||0)+(eclipse.y1||0)*t+(eclipse.y2||0)*t*t+(eclipse.y3||0)*t*t*t;
-                    const u = (eclipse.x1||0)+2*(eclipse.x2||0)*t+3*(eclipse.x3||0)*t*t;
-                    const v = (eclipse.y1||0)+2*(eclipse.y2||0)*t+3*(eclipse.y3||0)*t*t;
-                    const l1 = (eclipse.l10||0.54)+(eclipse.l11||0)*t;
-                    const dDeg = (eclipse.d0||0)+(eclipse.d1||0)*t+(eclipse.d2||0)*t*t;
-                    const omega = Math.sin(dDeg * Math.PI / 180) * (eclipse.mu1||15.004) * Math.PI / 180;
-                    const u_eff = u + omega * y;
-                    const v_eff = v - omega * x;
-                    const c = u*x + v*y;
-                    const veff2 = u_eff*u_eff + v_eff*v_eff;
-                    if (veff2 === 0) continue;
-                    const x_proj = c * u_eff / veff2;
-                    const y_proj = c * v_eff / veff2;
-                    const h2 = 1.0 - (x_proj*x_proj + y_proj*y_proj);
-                    if (h2 < 0) continue;
-                    const h = Math.sqrt(h2), Veff = Math.sqrt(veff2);
-                    const xi1 = x_proj - h * v_eff / Veff,  eta1 = y_proj + h * u_eff / Veff;
-                    const xi2 = x_proj + h * v_eff / Veff,  eta2 = y_proj - h * u_eff / Veff;
-
-                    const isSunrise = (t < tClosest);
-                    if (Math.sqrt((xi1-x)*(xi1-x)+(eta1-y)*(eta1-y)) <= l1 + 0.005) {
-                        const pt = besselianXYToLatLng(eclipse, t, xi1, eta1);
-                        if (pt) {
-                            if (isSunrise) sunrise1.push(pt);
-                            else sunset1.push(pt);
-                        }
-                    }
-                    if (Math.sqrt((xi2-x)*(xi2-x)+(eta2-y)*(eta2-y)) <= l1 + 0.005) {
-                        const pt = besselianXYToLatLng(eclipse, t, xi2, eta2);
-                        if (pt) {
-                            if (isSunrise) sunrise2.push(pt);
-                            else sunset2.push(pt);
-                        }
-                    }
-                }
-
-                const fullEspenakLoop = sunrise1.slice().reverse()
-                    .concat(sunrise2)
-                    .concat(sunset2)
-                    .concat(sunset1.slice().reverse());
-
-                if (fullEspenakLoop.length > 1) {
-                    const lineEspenakMax = createSegmentedLine(fullEspenakLoop, 0x38bdf8, EARTH_RADIUS * 1.004, 3);
+                // Curva de Máximo Eclipse en Horizonte (Espenak analítica Cian #38bdf8)
+                if (data.fullEspenakLoop && data.fullEspenakLoop.length > 1) {
+                    const lineEspenakMax = createSegmentedLine(data.fullEspenakLoop, 0x38bdf8, EARTH_RADIUS * 1.004, 3);
                     if (lineEspenakMax) isomagnitudesGroup.add(lineEspenakMax);
                 }
 
                 earthGroup.add(isomagnitudesGroup);
             }
 
-            // -------------------------------------------------------------
-            // LÍNEAS DE TIEMPO UNIVERSAL (HORAS UT) - ESTILO CANON NASA/ESPENAK
-            // -------------------------------------------------------------
+            // 4. LÍNEAS DE TIEMPO UNIVERSAL (HORAS UT)
             const showUtLines = showIsomagnitudes;
             if (showUtLines) {
                 utLinesGroup = new THREE.Group();
 
-                const dtHours = (eclipse.dt || 0) / 3600;
-                const utMin = (eclipse.t0 || 12) + tLoopMin - dtHours;
-                const utMax = (eclipse.t0 || 12) + tLoopMax - dtHours;
-
-                const stepHours = (utMax - utMin < 2.5) ? 0.25 : 0.5;
-                const startHalfHour = Math.ceil(utMin / stepHours) * stepHours;
-                const endHalfHour = Math.floor(utMax / stepHours) * stepHours;
-
-                for (let ut = startHalfHour; ut <= endHalfHour; ut += stepHours) {
-                    const t = ut + dtHours - (eclipse.t0 || 12);
-                    const x = (eclipse.x0 || 0) + (eclipse.x1 || 0)*t + (eclipse.x2 || 0)*t*t + (eclipse.x3 || 0)*t*t*t;
-                    const y = (eclipse.y0 || 0) + (eclipse.y1 || 0)*t + (eclipse.y2 || 0)*t*t + (eclipse.y3 || 0)*t*t*t;
-                    const x1 = (eclipse.x1 || 0) + 2*(eclipse.x2 || 0)*t + 3*(eclipse.x3 || 0)*t*t;
-                    const y1 = (eclipse.y1 || 0) + 2*(eclipse.y2 || 0)*t + 3*(eclipse.y3 || 0)*t*t;
-                    const v = Math.sqrt(x1*x1 + y1*y1) || 0.5;
-                    const L1 = (eclipse.l10 || 0.54) + (eclipse.l11 || 0)*t;
-
-                    const pts = [];
-                    const numSubSteps = 30;
-                    let labelPt = null;
-                    for (let step = -numSubSteps; step <= numSubSteps; step++) {
-                        const lam = (step / numSubSteps) * L1;
-                        const px = x - lam * (y1 / v);
-                        const py = y + lam * (x1 / v);
-                        if (px*px + py*py <= 0.999) {
-                            const ll = besselianXYToLatLng(eclipse, t, px, py);
-                            if (ll) {
-                                pts.push(ll);
-                                // Seleccionar punto en el extremo exterior (fuera de la franja de totalidad, lambda >= 0.75*L1)
-                                if (step === Math.round(numSubSteps * 0.75)) {
-                                    labelPt = ll;
-                                }
-                            }
-                        }
-                    }
-
-                    if (pts.length > 1) {
-                        const utLineMesh = createSegmentedLine(pts, 0x10b981, EARTH_RADIUS * 1.0036, 1, 0.70);
+                data.utLines.forEach(utLine => {
+                    if (utLine.pts && utLine.pts.length > 1) {
+                        const utLineMesh = createSegmentedLine(utLine.pts, 0x10b981, EARTH_RADIUS * 1.0036, 1, 0.70);
                         if (utLineMesh) utLinesGroup.add(utLineMesh);
 
-                        // Si el extremo en +0.75 cayó fuera de la Tierra, tomar el punto más exterior disponible
-                        if (!labelPt && pts.length > 0) {
-                            labelPt = pts[pts.length - 2] || pts[pts.length - 1];
-                        }
-
-                        // Etiqueta flotante de Hora UT (ej. "21:30 UT") colocada en el exterior
-                        const utH = Math.floor((ut % 24 + 24) % 24);
-                        const utM = Math.round(((ut - Math.floor(ut)) * 60 + 60) % 60);
-                        const labelText = `${String(utH).padStart(2,'0')}:${String(utM).padStart(2,'0')} UT`;
-                        
-                        const showLabels = showIsomagnitudes && (document.getElementById('chk-show-labels')?.checked ?? true);
-                        if (showLabels && labelPt) {
-                            const textSprite = createTextSprite(labelText, '#000000', '#ffffff', 0.75);
+                        if (showLabels && utLine.labelPt) {
+                            const textSprite = createTextSprite(utLine.labelText, '#000000', '#ffffff', 0.75);
                             if (textSprite) {
-                                const spritePos = latLngToVector3(labelPt.lat, labelPt.lng, EARTH_RADIUS * 1.018);
+                                const spritePos = latLngToVector3(utLine.labelPt.lat, utLine.labelPt.lng, EARTH_RADIUS * 1.018);
                                 textSprite.position.copy(spritePos);
                                 utLinesGroup.add(textSprite);
                             }
                         }
                     }
-                }
+                });
 
                 earthGroup.add(utLinesGroup);
             }
