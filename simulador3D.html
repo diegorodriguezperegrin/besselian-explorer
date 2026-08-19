@@ -1962,12 +1962,14 @@
             
             // Moon Orbit Line
             const moonOrbitGeom = new THREE.BufferGeometry();
-            const moonOrbitPoints = [];
+            const moonOrbitPosArray = new Float32Array((segments + 1) * 3);
             for (let i = 0; i <= segments; i++) {
                 const theta = (i / segments) * Math.PI * 2;
-                moonOrbitPoints.push(new THREE.Vector3(Math.cos(theta) * currentScale.moonOrbitRadius, 0, -Math.sin(theta) * currentScale.moonOrbitRadius));
+                moonOrbitPosArray[i * 3]     = Math.cos(theta) * currentScale.moonOrbitRadius;
+                moonOrbitPosArray[i * 3 + 1] = 0;
+                moonOrbitPosArray[i * 3 + 2] = -Math.sin(theta) * currentScale.moonOrbitRadius;
             }
-            moonOrbitGeom.setFromPoints(moonOrbitPoints);
+            moonOrbitGeom.setAttribute('position', new THREE.BufferAttribute(moonOrbitPosArray, 3));
             const materialMoonOrbit = new THREE.LineBasicMaterial({
                 color: 0xc084fc,
                 transparent: true,
@@ -1981,11 +1983,11 @@
             
             // Line of Apsides (Perigee-Apogee Line)
             const apsidesGeom = new THREE.BufferGeometry();
-            const apsidesPoints = [
-                new THREE.Vector3(-currentScale.moonOrbitRadius, 0, 0),
-                new THREE.Vector3(currentScale.moonOrbitRadius, 0, 0)
-            ];
-            apsidesGeom.setFromPoints(apsidesPoints);
+            const apsidesPosArray = new Float32Array([
+                -currentScale.moonOrbitRadius, 0, 0,
+                 currentScale.moonOrbitRadius, 0, 0
+            ]);
+            apsidesGeom.setAttribute('position', new THREE.BufferAttribute(apsidesPosArray, 3));
             const materialApsides = new THREE.LineDashedMaterial({
                 color: 0xffa500, // orange to contrast with purple orbit
                 dashSize: 0.4,
@@ -2150,6 +2152,7 @@
             // Re-create Celestial Precession Circle and Cross — centered on Sun (origin) at R=1200
             if (celestialPrecessionCircle) scene.remove(celestialPrecessionCircle);
             const precessionCircleGeom = new THREE.BufferGeometry();
+            precessionCircleGeom.setAttribute('position', new THREE.BufferAttribute(new Float32Array(129 * 3), 3));
             const precessionCircleMat = new THREE.LineBasicMaterial({
                 color: 0x39e69e, // Green to match Earth's axis
                 transparent: true,
@@ -2162,6 +2165,7 @@
 
             if (celestialPrecessionCross) scene.remove(celestialPrecessionCross);
             const precessionCrossGeom = new THREE.BufferGeometry();
+            precessionCrossGeom.setAttribute('position', new THREE.BufferAttribute(new Float32Array(4 * 3), 3));
             const precessionCrossMat = new THREE.LineBasicMaterial({
                 color: 0x39e69e, // Green to match Earth's axis
                 transparent: true,
@@ -2175,6 +2179,7 @@
             // Re-create Axis Projection Line (connecting Earth to precession cross on celestial sphere)
             if (axisProjectionLine && scene) scene.remove(axisProjectionLine);
             const projGeom = new THREE.BufferGeometry();
+            projGeom.setAttribute('position', new THREE.BufferAttribute(new Float32Array(2 * 3), 3));
             const projMat = new THREE.LineBasicMaterial({
                 color: 0x39e69e,
                 transparent: true,
@@ -2190,7 +2195,7 @@
             celestialPrecessionCross.material.opacity = Math.min(1.0, gridOpacity * 5.0);
 
             // Populate initial values
-            updateCelestialPrecessionCircle();
+            updateCelestialPrecessionCircle(true);
             updateCelestialPrecessionCross();
         }
 
@@ -2364,57 +2369,77 @@
             );
         }
 
-        function updateCelestialPrecessionCircle() {
-            if (!celestialPrecessionCircle) return;
+        let _lastCircleObliq = null;
+        function updateCelestialPrecessionCircle(force = false) {
+            if (!celestialPrecessionCircle || !celestialPrecessionCircle.visible) return;
             const obliq = THREE.MathUtils.degToRad(angles.obliqEarth);
+            if (!force && _lastCircleObliq === obliq) return;
+            _lastCircleObliq = obliq;
             const R = 1200;
-            const points = [];
-            // Sweep all precession angles: baseAxis rotated around Y by psi ∈ [0, 2π]
-            for (let i = 0; i <= 128; i++) {
-                const psi = (i / 128) * Math.PI * 2;
-                points.push(new THREE.Vector3(
-                    -Math.sin(obliq) * Math.cos(psi) * R,
-                     Math.cos(obliq)                 * R,
-                     Math.sin(obliq) * Math.sin(psi) * R
-                ));
+            const posAttr = celestialPrecessionCircle.geometry.attributes.position;
+            if (posAttr && posAttr.count >= 129) {
+                // Sweep all precession angles: baseAxis rotated around Y by psi ∈ [0, 2π]
+                for (let i = 0; i <= 128; i++) {
+                    const psi = (i / 128) * Math.PI * 2;
+                    posAttr.setXYZ(i,
+                        -Math.sin(obliq) * Math.cos(psi) * R,
+                         Math.cos(obliq)                 * R,
+                         Math.sin(obliq) * Math.sin(psi) * R
+                    );
+                }
+                posAttr.needsUpdate = true;
+                celestialPrecessionCircle.geometry.computeBoundingSphere();
             }
-            celestialPrecessionCircle.geometry.setFromPoints(points);
-            celestialPrecessionCircle.geometry.computeBoundingSphere();
         }
 
         function updateCelestialPrecessionCross() {
-            if (!celestialPrecessionCross) return;
+            if (!celestialPrecessionCross || !celestialPrecessionCross.visible) return;
             const axisDir = _getEarthAxisDir();  // pure math, zero dependency on matrixWorld
             const R = 1200;
             // Draw cross where the trail points are recorded: axisDir from the Sun (origin)
-            const center = axisDir.clone().multiplyScalar(R);
+            const cx = axisDir.x * R, cy = axisDir.y * R, cz = axisDir.z * R;
 
-            // Two tangent vectors on the sphere surface at 'center'
-            let u = new THREE.Vector3();
+            // Two tangent vectors on the sphere surface at center
+            let ux, uy, uz;
             if (Math.abs(axisDir.y) > 0.999) {
-                u.set(1, 0, 0);
+                ux = 1; uy = 0; uz = 0;
             } else {
-                u.crossVectors(axisDir, new THREE.Vector3(0, 1, 0)).normalize();
+                ux = axisDir.z;
+                uy = 0;
+                uz = -axisDir.x;
+                const uLen = Math.sqrt(ux*ux + uz*uz) || 1;
+                ux /= uLen; uz /= uLen;
             }
-            const v = new THREE.Vector3().crossVectors(axisDir, u).normalize();
+            let vx = axisDir.y * uz - axisDir.z * uy;
+            let vy = axisDir.z * ux - axisDir.x * uz;
+            let vz = axisDir.x * uy - axisDir.y * ux;
+            const vLen = Math.sqrt(vx*vx + vy*vy + vz*vz) || 1;
+            vx /= vLen; vy /= vLen; vz /= vLen;
 
             const size = 25;
-            celestialPrecessionCross.geometry.setFromPoints([
-                center.clone().addScaledVector(u, -size),
-                center.clone().addScaledVector(u,  size),
-                center.clone().addScaledVector(v, -size),
-                center.clone().addScaledVector(v,  size)
-            ]);
-            celestialPrecessionCross.geometry.computeBoundingSphere();
+            const posAttr = celestialPrecessionCross.geometry.attributes.position;
+            if (posAttr && posAttr.count >= 4) {
+                posAttr.setXYZ(0, cx - ux * size, cy - uy * size, cz - uz * size);
+                posAttr.setXYZ(1, cx + ux * size, cy + uy * size, cz + uz * size);
+                posAttr.setXYZ(2, cx - vx * size, cy - vy * size, cz - vz * size);
+                posAttr.setXYZ(3, cx + vx * size, cy + vy * size, cz + vz * size);
+                posAttr.needsUpdate = true;
+                celestialPrecessionCross.geometry.computeBoundingSphere();
+            }
         }
 
         function updateAxisProjectionLine() {
-            if (!axisProjectionLine) return;
+            if (!axisProjectionLine || !axisProjectionLine.visible) return;
             const earthWorldPos = earthGroup.position;
             // Line from Earth to the Sun-centered axis projection (matches where the trail is drawn)
-            const crossWorldPos = _getEarthAxisDir().multiplyScalar(1200);
-            axisProjectionLine.geometry.setFromPoints([earthWorldPos, crossWorldPos]);
-            axisProjectionLine.geometry.computeBoundingSphere();
+            const axisDir = _getEarthAxisDir();
+            const posAttr = axisProjectionLine.geometry.attributes.position;
+            if (posAttr && posAttr.count >= 2) {
+                posAttr.setXYZ(0, earthWorldPos.x, earthWorldPos.y, earthWorldPos.z);
+                posAttr.setXYZ(1, axisDir.x * 1200, axisDir.y * 1200, axisDir.z * 1200);
+                posAttr.needsUpdate = true;
+                axisProjectionLine.geometry.computeBoundingSphere();
+            }
         }
 
         // Create major constellation lines projected onto the celestial sphere (Zodiac + Major North/South)
@@ -2704,30 +2729,33 @@
             _vMoonPos.set(moonX, 0, moonZ);
             moonMesh.position.copy(_vMoonPos);
             
-            // Update dynamic orbit ellipse line geometry
+            // Update dynamic orbit ellipse line geometry with zero-allocation buffer update
             if (moonOrbitLine && moonOrbitLine.visible) {
-                const points = [];
                 const b = a * Math.sqrt(1 - e * e);
                 const segments = 128;
-                for (let i = 0; i <= segments; i++) {
-                    const theta = (i / segments) * Math.PI * 2;
-                    const xp = a * (Math.cos(theta) - e);
-                    const zp = - b * Math.sin(theta);
-                    const rx = xp * Math.cos(omega) - zp * Math.sin(omega);
-                    const rz = xp * Math.sin(omega) + zp * Math.cos(omega);
-                    points.push(new THREE.Vector3(rx, 0, rz));
+                const posAttr = moonOrbitLine.geometry.attributes.position;
+                if (posAttr && posAttr.count >= segments + 1) {
+                    for (let i = 0; i <= segments; i++) {
+                        const theta = (i / segments) * Math.PI * 2;
+                        const xp = a * (Math.cos(theta) - e);
+                        const zp = - b * Math.sin(theta);
+                        const rx = xp * Math.cos(omega) - zp * Math.sin(omega);
+                        const rz = xp * Math.sin(omega) + zp * Math.cos(omega);
+                        posAttr.setXYZ(i, rx, 0, rz);
+                    }
+                    posAttr.needsUpdate = true;
                 }
-                moonOrbitLine.geometry.setFromPoints(points);
             }
             
-            // Update line of apsides
+            // Update line of apsides with zero-allocation buffer update
             if (lineOfApsides && lineOfApsides.visible) {
-                const apsidesPoints = [
-                    new THREE.Vector3(-a * (1 + e) * Math.cos(omega), 0, -a * (1 + e) * Math.sin(omega)),
-                    new THREE.Vector3(a * (1 - e) * Math.cos(omega), 0, a * (1 - e) * Math.sin(omega))
-                ];
-                lineOfApsides.geometry.setFromPoints(apsidesPoints);
-                lineOfApsides.computeLineDistances();
+                const posAttr = lineOfApsides.geometry.attributes.position;
+                if (posAttr && posAttr.count >= 2) {
+                    posAttr.setXYZ(0, -a * (1 + e) * Math.cos(omega), 0, -a * (1 + e) * Math.sin(omega));
+                    posAttr.setXYZ(1, a * (1 - e) * Math.cos(omega), 0, a * (1 - e) * Math.sin(omega));
+                    posAttr.needsUpdate = true;
+                    lineOfApsides.computeLineDistances();
+                }
             }
             
             // Update precession circle and cross on the celestial sphere
