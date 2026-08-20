@@ -1175,11 +1175,11 @@
         <section class="calendar-section" id="calendar-view">
             <div class="calendar-legend-bar">
                 <div class="calendar-legend-items">
-                    <span style="display: flex; align-items: center; gap: 0.35rem; color: #fff; font-weight: 600;"><i class="fa-solid fa-water" style="color: var(--primary);"></i> Ondas Celestes Semanales:</span>
-                    <span style="display: flex; align-items: center; gap: 0.35rem;"><span style="display: inline-block; width: 14px; height: 3px; background: #facc15; border-radius: 2px;"></span> Sol (00h a 24h)</span>
-                    <span style="display: flex; align-items: center; gap: 0.35rem;"><span style="display: inline-block; width: 14px; height: 3px; background: #f43f5e; border-radius: 2px;"></span> Luna (altura y fase)</span>
+                    <span style="display: flex; align-items: center; gap: 0.35rem; color: #fff; font-weight: 600;"><i class="fa-solid fa-water" style="color: var(--primary);"></i> Ondas Semanales (Mediodía a Mediodía):</span>
+                    <span style="display: flex; align-items: center; gap: 0.35rem;"><span style="display: inline-block; width: 14px; height: 3px; background: #facc15; border-radius: 2px;"></span> Sol</span>
+                    <span style="display: flex; align-items: center; gap: 0.35rem;"><span style="display: inline-block; width: 14px; height: 3px; background: #f43f5e; border-radius: 2px;"></span> Luna (brillo según fase)</span>
                     <span style="display: flex; align-items: center; gap: 0.35rem;"><span style="display: inline-block; width: 14px; height: 2px; border-top: 2px dashed #22c55e;"></span> Horizonte (0°)</span>
-                    <span style="display: flex; align-items: center; gap: 0.35rem;"><span style="display: inline-block; width: 10px; height: 10px; background: #050811; border: 1px solid rgba(255,255,255,0.2); border-radius: 2px;"></span> Noche Oscura</span>
+                    <span style="display: flex; align-items: center; gap: 0.35rem;"><span style="display: inline-block; width: 10px; height: 10px; background: #04070e; border: 1px solid rgba(255,255,255,0.2); border-radius: 2px;"></span> Noche Oscura (en el centro)</span>
                 </div>
                 <span style="font-size: 0.72rem; color: var(--text-dim);"><i class="fa-solid fa-hand-pointer"></i> Haz clic en un día para ver su gráfica 24h</span>
             </div>
@@ -1676,9 +1676,9 @@
             }).join('');
         }
 
-        // Cálculo de muestras cada hora (00:00 a 24:00 local) para las ondas continuas del día
+        // Cálculo de muestras cada hora (Mediodía 12:00 a Mediodía 12:00 del día siguiente) centrando la noche de observación
         function computeDay24hSamples(year, month, day, lat = MATARO_LAT, lon = MATARO_LON, steps = 24) {
-            const startMs = new Date(year, month, day, 0, 0, 0).getTime();
+            const startMs = new Date(year, month, day, 12, 0, 0).getTime();
             const res = [];
             let maxMoonAlt = -999, maxMoonIdx = 0;
             for (let i = 0; i <= steps; i++) {
@@ -1850,7 +1850,17 @@
                 ctx.stroke();
                 ctx.setLineDash([]);
 
-                // 3. Onda Amarilla del Sol (00h a 24h)
+                // 2b. Línea vertical de medianoche (00:00 h) en el centro de la casilla
+                ctx.beginPath();
+                ctx.strokeStyle = "rgba(255, 255, 255, 0.08)";
+                ctx.lineWidth = 1;
+                ctx.setLineDash([2, 3]);
+                ctx.moveTo(w / 2, 0);
+                ctx.lineTo(w / 2, h);
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                // 3. Onda Amarilla del Sol (Mediodía a Mediodía siguiente)
                 ctx.beginPath();
                 ctx.strokeStyle = "#facc15";
                 ctx.lineWidth = 2.0;
@@ -1865,7 +1875,7 @@
                 ctx.stroke();
                 ctx.shadowBlur = 0;
 
-                // 4. Onda Coral de la Luna (00h a 24h) con brillo según fase (10% en Luna Nueva a 100% en Luna Llena)
+                // 4. Onda Coral de la Luna (Mediodía a Mediodía siguiente, brillo según fase)
                 const moonIllum = dayData.moonIllum;
                 const moonOpacity = 0.10 + 0.90 * (moonIllum / 100);
                 ctx.beginPath();
