@@ -7,7 +7,8 @@
     <!-- Fuentes Google: Outfit y Plus Jakarta Sans -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
             --bg-deep: #080c14;
@@ -29,6 +30,7 @@
             --radius-lg: 16px;
             --radius-md: 12px;
             --radius-sm: 8px;
+            --font-heading: 'Outfit', sans-serif;
             --font-main: 'Outfit', sans-serif;
             --font-body: 'Plus Jakarta Sans', sans-serif;
             --font-mono: 'JetBrains Mono', monospace;
@@ -95,24 +97,26 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.6rem;
+            font-size: 1.5rem;
             box-shadow: 0 0 20px var(--primary-glow);
+            color: #fff;
         }
 
         .brand-title h1 {
-            font-family: var(--font-main);
+            font-family: var(--font-heading);
             font-size: 1.35rem;
             font-weight: 700;
-            letter-spacing: -0.02em;
+            letter-spacing: -0.01em;
             color: #fff;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
         }
 
         .brand-title p {
-            font-size: 0.82rem;
-            color: var(--text-muted);
+            font-family: var(--font-heading);
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--primary);
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
             margin-top: 0.15rem;
         }
 
@@ -170,19 +174,22 @@
 
         .ticker-header {
             display: flex;
+            flex-wrap: wrap;
             justify-content: space-between;
             align-items: center;
+            gap: 0.6rem;
             margin-bottom: 1rem;
         }
 
         .ticker-title {
-            font-family: var(--font-main);
+            font-family: var(--font-heading);
             font-size: 1.05rem;
-            font-weight: 600;
+            font-weight: 700;
             display: flex;
+            flex-wrap: wrap;
             align-items: center;
-            gap: 0.5rem;
-            color: var(--accent-gold);
+            gap: 0.6rem;
+            color: var(--text-main);
         }
 
         .ticker-grid {
@@ -795,15 +802,15 @@
         <!-- Cabecera Cosmos Mataró -->
         <header class="app-header">
             <div class="header-brand">
-                <div class="brand-logo">🪐</div>
+                <div class="brand-logo"><i class="fa-solid fa-calendar-days"></i></div>
                 <div class="brand-title">
-                    <h1>Cosmos Mataró <span class="location-badge">📍 41.54°N, 2.44°E</span></h1>
-                    <p>Calendario de Efemérides Celestes • Cálculos de precisión NASA / Espenak</p>
+                    <h1>Calendario de efemérides celestes</h1>
+                    <p>COSMOS MATARÓ</p>
                 </div>
             </div>
             <div class="header-nav-links">
-                <a href="besselianexplorer.html" class="nav-btn" title="Explorador Besseliano 3D">🌒 Besselian Explorer</a>
-                <a href="simulador3D.html" class="nav-btn" title="Simulador Orbital 3D">🌍 Simulador 3D</a>
+                <a href="besselianexplorer.html" class="nav-btn" title="Explorador Besseliano 3D"><i class="fa-solid fa-moon"></i> Besselian Explorer</a>
+                <a href="simulador3D.html" class="nav-btn" title="Simulador Orbital 3D"><i class="fa-solid fa-earth-americas"></i> Simulador 3D</a>
             </div>
         </header>
 
@@ -811,7 +818,8 @@
         <section class="ticker-section" id="ticker-view">
             <div class="ticker-header">
                 <div class="ticker-title">
-                    <span>✨</span> Próximos Eventos Celestes en Mataró
+                    <span><i class="fa-solid fa-star" style="color: var(--accent-gold);"></i> Próximos eventos celestes en Mataró</span>
+                    <span class="location-badge"><i class="fa-solid fa-location-dot"></i> Lat. 41° 32' N, Lon. 2° 26' E (41.54° N, 2.44° E)</span>
                 </div>
                 <span style="font-size: 0.8rem; color: var(--text-dim);" id="ticker-range-label">Próximos 15 días</span>
             </div>
