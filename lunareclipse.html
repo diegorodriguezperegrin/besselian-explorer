@@ -484,6 +484,23 @@
             background: rgba(56, 189, 248, 0.08);
         }
 
+        /* Opciones de Capas en Vista Telescópica */
+        .layer-options-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        .layer-checkbox {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+        }
+
         /* Barra Inferior del Reproductor Temporal */
         .player-bar {
             position: absolute;
@@ -742,7 +759,7 @@
         <div class="viewport-layer active" id="layer-telescopic">
             <canvas id="canvas-telescopic"></canvas>
             <div class="canvas-overlay-info" id="telescopic-info">
-                <span><i class="fa-solid fa-arrows-up-down-left-right" style="color: var(--accent-blue);"></i> Arrastra para desplazar · Rueda para hacer zoom</span>
+                <span><i class="fa-solid fa-arrows-up-down-left-right" style="color: var(--accent-blue);"></i> Arrastra para desplazar · Rueda para zoom</span>
             </div>
         </div>
 
@@ -861,6 +878,16 @@
                 <div class="stat-item"><span class="stat-label">Magnitud Penumbral</span><span class="stat-val" id="stat-pen-mag">2.3450</span></div>
                 <div class="stat-item"><span class="stat-label">Duración Totalidad</span><span class="stat-val" id="stat-tot-dur" style="color: var(--accent-blood);">82.1 min</span></div>
             </div>
+            <div class="layer-options-row">
+                <label class="layer-checkbox">
+                    <input type="checkbox" id="chk-show-features" checked onchange="renderTelescopicView()">
+                    <span>Accidentes Lunares</span>
+                </label>
+                <label class="layer-checkbox">
+                    <input type="checkbox" id="chk-show-axes" checked onchange="renderTelescopicView()">
+                    <span>Ejes Celestes</span>
+                </label>
+            </div>
         </div>
 
         <!-- Circunstancias Locales para Mataró -->
@@ -950,6 +977,15 @@
         let lastFrameTimestamp = null;
         let currentActiveView = 'telescopic'; // 'telescopic', '3d', 'map'
 
+        // Textura Fotográfica de la Luna
+        const moonImg = new Image();
+        let moonImageLoaded = false;
+        moonImg.src = 'realistic_moon.png';
+        moonImg.onload = () => {
+            moonImageLoaded = true;
+            renderTelescopicView();
+        };
+
         // Variables de Vista Telescópica 2D
         let teleZoom = 1.0, telePanX = 0, telePanY = 0, isDraggingTele = false, dragStartX = 0, dragStartY = 0;
 
@@ -1016,12 +1052,10 @@
         function loadEclipse(ec) {
             currentEclipse = ec;
 
-            // Rango de tiempo de la simulación: desde P1 - 20min hasta P4 + 20min
             simStartTimeMs = ec.p1Ms - 20 * 60000;
             simEndTimeMs = ec.p4Ms + 20 * 60000;
-            simCurrentTimeMs = ec.maxMs; // Empezar en el Máximo
+            simCurrentTimeMs = ec.maxMs;
 
-            // Actualizar interfaz lateral
             document.getElementById('stat-type').textContent = `${ec.typeLabel} (${ec.typeFull})`;
             document.getElementById('stat-saros').textContent = ec.saros;
             document.getElementById('stat-gamma').textContent = ec.gamma.toFixed(4);
@@ -1029,13 +1063,11 @@
             document.getElementById('stat-pen-mag').textContent = ec.penMag.toFixed(4);
             document.getElementById('stat-tot-dur').textContent = ec.totDur > 0 ? `${ec.totDur.toFixed(1)} min` : '--';
 
-            // Habilitar/Deshabilitar botones de salto según si hay totalidad o parcialidad
             document.getElementById('chip-u1').style.display = ec.u1Ms ? 'inline-block' : 'none';
             document.getElementById('chip-u2').style.display = ec.u2Ms ? 'inline-block' : 'none';
             document.getElementById('chip-u3').style.display = ec.u3Ms ? 'inline-block' : 'none';
             document.getElementById('chip-u4').style.display = ec.u4Ms ? 'inline-block' : 'none';
 
-            // Marcadores en la barra de tiempo
             positionTimelineMarker('marker-p1', ec.p1Ms);
             positionTimelineMarker('marker-u1', ec.u1Ms);
             positionTimelineMarker('marker-u2', ec.u2Ms);
@@ -1044,13 +1076,9 @@
             positionTimelineMarker('marker-u4', ec.u4Ms);
             positionTimelineMarker('marker-p4', ec.p4Ms);
 
-            // Calcular y renderizar circunstancias para Mataró
             renderMataroCircumstances();
-
-            // Sincronizar 3D
             update3DEclipseGeometry();
 
-            // Reset pan y zoom
             teleZoom = 1.0; telePanX = 0; telePanY = 0;
 
             updateTimeUI();
@@ -1074,7 +1102,6 @@
             const z = Math.acos(Math.max(-1, Math.min(1, cosZ)));
             const alt = (Math.PI / 2 - z) * DEG;
 
-            // Azimuth
             const sinAz = Math.cos(phi2) * Math.sin(dLon) / Math.sin(z);
             const cosAz = (Math.sin(phi2) - Math.sin(phi1) * Math.cos(z)) / (Math.cos(phi1) * Math.sin(z));
             let az = Math.atan2(sinAz, cosAz) * DEG;
@@ -1119,7 +1146,6 @@
 
             tbody.innerHTML = rowsHtml;
 
-            // Badge de visibilidad general
             const badge = document.getElementById('mataro-vis-badge');
             if (visibleCount === contacts.length) {
                 badge.className = 'mataro-vis-tag vis-full';
@@ -1145,7 +1171,6 @@
             window.addEventListener('resize', resizeTelescopicCanvas);
             resizeTelescopicCanvas();
 
-            // Interacción de Zoom y Pan
             canvas.addEventListener('wheel', (e) => {
                 e.preventDefault();
                 const zoomFactor = e.deltaY < 0 ? 1.15 : 0.87;
@@ -1178,7 +1203,6 @@
             renderTelescopicView();
         }
 
-        // Geometría de Sombra y Posición Lunar Relativa
         function getMoonShadowCoordsAtTime(tMs) {
             const ec = currentEclipse;
             const dtHours = (tMs - ec.maxMs) / 3600000;
@@ -1208,7 +1232,7 @@
             ctx.scale(dpr, dpr);
             ctx.clearRect(0, 0, w, h);
 
-            // Fondo de Espacio Profundo
+            // Fondo de Espacio Profundo Estelar
             ctx.fillStyle = "#050811";
             ctx.fillRect(0, 0, w, h);
 
@@ -1223,21 +1247,26 @@
             const rpPx = geo.rPenumbra * baseScale;
             const rmPx = geo.rMoon * baseScale;
 
-            // 1. Ejes Celestes (N, S, E, O)
-            ctx.beginPath();
-            ctx.strokeStyle = "rgba(255, 255, 255, 0.08)";
-            ctx.lineWidth = 1;
-            ctx.moveTo(-rpPx * 1.35, 0); ctx.lineTo(rpPx * 1.35, 0);
-            ctx.moveTo(0, -rpPx * 1.35); ctx.lineTo(0, rpPx * 1.35);
-            ctx.stroke();
+            const showAxes = document.getElementById('chk-show-axes') ? document.getElementById('chk-show-axes').checked : true;
+            const showFeatures = document.getElementById('chk-show-features') ? document.getElementById('chk-show-features').checked : true;
 
-            ctx.font = "11px 'JetBrains Mono', monospace";
-            ctx.fillStyle = "rgba(255, 255, 255, 0.35)";
-            ctx.textAlign = "center";
-            ctx.fillText("N (Eclíptica)", 0, -rpPx * 1.4);
-            ctx.fillText("S", 0, rpPx * 1.45);
-            ctx.fillText("E", -rpPx * 1.45, 4);
-            ctx.fillText("O", rpPx * 1.45, 4);
+            // 1. Ejes Celestes (N, S, E, O)
+            if (showAxes) {
+                ctx.beginPath();
+                ctx.strokeStyle = "rgba(255, 255, 255, 0.08)";
+                ctx.lineWidth = 1;
+                ctx.moveTo(-rpPx * 1.35, 0); ctx.lineTo(rpPx * 1.35, 0);
+                ctx.moveTo(0, -rpPx * 1.35); ctx.lineTo(0, rpPx * 1.35);
+                ctx.stroke();
+
+                ctx.font = "11px 'JetBrains Mono', monospace";
+                ctx.fillStyle = "rgba(255, 255, 255, 0.35)";
+                ctx.textAlign = "center";
+                ctx.fillText("N (Eclíptica)", 0, -rpPx * 1.4);
+                ctx.fillText("S", 0, rpPx * 1.45);
+                ctx.fillText("E", -rpPx * 1.45, 4);
+                ctx.fillText("O", rpPx * 1.45, 4);
+            }
 
             // 2. Disco de la Penumbra Terrestre
             const penGrad = ctx.createRadialGradient(0, 0, ruPx, 0, 0, rpPx);
@@ -1282,7 +1311,7 @@
             ctx.fillStyle = "rgba(147, 197, 253, 0.7)";
             ctx.fillText("PENUMBRA", 0, -rpPx + 18);
 
-            // 4. Trayectoria de la Luna a través de la sombra
+            // 4. Trayectoria de la Luna
             ctx.beginPath();
             ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
             ctx.lineWidth = 1;
@@ -1293,73 +1322,98 @@
             ctx.stroke();
             ctx.setLineDash([]);
 
-            // 5. Renderizado de la Luna
+            // 5. Renderizado Realista de la Luna Fotográfica
             const mx = geo.x * baseScale;
             const my = geo.y * baseScale;
 
             ctx.save();
             ctx.translate(mx, my);
 
-            const distToCenter = geo.dist;
-            let shadowLevel = 0;
-
-            if (distToCenter < (geo.rUmbra - geo.rMoon)) {
-                shadowLevel = 2; // Totalidad
-            } else if (distToCenter < (geo.rUmbra + geo.rMoon)) {
-                shadowLevel = 1.5; // Parcial
-            } else if (distToCenter < (geo.rPenumbra + geo.rMoon)) {
-                shadowLevel = 1; // Penumbra
-            }
-
-            // Cuerpo Lunar base
+            // Clip circular exacto de la esfera lunar
+            ctx.save();
             ctx.beginPath();
             ctx.arc(0, 0, rmPx, 0, Math.PI * 2);
-            ctx.fillStyle = "#e2e8f0";
-            ctx.fill();
+            ctx.clip();
 
-            // Textura superficial simulada
-            ctx.beginPath();
-            ctx.fillStyle = "rgba(71, 85, 105, 0.35)";
-            ctx.arc(-rmPx * 0.2, -rmPx * 0.15, rmPx * 0.35, 0, Math.PI * 2);
-            ctx.arc(rmPx * 0.25, -rmPx * 0.25, rmPx * 0.28, 0, Math.PI * 2);
-            ctx.arc(-rmPx * 0.1, rmPx * 0.3, rmPx * 0.4, 0, Math.PI * 2);
-            ctx.fill();
-
-            // Capa de Sombra Dinámica
-            if (shadowLevel > 0) {
-                const angleToShadowCenter = Math.atan2(-my, -mx);
-                const sGrad = ctx.createLinearGradient(
-                    Math.cos(angleToShadowCenter) * rmPx,
-                    Math.sin(angleToShadowCenter) * rmPx,
-                    -Math.cos(angleToShadowCenter) * rmPx,
-                    -Math.sin(angleToShadowCenter) * rmPx
-                );
-
-                if (shadowLevel === 2) {
-                    sGrad.addColorStop(0, "rgba(225, 29, 72, 0.92)");
-                    sGrad.addColorStop(0.7, "rgba(153, 27, 27, 0.95)");
-                    sGrad.addColorStop(1, "rgba(69, 10, 10, 0.98)");
-                } else if (shadowLevel === 1.5) {
-                    sGrad.addColorStop(0, "rgba(15, 23, 42, 0.95)");
-                    sGrad.addColorStop(0.5, "rgba(185, 28, 28, 0.75)");
-                    sGrad.addColorStop(0.85, "rgba(0, 0, 0, 0.2)");
-                    sGrad.addColorStop(1, "rgba(255, 255, 255, 0)");
-                } else {
-                    sGrad.addColorStop(0, "rgba(15, 23, 42, 0.55)");
-                    sGrad.addColorStop(1, "rgba(255, 255, 255, 0)");
-                }
-
+            if (moonImageLoaded && moonImg.complete && moonImg.naturalWidth > 0) {
+                // Dibujar textura fotográfica de alta resolución
+                ctx.drawImage(moonImg, -rmPx, -rmPx, rmPx * 2, rmPx * 2);
+            } else {
+                // Procedural de respaldo de alta fidelidad
                 ctx.beginPath();
                 ctx.arc(0, 0, rmPx, 0, Math.PI * 2);
-                ctx.fillStyle = sGrad;
+                ctx.fillStyle = "#cbd5e1";
+                ctx.fill();
+
+                // Mares lunares principales
+                ctx.fillStyle = "rgba(51, 65, 85, 0.55)";
+                ctx.beginPath();
+                ctx.ellipse(-rmPx * 0.25, -rmPx * 0.2, rmPx * 0.35, rmPx * 0.25, 0.2, 0, Math.PI * 2); // Mare Imbrium
+                ctx.ellipse(rmPx * 0.25, -rmPx * 0.15, rmPx * 0.22, rmPx * 0.18, -0.3, 0, Math.PI * 2); // Mare Serenitatis
+                ctx.ellipse(rmPx * 0.45, -rmPx * 0.05, rmPx * 0.18, rmPx * 0.15, 0, 0, Math.PI * 2); // Mare Tranquillitatis
+                ctx.ellipse(-rmPx * 0.4, rmPx * 0.1, rmPx * 0.3, rmPx * 0.4, 0.5, 0, Math.PI * 2); // Oceanus Procellarum
+                ctx.fill();
+
+                // Cráter Tycho y rayos brillantes
+                ctx.fillStyle = "#ffffff";
+                ctx.beginPath();
+                ctx.arc(0, rmPx * 0.55, rmPx * 0.06, 0, Math.PI * 2);
                 ctx.fill();
             }
 
+            // APLICACIÓN DE SOMBRA EXACTA POR INTERSECCIÓN GEOMÉTRICA CON LA TIERRA
+            // 5a. Penumbra Suave (Atenuación lumínica)
+            const distFromShadowCenter = Math.sqrt(mx * mx + my * my);
+            if (distFromShadowCenter < (rpPx + rmPx)) {
+                const penFrac = Math.max(0, Math.min(1, (rpPx + rmPx - distFromShadowCenter) / (rpPx - ruPx)));
+                if (penFrac > 0) {
+                    ctx.fillStyle = `rgba(15, 23, 42, ${penFrac * 0.65})`;
+                    ctx.fillRect(-rmPx, -rmPx, rmPx * 2, rmPx * 2);
+                }
+            }
+
+            // 5b. Umbra Geométrica Curva (El mordisco de la Tierra)
+            // En el sistema de coordenadas local de la Luna, el centro de la Tierra está en (-mx, -my)
+            ctx.save();
             ctx.beginPath();
-            ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
+            ctx.arc(-mx, -my, ruPx, 0, Math.PI * 2);
+            
+            // Gradiente auténtico de Luna de Sangre (Dispersión de Rayleigh atmosférica)
+            const rayleighGrad = ctx.createRadialGradient(-mx, -my, 0, -mx, -my, ruPx);
+            rayleighGrad.addColorStop(0, "rgba(69, 10, 10, 0.94)"); // Núcleo umbral cobrizo oscuro
+            rayleighGrad.addColorStop(0.7, "rgba(153, 27, 27, 0.92)"); // Rojo sangre cálido
+            rayleighGrad.addColorStop(0.92, "rgba(225, 29, 72, 0.88)"); // Borde carmesí brillante
+            rayleighGrad.addColorStop(0.99, "rgba(56, 189, 248, 0.35)"); // Franja azulada/turquesa de ozono
+            rayleighGrad.addColorStop(1, "rgba(15, 23, 42, 0.98)");
+
+            ctx.fillStyle = rayleighGrad;
+            ctx.fill();
+
+            // Línea de contacto de la Umbra sobre la superficie lunar
+            ctx.strokeStyle = "rgba(244, 63, 94, 0.75)";
             ctx.lineWidth = 1.2;
+            ctx.stroke();
+            ctx.restore();
+
+            ctx.restore(); // Fin del clip de la esfera lunar
+
+            // Borde iluminado de la Luna
+            ctx.beginPath();
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.35)";
+            ctx.lineWidth = 1;
             ctx.arc(0, 0, rmPx, 0, Math.PI * 2);
             ctx.stroke();
+
+            // Nombres de Accidentes Lunares (si está activado)
+            if (showFeatures && teleZoom > 1.2) {
+                ctx.font = "9px 'Outfit', sans-serif";
+                ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
+                ctx.textAlign = "center";
+                ctx.fillText("M. Tranquillitatis", rmPx * 0.35, -rmPx * 0.05);
+                ctx.fillText("M. Imbrium", -rmPx * 0.25, -rmPx * 0.25);
+                ctx.fillText("Tycho", 0, rmPx * 0.65);
+                ctx.fillText("Copernicus", -rmPx * 0.2, rmPx * 0.05);
+            }
 
             ctx.restore();
             ctx.restore();
@@ -1384,26 +1438,27 @@
             controls3D.enableDamping = true;
             controls3D.dampingFactor = 0.05;
 
-            const sunLight = new THREE.DirectionalLight(0xffffff, 1.6);
+            const sunLight = new THREE.DirectionalLight(0xffffff, 1.8);
             sunLight.position.set(0, 0, 200);
             scene3D.add(sunLight);
 
-            const ambientLight = new THREE.AmbientLight(0x1e293b, 0.35);
+            const ambientLight = new THREE.AmbientLight(0x1e293b, 0.4);
             scene3D.add(ambientLight);
 
             // Tierra 3D
-            const earthGeo = new THREE.SphereGeometry(6.37, 32, 32);
+            const earthGeo = new THREE.SphereGeometry(6.37, 48, 48);
             const earthMat = new THREE.MeshPhongMaterial({
-                color: 0x1d4ed8,
-                emissive: 0x07112c,
+                color: 0x1e40af,
+                emissive: 0x030712,
                 specular: 0x38bdf8,
-                shininess: 15
+                shininess: 25
             });
             earthMesh3D = new THREE.Mesh(earthGeo, earthMat);
+            earthMesh3D.rotation.z = 23.44 * RAD; // Oblicuidad axial
             scene3D.add(earthMesh3D);
 
             // Cono de Umbra
-            const umbraGeo = new THREE.ConeGeometry(5.2, 80, 32, 1, true);
+            const umbraGeo = new THREE.ConeGeometry(5.2, 80, 48, 1, true);
             umbraGeo.rotateX(-Math.PI / 2);
             const umbraMat = new THREE.MeshBasicMaterial({
                 color: 0xe11d48,
@@ -1416,7 +1471,7 @@
             scene3D.add(umbraConeMesh3D);
 
             // Cono de Penumbra
-            const penGeo = new THREE.ConeGeometry(9.8, 80, 32, 1, true);
+            const penGeo = new THREE.ConeGeometry(9.8, 80, 48, 1, true);
             penGeo.rotateX(-Math.PI / 2);
             const penMat = new THREE.MeshBasicMaterial({
                 color: 0x38bdf8,
@@ -1428,11 +1483,14 @@
             penumbraConeMesh3D.position.set(0, 0, -40);
             scene3D.add(penumbraConeMesh3D);
 
-            // Luna 3D
-            const moonGeo = new THREE.SphereGeometry(1.74, 32, 32);
+            // Luna 3D con Textura Fotográfica
+            const moonGeo = new THREE.SphereGeometry(1.74, 48, 48);
+            const texLoader = new THREE.TextureLoader();
+            const moonTexture3D = texLoader.load('realistic_moon.png');
+            
             const moonMat = new THREE.MeshPhongMaterial({
-                color: 0xe2e8f0,
-                shininess: 5
+                map: moonTexture3D,
+                shininess: 8
             });
             moonMesh3D = new THREE.Mesh(moonGeo, moonMat);
             scene3D.add(moonMesh3D);
@@ -1468,6 +1526,7 @@
 
             moonMesh3D.position.set(moonX, moonY, moonZ);
 
+            // Enrojecimiento de la Luna en 3D
             if (geo.dist < (geo.rUmbra - geo.rMoon)) {
                 moonMesh3D.material.color.setHex(0xe11d48);
                 moonMesh3D.material.emissive.setHex(0x450a0a);
@@ -1475,7 +1534,7 @@
                 moonMesh3D.material.color.setHex(0xfb923c);
                 moonMesh3D.material.emissive.setHex(0x2a0505);
             } else {
-                moonMesh3D.material.color.setHex(0xe2e8f0);
+                moonMesh3D.material.color.setHex(0xffffff);
                 moonMesh3D.material.emissive.setHex(0x000000);
             }
         }
@@ -1694,7 +1753,7 @@
             }
         }
 
-        // 7. Conmutación de Vistas (2D Telescópico, 3D, Mapa)
+        // 7. Conmutación de Vistas
         function switchMainView(view) {
             currentActiveView = view;
             document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
