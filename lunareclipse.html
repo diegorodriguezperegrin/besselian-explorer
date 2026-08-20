@@ -1,0 +1,1761 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lunar Eclipse Explorer 3D - Cosmos Mataró</title>
+    <meta name="description" content="Explorador 3D y simulador telescópico de eclipses lunares con datos del catálogo de 5 milenios de la NASA (Espenak & Meeus) por Cosmos Mataró.">
+    <meta name="theme-color" content="#060911">
+    <meta name="author" content="Cosmos Mataró">
+    
+    <!-- Open Graph / Social -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Lunar Eclipse Explorer 3D - Cosmos Mataró">
+    <meta property="og:description" content="Simulador 3D y telescópico interactivo de eclipses lunares (totales, parciales y penumbrales) con datos de la NASA.">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@300;400;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Three.js y OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <!-- Catálogo de Eclipses Lunares de la NASA (1801 a 2200) -->
+    <script src="lunar_eclipses_data.js"></script>
+
+    <style>
+        :root {
+            --bg-space: #050811;
+            --bg-card: rgba(13, 18, 28, 0.85);
+            --bg-panel: rgba(12, 16, 25, 0.94);
+            --border-color: rgba(255, 255, 255, 0.1);
+            --border-color-active: rgba(56, 189, 248, 0.5);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-dim: #64748b;
+            --accent-blue: #38bdf8;
+            --accent-blood: #f43f5e;
+            --accent-umbra: #e11d48;
+            --accent-penumbra: #93c5fd;
+            --accent-gold: #facc15;
+            --accent-green: #34d399;
+            --font-heading: 'Outfit', sans-serif;
+            --font-body: 'Plus Jakarta Sans', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+            --transition-smooth: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-space);
+            color: var(--text-primary);
+            font-family: var(--font-body);
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            position: relative;
+            user-select: none;
+        }
+
+        /* Contenedores de Visualización */
+        #viewports-container {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        .viewport-layer {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            display: none;
+        }
+
+        .viewport-layer.active {
+            display: block;
+        }
+
+        #canvas-telescopic, #canvas-map {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        #webgl-container {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Barra Superior Flotante: Selector de Vistas y Enlaces */
+        .top-nav-bar {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            z-index: 30;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .view-switcher {
+            background: var(--bg-panel);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 4px;
+            display: flex;
+            gap: 4px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+        }
+
+        .view-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-family: var(--font-heading);
+            font-size: 0.82rem;
+            font-weight: 600;
+            padding: 6px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: var(--transition-smooth);
+        }
+
+        .view-btn:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .view-btn.active {
+            background: var(--accent-blue);
+            color: #060911;
+            font-weight: 700;
+        }
+
+        .nav-links-group {
+            display: flex;
+            gap: 6px;
+        }
+
+        .ext-nav-btn {
+            background: var(--bg-panel);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            font-family: var(--font-body);
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 8px 12px;
+            border-radius: 12px;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: var(--transition-smooth);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+        }
+
+        .ext-nav-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--border-color-active);
+            color: var(--accent-blue);
+            transform: translateY(-1px);
+        }
+
+        /* Panel Lateral Izquierdo: Selección y Datos */
+        .sidebar-panel {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            width: 360px;
+            max-height: calc(100vh - 30px);
+            z-index: 25;
+            background: var(--bg-panel);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 16px 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            box-shadow: 0 12px 36px rgba(0, 0, 0, 0.65);
+            overflow-y: auto;
+            overflow-x: hidden;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+            transition: var(--transition-smooth);
+        }
+
+        .sidebar-panel.collapsed {
+            transform: translateX(calc(-100% - 30px));
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .sidebar-panel::-webkit-scrollbar {
+            width: 5px;
+        }
+        .sidebar-panel::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 4px;
+        }
+
+        /* Cabecera Sticky del Panel */
+        .panel-header {
+            position: sticky;
+            top: -16px;
+            margin-top: -16px;
+            margin-left: -18px;
+            margin-right: -18px;
+            padding: 14px 18px 10px 18px;
+            background: rgba(12, 16, 25, 0.96);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border-color);
+            border-top-left-radius: 16px;
+            border-top-right-radius: 16px;
+            z-index: 30;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-header h1 {
+            font-family: var(--font-heading);
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #f8fafc;
+            line-height: 1.2;
+            margin: 0;
+        }
+
+        .panel-header p {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--accent-blue);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-top: 2px;
+            margin-bottom: 0;
+        }
+
+        .panel-toggle {
+            cursor: pointer;
+            font-size: 0.95rem;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            transition: var(--transition-smooth);
+        }
+
+        .panel-toggle:hover {
+            background: rgba(255, 255, 255, 0.12);
+            color: #fff;
+        }
+
+        .reopen-btn {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            z-index: 20;
+            background: var(--bg-panel);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            font-family: var(--font-heading);
+            font-size: 0.85rem;
+            font-weight: 600;
+            padding: 9px 14px;
+            border-radius: 12px;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+            transition: var(--transition-smooth);
+        }
+
+        .reopen-btn:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: var(--border-color-active);
+            color: var(--accent-blue);
+        }
+
+        /* Secciones del Panel */
+        .section-title {
+            font-family: var(--font-heading);
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 4px;
+        }
+
+        /* Presets Rápidos */
+        .quick-presets {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .preset-chip {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 6px 10px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: var(--transition-smooth);
+        }
+
+        .preset-chip:hover {
+            background: rgba(56, 189, 248, 0.08);
+            border-color: var(--accent-blue);
+        }
+
+        .preset-chip.active {
+            background: rgba(56, 189, 248, 0.15);
+            border-color: var(--accent-blue);
+            color: #fff;
+        }
+
+        .preset-badge-tag {
+            font-size: 0.68rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: var(--font-mono);
+            font-weight: 700;
+        }
+
+        .badge-total { background: rgba(244, 63, 94, 0.25); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.4); }
+        .badge-partial { background: rgba(250, 204, 21, 0.2); color: #fde047; border: 1px solid rgba(250, 204, 21, 0.35); }
+        .badge-penumbral { background: rgba(148, 163, 184, 0.2); color: #cbd5e1; border: 1px solid rgba(148, 163, 184, 0.35); }
+
+        /* Selector General de Eclipses */
+        .search-row {
+            display: flex;
+            gap: 6px;
+        }
+
+        .search-input, .search-select {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: #fff;
+            padding: 7px 10px;
+            font-family: var(--font-body);
+            font-size: 0.82rem;
+            outline: none;
+            transition: var(--transition-smooth);
+        }
+
+        .search-input:focus, .search-select:focus {
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+        }
+
+        .search-select {
+            flex: 1;
+            cursor: pointer;
+        }
+
+        /* Ficha de Datos Astronómicos */
+        .card-stats {
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px 12px;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .stat-val {
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #f1f5f9;
+        }
+
+        /* Ficha de Circunstancias Locales Mataró */
+        .mataro-card {
+            background: linear-gradient(135deg, rgba(14, 165, 233, 0.08), rgba(244, 63, 94, 0.06));
+            border: 1px solid rgba(56, 189, 248, 0.25);
+            border-radius: 12px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .mataro-badge-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .mataro-vis-tag {
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .vis-full { background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.4); }
+        .vis-rise { background: rgba(249, 115, 22, 0.2); color: #fb923c; border: 1px solid rgba(249, 115, 22, 0.4); }
+        .vis-set { background: rgba(234, 179, 8, 0.2); color: #fde047; border: 1px solid rgba(234, 179, 8, 0.4); }
+        .vis-none { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+
+        .contacts-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.74rem;
+            font-family: var(--font-mono);
+        }
+
+        .contacts-table th {
+            text-align: left;
+            color: var(--text-dim);
+            padding: 2px 4px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            font-weight: 600;
+        }
+
+        .contacts-table td {
+            padding: 3px 4px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            color: #cbd5e1;
+        }
+
+        .contacts-table tr.active td {
+            color: var(--accent-blue);
+            font-weight: 700;
+            background: rgba(56, 189, 248, 0.08);
+        }
+
+        /* Barra Inferior del Reproductor Temporal */
+        .player-bar {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: min(880px, calc(100vw - 40px));
+            background: var(--bg-panel);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 12px 20px;
+            z-index: 30;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8);
+        }
+
+        .player-top-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .player-phase-badge {
+            font-family: var(--font-heading);
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .player-time-display {
+            font-family: var(--font-mono);
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .player-time-display strong {
+            color: var(--accent-blue);
+        }
+
+        .player-slider-container {
+            position: relative;
+            width: 100%;
+            height: 28px;
+            display: flex;
+            align-items: center;
+        }
+
+        .player-slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.15);
+            outline: none;
+            cursor: pointer;
+            position: relative;
+            z-index: 2;
+        }
+
+        .player-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--accent-blue);
+            box-shadow: 0 0 10px var(--accent-blue);
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        .player-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.25);
+        }
+
+        .contact-marker {
+            position: absolute;
+            top: 2px;
+            width: 2px;
+            height: 14px;
+            background: rgba(255, 255, 255, 0.35);
+            z-index: 1;
+            transform: translateX(-50%);
+            pointer-events: none;
+        }
+
+        .contact-marker.tot {
+            background: var(--accent-blood);
+            height: 18px;
+            top: 0;
+            width: 3px;
+        }
+
+        .player-controls-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .ctrl-btn-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .ctrl-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: #fff;
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            transition: var(--transition-smooth);
+        }
+
+        .ctrl-btn:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: var(--accent-blue);
+        }
+
+        .ctrl-btn.play-main {
+            width: 40px;
+            height: 40px;
+            background: var(--accent-blue);
+            color: #060911;
+            border: none;
+            font-size: 1rem;
+        }
+
+        .ctrl-btn.play-main:hover {
+            filter: brightness(1.15);
+            transform: scale(1.05);
+        }
+
+        .jump-chips-group {
+            display: flex;
+            gap: 4px;
+        }
+
+        .jump-chip {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 6px;
+            padding: 4px 8px;
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: var(--transition-smooth);
+        }
+
+        .jump-chip:hover {
+            background: rgba(56, 189, 248, 0.15);
+            color: #fff;
+            border-color: var(--accent-blue);
+        }
+
+        .jump-chip.active {
+            background: var(--accent-blue);
+            color: #060911;
+            font-weight: 700;
+        }
+
+        /* 3D Camera Controls Helper */
+        .camera-presets-bar {
+            position: absolute;
+            top: 70px;
+            right: 15px;
+            z-index: 20;
+            display: none;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .cam-btn {
+            background: var(--bg-panel);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            font-family: var(--font-heading);
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 6px 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: var(--transition-smooth);
+        }
+
+        .cam-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--accent-blue);
+        }
+
+        /* Overlay Info */
+        .canvas-overlay-info {
+            position: absolute;
+            bottom: 120px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(12, 16, 25, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 6px 16px;
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Responsive Mobile */
+        @media (max-width: 768px) {
+            .sidebar-panel {
+                width: calc(100vw - 30px);
+                max-height: 50vh;
+            }
+            .player-bar {
+                width: calc(100vw - 20px);
+                bottom: 10px;
+                padding: 10px 14px;
+            }
+            .jump-chips-group {
+                display: none;
+            }
+            .top-nav-bar {
+                top: 10px;
+                right: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Capa de Viewports (2D Telescópico, 3D Espacial, Mapa Mundial) -->
+    <div id="viewports-container">
+        <!-- 1. Vista Telescópica 2D de Sombra -->
+        <div class="viewport-layer active" id="layer-telescopic">
+            <canvas id="canvas-telescopic"></canvas>
+            <div class="canvas-overlay-info" id="telescopic-info">
+                <span><i class="fa-solid fa-arrows-up-down-left-right" style="color: var(--accent-blue);"></i> Arrastra para desplazar · Rueda para hacer zoom</span>
+            </div>
+        </div>
+
+        <!-- 2. Vista Espacial 3D (Three.js) -->
+        <div class="viewport-layer" id="layer-3d">
+            <div id="webgl-container"></div>
+            <div class="camera-presets-bar" id="camera-presets-bar">
+                <button class="cam-btn" onclick="set3DCameraPreset('earthView')"><i class="fa-solid fa-earth-americas"></i> Vista desde la Tierra</button>
+                <button class="cam-btn" onclick="set3DCameraPreset('sideView')"><i class="fa-solid fa-arrows-left-right"></i> Vista Lateral Orbital</button>
+                <button class="cam-btn" onclick="set3DCameraPreset('sunView')"><i class="fa-solid fa-sun"></i> Vista desde el Sol</button>
+                <button class="cam-btn" onclick="set3DCameraPreset('free')"><i class="fa-solid fa-camera"></i> Cámara Libre</button>
+            </div>
+        </div>
+
+        <!-- 3. Mapa de Visibilidad Mundial -->
+        <div class="viewport-layer" id="layer-map">
+            <canvas id="canvas-map"></canvas>
+        </div>
+    </div>
+
+    <!-- Barra Superior: Selector de Modos y Enlaces -->
+    <div class="top-nav-bar">
+        <div class="view-switcher">
+            <button class="view-btn active" id="btn-view-telescopic" onclick="switchMainView('telescopic')">
+                <i class="fa-solid fa-bullseye"></i> Telescópica 2D
+            </button>
+            <button class="view-btn" id="btn-view-3d" onclick="switchMainView('3d')">
+                <i class="fa-solid fa-cube"></i> Espacial 3D
+            </button>
+            <button class="view-btn" id="btn-view-map" onclick="switchMainView('map')">
+                <i class="fa-solid fa-earth-europe"></i> Visibilidad
+            </button>
+        </div>
+
+        <div class="nav-links-group">
+            <a href="besselianexplorer.html" class="ext-nav-btn" title="Ir a Besselian Explorer 3D"><i class="fa-solid fa-moon"></i> Besselian</a>
+            <a href="simulador3D.html" class="ext-nav-btn" title="Ir a Simulador Orbital 3D"><i class="fa-solid fa-globe"></i> Simulador 3D</a>
+            <a href="skycal_mataro.html" class="ext-nav-btn" title="Ir a Calendario de Efemérides"><i class="fa-solid fa-calendar-days"></i> Calendario</a>
+        </div>
+    </div>
+
+    <!-- Botón Reabrir Panel Lateral cuando está colapsado -->
+    <button class="reopen-btn" id="btn-reopen-sidebar" onclick="toggleSidebar(true)">
+        <i class="fa-solid fa-list-ul"></i>
+        <span>Eclipses Lunares</span>
+    </button>
+
+    <!-- Panel Lateral Izquierdo: Selección y Datos Astronómicos -->
+    <aside class="sidebar-panel" id="sidebar-panel">
+        <div class="panel-header">
+            <div>
+                <h1>Lunar Eclipse Explorer 3D</h1>
+                <p>COSMOS MATARÓ</p>
+            </div>
+            <div class="panel-toggle" onclick="toggleSidebar(false)" title="Ocultar panel"><i class="fa-solid fa-chevron-left"></i></div>
+        </div>
+
+        <!-- Eclipses Destacados -->
+        <div class="section-title">
+            <i class="fa-solid fa-star" style="color: var(--accent-gold);"></i> Eclipses Destacados
+        </div>
+        <div class="quick-presets">
+            <div class="preset-chip" onclick="selectPresetEclipse('2025-03-14')">
+                <span>14 Mar 2025</span>
+                <span class="preset-badge-tag badge-total">Total (65m)</span>
+            </div>
+            <div class="preset-chip active" onclick="selectPresetEclipse('2025-09-07')">
+                <span>7 Sep 2025 (España)</span>
+                <span class="preset-badge-tag badge-total">Total (82m)</span>
+            </div>
+            <div class="preset-chip" onclick="selectPresetEclipse('2026-03-03')">
+                <span>3 Mar 2026</span>
+                <span class="preset-badge-tag badge-total">Total (58m)</span>
+            </div>
+            <div class="preset-chip" onclick="selectPresetEclipse('2026-08-28')">
+                <span>28 Ago 2026</span>
+                <span class="preset-badge-tag badge-partial">Parcial 93%</span>
+            </div>
+            <div class="preset-chip" onclick="selectPresetEclipse('2028-12-31')">
+                <span>31 Dic 2028 (Nochevieja)</span>
+                <span class="preset-badge-tag badge-total">Total (71m)</span>
+            </div>
+            <div class="preset-chip" onclick="selectPresetEclipse('2029-06-26')">
+                <span>26 Jun 2029 (Central)</span>
+                <span class="preset-badge-tag badge-total">Total (102m)</span>
+            </div>
+        </div>
+
+        <!-- Búsqueda y Selector de Catálogo -->
+        <div class="section-title">
+            <i class="fa-solid fa-magnifying-glass"></i> Explorar Catálogo NASA (1801-2200)
+        </div>
+        <div class="search-row">
+            <select class="search-select" id="filter-type" onchange="filterEclipseList()">
+                <option value="ALL">Todos los tipos</option>
+                <option value="T">🔴 Totales</option>
+                <option value="P">🌗 Parciales</option>
+                <option value="N">⚪ Penumbrales</option>
+            </select>
+            <input type="number" class="search-input" id="filter-year" placeholder="Año..." style="width: 80px;" min="1801" max="2200" oninput="filterEclipseList()">
+        </div>
+        <select class="search-select" id="eclipse-select-dropdown" style="width: 100%;" onchange="onSelectDropdownEclipse(this.value)">
+            <!-- Poblado dinámicamente -->
+        </select>
+
+        <!-- Ficha de Datos Astronómicos (NASA GSFC) -->
+        <div class="section-title">
+            <i class="fa-solid fa-circle-info"></i> Parámetros de la NASA
+        </div>
+        <div class="card-stats">
+            <div class="stat-grid">
+                <div class="stat-item"><span class="stat-label">Tipo</span><span class="stat-val" id="stat-type">Total (T)</span></div>
+                <div class="stat-item"><span class="stat-label">Serie Saros</span><span class="stat-val" id="stat-saros">128</span></div>
+                <div class="stat-item"><span class="stat-label">Parámetro Gamma (γ)</span><span class="stat-val" id="stat-gamma">-0.2752</span></div>
+                <div class="stat-item"><span class="stat-label">Magnitud Umbral</span><span class="stat-val" id="stat-um-mag">1.3619</span></div>
+                <div class="stat-item"><span class="stat-label">Magnitud Penumbral</span><span class="stat-val" id="stat-pen-mag">2.3450</span></div>
+                <div class="stat-item"><span class="stat-label">Duración Totalidad</span><span class="stat-val" id="stat-tot-dur" style="color: var(--accent-blood);">82.1 min</span></div>
+            </div>
+        </div>
+
+        <!-- Circunstancias Locales para Mataró -->
+        <div class="section-title" style="display: flex; justify-content: space-between;">
+            <span><i class="fa-solid fa-location-dot" style="color: var(--accent-blue);"></i> Mataró (41.54°N, 2.44°E)</span>
+            <button onclick="exportSelectedEclipseToICal()" style="background: none; border: none; color: var(--accent-blue); font-size: 0.72rem; cursor: pointer; text-decoration: underline;"><i class="fa-solid fa-calendar-plus"></i> iCal</button>
+        </div>
+        <div class="mataro-card">
+            <div class="mataro-badge-header">
+                <span style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 600;">Visibilidad Local:</span>
+                <span class="mataro-vis-tag vis-full" id="mataro-vis-badge"><i class="fa-solid fa-eye"></i> Visible al Orto</span>
+            </div>
+            <table class="contacts-table" id="mataro-contacts-table">
+                <thead>
+                    <tr><th>Fase</th><th>Hora Local</th><th>Altitud</th><th>Azimut</th></tr>
+                </thead>
+                <tbody id="mataro-contacts-tbody">
+                    <!-- Rellenado dinámicamente -->
+                </tbody>
+            </table>
+        </div>
+    </aside>
+
+    <!-- Barra Inferior del Reproductor Temporal -->
+    <div class="player-bar">
+        <div class="player-top-row">
+            <div class="player-phase-badge" id="player-phase-label">
+                <span style="color: var(--accent-blood);">🔴 Totalidad</span> · Luna de Sangre
+            </div>
+            <div class="player-time-display">
+                <span>UTC: <strong id="time-utc-text">18:11:43</strong></span>
+                <span>Hora Mataró: <strong id="time-local-text">20:11:43 CEST</strong></span>
+            </div>
+        </div>
+
+        <div class="player-slider-container">
+            <input type="range" class="player-slider" id="time-scrubber" min="0" max="1000" value="500" oninput="onScrubTimeline(this.value)">
+            <!-- Marcadores de Contacto superpuestos -->
+            <div class="contact-marker" id="marker-p1" title="P1: Inicio Penumbra"></div>
+            <div class="contact-marker" id="marker-u1" title="U1: Inicio Umbra (Parcial)"></div>
+            <div class="contact-marker tot" id="marker-u2" title="U2: Inicio Totalidad"></div>
+            <div class="contact-marker tot" id="marker-max" title="Máximo Eclipse" style="background: #fff; width: 3px;"></div>
+            <div class="contact-marker tot" id="marker-u3" title="U3: Fin Totalidad"></div>
+            <div class="contact-marker" id="marker-u4" title="U4: Fin Umbra"></div>
+            <div class="contact-marker" id="marker-p4" title="P4: Fin Penumbra"></div>
+        </div>
+
+        <div class="player-controls-row">
+            <div class="ctrl-btn-group">
+                <button class="ctrl-btn" onclick="stepTime(-900000)" title="Retroceder 15 min"><i class="fa-solid fa-backward"></i></button>
+                <button class="ctrl-btn" onclick="stepTime(-60000)" title="Retroceder 1 min"><i class="fa-solid fa-step-backward"></i></button>
+                <button class="ctrl-btn play-main" id="btn-play-pause" onclick="togglePlayPause()" title="Reproducir / Pausar"><i class="fa-solid fa-play"></i></button>
+                <button class="ctrl-btn" onclick="stepTime(60000)" title="Avanzar 1 min"><i class="fa-solid fa-step-forward"></i></button>
+                <button class="ctrl-btn" onclick="stepTime(900000)" title="Avanzar 15 min"><i class="fa-solid fa-forward"></i></button>
+                <select class="search-input" id="sim-speed-select" style="padding: 4px 8px; font-size: 0.75rem;" onchange="setSimSpeed(this.value)">
+                    <option value="1">1×</option>
+                    <option value="10">10×</option>
+                    <option value="60" selected>60× (1s = 1m)</option>
+                    <option value="300">300× (1s = 5m)</option>
+                    <option value="1200">1200×</option>
+                </select>
+            </div>
+
+            <!-- Botones de Salto Rápido a Contactos -->
+            <div class="jump-chips-group">
+                <button class="jump-chip" onclick="jumpToContact('p1')">P1</button>
+                <button class="jump-chip" id="chip-u1" onclick="jumpToContact('u1')">U1</button>
+                <button class="jump-chip" id="chip-u2" onclick="jumpToContact('u2')">U2</button>
+                <button class="jump-chip active" onclick="jumpToContact('max')">MÁX</button>
+                <button class="jump-chip" id="chip-u3" onclick="jumpToContact('u3')">U3</button>
+                <button class="jump-chip" id="chip-u4" onclick="jumpToContact('u4')">U4</button>
+                <button class="jump-chip" onclick="jumpToContact('p4')">P4</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPT PRINCIPAL DE LA APLICACIÓN -->
+    <script>
+        const MATARO_LAT = 41.54, MATARO_LON = 2.44, RAD = Math.PI / 180, DEG = 180 / Math.PI;
+
+        // Estado Global
+        let currentEclipse = null;
+        let simCurrentTimeMs = 0;
+        let simStartTimeMs = 0, simEndTimeMs = 0;
+        let isPlaying = false;
+        let simSpeedMultiplier = 60;
+        let lastFrameTimestamp = null;
+        let currentActiveView = 'telescopic'; // 'telescopic', '3d', 'map'
+
+        // Variables de Vista Telescópica 2D
+        let teleZoom = 1.0, telePanX = 0, telePanY = 0, isDraggingTele = false, dragStartX = 0, dragStartY = 0;
+
+        // Variables de Three.js 3D
+        let scene3D, camera3D, renderer3D, controls3D;
+        let earthMesh3D, moonMesh3D, umbraConeMesh3D, penumbraConeMesh3D, moonOrbitLine3D;
+
+        // Inicialización al cargar DOM
+        window.addEventListener('DOMContentLoaded', () => {
+            initEclipseCatalog();
+            initTelescopicCanvas();
+            initThreeJS();
+            initVisibilityMap();
+            
+            // Seleccionar por defecto el eclipse total de 7 Sep 2025
+            const defaultEc = NASA_LUNAR_ECLIPSES.find(e => e.dateStr === '2025-09-07') || NASA_LUNAR_ECLIPSES[0];
+            loadEclipse(defaultEc);
+
+            requestAnimationFrame(mainAnimationLoop);
+        });
+
+        // 1. Catálogo y Filtros
+        function initEclipseCatalog() {
+            filterEclipseList();
+        }
+
+        function filterEclipseList() {
+            const typeFilter = document.getElementById('filter-type').value;
+            const yearFilter = parseInt(document.getElementById('filter-year').value, 10);
+            const dropdown = document.getElementById('eclipse-select-dropdown');
+
+            const filtered = NASA_LUNAR_ECLIPSES.filter(e => {
+                if (typeFilter !== 'ALL' && e.type !== typeFilter) return false;
+                if (!isNaN(yearFilter) && e.year !== yearFilter) return false;
+                return true;
+            });
+
+            dropdown.innerHTML = filtered.map(e => `
+                <option value="${e.id}" ${currentEclipse && currentEclipse.id === e.id ? 'selected' : ''}>
+                    ${e.dateStr} · ${e.typeLabel} (Saros ${e.saros})
+                </option>
+            `).join('');
+
+            if (filtered.length > 0 && (!currentEclipse || !filtered.some(e => e.id === currentEclipse.id))) {
+                loadEclipse(filtered[0]);
+            }
+        }
+
+        function onSelectDropdownEclipse(id) {
+            const ec = NASA_LUNAR_ECLIPSES.find(e => e.id === id);
+            if (ec) loadEclipse(ec);
+        }
+
+        function selectPresetEclipse(dateStr) {
+            document.querySelectorAll('.preset-chip').forEach(c => c.classList.remove('active'));
+            const chip = Array.from(document.querySelectorAll('.preset-chip')).find(c => c.textContent.includes(dateStr));
+            if (chip) chip.classList.add('active');
+
+            const ec = NASA_LUNAR_ECLIPSES.find(e => e.dateStr === dateStr);
+            if (ec) loadEclipse(ec);
+        }
+
+        // Carga de un Eclipse
+        function loadEclipse(ec) {
+            currentEclipse = ec;
+
+            // Rango de tiempo de la simulación: desde P1 - 20min hasta P4 + 20min
+            simStartTimeMs = ec.p1Ms - 20 * 60000;
+            simEndTimeMs = ec.p4Ms + 20 * 60000;
+            simCurrentTimeMs = ec.maxMs; // Empezar en el Máximo
+
+            // Actualizar interfaz lateral
+            document.getElementById('stat-type').textContent = `${ec.typeLabel} (${ec.typeFull})`;
+            document.getElementById('stat-saros').textContent = ec.saros;
+            document.getElementById('stat-gamma').textContent = ec.gamma.toFixed(4);
+            document.getElementById('stat-um-mag').textContent = ec.umMag > 0 ? ec.umMag.toFixed(4) : '-- (Sin umbra)';
+            document.getElementById('stat-pen-mag').textContent = ec.penMag.toFixed(4);
+            document.getElementById('stat-tot-dur').textContent = ec.totDur > 0 ? `${ec.totDur.toFixed(1)} min` : '--';
+
+            // Habilitar/Deshabilitar botones de salto según si hay totalidad o parcialidad
+            document.getElementById('chip-u1').style.display = ec.u1Ms ? 'inline-block' : 'none';
+            document.getElementById('chip-u2').style.display = ec.u2Ms ? 'inline-block' : 'none';
+            document.getElementById('chip-u3').style.display = ec.u3Ms ? 'inline-block' : 'none';
+            document.getElementById('chip-u4').style.display = ec.u4Ms ? 'inline-block' : 'none';
+
+            // Marcadores en la barra de tiempo
+            positionTimelineMarker('marker-p1', ec.p1Ms);
+            positionTimelineMarker('marker-u1', ec.u1Ms);
+            positionTimelineMarker('marker-u2', ec.u2Ms);
+            positionTimelineMarker('marker-max', ec.maxMs);
+            positionTimelineMarker('marker-u3', ec.u3Ms);
+            positionTimelineMarker('marker-u4', ec.u4Ms);
+            positionTimelineMarker('marker-p4', ec.p4Ms);
+
+            // Calcular y renderizar circunstancias para Mataró
+            renderMataroCircumstances();
+
+            // Sincronizar 3D
+            update3DEclipseGeometry();
+
+            // Reset pan y zoom
+            teleZoom = 1.0; telePanX = 0; telePanY = 0;
+
+            updateTimeUI();
+        }
+
+        function positionTimelineMarker(elId, timeMs) {
+            const el = document.getElementById(elId);
+            if (!timeMs) { el.style.display = 'none'; return; }
+            el.style.display = 'block';
+            const pct = Math.max(0, Math.min(100, ((timeMs - simStartTimeMs) / (simEndTimeMs - simStartTimeMs)) * 100));
+            el.style.left = `${pct}%`;
+        }
+
+        // 2. Circunstancias Locales para Mataró
+        function getMoonHorizontalCoords(zenLat, zenLonMax, tMs, maxMs, obsLat = MATARO_LAT, obsLon = MATARO_LON) {
+            const dtHours = (tMs - maxMs) / 3600000;
+            const zenLon = zenLonMax - dtHours * 15.041;
+            const phi1 = obsLat * RAD, phi2 = zenLat * RAD;
+            const dLon = (obsLon - zenLon) * RAD;
+            const cosZ = Math.sin(phi1) * Math.sin(phi2) + Math.cos(phi1) * Math.cos(phi2) * Math.cos(dLon);
+            const z = Math.acos(Math.max(-1, Math.min(1, cosZ)));
+            const alt = (Math.PI / 2 - z) * DEG;
+
+            // Azimuth
+            const sinAz = Math.cos(phi2) * Math.sin(dLon) / Math.sin(z);
+            const cosAz = (Math.sin(phi2) - Math.sin(phi1) * Math.cos(z)) / (Math.cos(phi1) * Math.sin(z));
+            let az = Math.atan2(sinAz, cosAz) * DEG;
+            if (az < 0) az += 360;
+
+            return { alt, az };
+        }
+
+        function renderMataroCircumstances() {
+            const ec = currentEclipse;
+            const tbody = document.getElementById('mataro-contacts-tbody');
+            const contacts = [
+                { key: 'P1', name: 'Inicio Penumbra', ms: ec.p1Ms },
+                { key: 'U1', name: 'Inicio Umbra', ms: ec.u1Ms },
+                { key: 'U2', name: 'Inicio Total', ms: ec.u2Ms },
+                { key: 'MÁX', name: 'Máximo', ms: ec.maxMs },
+                { key: 'U3', name: 'Fin Total', ms: ec.u3Ms },
+                { key: 'U4', name: 'Fin Umbra', ms: ec.u4Ms },
+                { key: 'P4', name: 'Fin Penumbra', ms: ec.p4Ms }
+            ].filter(c => c.ms !== null);
+
+            let visibleCount = 0, totalVisible = false;
+            let rowsHtml = '';
+
+            contacts.forEach(c => {
+                const coords = getMoonHorizontalCoords(ec.zenLat, ec.zenLon, c.ms, ec.maxMs);
+                const isAbove = coords.alt > 0;
+                if (isAbove) visibleCount++;
+                if (c.key === 'MÁX' && isAbove && ec.type === 'T') totalVisible = true;
+
+                const localTimeStr = new Intl.DateTimeFormat('es-ES', { timeZone: 'Europe/Madrid', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).format(new Date(c.ms));
+
+                rowsHtml += `
+                    <tr id="row-contact-${c.key}">
+                        <td><strong>${c.key}</strong></td>
+                        <td>${localTimeStr}</td>
+                        <td style="color: ${isAbove ? 'var(--accent-green)' : 'var(--text-dim)'};">${coords.alt.toFixed(1)}°</td>
+                        <td>${coords.az.toFixed(0)}°</td>
+                    </tr>
+                `;
+            });
+
+            tbody.innerHTML = rowsHtml;
+
+            // Badge de visibilidad general
+            const badge = document.getElementById('mataro-vis-badge');
+            if (visibleCount === contacts.length) {
+                badge.className = 'mataro-vis-tag vis-full';
+                badge.innerHTML = '<i class="fa-solid fa-eye"></i> Visible Completo';
+            } else if (visibleCount > 0) {
+                const firstCoords = getMoonHorizontalCoords(ec.zenLat, ec.zenLon, contacts[0].ms, ec.maxMs);
+                if (firstCoords.alt <= 0) {
+                    badge.className = 'mataro-vis-tag vis-rise';
+                    badge.innerHTML = '<i class="fa-solid fa-moon"></i> Visible al Orto';
+                } else {
+                    badge.className = 'mataro-vis-tag vis-set';
+                    badge.innerHTML = '<i class="fa-solid fa-moon"></i> Visible al Ocaso';
+                }
+            } else {
+                badge.className = 'mataro-vis-tag vis-none';
+                badge.innerHTML = '<i class="fa-solid fa-eye-slash"></i> No Visible';
+            }
+        }
+
+        // 3. Motor de la Vista Telescópica 2D (Sombra y Luna)
+        function initTelescopicCanvas() {
+            const canvas = document.getElementById('canvas-telescopic');
+            window.addEventListener('resize', resizeTelescopicCanvas);
+            resizeTelescopicCanvas();
+
+            // Interacción de Zoom y Pan
+            canvas.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                const zoomFactor = e.deltaY < 0 ? 1.15 : 0.87;
+                teleZoom = Math.max(0.4, Math.min(6.0, teleZoom * zoomFactor));
+                renderTelescopicView();
+            }, { passive: false });
+
+            canvas.addEventListener('mousedown', (e) => {
+                isDraggingTele = true;
+                dragStartX = e.clientX - telePanX;
+                dragStartY = e.clientY - telePanY;
+            });
+
+            window.addEventListener('mousemove', (e) => {
+                if (!isDraggingTele) return;
+                telePanX = e.clientX - dragStartX;
+                telePanY = e.clientY - dragStartY;
+                renderTelescopicView();
+            });
+
+            window.addEventListener('mouseup', () => { isDraggingTele = false; });
+        }
+
+        function resizeTelescopicCanvas() {
+            const canvas = document.getElementById('canvas-telescopic');
+            if (!canvas) return;
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = window.innerWidth * dpr;
+            canvas.height = window.innerHeight * dpr;
+            renderTelescopicView();
+        }
+
+        // Geometría de Sombra y Posición Lunar Relativa
+        function getMoonShadowCoordsAtTime(tMs) {
+            const ec = currentEclipse;
+            const dtHours = (tMs - ec.maxMs) / 3600000;
+            
+            const rMoon = 1.0;
+            const rUmbra = 2.70;
+            const rPenumbra = 4.65;
+
+            const speed = 1.85;
+            const x = dtHours * speed;
+            const y = ec.gamma * rUmbra;
+
+            const dist = Math.sqrt(x * x + y * y);
+
+            return { x, y, dist, rMoon, rUmbra, rPenumbra };
+        }
+
+        function renderTelescopicView() {
+            const canvas = document.getElementById('canvas-telescopic');
+            if (!canvas || currentActiveView !== 'telescopic' || !currentEclipse) return;
+
+            const ctx = canvas.getContext('2d');
+            const dpr = window.devicePixelRatio || 1;
+            const w = canvas.width / dpr, h = canvas.height / dpr;
+
+            ctx.save();
+            ctx.scale(dpr, dpr);
+            ctx.clearRect(0, 0, w, h);
+
+            // Fondo de Espacio Profundo
+            ctx.fillStyle = "#050811";
+            ctx.fillRect(0, 0, w, h);
+
+            const cx = w / 2 + telePanX;
+            const cy = h / 2 + telePanY;
+            const baseScale = Math.min(w, h) * 0.11 * teleZoom;
+
+            ctx.translate(cx, cy);
+
+            const geo = getMoonShadowCoordsAtTime(simCurrentTimeMs);
+            const ruPx = geo.rUmbra * baseScale;
+            const rpPx = geo.rPenumbra * baseScale;
+            const rmPx = geo.rMoon * baseScale;
+
+            // 1. Ejes Celestes (N, S, E, O)
+            ctx.beginPath();
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.08)";
+            ctx.lineWidth = 1;
+            ctx.moveTo(-rpPx * 1.35, 0); ctx.lineTo(rpPx * 1.35, 0);
+            ctx.moveTo(0, -rpPx * 1.35); ctx.lineTo(0, rpPx * 1.35);
+            ctx.stroke();
+
+            ctx.font = "11px 'JetBrains Mono', monospace";
+            ctx.fillStyle = "rgba(255, 255, 255, 0.35)";
+            ctx.textAlign = "center";
+            ctx.fillText("N (Eclíptica)", 0, -rpPx * 1.4);
+            ctx.fillText("S", 0, rpPx * 1.45);
+            ctx.fillText("E", -rpPx * 1.45, 4);
+            ctx.fillText("O", rpPx * 1.45, 4);
+
+            // 2. Disco de la Penumbra Terrestre
+            const penGrad = ctx.createRadialGradient(0, 0, ruPx, 0, 0, rpPx);
+            penGrad.addColorStop(0, "rgba(25, 33, 56, 0.75)");
+            penGrad.addColorStop(0.7, "rgba(18, 25, 45, 0.45)");
+            penGrad.addColorStop(1, "rgba(10, 15, 30, 0)");
+            ctx.beginPath();
+            ctx.fillStyle = penGrad;
+            ctx.arc(0, 0, rpPx, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.strokeStyle = "rgba(147, 197, 253, 0.25)";
+            ctx.setLineDash([4, 4]);
+            ctx.arc(0, 0, rpPx, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // 3. Disco de la Umbra Terrestre
+            const umbGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, ruPx);
+            umbGrad.addColorStop(0, "#450a0a");
+            umbGrad.addColorStop(0.65, "#2a0505");
+            umbGrad.addColorStop(0.95, "#0d0202");
+            umbGrad.addColorStop(1, "rgba(0, 0, 0, 0.95)");
+
+            ctx.beginPath();
+            ctx.fillStyle = umbGrad;
+            ctx.arc(0, 0, ruPx, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.strokeStyle = "rgba(244, 63, 94, 0.6)";
+            ctx.lineWidth = 1.5;
+            ctx.arc(0, 0, ruPx, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Etiquetas de Umbra y Penumbra
+            ctx.fillStyle = "rgba(244, 63, 94, 0.85)";
+            ctx.font = "12px 'Outfit', sans-serif";
+            ctx.fillText("UMBRA", 0, -ruPx + 18);
+
+            ctx.fillStyle = "rgba(147, 197, 253, 0.7)";
+            ctx.fillText("PENUMBRA", 0, -rpPx + 18);
+
+            // 4. Trayectoria de la Luna a través de la sombra
+            ctx.beginPath();
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
+            ctx.lineWidth = 1;
+            ctx.setLineDash([3, 3]);
+            const yTraj = geo.y * baseScale;
+            ctx.moveTo(-rpPx * 1.35, yTraj);
+            ctx.lineTo(rpPx * 1.35, yTraj);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // 5. Renderizado de la Luna
+            const mx = geo.x * baseScale;
+            const my = geo.y * baseScale;
+
+            ctx.save();
+            ctx.translate(mx, my);
+
+            const distToCenter = geo.dist;
+            let shadowLevel = 0;
+
+            if (distToCenter < (geo.rUmbra - geo.rMoon)) {
+                shadowLevel = 2; // Totalidad
+            } else if (distToCenter < (geo.rUmbra + geo.rMoon)) {
+                shadowLevel = 1.5; // Parcial
+            } else if (distToCenter < (geo.rPenumbra + geo.rMoon)) {
+                shadowLevel = 1; // Penumbra
+            }
+
+            // Cuerpo Lunar base
+            ctx.beginPath();
+            ctx.arc(0, 0, rmPx, 0, Math.PI * 2);
+            ctx.fillStyle = "#e2e8f0";
+            ctx.fill();
+
+            // Textura superficial simulada
+            ctx.beginPath();
+            ctx.fillStyle = "rgba(71, 85, 105, 0.35)";
+            ctx.arc(-rmPx * 0.2, -rmPx * 0.15, rmPx * 0.35, 0, Math.PI * 2);
+            ctx.arc(rmPx * 0.25, -rmPx * 0.25, rmPx * 0.28, 0, Math.PI * 2);
+            ctx.arc(-rmPx * 0.1, rmPx * 0.3, rmPx * 0.4, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Capa de Sombra Dinámica
+            if (shadowLevel > 0) {
+                const angleToShadowCenter = Math.atan2(-my, -mx);
+                const sGrad = ctx.createLinearGradient(
+                    Math.cos(angleToShadowCenter) * rmPx,
+                    Math.sin(angleToShadowCenter) * rmPx,
+                    -Math.cos(angleToShadowCenter) * rmPx,
+                    -Math.sin(angleToShadowCenter) * rmPx
+                );
+
+                if (shadowLevel === 2) {
+                    sGrad.addColorStop(0, "rgba(225, 29, 72, 0.92)");
+                    sGrad.addColorStop(0.7, "rgba(153, 27, 27, 0.95)");
+                    sGrad.addColorStop(1, "rgba(69, 10, 10, 0.98)");
+                } else if (shadowLevel === 1.5) {
+                    sGrad.addColorStop(0, "rgba(15, 23, 42, 0.95)");
+                    sGrad.addColorStop(0.5, "rgba(185, 28, 28, 0.75)");
+                    sGrad.addColorStop(0.85, "rgba(0, 0, 0, 0.2)");
+                    sGrad.addColorStop(1, "rgba(255, 255, 255, 0)");
+                } else {
+                    sGrad.addColorStop(0, "rgba(15, 23, 42, 0.55)");
+                    sGrad.addColorStop(1, "rgba(255, 255, 255, 0)");
+                }
+
+                ctx.beginPath();
+                ctx.arc(0, 0, rmPx, 0, Math.PI * 2);
+                ctx.fillStyle = sGrad;
+                ctx.fill();
+            }
+
+            ctx.beginPath();
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
+            ctx.lineWidth = 1.2;
+            ctx.arc(0, 0, rmPx, 0, Math.PI * 2);
+            ctx.stroke();
+
+            ctx.restore();
+            ctx.restore();
+        }
+
+        // 4. Motor de la Vista Espacial 3D (Three.js)
+        function initThreeJS() {
+            const container = document.getElementById('webgl-container');
+            const w = window.innerWidth, h = window.innerHeight;
+
+            scene3D = new THREE.Scene();
+            camera3D = new THREE.PerspectiveCamera(45, w / h, 0.1, 1000);
+            camera3D.position.set(0, 45, 95);
+
+            renderer3D = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer3D.setSize(w, h);
+            renderer3D.setPixelRatio(window.devicePixelRatio || 1);
+            renderer3D.shadowMap.enabled = true;
+            container.appendChild(renderer3D.domElement);
+
+            controls3D = new THREE.OrbitControls(camera3D, renderer3D.domElement);
+            controls3D.enableDamping = true;
+            controls3D.dampingFactor = 0.05;
+
+            const sunLight = new THREE.DirectionalLight(0xffffff, 1.6);
+            sunLight.position.set(0, 0, 200);
+            scene3D.add(sunLight);
+
+            const ambientLight = new THREE.AmbientLight(0x1e293b, 0.35);
+            scene3D.add(ambientLight);
+
+            // Tierra 3D
+            const earthGeo = new THREE.SphereGeometry(6.37, 32, 32);
+            const earthMat = new THREE.MeshPhongMaterial({
+                color: 0x1d4ed8,
+                emissive: 0x07112c,
+                specular: 0x38bdf8,
+                shininess: 15
+            });
+            earthMesh3D = new THREE.Mesh(earthGeo, earthMat);
+            scene3D.add(earthMesh3D);
+
+            // Cono de Umbra
+            const umbraGeo = new THREE.ConeGeometry(5.2, 80, 32, 1, true);
+            umbraGeo.rotateX(-Math.PI / 2);
+            const umbraMat = new THREE.MeshBasicMaterial({
+                color: 0xe11d48,
+                transparent: true,
+                opacity: 0.28,
+                side: THREE.DoubleSide
+            });
+            umbraConeMesh3D = new THREE.Mesh(umbraGeo, umbraMat);
+            umbraConeMesh3D.position.set(0, 0, -40);
+            scene3D.add(umbraConeMesh3D);
+
+            // Cono de Penumbra
+            const penGeo = new THREE.ConeGeometry(9.8, 80, 32, 1, true);
+            penGeo.rotateX(-Math.PI / 2);
+            const penMat = new THREE.MeshBasicMaterial({
+                color: 0x38bdf8,
+                transparent: true,
+                opacity: 0.10,
+                side: THREE.DoubleSide
+            });
+            penumbraConeMesh3D = new THREE.Mesh(penGeo, penMat);
+            penumbraConeMesh3D.position.set(0, 0, -40);
+            scene3D.add(penumbraConeMesh3D);
+
+            // Luna 3D
+            const moonGeo = new THREE.SphereGeometry(1.74, 32, 32);
+            const moonMat = new THREE.MeshPhongMaterial({
+                color: 0xe2e8f0,
+                shininess: 5
+            });
+            moonMesh3D = new THREE.Mesh(moonGeo, moonMat);
+            scene3D.add(moonMesh3D);
+
+            // Línea de Órbita Lunar
+            const orbitCurve = new THREE.EllipseCurve(0, 0, 48, 48, 0, Math.PI * 2, false, 0);
+            const points = orbitCurve.getPoints(64);
+            const orbitGeo = new THREE.BufferGeometry().setFromPoints(points.map(p => new THREE.Vector3(p.x, 0, p.y)));
+            const orbitMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.15 });
+            moonOrbitLine3D = new THREE.Line(orbitGeo, orbitMat);
+            moonOrbitLine3D.rotation.x = Math.PI / 2 + 5.14 * RAD;
+            scene3D.add(moonOrbitLine3D);
+
+            window.addEventListener('resize', onWindowResize3D);
+        }
+
+        function onWindowResize3D() {
+            if (!camera3D || !renderer3D) return;
+            const w = window.innerWidth, h = window.innerHeight;
+            camera3D.aspect = w / h;
+            camera3D.updateProjectionMatrix();
+            renderer3D.setSize(w, h);
+        }
+
+        function update3DEclipseGeometry() {
+            if (!moonMesh3D || !currentEclipse) return;
+            const geo = getMoonShadowCoordsAtTime(simCurrentTimeMs);
+            
+            const angle = (geo.x / geo.rPenumbra) * 0.4;
+            const moonZ = -45 * Math.cos(angle);
+            const moonX = 45 * Math.sin(angle);
+            const moonY = geo.y * 3.2;
+
+            moonMesh3D.position.set(moonX, moonY, moonZ);
+
+            if (geo.dist < (geo.rUmbra - geo.rMoon)) {
+                moonMesh3D.material.color.setHex(0xe11d48);
+                moonMesh3D.material.emissive.setHex(0x450a0a);
+            } else if (geo.dist < (geo.rUmbra + geo.rMoon)) {
+                moonMesh3D.material.color.setHex(0xfb923c);
+                moonMesh3D.material.emissive.setHex(0x2a0505);
+            } else {
+                moonMesh3D.material.color.setHex(0xe2e8f0);
+                moonMesh3D.material.emissive.setHex(0x000000);
+            }
+        }
+
+        function set3DCameraPreset(preset) {
+            if (!camera3D || !controls3D) return;
+            if (preset === 'earthView') {
+                camera3D.position.set(0, 0, 8);
+                controls3D.target.set(moonMesh3D.position.x, moonMesh3D.position.y, moonMesh3D.position.z);
+            } else if (preset === 'sideView') {
+                camera3D.position.set(110, 15, -40);
+                controls3D.target.set(0, 0, -40);
+            } else if (preset === 'sunView') {
+                camera3D.position.set(0, 0, 130);
+                controls3D.target.set(0, 0, 0);
+            } else {
+                camera3D.position.set(0, 45, 95);
+                controls3D.target.set(0, 0, -20);
+            }
+            controls3D.update();
+        }
+
+        // 5. Mapa de Visibilidad Mundial
+        function initVisibilityMap() {
+            const canvas = document.getElementById('canvas-map');
+            window.addEventListener('resize', resizeMapCanvas);
+            resizeMapCanvas();
+        }
+
+        function resizeMapCanvas() {
+            const canvas = document.getElementById('canvas-map');
+            if (!canvas) return;
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = window.innerWidth * dpr;
+            canvas.height = window.innerHeight * dpr;
+            renderVisibilityMap();
+        }
+
+        function renderVisibilityMap() {
+            const canvas = document.getElementById('canvas-map');
+            if (!canvas || currentActiveView !== 'map' || !currentEclipse) return;
+
+            const ctx = canvas.getContext('2d');
+            const dpr = window.devicePixelRatio || 1;
+            const w = canvas.width / dpr, h = canvas.height / dpr;
+
+            ctx.save();
+            ctx.scale(dpr, dpr);
+            ctx.clearRect(0, 0, w, h);
+
+            ctx.fillStyle = "#0a1128";
+            ctx.fillRect(0, 0, w, h);
+
+            const mapW = Math.min(w * 0.85, 960);
+            const mapH = mapW * 0.5;
+            const ox = (w - mapW) / 2;
+            const oy = (h - mapH) / 2 - 20;
+
+            ctx.fillStyle = "#0c142b";
+            ctx.fillRect(ox, oy, mapW, mapH);
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.15)";
+            ctx.lineWidth = 1;
+            ctx.strokeRect(ox, oy, mapW, mapH);
+
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.05)";
+            for (let lon = -180; lon <= 180; lon += 30) {
+                const x = ox + ((lon + 180) / 360) * mapW;
+                ctx.beginPath(); ctx.moveTo(x, oy); ctx.lineTo(x, oy + mapH); ctx.stroke();
+            }
+            for (let lat = -90; lat <= 90; lat += 30) {
+                const y = oy + ((90 - lat) / 180) * mapH;
+                ctx.beginPath(); ctx.moveTo(ox, y); ctx.lineTo(ox + mapW, y); ctx.stroke();
+            }
+
+            const ec = currentEclipse;
+            const zenX = ox + ((ec.zenLon + 180) / 360) * mapW;
+            const zenY = oy + ((90 - ec.zenLat) / 180) * mapH;
+
+            const visGrad = ctx.createRadialGradient(zenX, zenY, mapH * 0.1, zenX, zenY, mapH * 0.52);
+            visGrad.addColorStop(0, "rgba(244, 63, 94, 0.25)");
+            visGrad.addColorStop(0.7, "rgba(56, 189, 248, 0.15)");
+            visGrad.addColorStop(1, "rgba(0, 0, 0, 0.5)");
+
+            ctx.fillStyle = visGrad;
+            ctx.beginPath();
+            ctx.arc(zenX, zenY, mapH * 0.52, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.fillStyle = "var(--accent-gold)";
+            ctx.arc(zenX, zenY, 6, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = "#fff";
+            ctx.stroke();
+
+            ctx.fillStyle = "#fff";
+            ctx.font = "11px 'Outfit', sans-serif";
+            ctx.textAlign = "center";
+            ctx.fillText("Punto Sublunar (Máx)", zenX, zenY - 10);
+
+            const mataroX = ox + ((MATARO_LON + 180) / 360) * mapW;
+            const mataroY = oy + ((90 - MATARO_LAT) / 180) * mapH;
+
+            ctx.beginPath();
+            ctx.fillStyle = "#38bdf8";
+            ctx.arc(mataroX, mataroY, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = "#fff";
+            ctx.stroke();
+
+            ctx.fillStyle = "#38bdf8";
+            ctx.font = "bold 11px 'Outfit', sans-serif";
+            ctx.fillText("📍 Mataró", mataroX + 24, mataroY + 4);
+
+            ctx.restore();
+        }
+
+        // 6. Ciclo de Animación y Controles Temporales
+        function mainAnimationLoop(timestamp) {
+            if (!lastFrameTimestamp) lastFrameTimestamp = timestamp;
+            const dtSec = (timestamp - lastFrameTimestamp) / 1000;
+            lastFrameTimestamp = timestamp;
+
+            if (isPlaying && currentEclipse) {
+                simCurrentTimeMs += dtSec * 1000 * simSpeedMultiplier;
+                if (simCurrentTimeMs > simEndTimeMs) {
+                    simCurrentTimeMs = simStartTimeMs;
+                }
+                updateTimeUI();
+            }
+
+            if (currentActiveView === 'telescopic') {
+                renderTelescopicView();
+            } else if (currentActiveView === '3d') {
+                update3DEclipseGeometry();
+                if (controls3D) controls3D.update();
+                if (renderer3D && scene3D && camera3D) renderer3D.render(scene3D, camera3D);
+            }
+
+            requestAnimationFrame(mainAnimationLoop);
+        }
+
+        function updateTimeUI() {
+            if (!currentEclipse) return;
+
+            const frac = Math.max(0, Math.min(1, (simCurrentTimeMs - simStartTimeMs) / (simEndTimeMs - simStartTimeMs)));
+            document.getElementById('time-scrubber').value = Math.round(frac * 1000);
+
+            const d = new Date(simCurrentTimeMs);
+            const utcTimeStr = d.toISOString().slice(11, 19);
+            const localTimeStr = new Intl.DateTimeFormat('es-ES', { timeZone: 'Europe/Madrid', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).format(d);
+
+            document.getElementById('time-utc-text').textContent = utcTimeStr;
+            document.getElementById('time-local-text').textContent = `${localTimeStr} CEST`;
+
+            const geo = getMoonShadowCoordsAtTime(simCurrentTimeMs);
+            const phaseLabel = document.getElementById('player-phase-label');
+            if (geo.dist < (geo.rUmbra - geo.rMoon)) {
+                phaseLabel.innerHTML = '<span style="color: var(--accent-blood);">🔴 Totalidad</span> · Luna de Sangre';
+            } else if (geo.dist < (geo.rUmbra + geo.rMoon)) {
+                phaseLabel.innerHTML = '<span style="color: var(--accent-gold);">🌗 Fase Parcial</span> · Inmersión en Umbra';
+            } else if (geo.dist < (geo.rPenumbra + geo.rMoon)) {
+                phaseLabel.innerHTML = '<span style="color: var(--accent-penumbra);">⚪ Fase Penumbral</span>';
+            } else {
+                phaseLabel.innerHTML = '<span style="color: var(--text-secondary);">🌕 Fuera de Sombra</span>';
+            }
+
+            document.querySelectorAll('#mataro-contacts-tbody tr').forEach(r => r.classList.remove('active'));
+            ['P1', 'U1', 'U2', 'MÁX', 'U3', 'U4', 'P4'].forEach(k => {
+                const targetMs = k === 'MÁX' ? currentEclipse.maxMs : currentEclipse[`${k.toLowerCase()}Ms`];
+                if (targetMs && Math.abs(simCurrentTimeMs - targetMs) < 120000) {
+                    const row = document.getElementById(`row-contact-${k}`);
+                    if (row) row.classList.add('active');
+                }
+            });
+        }
+
+        function onScrubTimeline(val) {
+            const frac = val / 1000;
+            simCurrentTimeMs = simStartTimeMs + frac * (simEndTimeMs - simStartTimeMs);
+            updateTimeUI();
+            if (currentActiveView === 'telescopic') renderTelescopicView();
+        }
+
+        function togglePlayPause() {
+            isPlaying = !isPlaying;
+            document.getElementById('btn-play-pause').innerHTML = isPlaying ? '<i class="fa-solid fa-pause"></i>' : '<i class="fa-solid fa-play"></i>';
+        }
+
+        function stepTime(deltaMs) {
+            simCurrentTimeMs = Math.max(simStartTimeMs, Math.min(simEndTimeMs, simCurrentTimeMs + deltaMs));
+            updateTimeUI();
+            if (currentActiveView === 'telescopic') renderTelescopicView();
+        }
+
+        function setSimSpeed(speed) {
+            simSpeedMultiplier = parseFloat(speed);
+        }
+
+        function jumpToContact(contactKey) {
+            if (!currentEclipse) return;
+            const ec = currentEclipse;
+            let targetMs = ec.maxMs;
+            if (contactKey === 'p1') targetMs = ec.p1Ms;
+            else if (contactKey === 'u1') targetMs = ec.u1Ms;
+            else if (contactKey === 'u2') targetMs = ec.u2Ms;
+            else if (contactKey === 'max') targetMs = ec.maxMs;
+            else if (contactKey === 'u3') targetMs = ec.u3Ms;
+            else if (contactKey === 'u4') targetMs = ec.u4Ms;
+            else if (contactKey === 'p4') targetMs = ec.p4Ms;
+
+            if (targetMs) {
+                simCurrentTimeMs = targetMs;
+                updateTimeUI();
+                if (currentActiveView === 'telescopic') renderTelescopicView();
+            }
+        }
+
+        // 7. Conmutación de Vistas (2D Telescópico, 3D, Mapa)
+        function switchMainView(view) {
+            currentActiveView = view;
+            document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.viewport-layer').forEach(l => l.classList.remove('active'));
+
+            document.getElementById(`btn-view-${view}`).classList.add('active');
+            document.getElementById(`layer-${view}`).classList.add('active');
+
+            document.getElementById('camera-presets-bar').style.display = view === '3d' ? 'flex' : 'none';
+
+            if (view === 'telescopic') resizeTelescopicCanvas();
+            else if (view === '3d') onWindowResize3D();
+            else if (view === 'map') resizeMapCanvas();
+        }
+
+        function toggleSidebar(show) {
+            const panel = document.getElementById('sidebar-panel');
+            const reopenBtn = document.getElementById('btn-reopen-sidebar');
+            if (show) {
+                panel.classList.remove('collapsed');
+                reopenBtn.style.display = 'none';
+            } else {
+                panel.classList.add('collapsed');
+                reopenBtn.style.display = 'flex';
+            }
+        }
+
+        // Exportar a iCalendar (.ics)
+        function exportSelectedEclipseToICal() {
+            if (!currentEclipse) return;
+            const ec = currentEclipse;
+            const start = new Date(ec.p1Ms);
+            const end = new Date(ec.p4Ms);
+            const pad = (n) => String(n).padStart(2, '0');
+            const format = (d) => `${d.getUTCFullYear()}${pad(d.getUTCMonth()+1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}00Z`;
+
+            const summary = `🌕 Eclipse Lunar ${ec.typeLabel} - Cosmos Mataró`;
+            const desc = `Eclipse Lunar ${ec.typeLabel} (Saros ${ec.saros}, Gamma ${ec.gamma.toFixed(2)}). Máximo: ${ec.timeTD} TD. Visible desde Mataró: ${document.getElementById('mataro-vis-badge').textContent}.`;
+
+            const icsData = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Cosmos Mataro//Lunar Eclipse Explorer//ES
+BEGIN:VEVENT
+UID:lunar-eclipse-${ec.id}@cosmosmataro.org
+DTSTAMP:${format(new Date())}
+DTSTART:${format(start)}
+DTEND:${format(end)}
+SUMMARY:${summary}
+DESCRIPTION:${desc}
+LOCATION:Mataró, España (41.54N, 2.44E)
+END:VEVENT
+END:VCALENDAR`;
+
+            const blob = new Blob([icsData], { type: 'text/calendar;charset=utf-8' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `Eclipse_Lunar_${ec.dateStr}.ics`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+</html>
