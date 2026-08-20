@@ -392,12 +392,37 @@
         }
 
         /* Cuadrícula de Calendario Mensual */
+        /* Cuadrícula de Calendario Mensual con Onda Continua */
         .calendar-section {
             background: var(--bg-surface);
             backdrop-filter: blur(16px);
             border: 1px solid var(--border-subtle);
             border-radius: var(--radius-lg);
             padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .calendar-legend-bar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            padding: 0.45rem 0.85rem;
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: var(--radius-sm);
+            font-size: 0.76rem;
+            color: var(--text-muted);
+        }
+
+        .calendar-legend-items {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 1rem;
         }
 
         .calendar-weekdays {
@@ -406,10 +431,10 @@
             gap: 6px;
             text-align: center;
             font-family: var(--font-main);
-            font-weight: 600;
+            font-weight: 700;
             font-size: 0.8rem;
             color: var(--text-dim);
-            padding-bottom: 0.75rem;
+            padding: 0.25rem 0;
             text-transform: uppercase;
             letter-spacing: 0.05em;
         }
@@ -421,45 +446,88 @@
         }
 
         .calendar-day {
-            background: rgba(20, 29, 48, 0.5);
+            background: #080d16;
             border: 1px solid var(--border-subtle);
             border-radius: var(--radius-sm);
-            min-height: 105px;
-            padding: 0.45rem;
+            min-height: 118px;
             display: flex;
             flex-direction: column;
-            gap: 0.3rem;
             transition: all 0.2s ease;
             position: relative;
+            overflow: hidden;
+            cursor: pointer;
         }
 
-        .calendar-day.empty {
-            background: transparent;
-            border-color: transparent;
+        .calendar-day.padding-day {
+            opacity: 0.45;
+            background: #04070e;
+        }
+
+        .calendar-day.padding-day:hover {
+            opacity: 0.8;
         }
 
         .calendar-day.today {
-            border-color: var(--primary);
-            box-shadow: inset 0 0 12px rgba(56, 189, 248, 0.15);
+            border-color: var(--primary) !important;
+            box-shadow: 0 0 12px rgba(56, 189, 248, 0.3) !important;
         }
 
-        .calendar-day:not(.empty):hover {
-            background: rgba(30, 42, 68, 0.7);
-            border-color: rgba(255, 255, 255, 0.2);
+        .calendar-day.selected {
+            border-color: var(--primary) !important;
+            box-shadow: inset 0 0 15px rgba(56, 189, 248, 0.25), 0 0 10px rgba(56, 189, 248, 0.25) !important;
+        }
+
+        .calendar-day:hover {
+            border-color: rgba(255, 255, 255, 0.35);
+            transform: translateY(-1px);
+        }
+
+        .day-curve-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+            display: block;
+        }
+
+        .day-content-wrapper {
+            position: relative;
+            z-index: 2;
+            padding: 0.35rem 0.45rem;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            pointer-events: auto;
+        }
+
+        .day-number-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.25rem;
         }
 
         .day-number {
             font-family: var(--font-mono);
-            font-size: 0.8rem;
-            font-weight: 600;
-            color: var(--text-muted);
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: #f1f5f9;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            gap: 0.35rem;
         }
 
-        .calendar-day.today .day-number {
-            color: var(--primary);
+        .day-badge-moon {
+            font-size: 0.7rem;
+            color: #cbd5e1;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+            display: flex;
+            align-items: center;
+            gap: 0.2rem;
         }
 
         .day-events {
@@ -472,23 +540,28 @@
         }
 
         .event-pill {
-            background: var(--pill-bg, rgba(56, 189, 248, 0.12));
+            background: rgba(15, 23, 42, 0.88);
+            backdrop-filter: blur(4px);
             border-left: 3px solid var(--pill-border, var(--primary));
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            border-right: 1px solid rgba(255, 255, 255, 0.08);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
             padding: 2px 5px;
             border-radius: 3px;
             font-size: 0.68rem;
             font-family: var(--font-body);
-            color: var(--pill-text, #fff);
+            color: #fff;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
             cursor: pointer;
             transition: transform 0.15s ease;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
         }
 
         .event-pill:hover {
             transform: scale(1.02);
-            filter: brightness(1.15);
+            filter: brightness(1.2);
         }
 
         /* Vista de Lista / Agenda Anual */
@@ -1100,6 +1173,16 @@
             </div>
         </section>
         <section class="calendar-section" id="calendar-view">
+            <div class="calendar-legend-bar">
+                <div class="calendar-legend-items">
+                    <span style="display: flex; align-items: center; gap: 0.35rem; color: #fff; font-weight: 600;"><i class="fa-solid fa-water" style="color: var(--primary);"></i> Ondas Celestes Semanales:</span>
+                    <span style="display: flex; align-items: center; gap: 0.35rem;"><span style="display: inline-block; width: 14px; height: 3px; background: #facc15; border-radius: 2px;"></span> Sol (00h a 24h)</span>
+                    <span style="display: flex; align-items: center; gap: 0.35rem;"><span style="display: inline-block; width: 14px; height: 3px; background: #f43f5e; border-radius: 2px;"></span> Luna (altura y fase)</span>
+                    <span style="display: flex; align-items: center; gap: 0.35rem;"><span style="display: inline-block; width: 14px; height: 2px; border-top: 2px dashed #22c55e;"></span> Horizonte (0°)</span>
+                    <span style="display: flex; align-items: center; gap: 0.35rem;"><span style="display: inline-block; width: 10px; height: 10px; background: #050811; border: 1px solid rgba(255,255,255,0.2); border-radius: 2px;"></span> Noche Oscura</span>
+                </div>
+                <span style="font-size: 0.72rem; color: var(--text-dim);"><i class="fa-solid fa-hand-pointer"></i> Haz clic en un día para ver su gráfica 24h</span>
+            </div>
             <div class="calendar-weekdays">
                 <div>Lun</div>
                 <div>Mar</div>
@@ -1589,21 +1672,241 @@
             }).join('');
         }
 
-        function renderCalendar() {
-            const daysContainer = document.getElementById('calendar-days-container'), monthLabel = document.getElementById('current-month-label'), events = getParsedEvents();
-            monthLabel.textContent = `${["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"][currentMonth]} ${currentYear}`;
-            const startOffset = (new Date(currentYear, currentMonth, 1).getDay() + 6) % 7, daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-            const today = new Date(), isCurrentMonth = today.getFullYear() === currentYear && today.getMonth() === currentMonth;
-            const isSelectedMonth = selectedChartDate.getFullYear() === currentYear && selectedChartDate.getMonth() === currentMonth;
-            let html = Array(startOffset).fill('<div class="calendar-day empty"></div>').join('');
-            for (let day = 1; day <= daysInMonth; day++) {
-                const dayEventsList = events.filter(e => e.local.yearLocal === currentYear && e.local.monthLocal === currentMonth && e.local.dayLocal === day && (currentFilter === 'all' || e.category === currentFilter));
-                html += `<div class="calendar-day ${isCurrentMonth && day === today.getDate() ? 'today' : ''} ${isSelectedMonth && day === selectedChartDate.getDate() ? 'selected' : ''}" onclick="selectCalendarDay(${currentYear}, ${currentMonth}, ${day})">
-                            <div class="day-number"><span>${day}</span>${isCurrentMonth && day === today.getDate() ? '<span style="font-size: 0.65rem; color: var(--primary);">HOY</span>' : (isSelectedMonth && day === selectedChartDate.getDate() ? '<span style="font-size: 0.65rem; color: var(--primary);"><i class="fa-solid fa-chart-line"></i></span>' : '')}</div>
-                            <div class="day-events">${dayEventsList.map(e => `<div class="event-pill" style="--pill-bg: ${e.color}22; --pill-border: ${e.color};" onclick="openEventModal(${e.jd}, ${e.typeCode}); event.stopPropagation();" title="${e.name} (${e.local.timeOnly})">${e.icon} ${e.name}</div>`).join('')}</div>
-                        </div>`;
+        // Cálculo de muestras cada hora (00:00 a 24:00 local) para las ondas continuas del día
+        function computeDay24hSamples(year, month, day, lat = MATARO_LAT, lon = MATARO_LON, steps = 24) {
+            const startMs = new Date(year, month, day, 0, 0, 0).getTime();
+            const res = [];
+            let maxMoonAlt = -999, maxMoonIdx = 0;
+            for (let i = 0; i <= steps; i++) {
+                const t = new Date(startMs + (i / steps) * 86400000);
+                const jd = (t.getTime() / 86400000) + 2440587.5;
+                const sPos = getSunPos(jd);
+                const mPos = getMoonPos(jd);
+                const sAlt = getAltAz(sPos.ra, sPos.dec, jd, lat, lon).alt;
+                const mAlt = getAltAz(mPos.ra, mPos.dec, jd, lat, lon).alt;
+                if (mAlt > maxMoonAlt) {
+                    maxMoonAlt = mAlt;
+                    maxMoonIdx = i;
+                }
+                res.push({ frac: i / steps, sAlt, mAlt, mIllum: mPos.illum });
             }
+            return { samples: res, maxMoonAlt, maxMoonFrac: maxMoonIdx / steps, moonIllum: res[maxMoonIdx].mIllum };
+        }
+
+        let currentCalendarCells = [];
+
+        function renderCalendar() {
+            const daysContainer = document.getElementById('calendar-days-container');
+            const monthLabel = document.getElementById('current-month-label');
+            const events = getParsedEvents();
+
+            const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+            monthLabel.textContent = `${monthNames[currentMonth]} ${currentYear}`;
+
+            const firstDayIndex = new Date(currentYear, currentMonth, 1).getDay();
+            const startOffset = (firstDayIndex + 6) % 7;
+            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+            const prevDaysInMonth = new Date(currentYear, currentMonth, 0).getDate();
+            const totalCells = Math.ceil((startOffset + daysInMonth) / 7) * 7;
+
+            const today = new Date();
+            const isCurrentYearMonth = today.getFullYear() === currentYear && today.getMonth() === currentMonth;
+            const todayDay = today.getDate();
+
+            const isSelectedYearMonth = selectedChartDate.getFullYear() === currentYear && selectedChartDate.getMonth() === currentMonth;
+            const selectedDay = isSelectedYearMonth ? selectedChartDate.getDate() : -1;
+
+            let html = '';
+            currentCalendarCells = [];
+
+            for (let k = 0; k < totalCells; k++) {
+                let cellYear = currentYear;
+                let cellMonth = currentMonth;
+                let cellDay = 1;
+                let isPadding = false;
+
+                if (k < startOffset) {
+                    isPadding = true;
+                    cellMonth = currentMonth - 1;
+                    if (cellMonth < 0) {
+                        cellMonth = 11;
+                        cellYear = currentYear - 1;
+                    }
+                    cellDay = prevDaysInMonth - startOffset + 1 + k;
+                } else if (k >= startOffset + daysInMonth) {
+                    isPadding = true;
+                    cellMonth = currentMonth + 1;
+                    if (cellMonth > 11) {
+                        cellMonth = 0;
+                        cellYear = currentYear + 1;
+                    }
+                    cellDay = k - (startOffset + daysInMonth) + 1;
+                } else {
+                    cellDay = k - startOffset + 1;
+                }
+
+                currentCalendarCells.push({ k, year: cellYear, month: cellMonth, day: cellDay, isPadding });
+
+                const isToday = isCurrentYearMonth && !isPadding && cellDay === todayDay;
+                const isSelected = isSelectedYearMonth && !isPadding && cellDay === selectedDay;
+
+                const dayEventsList = events.filter(e => {
+                    const match = e.local.yearLocal === cellYear && e.local.monthLocal === cellMonth && e.local.dayLocal === cellDay;
+                    if (!match) return false;
+                    if (currentFilter === 'all') return true;
+                    return e.category === currentFilter;
+                });
+
+                const eventsHtml = dayEventsList.map(e => `
+                    <div class="event-pill" style="--pill-bg: ${e.color}22; --pill-border: ${e.color};" onclick="openEventModal(${e.jd}, ${e.typeCode}); event.stopPropagation();" title="${e.name} (${e.local.timeOnly})">
+                        ${e.icon} ${e.name}
+                    </div>
+                `).join('');
+
+                html += `
+                    <div class="calendar-day ${isPadding ? 'padding-day' : ''} ${isToday ? 'today' : ''} ${isSelected ? 'selected' : ''}" onclick="selectCalendarDay(${cellYear}, ${cellMonth}, ${cellDay})">
+                        <canvas class="day-curve-canvas" id="canvas-day-wave-${k}"></canvas>
+                        <div class="day-content-wrapper">
+                            <div class="day-number-row">
+                                <span class="day-number">${cellDay} ${isToday ? '<span style="font-size: 0.62rem; color: var(--primary);">HOY</span>' : (isSelected ? '<span style="font-size: 0.62rem; color: var(--primary);"><i class="fa-solid fa-chart-line"></i></span>' : '')}</span>
+                                <span class="day-badge-moon" id="moon-badge-${k}"></span>
+                            </div>
+                            <div class="day-events">
+                                ${eventsHtml}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
             daysContainer.innerHTML = html;
+
+            requestAnimationFrame(() => {
+                drawAllCalendarWaves(currentCalendarCells);
+            });
+        }
+
+        // Dibujar las ondas celestes continuas semana a semana
+        function drawAllCalendarWaves(cellDateList) {
+            const dpr = window.devicePixelRatio || 1;
+            const steps = 24;
+
+            cellDateList.forEach(item => {
+                const canvas = document.getElementById(`canvas-day-wave-${item.k}`);
+                if (!canvas) return;
+                const parent = canvas.parentElement;
+                const rect = parent.getBoundingClientRect();
+                const w = rect.width;
+                const h = rect.height;
+                if (w === 0 || h === 0) return;
+
+                canvas.width = w * dpr;
+                canvas.height = h * dpr;
+
+                const ctx = canvas.getContext('2d');
+                ctx.scale(dpr, dpr);
+
+                const dayData = computeDay24hSamples(item.year, item.month, item.day, MATARO_LAT, MATARO_LON, steps);
+                const samples = dayData.samples;
+
+                // Mapeo vertical de elevación: +90° = Cenit (y = 0.12*h), 0° = Horizonte (y = 0.58*h), -90° = Nadir (y = 1.04*h)
+                const altToY = (alt) => h * (0.58 - (alt / 90) * 0.46);
+                const fracToX = (frac) => frac * w;
+
+                // 1. Franjas crepusculares suaves de fondo
+                const stepW = w / steps;
+                for (let i = 0; i < steps; i++) {
+                    const sAlt = samples[i].sAlt;
+                    const x1 = i * stepW;
+                    const x2 = (i + 1) * stepW;
+
+                    let bgCol = "rgba(4, 7, 14, 0.95)";
+                    if (sAlt > 0) {
+                        bgCol = "rgba(22, 44, 74, 0.38)";
+                    } else if (sAlt > -6) {
+                        bgCol = "rgba(180, 83, 9, 0.22)";
+                    } else if (sAlt > -12) {
+                        bgCol = "rgba(67, 56, 202, 0.22)";
+                    } else if (sAlt > -18) {
+                        bgCol = "rgba(30, 27, 75, 0.32)";
+                    }
+
+                    ctx.fillStyle = bgCol;
+                    ctx.fillRect(x1, 0, (x2 - x1) + 0.5, h);
+                }
+
+                // 2. Línea del Horizonte (0°)
+                const horizY = altToY(0);
+                ctx.beginPath();
+                ctx.strokeStyle = "rgba(34, 197, 94, 0.40)";
+                ctx.lineWidth = 1;
+                ctx.setLineDash([3, 3]);
+                ctx.moveTo(0, horizY);
+                ctx.lineTo(w, horizY);
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                // 3. Onda Amarilla del Sol (00h a 24h)
+                ctx.beginPath();
+                ctx.strokeStyle = "#facc15";
+                ctx.lineWidth = 2.0;
+                ctx.shadowColor = "rgba(250, 204, 21, 0.5)";
+                ctx.shadowBlur = 3;
+                samples.forEach((s, idx) => {
+                    const x = fracToX(s.frac);
+                    const y = altToY(s.sAlt);
+                    if (idx === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                });
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+
+                // 4. Onda Coral de la Luna (00h a 24h)
+                ctx.beginPath();
+                ctx.strokeStyle = "#f43f5e";
+                ctx.lineWidth = 1.7;
+                ctx.shadowColor = "rgba(244, 63, 94, 0.45)";
+                ctx.shadowBlur = 3;
+                samples.forEach((s, idx) => {
+                    const x = fracToX(s.frac);
+                    const y = altToY(s.mAlt);
+                    if (idx === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                });
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+
+                // 5. Marcador de Culminación Lunar
+                if (dayData.maxMoonAlt > -90) {
+                    const cx = fracToX(dayData.maxMoonFrac);
+                    const cy = altToY(dayData.maxMoonAlt);
+
+                    ctx.beginPath();
+                    ctx.fillStyle = "rgba(244, 63, 94, 0.35)";
+                    ctx.arc(cx, cy, 5, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    ctx.beginPath();
+                    ctx.fillStyle = "#ffffff";
+                    ctx.strokeStyle = "#f43f5e";
+                    ctx.lineWidth = 1.5;
+                    ctx.arc(cx, cy, 2.5, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.stroke();
+                }
+
+                // Actualizar badge lunar del día
+                const badge = document.getElementById(`moon-badge-${item.k}`);
+                if (badge) {
+                    const illum = dayData.moonIllum.toFixed(0);
+                    let phaseIcon = "🌑";
+                    if (illum > 90) phaseIcon = "🌕";
+                    else if (illum > 60) phaseIcon = "🌔";
+                    else if (illum > 35) phaseIcon = "🌓";
+                    else if (illum > 10) phaseIcon = "🌒";
+                    badge.innerHTML = `<span title="Iluminación lunar: ${illum}%">${phaseIcon} ${illum}%</span>`;
+                }
+            });
         }
 
         function renderList() {
@@ -1643,6 +1946,12 @@
                 document.body.style.background = 'transparent'; document.querySelector('.app-container').style.padding = '0.5rem';
             }
             renderTicker(); renderCalendar(); setupCanvasHover(); renderAltitudeChart();
+        });
+
+        window.addEventListener('resize', () => {
+            if (currentCalendarCells && currentCalendarCells.length > 0) {
+                drawAllCalendarWaves(currentCalendarCells);
+            }
         });
     </script>
 </body>
