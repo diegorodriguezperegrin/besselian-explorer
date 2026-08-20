@@ -765,6 +765,191 @@
             border-top: 1px solid var(--border-subtle);
         }
 
+        /* Sección Gráfico de Visibilidad y Altura (Estilo Telescopius) */
+        .night-chart-section {
+            background: var(--bg-surface);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            position: relative;
+        }
+
+        .chart-header {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .chart-title {
+            font-family: var(--font-heading);
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .chart-day-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .chart-day-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-main);
+            padding: 0.35rem 0.65rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .chart-day-btn:hover {
+            background: rgba(56, 189, 248, 0.15);
+            border-color: var(--primary);
+            color: #fff;
+        }
+
+        .chart-date-badge {
+            font-family: var(--font-heading);
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--primary);
+            min-width: 130px;
+            text-align: center;
+        }
+
+        .chart-canvas-container {
+            width: 100%;
+            height: 190px;
+            background: #080c14;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--radius-md);
+            position: relative;
+            overflow: hidden;
+            touch-action: none;
+            cursor: crosshair;
+        }
+
+        #sky-altitude-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .chart-hover-overlay {
+            position: absolute;
+            bottom: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(15, 23, 42, 0.92);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(56, 189, 248, 0.35);
+            border-radius: 20px;
+            padding: 4px 14px;
+            font-size: 0.75rem;
+            color: #f8fafc;
+            pointer-events: none;
+            white-space: nowrap;
+            display: none;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            z-index: 10;
+        }
+
+        .chart-legend {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 1.25rem;
+            font-size: 0.76rem;
+            color: var(--text-muted);
+            padding-top: 0.25rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .legend-bar {
+            width: 18px;
+            height: 8px;
+            border-radius: 2px;
+        }
+
+        .chart-ephem-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 0.75rem;
+        }
+
+        .ephem-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
+            padding: 0.75rem 0.9rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+
+        .ephem-card-title {
+            font-family: var(--font-heading);
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .ephem-card-values {
+            display: flex;
+            flex-direction: column;
+            gap: 0.2rem;
+            font-size: 0.78rem;
+        }
+
+        .ephem-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .ephem-label {
+            color: var(--text-dim);
+        }
+
+        .ephem-val {
+            font-family: var(--font-mono);
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .calendar-day.selected {
+            border-color: var(--primary) !important;
+            background: rgba(56, 189, 248, 0.15) !important;
+            box-shadow: 0 0 12px rgba(56, 189, 248, 0.25);
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .app-header {
@@ -792,6 +977,9 @@
             .event-pill {
                 font-size: 0.6rem;
                 padding: 1px 3px;
+            }
+            .chart-canvas-container {
+                height: 160px;
             }
         }
     </style>
@@ -853,7 +1041,64 @@
             </div>
         </div>
 
-        <!-- Vista de Calendario Mensual -->
+        <!-- Sección Gráfico de Visibilidad y Altura (Estilo Telescopius) -->
+        <section class="night-chart-section" id="night-chart-section">
+            <div class="chart-header">
+                <div class="chart-title">
+                    <span><i class="fa-solid fa-chart-area" style="color: var(--primary);"></i> Visibilidad Nocturna y Alturas (Sol y Luna)</span>
+                </div>
+                <div class="chart-day-controls">
+                    <button class="chart-day-btn" onclick="navigateChartDay(-1)" title="Día anterior">◀ Anterior</button>
+                    <span class="chart-date-badge" id="chart-date-label">20 Ago 2026</span>
+                    <button class="chart-day-btn" onclick="navigateChartDay(1)" title="Día siguiente">Siguiente ▶</button>
+                    <button class="chart-day-btn" onclick="navigateChartToday()" title="Ir a hoy">Hoy</button>
+                </div>
+            </div>
+
+            <div class="chart-canvas-container" id="chart-canvas-wrapper">
+                <canvas id="sky-altitude-canvas"></canvas>
+                <div class="chart-hover-overlay" id="chart-hover-overlay">--:-- · Altitud: --°</div>
+            </div>
+
+            <div class="chart-legend">
+                <div class="legend-item"><span class="legend-dot" style="background: #facc15;"></span> Sol</div>
+                <div class="legend-item"><span class="legend-dot" style="background: #f43f5e;"></span> Luna</div>
+                <div class="legend-item"><span class="legend-bar" style="background: #1e3a5f;"></span> Día</div>
+                <div class="legend-item"><span class="legend-bar" style="background: #d97706;"></span> Crepúsculo Civil (0° a -6°)</div>
+                <div class="legend-item"><span class="legend-bar" style="background: #4338ca;"></span> Náutico (-6° a -12°)</div>
+                <div class="legend-item"><span class="legend-bar" style="background: #1e1b4b;"></span> Astronómico (-12° a -18°)</div>
+                <div class="legend-item"><span class="legend-bar" style="background: #050811; border: 1px solid rgba(255,255,255,0.2);"></span> Noche Oscura (&lt;-18°)</div>
+            </div>
+
+            <div class="chart-ephem-grid">
+                <div class="ephem-card">
+                    <div class="ephem-card-title"><i class="fa-solid fa-sun" style="color: #facc15;"></i> Sol en Mataró</div>
+                    <div class="ephem-card-values">
+                        <div class="ephem-row"><span class="ephem-label">Puesta (Ocaso):</span> <span class="ephem-val" id="ephem-sunset">--:-- h</span></div>
+                        <div class="ephem-row"><span class="ephem-label">Salida (Amanecer):</span> <span class="ephem-val" id="ephem-sunrise">--:-- h</span></div>
+                        <div class="ephem-row"><span class="ephem-label">Mediodía / Máx. Alt:</span> <span class="ephem-val" id="ephem-sunmax">--:-- h (--°)</span></div>
+                    </div>
+                </div>
+
+                <div class="ephem-card">
+                    <div class="ephem-card-title"><i class="fa-solid fa-moon" style="color: #f43f5e;"></i> Luna en Mataró</div>
+                    <div class="ephem-card-values">
+                        <div class="ephem-row"><span class="ephem-label">Fase e Iluminación:</span> <span class="ephem-val" id="ephem-moon-illum">--%</span></div>
+                        <div class="ephem-row"><span class="ephem-label">Salida / Puesta:</span> <span class="ephem-val" id="ephem-moon-rise-set">--:-- / --:--</span></div>
+                        <div class="ephem-row"><span class="ephem-label">Culminación (Máx. Alt):</span> <span class="ephem-val" id="ephem-moon-culm">--:-- h (--°)</span></div>
+                    </div>
+                </div>
+
+                <div class="ephem-card">
+                    <div class="ephem-card-title"><i class="fa-solid fa-star-and-crescent" style="color: var(--primary);"></i> Ventana de Noche Oscura</div>
+                    <div class="ephem-card-values">
+                        <div class="ephem-row"><span class="ephem-label">Inicio noche (&lt;-18°):</span> <span class="ephem-val" id="ephem-dark-start">--:-- h</span></div>
+                        <div class="ephem-row"><span class="ephem-label">Fin noche (&lt;-18°):</span> <span class="ephem-val" id="ephem-dark-end">--:-- h</span></div>
+                        <div class="ephem-row"><span class="ephem-label">Duración oscuridad:</span> <span class="ephem-val" id="ephem-dark-dur" style="color: var(--accent-emerald);">-- h -- min</span></div>
+                    </div>
+                </div>
+            </div>
+        </section>
         <section class="calendar-section" id="calendar-view">
             <div class="calendar-weekdays">
                 <div>Lun</div>
@@ -1131,7 +1376,6 @@
                 };
 
                 let name = info.name;
-                // Si es elongación de Mercurio/Venus, añadir los grados
                 if ((typeCode === 35 || typeCode === 36 || typeCode === 37 || typeCode === 38) && param !== 0) {
                     name += ` (${Math.abs(param / 10).toFixed(1)}°)`;
                 }
@@ -1154,271 +1398,251 @@
             });
         }
 
-        // Renderizar Ticker de Próximos Eventos
-        function renderTicker() {
-            const container = document.getElementById('ticker-container');
-            const events = getParsedEvents();
-            const now = new Date();
-            const nowMs = now.getTime();
-            const maxMs = nowMs + 15 * 86400000; // 15 días adelante
+        // Constantes astronómicas para Mataró
+        const MATARO_LAT = 41.54;
+        const MATARO_LON = 2.44;
+        const RAD = Math.PI / 180;
+        const DEG = 180 / Math.PI;
 
-            const upcoming = events.filter(e => {
-                const t = e.dateObj.getTime();
-                return t >= (nowMs - 86400000 * 0.5) && t <= maxMs;
-            }).slice(0, 8);
+        function normalizeDeg(d) {
+            d = d % 360;
+            return d < 0 ? d + 360 : d;
+        }
 
-            if (upcoming.length === 0) {
-                container.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 1rem;">No hay eventos destacados en los próximos 15 días.</div>`;
-                return;
+        function getSunPos(jd) {
+            const T = (jd - 2451545.0) / 36525;
+            const L0 = normalizeDeg(280.46646 + 36000.76983 * T);
+            const M = normalizeDeg(357.52911 + 35999.05029 * T) * RAD;
+            const C = (1.914602 - 0.004817 * T) * Math.sin(M) + (0.019993 - 0.000101 * T) * Math.sin(2 * M) + 0.000289 * Math.sin(3 * M);
+            const sunLon = normalizeDeg(L0 + C) * RAD;
+            const eps = (23.439291 - 0.0130042 * T) * RAD;
+            const ra = Math.atan2(Math.cos(eps) * Math.sin(sunLon), Math.cos(sunLon));
+            const dec = Math.asin(Math.sin(eps) * Math.sin(sunLon));
+            return { ra: normalizeDeg(ra * DEG), dec: dec * DEG };
+        }
+
+        function getMoonPos(jd) {
+            const T = (jd - 2451545.0) / 36525;
+            const Lprime = normalizeDeg(218.3164477 + 481267.88123421 * T);
+            const D = normalizeDeg(297.8501921 + 445267.1114034 * T) * RAD;
+            const M = normalizeDeg(357.5291092 + 35999.0502909 * T) * RAD;
+            const Mprime = normalizeDeg(134.9633964 + 477198.8675055 * T) * RAD;
+            const F = normalizeDeg(93.2720950 + 483202.0175233 * T) * RAD;
+            const dLon = 6.288774 * Math.sin(Mprime) + 1.274027 * Math.sin(2 * D - Mprime) + 0.658309 * Math.sin(2 * D) + 0.213618 * Math.sin(2 * Mprime) - 0.185116 * Math.sin(M) - 0.114332 * Math.sin(2 * F) + 0.058793 * Math.sin(2 * D - 2 * Mprime) + 0.057066 * Math.sin(2 * D - M - Mprime) + 0.053322 * Math.sin(2 * D + Mprime) + 0.045758 * Math.sin(2 * D - M);
+            const dLat = 5.128122 * Math.sin(F) + 0.280602 * Math.sin(Mprime + F) + 0.277693 * Math.sin(F - Mprime) + 0.173238 * Math.sin(2 * D - F);
+            const moonLon = normalizeDeg(Lprime + dLon) * RAD;
+            const moonLat = dLat * RAD;
+            const eps = (23.439291 - 0.0130042 * T) * RAD;
+            const sinDec = Math.sin(moonLat) * Math.cos(eps) + Math.cos(moonLat) * Math.sin(eps) * Math.sin(moonLon);
+            const dec = Math.asin(sinDec);
+            const y = Math.cos(moonLat) * Math.cos(eps) * Math.sin(moonLon) - Math.sin(moonLat) * Math.sin(eps);
+            const x = Math.cos(moonLat) * Math.cos(moonLon);
+            const ra = Math.atan2(y, x);
+            const phaseAngle = Math.acos(-Math.cos(D));
+            const illum = (1 + Math.cos(phaseAngle)) / 2;
+            return { ra: normalizeDeg(ra * DEG), dec: dec * DEG, illum: illum * 100 };
+        }
+
+        function getAltAz(ra, dec, jd, lat, lon) {
+            const GMST = normalizeDeg(280.46061837 + 360.98564736629 * (jd - 2451545.0));
+            const LST = normalizeDeg(GMST + lon);
+            const H = (LST - ra) * RAD;
+            const phi = lat * RAD;
+            const delta = dec * RAD;
+            const sinAlt = Math.sin(phi) * Math.sin(delta) + Math.cos(phi) * Math.cos(delta) * Math.cos(H);
+            const alt = Math.asin(Math.max(-1, Math.min(1, sinAlt))) * DEG;
+            const cosAz = (Math.sin(delta) - Math.sin(phi) * Math.sin(alt * RAD)) / (Math.cos(phi) * Math.cos(alt * RAD) || 1e-6);
+            let az = Math.acos(Math.max(-1, Math.min(1, cosAz))) * DEG;
+            if (Math.sin(H) > 0) az = 360 - az;
+            return { alt, az };
+        }
+
+        function computeDayEphemeris(targetDate, lat = MATARO_LAT, lon = MATARO_LON) {
+            const y = targetDate.getFullYear(), m = targetDate.getMonth(), d = targetDate.getDate();
+            const noonLocal = new Date(y, m, d, 12, 0, 0);
+            const startMs = noonLocal.getTime();
+            const samples = [], numSteps = 288;
+            let sunSet = null, astroDusk = null, astroDawn = null, sunRise = null, moonRise = null, moonSet = null;
+            let moonCulm = { alt: -999, time: null, az: 0, illum: 0 }, sunMax = { alt: -999, time: null }, prevSunAlt = null, prevMoonAlt = null;
+            for (let i = 0; i <= numSteps; i++) {
+                const tDate = new Date(startMs + i * 5 * 60000);
+                const jd = (tDate.getTime() / 86400000) + 2440587.5;
+                const sPos = getSunPos(jd), mPos = getMoonPos(jd);
+                const sAltAz = getAltAz(sPos.ra, sPos.dec, jd, lat, lon), mAltAz = getAltAz(mPos.ra, mPos.dec, jd, lat, lon);
+                const sAlt = sAltAz.alt, mAlt = mAltAz.alt;
+                if (mAlt > moonCulm.alt) moonCulm = { alt: mAlt, time: tDate, az: mAltAz.az, illum: mPos.illum };
+                if (sAlt > sunMax.alt) sunMax = { alt: sAlt, time: tDate };
+                if (prevSunAlt !== null) {
+                    if (prevSunAlt >= -0.833 && sAlt < -0.833 && !sunSet) sunSet = tDate;
+                    if (prevSunAlt >= -18.0 && sAlt < -18.0 && !astroDusk) astroDusk = tDate;
+                    if (prevSunAlt < -18.0 && sAlt >= -18.0 && !astroDawn) astroDawn = tDate;
+                    if (prevSunAlt < -0.833 && sAlt >= -0.833 && !sunRise) sunRise = tDate;
+                }
+                if (prevMoonAlt !== null) {
+                    if (prevMoonAlt < 0 && mAlt >= 0 && !moonRise) moonRise = tDate;
+                    if (prevMoonAlt >= 0 && mAlt < 0 && !moonSet) moonSet = tDate;
+                }
+                prevSunAlt = sAlt; prevMoonAlt = mAlt;
+                samples.push({ tDate, fraction: i / numSteps, sAlt, mAlt, sAz: sAltAz.az, mAz: mAltAz.az, mIllum: mPos.illum });
             }
+            return { targetDate, samples, sunSet, astroDusk, astroDawn, sunRise, moonRise, moonSet, moonCulm, sunMax };
+        }
 
+        let activeChartEphemeris = null, selectedChartDate = new Date(), hoveredSampleIndex = -1;
+
+        function formatTimeHM(date) { return date ? new Intl.DateTimeFormat('es-ES', { timeZone: 'Europe/Madrid', hour: '2-digit', minute: '2-digit', hour12: false }).format(date) : "--:--"; }
+
+        function renderAltitudeChart() {
+            const canvas = document.getElementById('sky-altitude-canvas'); if (!canvas) return;
+            const container = document.getElementById('chart-canvas-wrapper'), rect = container.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+            const w = rect.width || 800, h = rect.height || 190;
+            canvas.width = w * dpr; canvas.height = h * dpr;
+            const ctx = canvas.getContext('2d'); ctx.scale(dpr, dpr);
+            activeChartEphemeris = computeDayEphemeris(selectedChartDate);
+            const eph = activeChartEphemeris;
+            document.getElementById('chart-date-label').textContent = new Intl.DateTimeFormat('es-ES', { timeZone: 'Europe/Madrid', weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }).format(selectedChartDate);
+            document.getElementById('ephem-sunset').textContent = formatTimeHM(eph.sunSet) + ' h';
+            document.getElementById('ephem-sunrise').textContent = formatTimeHM(eph.sunRise) + ' h';
+            document.getElementById('ephem-sunmax').textContent = `${formatTimeHM(eph.sunMax.time)} h (${eph.sunMax.alt.toFixed(1)}°)`;
+            document.getElementById('ephem-moon-rise-set').textContent = `${formatTimeHM(eph.moonRise)} / ${formatTimeHM(eph.moonSet)}`;
+            document.getElementById('ephem-moon-illum').textContent = `${eph.moonCulm.illum.toFixed(0)}%`;
+            document.getElementById('ephem-moon-culm').textContent = `${formatTimeHM(eph.moonCulm.time)} h (${eph.moonCulm.alt.toFixed(1)}°)`;
+            if (eph.astroDusk && eph.astroDawn) {
+                document.getElementById('ephem-dark-start').textContent = formatTimeHM(eph.astroDusk) + ' h';
+                document.getElementById('ephem-dark-end').textContent = formatTimeHM(eph.astroDawn) + ' h';
+                const durMs = eph.astroDawn.getTime() - eph.astroDusk.getTime(), durHrs = Math.floor(durMs / 3600000), durMin = Math.round((durMs % 3600000) / 60000);
+                document.getElementById('ephem-dark-dur').textContent = `${durHrs} h ${durMin} min`;
+            } else { document.getElementById('ephem-dark-start').textContent = "No hay noche total"; document.getElementById('ephem-dark-end').textContent = "--"; document.getElementById('ephem-dark-dur').textContent = "Crepúsculo continuo"; }
+            const padL = 36, padR = 20, padT = 18, padB = 24, plotW = w - padL - padR, plotH = h - padT - padB;
+            const altToY = (alt) => padT + (90 - alt) / 180 * plotH, fractionToX = (frac) => padL + frac * plotW;
+            const samples = eph.samples, stepW = plotW / (samples.length - 1);
+            for (let i = 0; i < samples.length - 1; i++) {
+                const s = samples[i], x1 = padL + i * stepW, x2 = padL + (i + 1) * stepW, sAlt = s.sAlt;
+                ctx.fillStyle = sAlt <= -18 ? "#050811" : (sAlt <= -12 ? "#1e1b4b" : (sAlt <= -6 ? "#4338ca" : (sAlt <= 0 ? "#d97706" : "#1e3a5f")));
+                ctx.fillRect(x1, padT, (x2 - x1) + 0.5, plotH);
+            }
+            [-60, -30, 0, 30, 60].forEach(alt => {
+                const y = altToY(alt);
+                ctx.beginPath(); ctx.strokeStyle = alt === 0 ? "rgba(34, 197, 94, 0.85)" : "rgba(255, 255, 255, 0.08)"; ctx.lineWidth = alt === 0 ? 1.5 : 1;
+                if (alt === 0) ctx.setLineDash([4, 4]); else ctx.setLineDash([2, 4]);
+                ctx.moveTo(padL, y); ctx.lineTo(w - padR, y); ctx.stroke(); ctx.setLineDash([]);
+                ctx.fillStyle = alt === 0 ? "rgba(34, 197, 94, 0.95)" : "rgba(255, 255, 255, 0.4)"; ctx.textAlign = "right"; ctx.fillText(`${alt > 0 ? '+' : ''}${alt}°`, padL - 6, y);
+            });
+            [{ frac: 0/8, label: "12:00" }, { frac: 1/8, label: "15:00" }, { frac: 2/8, label: "18:00" }, { frac: 3/8, label: "21:00" }, { frac: 4/8, label: "00:00" }, { frac: 5/8, label: "03:00" }, { frac: 6/8, label: "06:00" }, { frac: 7/8, label: "09:00" }, { frac: 8/8, label: "12:00" }].forEach(hl => {
+                const x = fractionToX(hl.frac);
+                ctx.beginPath(); ctx.strokeStyle = hl.label === "00:00" ? "rgba(255, 255, 255, 0.4)" : "rgba(255, 255, 255, 0.06)";
+                if (hl.label === "00:00") ctx.setLineDash([3, 3]);
+                ctx.moveTo(x, padT); ctx.lineTo(x, padT + plotH); ctx.stroke(); ctx.setLineDash([]);
+                ctx.textAlign = "center"; ctx.fillText(hl.label, x, padT + plotH + 6);
+            });
+            ctx.beginPath(); ctx.strokeStyle = "#facc15"; ctx.lineWidth = 2.2; samples.forEach((s, idx) => idx === 0 ? ctx.moveTo(fractionToX(s.fraction), altToY(s.sAlt)) : ctx.lineTo(fractionToX(s.fraction), altToY(s.sAlt))); ctx.stroke();
+            ctx.beginPath(); ctx.strokeStyle = "#f43f5e"; ctx.lineWidth = 2.2; samples.forEach((s, idx) => idx === 0 ? ctx.moveTo(fractionToX(s.fraction), altToY(s.mAlt)) : ctx.lineTo(fractionToX(s.fraction), altToY(s.mAlt))); ctx.stroke();
+            if (eph.moonCulm.alt > -90) {
+                const culmIdx = samples.findIndex(s => Math.abs(s.tDate.getTime() - eph.moonCulm.time.getTime()) < 180000);
+                if (culmIdx !== -1) {
+                    const cx = fractionToX(samples[culmIdx].fraction), cy = altToY(eph.moonCulm.alt);
+                    ctx.beginPath(); ctx.fillStyle = "rgba(244, 63, 94, 0.35)"; ctx.arc(cx, cy, 8, 0, Math.PI * 2); ctx.fill();
+                    ctx.beginPath(); ctx.fillStyle = "#ffffff"; ctx.strokeStyle = "#f43f5e"; ctx.lineWidth = 2.5; ctx.arc(cx, cy, 4.5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+                }
+            }
+            if (hoveredSampleIndex >= 0 && hoveredSampleIndex < samples.length) {
+                const hs = samples[hoveredSampleIndex], hx = fractionToX(hs.fraction), sunY = altToY(hs.sAlt), moonY = altToY(hs.mAlt);
+                ctx.beginPath(); ctx.strokeStyle = "rgba(56, 189, 248, 0.75)"; ctx.lineWidth = 1.2; ctx.setLineDash([2, 2]); ctx.moveTo(hx, padT); ctx.lineTo(hx, padT + plotH); ctx.stroke(); ctx.setLineDash([]);
+                ctx.beginPath(); ctx.fillStyle = "#facc15"; ctx.arc(hx, sunY, 4, 0, Math.PI * 2); ctx.fill();
+                ctx.beginPath(); ctx.fillStyle = "#f43f5e"; ctx.arc(hx, moonY, 4, 0, Math.PI * 2); ctx.fill();
+                const stateStr = hs.sAlt <= -18 ? "Noche Astronómica Oscura" : (hs.sAlt <= -12 ? "Crepúsculo Astronómico" : (hs.sAlt <= -6 ? "Crepúsculo Náutico" : (hs.sAlt <= 0 ? "Crepúsculo Civil" : "Día")));
+                const overlay = document.getElementById('chart-hover-overlay'); overlay.style.display = "block"; overlay.innerHTML = `<strong>${formatTimeHM(hs.tDate)} h</strong> &nbsp;•&nbsp; ☀️ Sol: <strong>${hs.sAlt.toFixed(1)}°</strong> &nbsp;•&nbsp; 🌙 Luna: <strong>${hs.mAlt.toFixed(1)}°</strong> (${hs.mIllum.toFixed(0)}%) &nbsp;•&nbsp; <span style="color: var(--primary);">${stateStr}</span>`;
+            } else document.getElementById('chart-hover-overlay').style.display = "none";
+        }
+
+        function navigateChartDay(delta) { selectedChartDate = new Date(selectedChartDate.getTime() + delta * 86400000); currentYear = selectedChartDate.getFullYear(); currentMonth = selectedChartDate.getMonth(); renderAltitudeChart(); renderCalendar(); }
+        function navigateChartToday() { selectedChartDate = new Date(); currentYear = selectedChartDate.getFullYear(); currentMonth = selectedChartDate.getMonth(); renderAltitudeChart(); renderCalendar(); }
+        function selectCalendarDay(year, month, day) { selectedChartDate = new Date(year, month, day, 12, 0, 0); renderAltitudeChart(); renderCalendar(); if (window.innerWidth < 768) document.getElementById('night-chart-section').scrollIntoView({ behavior: 'smooth' }); }
+
+        function setupCanvasHover() {
+            const canvas = document.getElementById('sky-altitude-canvas'); if (!canvas) return;
+            function updateHover(clientX) {
+                const rect = canvas.getBoundingClientRect(), mouseX = clientX - rect.left - 36, frac = Math.max(0, Math.min(1, mouseX / (rect.width - 56)));
+                if (activeChartEphemeris && activeChartEphemeris.samples) { hoveredSampleIndex = Math.round(frac * (activeChartEphemeris.samples.length - 1)); renderAltitudeChart(); }
+            }
+            canvas.addEventListener('mousemove', (e) => updateHover(e.clientX));
+            canvas.addEventListener('mouseleave', () => { hoveredSampleIndex = -1; renderAltitudeChart(); });
+            canvas.addEventListener('touchmove', (e) => { if (e.touches && e.touches[0]) updateHover(e.touches[0].clientX); }, { passive: true });
+            canvas.addEventListener('touchend', () => { hoveredSampleIndex = -1; renderAltitudeChart(); });
+            window.addEventListener('resize', () => renderAltitudeChart());
+        }
+
+        function renderTicker() {
+            const container = document.getElementById('ticker-container'), events = getParsedEvents(), nowMs = new Date().getTime(), maxMs = nowMs + 15 * 86400000;
+            const upcoming = events.filter(e => { const t = e.dateObj.getTime(); return t >= (nowMs - 86400000 * 0.5) && t <= maxMs; }).slice(0, 8);
+            if (upcoming.length === 0) { container.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 1rem;">No hay eventos destacados en los próximos 15 días.</div>`; return; }
             container.innerHTML = upcoming.map(e => {
                 const diffDays = Math.round((e.dateObj.getTime() - nowMs) / 86400000);
-                let timeBadge = diffDays === 0 ? "¡HOY!" : (diffDays === 1 ? "MAÑANA" : `En ${diffDays} días`);
-                timeBadge += ` • ${e.local.timeOnly}`;
-
-                return `
-                    <div class="ticker-card" style="--card-accent: ${e.color};" onclick="openEventModal(${e.jd}, ${e.typeCode})">
+                return `<div class="ticker-card" style="--card-accent: ${e.color};" onclick="openEventModal(${e.jd}, ${e.typeCode})">
                         <div class="ticker-icon">${e.icon}</div>
                         <div class="ticker-info">
-                            <span class="ticker-time-badge">${timeBadge}</span>
+                            <span class="ticker-time-badge">${diffDays === 0 ? "¡HOY!" : (diffDays === 1 ? "MAÑANA" : `En ${diffDays} días`)} • ${e.local.timeOnly}</span>
                             <div class="ticker-name">${e.name}</div>
                             <div class="ticker-desc">${e.local.dateStr}</div>
                         </div>
-                    </div>
-                `;
+                    </div>`;
             }).join('');
         }
 
-        // Renderizar Calendario Mensual
         function renderCalendar() {
-            const daysContainer = document.getElementById('calendar-days-container');
-            const monthLabel = document.getElementById('current-month-label');
-            const events = getParsedEvents();
-
-            const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
-            monthLabel.textContent = `${monthNames[currentMonth]} ${currentYear}`;
-
-            // Primer día de la semana del mes (0=Dom, 1=Lun, ..., 6=Sáb)
-            const firstDayIndex = new Date(currentYear, currentMonth, 1).getDay();
-            // Ajustar para que la semana empiece en Lunes (0=Lun, ..., 6=Dom)
-            const startOffset = (firstDayIndex + 6) % 7;
-            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-
-            const today = new Date();
-            const isCurrentMonth = today.getFullYear() === currentYear && today.getMonth() === currentMonth;
-            const todayDay = today.getDate();
-
-            // Filtrar eventos del mes actual en hora de Mataró
-            const monthEvents = events.filter(e => {
-                const matchDate = e.local.yearLocal === currentYear && e.local.monthLocal === currentMonth;
-                if (!matchDate) return false;
-                if (currentFilter === 'all') return true;
-                return e.category === currentFilter;
-            });
-
-            let html = '';
-
-            // Celdas vacías iniciales
-            for (let i = 0; i < startOffset; i++) {
-                html += `<div class="calendar-day empty"></div>`;
-            }
-
-            // Días del mes
+            const daysContainer = document.getElementById('calendar-days-container'), monthLabel = document.getElementById('current-month-label'), events = getParsedEvents();
+            monthLabel.textContent = `${["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"][currentMonth]} ${currentYear}`;
+            const startOffset = (new Date(currentYear, currentMonth, 1).getDay() + 6) % 7, daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+            const today = new Date(), isCurrentMonth = today.getFullYear() === currentYear && today.getMonth() === currentMonth;
+            const isSelectedMonth = selectedChartDate.getFullYear() === currentYear && selectedChartDate.getMonth() === currentMonth;
+            let html = Array(startOffset).fill('<div class="calendar-day empty"></div>').join('');
             for (let day = 1; day <= daysInMonth; day++) {
-                const isToday = isCurrentMonth && day === todayDay;
-                const dayEventsList = monthEvents.filter(e => e.local.dayLocal === day);
-
-                const eventsHtml = dayEventsList.map(e => `
-                    <div class="event-pill" style="--pill-bg: ${e.color}22; --pill-border: ${e.color}; --pill-text: #fff;" onclick="openEventModal(${e.jd}, ${e.typeCode}); event.stopPropagation();" title="${e.name} (${e.local.timeOnly})">
-                        ${e.icon} ${e.name}
-                    </div>
-                `).join('');
-
-                html += `
-                    <div class="calendar-day ${isToday ? 'today' : ''}">
-                        <div class="day-number">
-                            <span>${day}</span>
-                            ${isToday ? '<span style="font-size: 0.65rem; color: var(--primary);">HOY</span>' : ''}
-                        </div>
-                        <div class="day-events">
-                            ${eventsHtml}
-                        </div>
-                    </div>
-                `;
+                const dayEventsList = events.filter(e => e.local.yearLocal === currentYear && e.local.monthLocal === currentMonth && e.local.dayLocal === day && (currentFilter === 'all' || e.category === currentFilter));
+                html += `<div class="calendar-day ${isCurrentMonth && day === today.getDate() ? 'today' : ''} ${isSelectedMonth && day === selectedChartDate.getDate() ? 'selected' : ''}" onclick="selectCalendarDay(${currentYear}, ${currentMonth}, ${day})">
+                            <div class="day-number"><span>${day}</span>${isCurrentMonth && day === today.getDate() ? '<span style="font-size: 0.65rem; color: var(--primary);">HOY</span>' : (isSelectedMonth && day === selectedChartDate.getDate() ? '<span style="font-size: 0.65rem; color: var(--primary);"><i class="fa-solid fa-chart-line"></i></span>' : '')}</div>
+                            <div class="day-events">${dayEventsList.map(e => `<div class="event-pill" style="--pill-bg: ${e.color}22; --pill-border: ${e.color};" onclick="openEventModal(${e.jd}, ${e.typeCode}); event.stopPropagation();" title="${e.name} (${e.local.timeOnly})">${e.icon} ${e.name}</div>`).join('')}</div>
+                        </div>`;
             }
-
             daysContainer.innerHTML = html;
         }
 
-        // Renderizar Vista de Lista Anual
         function renderList() {
-            const container = document.getElementById('list-container');
-            const events = getParsedEvents();
-            const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
-
-            const yearEvents = events.filter(e => {
-                if (e.local.yearLocal !== currentYear) return false;
-                if (currentFilter === 'all') return true;
-                return e.category === currentFilter;
-            });
-
-            if (yearEvents.length === 0) {
-                container.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 2rem;">No hay eventos registrados con el filtro seleccionado para el año ${currentYear}.</div>`;
-                return;
-            }
-
-            let html = '';
-            let currentGroupMonth = -1;
-
+            const container = document.getElementById('list-container'), events = getParsedEvents();
+            const yearEvents = events.filter(e => e.local.yearLocal === currentYear && (currentFilter === 'all' || e.category === currentFilter));
+            if (yearEvents.length === 0) { container.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 2rem;">No hay eventos registrados con el filtro seleccionado para el año ${currentYear}.</div>`; return; }
+            let html = '', curM = -1;
             yearEvents.forEach(e => {
-                if (e.local.monthLocal !== currentGroupMonth) {
-                    currentGroupMonth = e.local.monthLocal;
-                    html += `<div class="list-month-header">${monthNames[currentGroupMonth]} ${currentYear}</div><div class="list-group">`;
-                }
-
-                html += `
-                    <div class="list-item" onclick="openEventModal(${e.jd}, ${e.typeCode})">
-                        <div class="list-item-left">
-                            <div class="list-item-icon">${e.icon}</div>
-                            <div>
-                                <div class="list-item-title">${e.name}</div>
-                                <div class="list-item-desc">${e.description}</div>
-                            </div>
-                        </div>
-                        <div class="list-item-time">
-                            <div>${e.local.dateStr}</div>
-                            <div style="color: var(--text-muted); font-size: 0.72rem;">${e.local.timeStr}</div>
-                        </div>
-                    </div>
-                `;
+                if (e.local.monthLocal !== curM) { curM = e.local.monthLocal; html += `<div class="list-month-header">${["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"][curM]} ${currentYear}</div><div class="list-group">`; }
+                html += `<div class="list-item" onclick="openEventModal(${e.jd}, ${e.typeCode})">
+                        <div class="list-item-left"><div class="list-item-icon">${e.icon}</div><div><div class="list-item-title">${e.name}</div><div class="list-item-desc">${e.description}</div></div></div>
+                        <div class="list-item-time"><div>${e.local.dateStr}</div><div style="color: var(--text-muted); font-size: 0.72rem;">${e.local.timeStr}</div></div></div>`;
             });
-
             container.innerHTML = html;
         }
 
-        // Navegación de Meses
-        function changeMonth(delta) {
-            currentMonth += delta;
-            if (currentMonth < 0) {
-                currentMonth = 11;
-                currentYear--;
-            } else if (currentMonth > 11) {
-                currentMonth = 0;
-                currentYear++;
-            }
-            renderCalendar();
-            if (currentView === 'list') renderList();
-        }
-
-        function goToToday() {
-            const today = new Date();
-            currentYear = today.getFullYear();
-            currentMonth = today.getMonth();
-            renderCalendar();
-            if (currentView === 'list') renderList();
-        }
-
-        // Cambio de Vista (Calendario vs Lista)
-        function switchView(view) {
-            currentView = view;
-            document.getElementById('btn-view-calendar').classList.toggle('active', view === 'calendar');
-            document.getElementById('btn-view-list').classList.toggle('active', view === 'list');
-            document.getElementById('calendar-view').style.display = view === 'calendar' ? 'block' : 'none';
-            document.getElementById('list-view').style.display = view === 'list' ? 'block' : 'none';
-            if (view === 'calendar') renderCalendar();
-            else renderList();
-        }
-
-        // Filtrado por Categoría
-        function filterCategory(cat, btnEl) {
-            currentFilter = cat;
-            document.querySelectorAll('.chip-btn').forEach(b => b.classList.remove('active'));
-            if (btnEl) btnEl.classList.add('active');
-            renderCalendar();
-            if (currentView === 'list') renderList();
-        }
-
-        // Modal de Eventos
+        function changeMonth(delta) { currentMonth += delta; if (currentMonth < 0) { currentMonth = 11; currentYear--; } else if (currentMonth > 11) { currentMonth = 0; currentYear++; } renderCalendar(); if (currentView === 'list') renderList(); }
+        function goToToday() { currentYear = new Date().getFullYear(); currentMonth = new Date().getMonth(); selectedChartDate = new Date(); renderAltitudeChart(); renderCalendar(); if (currentView === 'list') renderList(); }
+        function switchView(view) { currentView = view; document.getElementById('btn-view-calendar').classList.toggle('active', view === 'calendar'); document.getElementById('btn-view-list').classList.toggle('active', view === 'list'); document.getElementById('calendar-view').style.display = view === 'calendar' ? 'block' : 'none'; document.getElementById('list-view').style.display = view === 'list' ? 'block' : 'none'; view === 'calendar' ? renderCalendar() : renderList(); }
+        function filterCategory(cat, btnEl) { currentFilter = cat; document.querySelectorAll('.chip-btn').forEach(b => b.classList.remove('active')); if (btnEl) btnEl.classList.add('active'); renderCalendar(); if (currentView === 'list') renderList(); }
         function openEventModal(jd, typeCode) {
-            const events = getParsedEvents();
-            const ev = events.find(e => Math.abs(e.jd - jd) < 1e-4 && e.typeCode === typeCode);
-            if (!ev) return;
-
-            activeSelectedEvent = ev;
-            document.getElementById('modal-icon').textContent = ev.icon;
-            document.getElementById('modal-title').textContent = ev.name;
-            document.getElementById('modal-category').textContent = ev.category.toUpperCase();
-            document.getElementById('modal-local-time').textContent = `${ev.local.dateStr} • ${ev.local.timeStr}`;
-            document.getElementById('modal-utc-time').textContent = ev.dateObj.toUTCString().replace('GMT', 'UTC');
-            document.getElementById('modal-description').textContent = ev.description;
-
-            document.getElementById('event-modal').classList.add('open');
+            const ev = getParsedEvents().find(e => Math.abs(e.jd - jd) < 1e-4 && e.typeCode === typeCode);
+            if (!ev) return; activeSelectedEvent = ev; document.getElementById('modal-icon').textContent = ev.icon; document.getElementById('modal-title').textContent = ev.name; document.getElementById('modal-category').textContent = ev.category.toUpperCase(); document.getElementById('modal-local-time').textContent = `${ev.local.dateStr} • ${ev.local.timeStr}`; document.getElementById('modal-utc-time').textContent = ev.dateObj.toUTCString().replace('GMT', 'UTC'); document.getElementById('modal-description').textContent = ev.description; selectedChartDate = new Date(ev.dateObj); renderAltitudeChart(); renderCalendar(); document.getElementById('event-modal').classList.add('open');
         }
-
-        function closeModal() {
-            document.getElementById('event-modal').classList.remove('open');
-            activeSelectedEvent = null;
-        }
-
-        function closeModalOnOverlay(event) {
-            if (event.target === document.getElementById('event-modal')) {
-                closeModal();
-            }
-        }
-
-        // Exportar a archivo iCalendar (.ics)
+        function closeModal() { document.getElementById('event-modal').classList.remove('open'); activeSelectedEvent = null; }
+        function closeModalOnOverlay(e) { if (e.target === document.getElementById('event-modal')) closeModal(); }
         function exportToICal() {
-            if (!activeSelectedEvent) return;
-            const ev = activeSelectedEvent;
-            const start = ev.dateObj;
-            const end = new Date(start.getTime() + 3600000); // 1 hora de duración
-
-            const pad = (n) => String(n).padStart(2, '0');
-            const formatICSDate = (d) => `${d.getUTCFullYear()}${pad(d.getUTCMonth()+1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}00Z`;
-
-            const icsContent = [
-                'BEGIN:VCALENDAR',
-                'VERSION:2.0',
-                'PRODID:-//Cosmos Mataró//SKYCAL Astro Calendar//ES',
-                'CALSCALE:GREGORIAN',
-                'BEGIN:VEVENT',
-                `SUMMARY:${ev.icon} ${ev.name} (Cosmos Mataró)`,
-                `DESCRIPTION:${ev.description}\\nFecha local Mataró: ${ev.local.dateStr} ${ev.local.timeStr}`,
-                `LOCATION:Mataró, España (41.54°N, 2.44°E)`,
-                `DTSTART:${formatICSDate(start)}`,
-                `DTEND:${formatICSDate(end)}`,
-                `UID:skycal-${ev.jd}-${ev.typeCode}@cosmosmataro.org`,
-                'STATUS:CONFIRMED',
-                'END:VEVENT',
-                'END:VCALENDAR'
-            ].join('\r\n');
-
-            const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = `${ev.name.toLowerCase().replace(/[^a-z0-9]/g, '_')}_cosmos_mataro.ics`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            if (!activeSelectedEvent) return; const ev = activeSelectedEvent, start = ev.dateObj, end = new Date(start.getTime() + 3600000), pad = (n) => String(n).padStart(2, '0');
+            const format = (d) => `${d.getUTCFullYear()}${pad(d.getUTCMonth()+1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}00Z`;
+            const blob = new Blob([`BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nSUMMARY:${ev.icon} ${ev.name}\nDTSTART:${format(start)}\nDTEND:${format(end)}\nDESCRIPTION:${ev.description}\nEND:VEVENT\nEND:VCALENDAR`], { type: 'text/calendar;charset=utf-8' });
+            const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = `${ev.name.replace(/[^a-z0-9]/g, '_')}.ics`; document.body.appendChild(link); link.click(); document.body.removeChild(link);
         }
 
-        // Soporte para URL params (p. ej. ?view=banner para embeber solo el ticker)
         window.addEventListener('DOMContentLoaded', () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const viewParam = urlParams.get('view');
-            if (viewParam === 'banner') {
-                document.querySelector('.app-header').style.display = 'none';
-                document.querySelector('.controls-bar').style.display = 'none';
-                document.getElementById('calendar-view').style.display = 'none';
-                document.getElementById('list-view').style.display = 'none';
-                document.querySelector('.app-footer').style.display = 'none';
-                document.body.style.background = 'transparent';
-                document.querySelector('.app-container').style.padding = '0.5rem';
+            if (new URLSearchParams(window.location.search).get('view') === 'banner') {
+                ['.app-header', '.controls-bar', '#night-chart-section', '#calendar-view', '#list-view', '.app-footer'].forEach(sel => document.querySelector(sel).style.display = 'none');
+                document.body.style.background = 'transparent'; document.querySelector('.app-container').style.padding = '0.5rem';
             }
-
-            renderTicker();
-            renderCalendar();
+            renderTicker(); renderCalendar(); setupCanvasHover(); renderAltitudeChart();
         });
     </script>
 </body>
