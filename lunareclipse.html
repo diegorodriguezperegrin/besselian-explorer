@@ -37,8 +37,9 @@
             --text-secondary: #94a3b8;
             --text-dim: #64748b;
             --accent-blue: #38bdf8;
-            --accent-blood: #f43f5e;
-            --accent-umbra: #e11d48;
+            --accent-blood: #e11d48;
+            --accent-copper: #c2410c;
+            --accent-umbra: #991b1b;
             --accent-penumbra: #93c5fd;
             --accent-gold: #facc15;
             --accent-green: #34d399;
@@ -274,7 +275,7 @@
             margin-top: 4px;
         }
 
-        /* Presets Rápidos */
+        /* Presets Rápidos (Limitados a 3 destacados) */
         .quick-presets {
             display: flex;
             flex-direction: column;
@@ -315,7 +316,7 @@
             font-weight: 700;
         }
 
-        .badge-total { background: rgba(244, 63, 94, 0.25); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.4); }
+        .badge-total { background: rgba(194, 65, 12, 0.25); color: #fb923c; border: 1px solid rgba(194, 65, 12, 0.4); }
         .badge-partial { background: rgba(250, 204, 21, 0.2); color: #fde047; border: 1px solid rgba(250, 204, 21, 0.35); }
         .badge-penumbral { background: rgba(148, 163, 184, 0.2); color: #cbd5e1; border: 1px solid rgba(148, 163, 184, 0.35); }
 
@@ -385,7 +386,7 @@
 
         /* Ficha de Circunstancias Locales Mataró */
         .mataro-card {
-            background: linear-gradient(135deg, rgba(14, 165, 233, 0.08), rgba(244, 63, 94, 0.06));
+            background: linear-gradient(135deg, rgba(14, 165, 233, 0.08), rgba(194, 65, 12, 0.06));
             border: 1px solid rgba(56, 189, 248, 0.25);
             border-radius: 12px;
             padding: 12px;
@@ -562,7 +563,7 @@
         }
 
         .contact-marker.tot {
-            background: var(--accent-blood);
+            background: var(--accent-copper);
             height: 16px;
             top: 0;
             width: 2.5px;
@@ -749,7 +750,7 @@
             <div class="panel-toggle" onclick="toggleSidebar(false)" title="Ocultar panel"><i class="fa-solid fa-chevron-left"></i></div>
         </div>
 
-        <!-- Eclipses Destacados -->
+        <!-- Eclipses Destacados (Limitados a 3) -->
         <div class="section-title">
             <i class="fa-solid fa-star" style="color: var(--accent-gold);"></i> Eclipses Destacados
         </div>
@@ -762,21 +763,9 @@
                 <span>7 Sep 2025 (España)</span>
                 <span class="preset-badge-tag badge-total">Total (82m)</span>
             </div>
-            <div class="preset-chip" onclick="selectPresetEclipse('2026-03-03')">
-                <span>3 Mar 2026</span>
-                <span class="preset-badge-tag badge-total">Total (58m)</span>
-            </div>
             <div class="preset-chip" onclick="selectPresetEclipse('2026-08-28')">
                 <span>28 Ago 2026</span>
                 <span class="preset-badge-tag badge-partial">Parcial 93%</span>
-            </div>
-            <div class="preset-chip" onclick="selectPresetEclipse('2028-12-31')">
-                <span>31 Dic 2028 (Nochevieja)</span>
-                <span class="preset-badge-tag badge-total">Total (71m)</span>
-            </div>
-            <div class="preset-chip" onclick="selectPresetEclipse('2029-06-26')">
-                <span>26 Jun 2029 (Central)</span>
-                <span class="preset-badge-tag badge-total">Total (102m)</span>
             </div>
         </div>
 
@@ -808,7 +797,7 @@
                 <div class="stat-item"><span class="stat-label">Parámetro Gamma (γ)</span><span class="stat-val" id="stat-gamma">-0.2752</span></div>
                 <div class="stat-item"><span class="stat-label">Magnitud Umbral</span><span class="stat-val" id="stat-um-mag">1.3619</span></div>
                 <div class="stat-item"><span class="stat-label">Magnitud Penumbral</span><span class="stat-val" id="stat-pen-mag">2.3450</span></div>
-                <div class="stat-item"><span class="stat-label">Duración Totalidad</span><span class="stat-val" id="stat-tot-dur" style="color: var(--accent-blood);">82.1 min</span></div>
+                <div class="stat-item"><span class="stat-label">Duración Totalidad</span><span class="stat-val" id="stat-tot-dur" style="color: #fb923c;">82.1 min</span></div>
             </div>
         </div>
 
@@ -862,7 +851,7 @@
         </div>
         <div class="panel-player-card">
             <div class="player-phase-badge" id="player-phase-label">
-                <span style="color: var(--accent-blood);">🔴 Totalidad</span> · Luna de Sangre
+                <span style="color: #fb923c;">🔴 Totalidad</span> · Luna de Sangre
             </div>
             <div class="player-time-display">
                 <span>UTC: <strong id="time-utc-text">18:11:43</strong></span>
@@ -1149,7 +1138,7 @@
             }
         }
 
-        // 3. Motor de la Vista Telescópica 2D (Sombra y Luna Fotográfica)
+        // 3. Motor de la Vista Telescópica 2D (Sombra y Luna Fotográfica Realista)
         function initTelescopicCanvas() {
             const canvas = document.getElementById('canvas-telescopic');
             window.addEventListener('resize', resizeTelescopicCanvas);
@@ -1254,8 +1243,8 @@
 
             // 2. Disco de la Penumbra Terrestre
             const penGrad = ctx.createRadialGradient(0, 0, ruPx, 0, 0, rpPx);
-            penGrad.addColorStop(0, "rgba(25, 33, 56, 0.75)");
-            penGrad.addColorStop(0.7, "rgba(18, 25, 45, 0.45)");
+            penGrad.addColorStop(0, "rgba(25, 33, 56, 0.65)");
+            penGrad.addColorStop(0.7, "rgba(18, 25, 45, 0.35)");
             penGrad.addColorStop(1, "rgba(10, 15, 30, 0)");
             ctx.beginPath();
             ctx.fillStyle = penGrad;
@@ -1263,18 +1252,18 @@
             ctx.fill();
 
             ctx.beginPath();
-            ctx.strokeStyle = "rgba(147, 197, 253, 0.25)";
+            ctx.strokeStyle = "rgba(147, 197, 253, 0.22)";
             ctx.setLineDash([4, 4]);
             ctx.arc(0, 0, rpPx, 0, Math.PI * 2);
             ctx.stroke();
             ctx.setLineDash([]);
 
-            // 3. Disco de la Umbra Terrestre
+            // 3. Disco de la Umbra Terrestre (Tono Oscuro Cobrizo / Antracita)
             const umbGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, ruPx);
-            umbGrad.addColorStop(0, "#450a0a");
-            umbGrad.addColorStop(0.65, "#2a0505");
-            umbGrad.addColorStop(0.95, "#0d0202");
-            umbGrad.addColorStop(1, "rgba(0, 0, 0, 0.95)");
+            umbGrad.addColorStop(0, "rgba(22, 10, 8, 0.96)");
+            umbGrad.addColorStop(0.7, "rgba(14, 7, 6, 0.98)");
+            umbGrad.addColorStop(0.95, "rgba(8, 4, 4, 0.99)");
+            umbGrad.addColorStop(1, "rgba(4, 2, 2, 1)");
 
             ctx.beginPath();
             ctx.fillStyle = umbGrad;
@@ -1282,22 +1271,22 @@
             ctx.fill();
 
             ctx.beginPath();
-            ctx.strokeStyle = "rgba(244, 63, 94, 0.6)";
-            ctx.lineWidth = 1.5;
+            ctx.strokeStyle = "rgba(160, 60, 40, 0.35)";
+            ctx.lineWidth = 1.2;
             ctx.arc(0, 0, ruPx, 0, Math.PI * 2);
             ctx.stroke();
 
             // Etiquetas
-            ctx.fillStyle = "rgba(244, 63, 94, 0.85)";
+            ctx.fillStyle = "rgba(180, 80, 60, 0.75)";
             ctx.font = "12px 'Outfit', sans-serif";
             ctx.fillText("UMBRA", 0, -ruPx + 18);
 
-            ctx.fillStyle = "rgba(147, 197, 253, 0.7)";
+            ctx.fillStyle = "rgba(147, 197, 253, 0.65)";
             ctx.fillText("PENUMBRA", 0, -rpPx + 18);
 
             // 4. Trayectoria de la Luna
             ctx.beginPath();
-            ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.18)";
             ctx.lineWidth = 1;
             ctx.setLineDash([3, 3]);
             const yTraj = geo.y * baseScale;
@@ -1333,28 +1322,29 @@
             if (distFromShadowCenter < (rpPx + rmPx)) {
                 const penFrac = Math.max(0, Math.min(1, (rpPx + rmPx - distFromShadowCenter) / (rpPx - ruPx)));
                 if (penFrac > 0) {
-                    ctx.fillStyle = `rgba(15, 23, 42, ${penFrac * 0.65})`;
+                    ctx.fillStyle = `rgba(15, 23, 42, ${penFrac * 0.60})`;
                     ctx.fillRect(-rmPx, -rmPx, rmPx * 2, rmPx * 2);
                 }
             }
 
-            // Umbra Geométrica Curva (El mordisco de la Tierra con dispersión de Rayleigh)
+            // Umbra Geométrica Curva (Tono rojizo oscuro cobrizo translúcido: la orografía permanece visible)
             ctx.save();
             ctx.beginPath();
             ctx.arc(-mx, -my, ruPx, 0, Math.PI * 2);
             
             const rayleighGrad = ctx.createRadialGradient(-mx, -my, 0, -mx, -my, ruPx);
-            rayleighGrad.addColorStop(0, "rgba(69, 10, 10, 0.94)");
-            rayleighGrad.addColorStop(0.7, "rgba(153, 27, 27, 0.92)");
-            rayleighGrad.addColorStop(0.92, "rgba(225, 29, 72, 0.88)");
-            rayleighGrad.addColorStop(0.99, "rgba(56, 189, 248, 0.35)");
-            rayleighGrad.addColorStop(1, "rgba(15, 23, 42, 0.98)");
+            rayleighGrad.addColorStop(0, "rgba(20, 8, 6, 0.88)");     // Núcleo umbral muy oscuro / negro-rojizo
+            rayleighGrad.addColorStop(0.55, "rgba(65, 24, 16, 0.84)"); // Tono cobrizo oscuro / siena
+            rayleighGrad.addColorStop(0.85, "rgba(115, 38, 22, 0.78)"); // Terracota profundo
+            rayleighGrad.addColorStop(0.96, "rgba(165, 65, 35, 0.58)"); // Borde cobrizo cálido
+            rayleighGrad.addColorStop(0.99, "rgba(70, 130, 180, 0.20)"); // Sutil franja de ozono
+            rayleighGrad.addColorStop(1, "rgba(10, 15, 25, 0.95)");
 
             ctx.fillStyle = rayleighGrad;
             ctx.fill();
 
-            ctx.strokeStyle = "rgba(244, 63, 94, 0.75)";
-            ctx.lineWidth = 1.2;
+            ctx.strokeStyle = "rgba(160, 60, 30, 0.4)";
+            ctx.lineWidth = 1.0;
             ctx.stroke();
             ctx.restore();
 
@@ -1445,9 +1435,9 @@
             const umbraGeo = new THREE.ConeGeometry(5.2, 80, 48, 1, true);
             umbraGeo.rotateX(-Math.PI / 2);
             const umbraMat = new THREE.MeshBasicMaterial({
-                color: 0xe11d48,
+                color: 0x991b1b,
                 transparent: true,
-                opacity: 0.28,
+                opacity: 0.22,
                 side: THREE.DoubleSide
             });
             umbraConeMesh3D = new THREE.Mesh(umbraGeo, umbraMat);
@@ -1510,13 +1500,13 @@
 
             moonMesh3D.position.set(moonX, moonY, moonZ);
 
-            // Enrojecimiento de la Luna en 3D
+            // Enrojecimiento oscuro cobrizo de la Luna en 3D (como en astrofotografía real)
             if (geo.dist < (geo.rUmbra - geo.rMoon)) {
-                moonMesh3D.material.color.setHex(0xe11d48);
-                moonMesh3D.material.emissive.setHex(0x450a0a);
+                moonMesh3D.material.color.setHex(0x6b2416);
+                moonMesh3D.material.emissive.setHex(0x1a0604);
             } else if (geo.dist < (geo.rUmbra + geo.rMoon)) {
-                moonMesh3D.material.color.setHex(0xfb923c);
-                moonMesh3D.material.emissive.setHex(0x2a0505);
+                moonMesh3D.material.color.setHex(0x994828);
+                moonMesh3D.material.emissive.setHex(0x0e0302);
             } else {
                 moonMesh3D.material.color.setHex(0xffffff);
                 moonMesh3D.material.emissive.setHex(0x000000);
@@ -1603,7 +1593,7 @@
             const zenY = oy + ((90 - ec.zenLat) / 180) * mapH;
 
             const visGrad = ctx.createRadialGradient(zenX, zenY, mapH * 0.1, zenX, zenY, mapH * 0.52);
-            visGrad.addColorStop(0, "rgba(244, 63, 94, 0.25)");
+            visGrad.addColorStop(0, "rgba(194, 65, 12, 0.22)");
             visGrad.addColorStop(0.7, "rgba(56, 189, 248, 0.15)");
             visGrad.addColorStop(1, "rgba(0, 0, 0, 0.5)");
 
@@ -1682,7 +1672,7 @@
             const geo = getMoonShadowCoordsAtTime(simCurrentTimeMs);
             const phaseLabel = document.getElementById('player-phase-label');
             if (geo.dist < (geo.rUmbra - geo.rMoon)) {
-                phaseLabel.innerHTML = '<span style="color: var(--accent-blood);">🔴 Totalidad</span> · Luna de Sangre';
+                phaseLabel.innerHTML = '<span style="color: #fb923c;">🔴 Totalidad</span> · Luna de Sangre';
             } else if (geo.dist < (geo.rUmbra + geo.rMoon)) {
                 phaseLabel.innerHTML = '<span style="color: var(--accent-gold);">🌗 Fase Parcial</span> · Umbra';
             } else if (geo.dist < (geo.rPenumbra + geo.rMoon)) {
