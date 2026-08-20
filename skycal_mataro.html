@@ -1,0 +1,1417 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cosmos Mataró — Calendario de Efemérides Celestes</title>
+    <!-- Fuentes Google: Outfit y Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-deep: #080c14;
+            --bg-surface: rgba(15, 23, 42, 0.85);
+            --bg-card: rgba(24, 34, 58, 0.65);
+            --bg-card-hover: rgba(36, 52, 88, 0.85);
+            --border-subtle: rgba(255, 255, 255, 0.08);
+            --border-active: rgba(56, 189, 248, 0.4);
+            --primary: #38bdf8;
+            --primary-glow: rgba(56, 189, 248, 0.25);
+            --accent-gold: #facc15;
+            --accent-purple: #c084fc;
+            --accent-emerald: #34d399;
+            --accent-rose: #fb7185;
+            --accent-orange: #fb923c;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --text-dim: #64748b;
+            --radius-lg: 16px;
+            --radius-md: 12px;
+            --radius-sm: 8px;
+            --font-main: 'Outfit', sans-serif;
+            --font-body: 'Plus Jakarta Sans', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-deep);
+            background-image: 
+                radial-gradient(circle at 15% 15%, rgba(56, 189, 248, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 85% 80%, rgba(192, 132, 252, 0.06) 0%, transparent 40%),
+                radial-gradient(circle at 50% 50%, rgba(15, 23, 42, 0.5) 0%, transparent 100%);
+            color: var(--text-main);
+            font-family: var(--font-body);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        /* Contenedor principal */
+        .app-container {
+            max-width: 1280px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 1.5rem 1.25rem 3rem 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        /* Cabecera */
+        header.app-header {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1.25rem;
+            padding: 1.25rem 1.5rem;
+            background: var(--bg-surface);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .brand-logo {
+            width: 46px;
+            height: 46px;
+            background: linear-gradient(135deg, #0284c7, #38bdf8, #818cf8);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+            box-shadow: 0 0 20px var(--primary-glow);
+        }
+
+        .brand-title h1 {
+            font-family: var(--font-main);
+            font-size: 1.35rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .brand-title p {
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            margin-top: 0.15rem;
+        }
+
+        .location-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.25rem 0.65rem;
+            background: rgba(56, 189, 248, 0.12);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-family: var(--font-mono);
+            color: var(--primary);
+        }
+
+        .header-nav-links {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .nav-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.5rem 0.85rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .nav-btn:hover {
+            background: rgba(56, 189, 248, 0.15);
+            border-color: var(--primary);
+            color: #fff;
+            transform: translateY(-1px);
+        }
+
+        /* Banner de Próximos Eventos (Modo Ticker) */
+        .ticker-section {
+            background: var(--bg-surface);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 1.25rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .ticker-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .ticker-title {
+            font-family: var(--font-main);
+            font-size: 1.05rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--accent-gold);
+        }
+
+        .ticker-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 0.85rem;
+        }
+
+        .ticker-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 0.9rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .ticker-card:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--border-active);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+        }
+
+        .ticker-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--card-accent, var(--primary));
+            border-radius: 4px 0 0 4px;
+        }
+
+        .ticker-icon {
+            font-size: 1.75rem;
+            min-width: 42px;
+            height: 42px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 10px;
+        }
+
+        .ticker-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .ticker-time-badge {
+            display: inline-block;
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            color: var(--card-accent, var(--primary));
+            margin-bottom: 0.2rem;
+            font-weight: 600;
+        }
+
+        .ticker-name {
+            font-family: var(--font-main);
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #fff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .ticker-desc {
+            font-size: 0.76rem;
+            color: var(--text-muted);
+            margin-top: 0.15rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Barra de Filtros y Navegación de Vistas */
+        .controls-bar {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            background: var(--bg-surface);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 1rem 1.25rem;
+        }
+
+        .view-switcher {
+            display: flex;
+            background: rgba(0, 0, 0, 0.35);
+            padding: 4px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-subtle);
+        }
+
+        .view-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 0.45rem 0.9rem;
+            font-family: var(--font-main);
+            font-size: 0.85rem;
+            font-weight: 600;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .view-btn.active {
+            background: var(--primary);
+            color: #080c14;
+            box-shadow: 0 2px 10px var(--primary-glow);
+        }
+
+        .month-selector {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+        }
+
+        .month-nav-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-main);
+            width: 34px;
+            height: 34px;
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+        }
+
+        .month-nav-btn:hover {
+            background: rgba(56, 189, 248, 0.15);
+            border-color: var(--primary);
+            color: #fff;
+        }
+
+        .current-month-display {
+            font-family: var(--font-main);
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #fff;
+            min-width: 180px;
+            text-align: center;
+        }
+
+        /* Chips de Categorías */
+        .category-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            width: 100%;
+            padding-top: 0.75rem;
+            border-top: 1px solid var(--border-subtle);
+        }
+
+        .chip-btn {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-muted);
+            padding: 0.35rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+
+        .chip-btn:hover {
+            border-color: var(--border-active);
+            color: #fff;
+        }
+
+        .chip-btn.active {
+            background: rgba(56, 189, 248, 0.15);
+            border-color: var(--primary);
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        /* Cuadrícula de Calendario Mensual */
+        .calendar-section {
+            background: var(--bg-surface);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 1.25rem;
+        }
+
+        .calendar-weekdays {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 6px;
+            text-align: center;
+            font-family: var(--font-main);
+            font-weight: 600;
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            padding-bottom: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 6px;
+        }
+
+        .calendar-day {
+            background: rgba(20, 29, 48, 0.5);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
+            min-height: 105px;
+            padding: 0.45rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .calendar-day.empty {
+            background: transparent;
+            border-color: transparent;
+        }
+
+        .calendar-day.today {
+            border-color: var(--primary);
+            box-shadow: inset 0 0 12px rgba(56, 189, 248, 0.15);
+        }
+
+        .calendar-day:not(.empty):hover {
+            background: rgba(30, 42, 68, 0.7);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .day-number {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .calendar-day.today .day-number {
+            color: var(--primary);
+        }
+
+        .day-events {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            flex: 1;
+            overflow-y: auto;
+            max-height: 80px;
+        }
+
+        .event-pill {
+            background: var(--pill-bg, rgba(56, 189, 248, 0.12));
+            border-left: 3px solid var(--pill-border, var(--primary));
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-size: 0.68rem;
+            font-family: var(--font-body);
+            color: var(--pill-text, #fff);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            cursor: pointer;
+            transition: transform 0.15s ease;
+        }
+
+        .event-pill:hover {
+            transform: scale(1.02);
+            filter: brightness(1.15);
+        }
+
+        /* Vista de Lista / Agenda Anual */
+        .list-section {
+            background: var(--bg-surface);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .list-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+
+        .list-month-header {
+            font-family: var(--font-main);
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--primary);
+            padding-bottom: 0.4rem;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-top: 0.5rem;
+        }
+
+        .list-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 0.85rem 1.1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .list-item:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--border-active);
+            transform: translateX(3px);
+        }
+
+        .list-item-left {
+            display: flex;
+            align-items: center;
+            gap: 0.9rem;
+        }
+
+        .list-item-icon {
+            font-size: 1.5rem;
+            width: 38px;
+            height: 38px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 8px;
+        }
+
+        .list-item-title {
+            font-family: var(--font-main);
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .list-item-desc {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .list-item-time {
+            text-align: right;
+            font-family: var(--font-mono);
+            font-size: 0.78rem;
+            color: var(--primary);
+            white-space: nowrap;
+        }
+
+        /* Modal de Detalles del Evento */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease;
+            padding: 1.25rem;
+        }
+
+        .modal-overlay.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-card {
+            background: var(--bg-deep);
+            border: 1px solid var(--border-active);
+            border-radius: var(--radius-lg);
+            max-width: 520px;
+            width: 100%;
+            padding: 1.75rem;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+            position: relative;
+            transform: translateY(20px);
+            transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .modal-overlay.open .modal-card {
+            transform: translateY(0);
+        }
+
+        .modal-close-btn {
+            position: absolute;
+            top: 1.25rem;
+            right: 1.25rem;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-muted);
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: all 0.2s ease;
+        }
+
+        .modal-close-btn:hover {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: #ef4444;
+            color: #fff;
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .modal-icon {
+            font-size: 2.2rem;
+            width: 56px;
+            height: 56px;
+            background: rgba(56, 189, 248, 0.1);
+            border: 1px solid rgba(56, 189, 248, 0.25);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-title h2 {
+            font-family: var(--font-main);
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .modal-title p {
+            font-size: 0.82rem;
+            color: var(--primary);
+            font-weight: 500;
+        }
+
+        .modal-body {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        .modal-meta-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 0.85rem 1rem;
+        }
+
+        .meta-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.2rem;
+        }
+
+        .meta-label {
+            font-size: 0.72rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .meta-val {
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .modal-actions {
+            margin-top: 1.5rem;
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .btn-action {
+            flex: 1;
+            padding: 0.65rem 1rem;
+            border-radius: var(--radius-sm);
+            font-family: var(--font-main);
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+
+        .btn-action.primary {
+            background: var(--primary);
+            border: none;
+            color: #080c14;
+        }
+
+        .btn-action.primary:hover {
+            filter: brightness(1.1);
+            transform: translateY(-1px);
+        }
+
+        .btn-action.secondary {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-main);
+        }
+
+        .btn-action.secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+
+        /* Footer */
+        footer.app-footer {
+            margin-top: auto;
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            padding: 1.5rem;
+            border-top: 1px solid var(--border-subtle);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .app-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .header-nav-links {
+                width: 100%;
+                justify-content: space-between;
+            }
+            .controls-bar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .month-selector {
+                justify-content: space-between;
+            }
+            .calendar-weekdays {
+                font-size: 0.7rem;
+            }
+            .calendar-day {
+                min-height: 80px;
+                padding: 0.25rem;
+            }
+            .event-pill {
+                font-size: 0.6rem;
+                padding: 1px 3px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- Cabecera Cosmos Mataró -->
+        <header class="app-header">
+            <div class="header-brand">
+                <div class="brand-logo">🪐</div>
+                <div class="brand-title">
+                    <h1>Cosmos Mataró <span class="location-badge">📍 41.54°N, 2.44°E</span></h1>
+                    <p>Calendario de Efemérides Celestes • Cálculos de precisión NASA / Espenak</p>
+                </div>
+            </div>
+            <div class="header-nav-links">
+                <a href="besselianexplorer.html" class="nav-btn" title="Explorador Besseliano 3D">🌒 Besselian Explorer</a>
+                <a href="simulador3D.html" class="nav-btn" title="Simulador Orbital 3D">🌍 Simulador 3D</a>
+            </div>
+        </header>
+
+        <!-- Sección Ticker / Próximos Eventos -->
+        <section class="ticker-section" id="ticker-view">
+            <div class="ticker-header">
+                <div class="ticker-title">
+                    <span>✨</span> Próximos Eventos Celestes en Mataró
+                </div>
+                <span style="font-size: 0.8rem; color: var(--text-dim);" id="ticker-range-label">Próximos 15 días</span>
+            </div>
+            <div class="ticker-grid" id="ticker-container">
+                <!-- Se llena dinámicamente con JavaScript -->
+            </div>
+        </section>
+
+        <!-- Barra de Controles y Filtros -->
+        <div class="controls-bar">
+            <div class="view-switcher">
+                <button class="view-btn active" onclick="switchView('calendar')" id="btn-view-calendar">📅 Calendario</button>
+                <button class="view-btn" onclick="switchView('list')" id="btn-view-list">📋 Agenda Anual</button>
+            </div>
+
+            <div class="month-selector">
+                <button class="month-nav-btn" onclick="changeMonth(-1)" title="Mes anterior">◀</button>
+                <div class="current-month-display" id="current-month-label">Agosto 2026</div>
+                <button class="month-nav-btn" onclick="changeMonth(1)" title="Mes siguiente">▶</button>
+                <button class="month-nav-btn" onclick="goToToday()" title="Ir a hoy" style="font-size: 0.75rem; font-family: var(--font-main); font-weight: 700; width: auto; padding: 0 0.6rem;">Hoy</button>
+            </div>
+
+            <div class="category-chips">
+                <button class="chip-btn active" data-cat="all" onclick="filterCategory('all', this)">✨ Todos</button>
+                <button class="chip-btn" data-cat="moon" onclick="filterCategory('moon', this)">🌒 Fases Lunares</button>
+                <button class="chip-btn" data-cat="planet" onclick="filterCategory('planet', this)">🪐 Planetas</button>
+                <button class="chip-btn" data-cat="eclipse" onclick="filterCategory('eclipse', this)">🌑 Eclipses</button>
+                <button class="chip-btn" data-cat="season" onclick="filterCategory('season', this)">☀️ Estaciones</button>
+                <button class="chip-btn" data-cat="shower" onclick="filterCategory('shower', this)">🌠 Meteoros</button>
+                <button class="chip-btn" data-cat="conjunction" onclick="filterCategory('conjunction', this)">🔭 Conjunciones</button>
+            </div>
+        </div>
+
+        <!-- Vista de Calendario Mensual -->
+        <section class="calendar-section" id="calendar-view">
+            <div class="calendar-weekdays">
+                <div>Lun</div>
+                <div>Mar</div>
+                <div>Mié</div>
+                <div>Jue</div>
+                <div>Vie</div>
+                <div>Sáb</div>
+                <div>Dom</div>
+            </div>
+            <div class="calendar-grid" id="calendar-days-container">
+                <!-- Días generados dinámicamente -->
+            </div>
+        </section>
+
+        <!-- Vista de Lista / Agenda Anual -->
+        <section class="list-section" id="list-view" style="display: none;">
+            <div id="list-container">
+                <!-- Eventos generados dinámicamente -->
+            </div>
+        </section>
+    </div>
+
+    <!-- Modal de Detalles del Evento -->
+    <div class="modal-overlay" id="event-modal" onclick="closeModalOnOverlay(event)">
+        <div class="modal-card">
+            <button class="modal-close-btn" onclick="closeModal()">✕</button>
+            <div class="modal-header">
+                <div class="modal-icon" id="modal-icon">🌕</div>
+                <div class="modal-title">
+                    <h2 id="modal-title">Luna Llena</h2>
+                    <p id="modal-category">Fase Lunar</p>
+                </div>
+            </div>
+            <div class="modal-body">
+                <div class="modal-meta-grid">
+                    <div class="meta-item">
+                        <span class="meta-label">Fecha y Hora (Mataró)</span>
+                        <span class="meta-val" id="modal-local-time">--:-- h</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">Tiempo Universal (UTC)</span>
+                        <span class="meta-val" id="modal-utc-time">--:-- UTC</span>
+                    </div>
+                </div>
+                <p id="modal-description">Descripción detallada del evento astronómico...</p>
+                <div class="modal-actions">
+                    <button class="btn-action primary" onclick="exportToICal()">📥 Añadir a Calendario (.ics)</button>
+                    <button class="btn-action secondary" onclick="closeModal()">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="app-footer">
+        <p>Cosmos Mataró — Efemérides Astronómicas basadas en el algoritmo <strong>SKYCAL</strong> (NASA Goddard Space Flight Center / Fred Espenak & Sumit Dutta).</p>
+        <p style="margin-top: 0.35rem; color: var(--text-dim);">Huso horario automático: <strong>Europe/Madrid (CET UTC+1 / CEST UTC+2)</strong>.</p>
+    </footer>
+
+    <!-- Carga del catálogo de eventos 2021-2050 -->
+    <script src="skycal_events_data.js"></script>
+
+    <script>
+        // Diccionario de Tipos Astronómicos de NASA SKYCAL en Español
+        const EVENT_DICTIONARY = {
+            1: { name: "Equinoccio de Primavera", cat: "season", icon: "🌱", desc: "El Sol cruza el ecuador celeste hacia el norte. Comienza la primavera astronómica en el hemisferio norte.", color: "#34d399" },
+            2: { name: "Solsticio de Verano", cat: "season", icon: "☀️", desc: "El Sol alcanza su máxima declinación norte. Es el día más largo del año y da inicio al verano astronómico.", color: "#fbbf24" },
+            3: { name: "Equinoccio de Otoño", cat: "season", icon: "🍂", desc: "El Sol cruza el ecuador celeste hacia el sur. Comienza el otoño astronómico en el hemisferio norte.", color: "#fb923c" },
+            4: { name: "Solsticio de Invierno", cat: "season", icon: "❄️", desc: "El Sol alcanza su máxima declinación sur. Es la noche más larga del año y comienza el invierno astronómico.", color: "#38bdf8" },
+            5: { name: "Perihelio Terrestre", cat: "season", icon: "🌍", desc: "Punto de la órbita donde la Tierra se encuentra más cercana al Sol (~147 millones de km).", color: "#f43f5e" },
+            6: { name: "Afelio Terrestre", cat: "season", icon: "🌍", desc: "Punto de la órbita donde la Tierra se encuentra más alejada del Sol (~152 millones de km).", color: "#60a5fa" },
+
+            11: { name: "Luna Nueva", cat: "moon", icon: "🌑", desc: "La Luna pasa entre la Tierra y el Sol. Ideal para observación de cielo profundo (sin contaminación lumínica natural).", color: "#94a3b8" },
+            12: { name: "Cuarto Creciente", cat: "moon", icon: "🌓", desc: "El 50% de la cara visible de la Luna está iluminada. Excelente momento para observar cráteres en el terminador.", color: "#38bdf8" },
+            13: { name: "Luna Llena", cat: "moon", icon: "🌕", desc: "La cara visible de la Luna está 100% iluminada por el Sol. Gran brillo en el cielo nocturno.", color: "#facc15" },
+            14: { name: "Cuarto Menguante", cat: "moon", icon: "🌗", desc: "El 50% de la cara visible de la Luna mengua hacia la fase nueva. Visible durante la segunda mitad de la noche.", color: "#c084fc" },
+
+            15: { name: "Perigeo Lunar", cat: "moon", icon: "📏", desc: "La Luna alcanza su punto más cercano a la Tierra en su órbita mensual (mayor tamaño aparente).", color: "#34d399" },
+            16: { name: "Apogeo Lunar", cat: "moon", icon: "📏", desc: "La Luna alcanza su punto más alejado de la Tierra en su órbita mensual (menor tamaño aparente).", color: "#94a3b8" },
+            17: { name: "Nodo Ascendente Lunar", cat: "moon", icon: "☊", desc: "La Luna cruza el plano de la eclíptica de sur a norte.", color: "#a855f7" },
+            18: { name: "Nodo Descendente Lunar", cat: "moon", icon: "☋", desc: "La Luna cruza el plano de la eclíptica de norte a sur.", color: "#a855f7" },
+            19: { name: "Máxima Declinación Sur Lunar", cat: "moon", icon: "🧭", desc: "La Luna alcanza su posición más baja en el cielo boreal.", color: "#64748b" },
+            20: { name: "Máxima Declinación Norte Lunar", cat: "moon", icon: "🧭", desc: "La Luna alcanza su posición más alta en el cielo boreal.", color: "#64748b" },
+
+            21: { name: "Eclipse Total de Sol", cat: "eclipse", icon: "🌑", desc: "La Luna oculta completamente el disco solar. Fenómeno extraordinario visible a lo largo de la franja de totalidad.", color: "#f43f5e" },
+            22: { name: "Eclipse Anular de Sol", cat: "eclipse", icon: "💍", desc: "La Luna no cubre por completo el Sol, dejando un anillo de fuego visible alrededor del disco lunar.", color: "#fb923c" },
+            23: { name: "Eclipse Híbrido de Sol", cat: "eclipse", icon: "☀️", desc: "Eclipse que transiciona entre anular y total a lo largo de su recorrido.", color: "#facc15" },
+            24: { name: "Eclipse Parcial de Sol", cat: "eclipse", icon: "🌘", desc: "La Luna cubre una fracción del disco solar.", color: "#fbbf24" },
+            26: { name: "Eclipse Total de Luna", cat: "eclipse", icon: "🔴", desc: "La Luna se sumerge totalmente en la sombra de la Tierra, adquiriendo un tono rojizo (Luna de Sangre).", color: "#ef4444" },
+            27: { name: "Eclipse Parcial de Luna", cat: "eclipse", icon: "🌗", desc: "Una porción de la Luna entra en la umbra de la sombra terrestre.", color: "#f87171" },
+            28: { name: "Eclipse Penumbral de Luna", cat: "eclipse", icon: "🌑", desc: "La Luna atraviesa la penumbra tenue de la Tierra, produciendo un sutil oscurecimiento.", color: "#94a3b8" },
+
+            31: { name: "Mercurio en Conjunción Inferior", cat: "planet", icon: "☿️", desc: "Mercurio pasa entre la Tierra y el Sol, no visible.", color: "#94a3b8" },
+            32: { name: "Venus en Conjunción Inferior", cat: "planet", icon: "♀️", desc: "Venus pasa entre la Tierra y el Sol.", color: "#f472b6" },
+            33: { name: "Mercurio en Conjunción Superior", cat: "planet", icon: "☿️", desc: "Mercurio pasa por detrás del Sol.", color: "#94a3b8" },
+            34: { name: "Venus en Conjunción Superior", cat: "planet", icon: "♀️", desc: "Venus pasa por detrás del Sol.", color: "#f472b6" },
+            35: { name: "Mercurio en Máxima Elongación Este", cat: "planet", icon: "☿️", desc: "Mejor momento para observar Mercurio tras el atardecer (cielo vespertino al oeste).", color: "#38bdf8" },
+            36: { name: "Mercurio en Máxima Elongación Oeste", cat: "planet", icon: "☿️", desc: "Mejor momento para observar Mercurio antes del amanecer (cielo matutino al este).", color: "#38bdf8" },
+            37: { name: "Venus en Máxima Elongación Este", cat: "planet", icon: "♀️", desc: "Venus brillante visible durante horas tras la puesta de Sol (el Lucero de la Tarde).", color: "#f472b6" },
+            38: { name: "Venus en Máxima Elongación Oeste", cat: "planet", icon: "♀️", desc: "Venus brillante visible antes del amanecer (el Lucero del Alba).", color: "#f472b6" },
+
+            41: { name: "Marte en Oposición", cat: "planet", icon: "♂️", desc: "Marte alineado con la Tierra y el Sol. Máximo brillo, mayor diámetro telescópico y visible toda la noche.", color: "#ef4444" },
+            42: { name: "Júpiter en Oposición", cat: "planet", icon: "♃", desc: "Júpiter en su punto más cercano a la Tierra. Máximo brillo y excelente visión de bandas y lunas galileanas.", color: "#fb923c" },
+            43: { name: "Saturno en Oposición", cat: "planet", icon: "🪐", desc: "Saturno en su mejor momento del año. Sus anillos y lunas son visibles toda la noche con telescopio.", color: "#facc15" },
+            44: { name: "Urano en Oposición", cat: "planet", icon: "♅", desc: "Urano en su distancia mínima a la Tierra, visible con prismáticos en cielos oscuros.", color: "#2dd4bf" },
+            45: { name: "Neptuno en Oposición", cat: "planet", icon: "♆", desc: "Neptuno en oposición, visible mediante telescopio como un diminuto disco azulado.", color: "#60a5fa" },
+
+            46: { name: "Marte en Conjunción Solar", cat: "planet", icon: "♂️", desc: "Marte pasa por detrás del Sol.", color: "#94a3b8" },
+            47: { name: "Júpiter en Conjunción Solar", cat: "planet", icon: "♃", desc: "Júpiter pasa por detrás del Sol.", color: "#94a3b8" },
+            48: { name: "Saturno en Conjunción Solar", cat: "planet", icon: "🪐", desc: "Saturno pasa por detrás del Sol.", color: "#94a3b8" },
+            49: { name: "Urano en Conjunción Solar", cat: "planet", icon: "♅", desc: "Urano pasa por detrás del Sol.", color: "#94a3b8" },
+            50: { name: "Neptuno en Conjunción Solar", cat: "planet", icon: "♆", desc: "Neptuno pasa por detrás del Sol.", color: "#94a3b8" },
+
+            51: { name: "Conjunción Luna - Mercurio", cat: "conjunction", icon: "🔭", desc: "Paso cercano de la Luna cerca de Mercurio en el cielo.", color: "#38bdf8" },
+            52: { name: "Conjunción Luna - Venus", cat: "conjunction", icon: "🔭", desc: "Hermoso acercamiento visual entre la Luna y el brillante planeta Venus.", color: "#f472b6" },
+            53: { name: "Conjunción Luna - Marte", cat: "conjunction", icon: "🔭", desc: "Acercamiento aparente entre la Luna y el planeta rojo Marte.", color: "#ef4444" },
+            54: { name: "Conjunción Luna - Júpiter", cat: "conjunction", icon: "🔭", desc: "Paso cercano de la Luna junto al gigante gaseoso Júpiter.", color: "#fb923c" },
+            55: { name: "Conjunción Luna - Saturno", cat: "conjunction", icon: "🔭", desc: "Acercamiento visual entre la Luna y el planeta de los anillos Saturno.", color: "#facc15" },
+            56: { name: "Conjunción Luna - Urano", cat: "conjunction", icon: "🔭", desc: "Alineación aparente de la Luna con Urano.", color: "#2dd4bf" },
+            57: { name: "Conjunción Luna - Neptuno", cat: "conjunction", icon: "🔭", desc: "Alineación aparente de la Luna con Neptuno.", color: "#60a5fa" },
+
+            61: { name: "Conjunción Luna - Aldebarán (Tauro)", cat: "conjunction", icon: "✨", desc: "Paso de la Luna junto a la brillante estrella roja Aldebarán en la constelación de Tauro.", color: "#f87171" },
+            62: { name: "Conjunción Luna - Pólux (Géminis)", cat: "conjunction", icon: "✨", desc: "Acercamiento visual de la Luna a la estrella Pólux en Géminis.", color: "#fbbf24" },
+            63: { name: "Conjunción Luna - Régulo (Leo)", cat: "conjunction", icon: "✨", desc: "Paso de la Luna cerca de Régulo, la estrella principal de Leo.", color: "#60a5fa" },
+            64: { name: "Conjunción Luna - Espiga (Virgo)", cat: "conjunction", icon: "✨", desc: "Paso de la Luna junto a la estrella blanco-azulada Espiga en Virgo.", color: "#38bdf8" },
+            65: { name: "Conjunción Luna - Antares (Escorpio)", cat: "conjunction", icon: "✨", desc: "Paso de la Luna cerca de la supergigante roja Antares en el corazón de Escorpio.", color: "#ef4444" },
+            66: { name: "Conjunción Luna - Pléyades (M45)", cat: "conjunction", icon: "✨", desc: "La Luna pasa cerca o sobre el cúmulo abierto de las Pléyades (las Siete Hermanas).", color: "#818cf8" },
+            67: { name: "Conjunción Luna - Pesebre (M44)", cat: "conjunction", icon: "✨", desc: "Paso de la Luna cerca del cúmulo abierto del Pesebre (M44) en Cáncer.", color: "#a855f7" },
+
+            68: { name: "Conjunción Mercurio - Aldebarán", cat: "conjunction", icon: "🔭", desc: "Paso de Mercurio junto a Aldebarán.", color: "#38bdf8" },
+            69: { name: "Conjunción Mercurio - Pólux", cat: "conjunction", icon: "🔭", desc: "Paso de Mercurio junto a Pólux.", color: "#38bdf8" },
+            70: { name: "Conjunción Mercurio - Régulo", cat: "conjunction", icon: "🔭", desc: "Paso de Mercurio junto a Régulo.", color: "#38bdf8" },
+            71: { name: "Conjunción Mercurio - Espiga", cat: "conjunction", icon: "🔭", desc: "Paso de Mercurio junto a Espiga.", color: "#38bdf8" },
+            72: { name: "Conjunción Mercurio - Antares", cat: "conjunction", icon: "🔭", desc: "Paso de Mercurio junto a Antares.", color: "#38bdf8" },
+            73: { name: "Conjunción Mercurio - Pléyades (M45)", cat: "conjunction", icon: "🔭", desc: "Paso de Mercurio junto a las Pléyades.", color: "#38bdf8" },
+            74: { name: "Conjunción Mercurio - Pesebre (M44)", cat: "conjunction", icon: "🔭", desc: "Paso de Mercurio junto a M44.", color: "#38bdf8" },
+
+            75: { name: "Conjunción Venus - Aldebarán", cat: "conjunction", icon: "🔭", desc: "Paso de Venus junto a Aldebarán.", color: "#f472b6" },
+            76: { name: "Conjunción Venus - Pólux", cat: "conjunction", icon: "🔭", desc: "Paso de Venus junto a Pólux.", color: "#f472b6" },
+            77: { name: "Conjunción Venus - Régulo", cat: "conjunction", icon: "🔭", desc: "Paso de Venus junto a Régulo.", color: "#f472b6" },
+            78: { name: "Conjunción Venus - Espiga", cat: "conjunction", icon: "🔭", desc: "Paso de Venus junto a Espiga.", color: "#f472b6" },
+            79: { name: "Conjunción Venus - Antares", cat: "conjunction", icon: "🔭", desc: "Paso de Venus junto a Antares.", color: "#f472b6" },
+            80: { name: "Conjunción Venus - Pléyades (M45)", cat: "conjunction", icon: "🔭", desc: "Hermoso paso de Venus junto al cúmulo de las Pléyades.", color: "#f472b6" },
+            81: { name: "Conjunción Venus - Pesebre (M44)", cat: "conjunction", icon: "🔭", desc: "Paso de Venus junto a M44.", color: "#f472b6" },
+
+            82: { name: "Conjunción Marte - Aldebarán", cat: "conjunction", icon: "🔭", desc: "Duelo de astros rojos: Marte y Aldebarán muy cercanos.", color: "#ef4444" },
+            83: { name: "Conjunción Marte - Pólux", cat: "conjunction", icon: "🔭", desc: "Paso de Marte junto a Pólux.", color: "#ef4444" },
+            84: { name: "Conjunción Marte - Régulo", cat: "conjunction", icon: "🔭", desc: "Paso de Marte junto a Régulo.", color: "#ef4444" },
+            85: { name: "Conjunción Marte - Espiga", cat: "conjunction", icon: "🔭", desc: "Paso de Marte junto a Espiga.", color: "#ef4444" },
+            86: { name: "Conjunción Marte - Antares", cat: "conjunction", icon: "🔭", desc: "Encuentro de 'los dos rivales de Marte': el planeta y la estrella Antares.", color: "#ef4444" },
+            87: { name: "Conjunción Marte - Pléyades (M45)", cat: "conjunction", icon: "🔭", desc: "Paso de Marte junto a las Pléyades.", color: "#ef4444" },
+            88: { name: "Conjunción Marte - Pesebre (M44)", cat: "conjunction", icon: "🔭", desc: "Paso de Marte junto a M44.", color: "#ef4444" },
+
+            89: { name: "Conjunción Júpiter - Aldebarán", cat: "conjunction", icon: "🔭", desc: "Paso de Júpiter junto a Aldebarán.", color: "#fb923c" },
+            90: { name: "Conjunción Júpiter - Pólux", cat: "conjunction", icon: "🔭", desc: "Paso de Júpiter junto a Pólux.", color: "#fb923c" },
+            91: { name: "Conjunción Júpiter - Régulo", cat: "conjunction", icon: "🔭", desc: "Paso de Júpiter junto a Régulo.", color: "#fb923c" },
+            92: { name: "Conjunción Júpiter - Espiga", cat: "conjunction", icon: "🔭", desc: "Paso de Júpiter junto a Espiga.", color: "#fb923c" },
+            93: { name: "Conjunción Júpiter - Antares", cat: "conjunction", icon: "🔭", desc: "Paso de Júpiter junto a Antares.", color: "#fb923c" },
+            94: { name: "Conjunción Júpiter - Pléyades (M45)", cat: "conjunction", icon: "🔭", desc: "Paso de Júpiter junto a las Pléyades.", color: "#fb923c" },
+            95: { name: "Conjunción Júpiter - Pesebre (M44)", cat: "conjunction", icon: "🔭", desc: "Paso de Júpiter junto a M44.", color: "#fb923c" },
+
+            96: { name: "Conjunción Saturno - Aldebarán", cat: "conjunction", icon: "🪐", desc: "Paso de Saturno junto a Aldebarán.", color: "#facc15" },
+            97: { name: "Conjunción Saturno - Pólux", cat: "conjunction", icon: "🪐", desc: "Paso de Saturno junto a Pólux.", color: "#facc15" },
+            98: { name: "Conjunción Saturno - Régulo", cat: "conjunction", icon: "🪐", desc: "Paso de Saturno junto a Régulo.", color: "#facc15" },
+            99: { name: "Conjunción Saturno - Espiga", cat: "conjunction", icon: "🪐", desc: "Paso de Saturno junto a Espiga.", color: "#facc15" },
+            100: { name: "Conjunción Saturno - Antares", cat: "conjunction", icon: "🪐", desc: "Paso de Saturno junto a Antares.", color: "#facc15" },
+            101: { name: "Conjunción Saturno - Pléyades (M45)", cat: "conjunction", icon: "🪐", desc: "Paso de Saturno junto a las Pléyades.", color: "#facc15" },
+            102: { name: "Conjunción Saturno - Pesebre (M44)", cat: "conjunction", icon: "🪐", desc: "Paso de Saturno junto a M44.", color: "#facc15" },
+
+            103: { name: "Conjunción Mercurio - Venus", cat: "conjunction", icon: "🔭", desc: "Aproximación visual entre los dos planetas interiores.", color: "#38bdf8" },
+            104: { name: "Conjunción Mercurio - Marte", cat: "conjunction", icon: "🔭", desc: "Paso cercano de Mercurio junto a Marte.", color: "#38bdf8" },
+            105: { name: "Conjunción Mercurio - Júpiter", cat: "conjunction", icon: "🔭", desc: "Paso cercano de Mercurio junto a Júpiter.", color: "#38bdf8" },
+            106: { name: "Conjunción Mercurio - Saturno", cat: "conjunction", icon: "🔭", desc: "Paso cercano de Mercurio junto a Saturno.", color: "#38bdf8" },
+            107: { name: "Conjunción Venus - Marte", cat: "conjunction", icon: "🔭", desc: "Alineación estética entre Venus y Marte.", color: "#f472b6" },
+            108: { name: "Conjunción Venus - Júpiter", cat: "conjunction", icon: "🔭", desc: "Espectacular conjunción de los dos planetas más brillantes del firmamento.", color: "#facc15" },
+            109: { name: "Conjunción Venus - Saturno", cat: "conjunction", icon: "🔭", desc: "Paso cercano entre Venus y Saturno.", color: "#f472b6" },
+            110: { name: "Conjunción Marte - Júpiter", cat: "conjunction", icon: "🔭", desc: "Paso cercano entre Marte y Júpiter.", color: "#ef4444" },
+            111: { name: "Conjunción Marte - Saturno", cat: "conjunction", icon: "🔭", desc: "Paso cercano entre Marte y Saturno.", color: "#ef4444" },
+            112: { name: "Gran Conjunción Júpiter - Saturno", cat: "conjunction", icon: "🪐", desc: "Raro y espectacular encuentro cercano entre los dos gigantes del Sistema Solar.", color: "#facc15" },
+
+            135: { name: "Máxima Elongación de Mercurio", cat: "planet", icon: "☿️", desc: "Mercurio alcanza su máxima separación angular respecto al Sol, óptimo para su observación.", color: "#38bdf8" },
+            136: { name: "Máxima Elongación de Venus", cat: "planet", icon: "♀️", desc: "Venus alcanza su máxima separación angular respecto al Sol, luciendo con gran altura e intensidad.", color: "#f472b6" },
+
+            120: { name: "Lluvia de Cuadrántidas (Pico)", cat: "shower", icon: "🌠", desc: "Pico de actividad de las Cuadrántidas (~120 meteoros/hora).", color: "#38bdf8" },
+            121: { name: "Lluvia de Líridas (Pico)", cat: "shower", icon: "🌠", desc: "Lluvia de meteoros de primavera originada por el cometa Thatcher.", color: "#34d399" },
+            122: { name: "Lluvia de Eta Acuáridas (Pico)", cat: "shower", icon: "🌠", desc: "Meteoros procedentes de los restos del cometa Halley.", color: "#2dd4bf" },
+            123: { name: "Lluvia de Delta Acuáridas (Pico)", cat: "shower", icon: "🌠", desc: "Lluvia de meteoros estival visible en el cielo austral.", color: "#2dd4bf" },
+            124: { name: "Lluvia de Perseidas (Pico)", cat: "shower", icon: "🌠", desc: "Las famosas 'Lágrimas de San Lorenzo', una de las lluvias más intensas y populares del año (~100 meteoros/hora).", color: "#facc15" },
+            125: { name: "Lluvia de Oriónidas (Pico)", cat: "shower", icon: "🌠", desc: "Meteoros rápidos procedentes de restos del cometa Halley.", color: "#fb923c" },
+            126: { name: "Lluvia de Táuridas del Sur (Pico)", cat: "shower", icon: "🌠", desc: "Lluvia otoñal conocida por sus brillantes bólidos de fuego.", color: "#fb923c" },
+            127: { name: "Lluvia de Táuridas del Norte (Pico)", cat: "shower", icon: "🌠", desc: "Meteoros procedentes del cometa Encke.", color: "#fb923c" },
+            128: { name: "Lluvia de Leónidas (Pico)", cat: "shower", icon: "🌠", desc: "Meteoros originados por el cometa Tempel-Tuttle.", color: "#f472b6" },
+            129: { name: "Lluvia de Gemínidas (Pico)", cat: "shower", icon: "🌠", desc: "La lluvia más prolífica del año (~150 meteoros/hora), originada por el asteroide 3200 Faetón.", color: "#38bdf8" },
+            130: { name: "Lluvia de Úrsidas (Pico)", cat: "shower", icon: "🌠", desc: "Última lluvia destacada del año en torno al solsticio de invierno.", color: "#c084fc" },
+
+            131: { name: "Cambio a Horario de Verano (CEST)", cat: "season", icon: "⏰", desc: "Inicio del horario de verano: los relojes se adelantan una hora (UTC+2).", color: "#38bdf8" },
+            132: { name: "Cambio a Horario de Invierno (CET)", cat: "season", icon: "⏰", desc: "Fin del horario de verano: los relojes se retrasan una hora (UTC+1).", color: "#38bdf8" },
+            133: { name: "Cambio a Horario de Verano (CEST)", cat: "season", icon: "⏰", desc: "Inicio del horario de verano en Europa.", color: "#38bdf8" },
+            134: { name: "Cambio a Horario de Invierno (CET)", cat: "season", icon: "⏰", desc: "Fin del horario de verano en Europa.", color: "#38bdf8" }
+        };
+
+        // Estado de la aplicación
+        let currentYear = new Date().getFullYear();
+        let currentMonth = new Date().getMonth(); // 0-11
+        let currentFilter = 'all';
+        let currentView = 'calendar';
+        let activeSelectedEvent = null;
+
+        // Conversor de Día Juliano a Objeto Date de JavaScript (UTC)
+        function jdToDate(jd) {
+            return new Date((jd - 2440587.5) * 86400000);
+        }
+
+        // Formateo de fecha y hora para Mataró (Europe/Madrid)
+        function formatMataroDateTime(date) {
+            const dtfDate = new Intl.DateTimeFormat('es-ES', {
+                timeZone: 'Europe/Madrid',
+                weekday: 'short',
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+            const dtfTime = new Intl.DateTimeFormat('es-ES', {
+                timeZone: 'Europe/Madrid',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+            });
+            const tzName = new Intl.DateTimeFormat('es-ES', {
+                timeZone: 'Europe/Madrid',
+                timeZoneName: 'short'
+            }).formatToParts(date).find(p => p.type === 'timeZoneName')?.value || 'CET';
+
+            // Componentes individuales para cálculo de calendario local
+            const dtfParts = new Intl.DateTimeFormat('en-US', {
+                timeZone: 'Europe/Madrid',
+                year: 'numeric',
+                month: 'numeric',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: 'numeric',
+                hourCycle: 'h23'
+            }).formatToParts(date);
+
+            const yearLocal = parseInt(dtfParts.find(p => p.type === 'year').value);
+            const monthLocal = parseInt(dtfParts.find(p => p.type === 'month').value) - 1;
+            const dayLocal = parseInt(dtfParts.find(p => p.type === 'day').value);
+
+            return {
+                dateStr: dtfDate.format(date),
+                timeStr: dtfTime.format(date) + ' h (' + tzName + ')',
+                timeOnly: dtfTime.format(date) + ' h',
+                tzName,
+                yearLocal,
+                monthLocal,
+                dayLocal
+            };
+        }
+
+        // Obtener eventos formateados
+        function getParsedEvents() {
+            if (typeof RAW_SKYCAL_EVENTS === 'undefined' || !Array.isArray(RAW_SKYCAL_EVENTS)) {
+                return [];
+            }
+            return RAW_SKYCAL_EVENTS.map(raw => {
+                const jd = raw[0];
+                const typeCode = raw[1];
+                const param = raw[2] || 0;
+                const info = EVENT_DICTIONARY[typeCode] || {
+                    name: "Fenómeno Celeste (" + typeCode + ")",
+                    cat: "other",
+                    icon: "✨",
+                    desc: "Evento astronómico registrado en las efemérides de la NASA.",
+                    color: "#38bdf8"
+                };
+
+                let name = info.name;
+                // Si es elongación de Mercurio/Venus, añadir los grados
+                if ((typeCode === 35 || typeCode === 36 || typeCode === 37 || typeCode === 38) && param !== 0) {
+                    name += ` (${Math.abs(param / 10).toFixed(1)}°)`;
+                }
+
+                const dateObj = jdToDate(jd);
+                const local = formatMataroDateTime(dateObj);
+
+                return {
+                    jd,
+                    typeCode,
+                    param,
+                    name,
+                    category: info.cat,
+                    icon: info.icon,
+                    description: info.desc,
+                    color: info.color,
+                    dateObj,
+                    local
+                };
+            });
+        }
+
+        // Renderizar Ticker de Próximos Eventos
+        function renderTicker() {
+            const container = document.getElementById('ticker-container');
+            const events = getParsedEvents();
+            const now = new Date();
+            const nowMs = now.getTime();
+            const maxMs = nowMs + 15 * 86400000; // 15 días adelante
+
+            const upcoming = events.filter(e => {
+                const t = e.dateObj.getTime();
+                return t >= (nowMs - 86400000 * 0.5) && t <= maxMs;
+            }).slice(0, 8);
+
+            if (upcoming.length === 0) {
+                container.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 1rem;">No hay eventos destacados en los próximos 15 días.</div>`;
+                return;
+            }
+
+            container.innerHTML = upcoming.map(e => {
+                const diffDays = Math.round((e.dateObj.getTime() - nowMs) / 86400000);
+                let timeBadge = diffDays === 0 ? "¡HOY!" : (diffDays === 1 ? "MAÑANA" : `En ${diffDays} días`);
+                timeBadge += ` • ${e.local.timeOnly}`;
+
+                return `
+                    <div class="ticker-card" style="--card-accent: ${e.color};" onclick="openEventModal(${e.jd}, ${e.typeCode})">
+                        <div class="ticker-icon">${e.icon}</div>
+                        <div class="ticker-info">
+                            <span class="ticker-time-badge">${timeBadge}</span>
+                            <div class="ticker-name">${e.name}</div>
+                            <div class="ticker-desc">${e.local.dateStr}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Renderizar Calendario Mensual
+        function renderCalendar() {
+            const daysContainer = document.getElementById('calendar-days-container');
+            const monthLabel = document.getElementById('current-month-label');
+            const events = getParsedEvents();
+
+            const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+            monthLabel.textContent = `${monthNames[currentMonth]} ${currentYear}`;
+
+            // Primer día de la semana del mes (0=Dom, 1=Lun, ..., 6=Sáb)
+            const firstDayIndex = new Date(currentYear, currentMonth, 1).getDay();
+            // Ajustar para que la semana empiece en Lunes (0=Lun, ..., 6=Dom)
+            const startOffset = (firstDayIndex + 6) % 7;
+            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+            const today = new Date();
+            const isCurrentMonth = today.getFullYear() === currentYear && today.getMonth() === currentMonth;
+            const todayDay = today.getDate();
+
+            // Filtrar eventos del mes actual en hora de Mataró
+            const monthEvents = events.filter(e => {
+                const matchDate = e.local.yearLocal === currentYear && e.local.monthLocal === currentMonth;
+                if (!matchDate) return false;
+                if (currentFilter === 'all') return true;
+                return e.category === currentFilter;
+            });
+
+            let html = '';
+
+            // Celdas vacías iniciales
+            for (let i = 0; i < startOffset; i++) {
+                html += `<div class="calendar-day empty"></div>`;
+            }
+
+            // Días del mes
+            for (let day = 1; day <= daysInMonth; day++) {
+                const isToday = isCurrentMonth && day === todayDay;
+                const dayEventsList = monthEvents.filter(e => e.local.dayLocal === day);
+
+                const eventsHtml = dayEventsList.map(e => `
+                    <div class="event-pill" style="--pill-bg: ${e.color}22; --pill-border: ${e.color}; --pill-text: #fff;" onclick="openEventModal(${e.jd}, ${e.typeCode}); event.stopPropagation();" title="${e.name} (${e.local.timeOnly})">
+                        ${e.icon} ${e.name}
+                    </div>
+                `).join('');
+
+                html += `
+                    <div class="calendar-day ${isToday ? 'today' : ''}">
+                        <div class="day-number">
+                            <span>${day}</span>
+                            ${isToday ? '<span style="font-size: 0.65rem; color: var(--primary);">HOY</span>' : ''}
+                        </div>
+                        <div class="day-events">
+                            ${eventsHtml}
+                        </div>
+                    </div>
+                `;
+            }
+
+            daysContainer.innerHTML = html;
+        }
+
+        // Renderizar Vista de Lista Anual
+        function renderList() {
+            const container = document.getElementById('list-container');
+            const events = getParsedEvents();
+            const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+
+            const yearEvents = events.filter(e => {
+                if (e.local.yearLocal !== currentYear) return false;
+                if (currentFilter === 'all') return true;
+                return e.category === currentFilter;
+            });
+
+            if (yearEvents.length === 0) {
+                container.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 2rem;">No hay eventos registrados con el filtro seleccionado para el año ${currentYear}.</div>`;
+                return;
+            }
+
+            let html = '';
+            let currentGroupMonth = -1;
+
+            yearEvents.forEach(e => {
+                if (e.local.monthLocal !== currentGroupMonth) {
+                    currentGroupMonth = e.local.monthLocal;
+                    html += `<div class="list-month-header">${monthNames[currentGroupMonth]} ${currentYear}</div><div class="list-group">`;
+                }
+
+                html += `
+                    <div class="list-item" onclick="openEventModal(${e.jd}, ${e.typeCode})">
+                        <div class="list-item-left">
+                            <div class="list-item-icon">${e.icon}</div>
+                            <div>
+                                <div class="list-item-title">${e.name}</div>
+                                <div class="list-item-desc">${e.description}</div>
+                            </div>
+                        </div>
+                        <div class="list-item-time">
+                            <div>${e.local.dateStr}</div>
+                            <div style="color: var(--text-muted); font-size: 0.72rem;">${e.local.timeStr}</div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        // Navegación de Meses
+        function changeMonth(delta) {
+            currentMonth += delta;
+            if (currentMonth < 0) {
+                currentMonth = 11;
+                currentYear--;
+            } else if (currentMonth > 11) {
+                currentMonth = 0;
+                currentYear++;
+            }
+            renderCalendar();
+            if (currentView === 'list') renderList();
+        }
+
+        function goToToday() {
+            const today = new Date();
+            currentYear = today.getFullYear();
+            currentMonth = today.getMonth();
+            renderCalendar();
+            if (currentView === 'list') renderList();
+        }
+
+        // Cambio de Vista (Calendario vs Lista)
+        function switchView(view) {
+            currentView = view;
+            document.getElementById('btn-view-calendar').classList.toggle('active', view === 'calendar');
+            document.getElementById('btn-view-list').classList.toggle('active', view === 'list');
+            document.getElementById('calendar-view').style.display = view === 'calendar' ? 'block' : 'none';
+            document.getElementById('list-view').style.display = view === 'list' ? 'block' : 'none';
+            if (view === 'calendar') renderCalendar();
+            else renderList();
+        }
+
+        // Filtrado por Categoría
+        function filterCategory(cat, btnEl) {
+            currentFilter = cat;
+            document.querySelectorAll('.chip-btn').forEach(b => b.classList.remove('active'));
+            if (btnEl) btnEl.classList.add('active');
+            renderCalendar();
+            if (currentView === 'list') renderList();
+        }
+
+        // Modal de Eventos
+        function openEventModal(jd, typeCode) {
+            const events = getParsedEvents();
+            const ev = events.find(e => Math.abs(e.jd - jd) < 1e-4 && e.typeCode === typeCode);
+            if (!ev) return;
+
+            activeSelectedEvent = ev;
+            document.getElementById('modal-icon').textContent = ev.icon;
+            document.getElementById('modal-title').textContent = ev.name;
+            document.getElementById('modal-category').textContent = ev.category.toUpperCase();
+            document.getElementById('modal-local-time').textContent = `${ev.local.dateStr} • ${ev.local.timeStr}`;
+            document.getElementById('modal-utc-time').textContent = ev.dateObj.toUTCString().replace('GMT', 'UTC');
+            document.getElementById('modal-description').textContent = ev.description;
+
+            document.getElementById('event-modal').classList.add('open');
+        }
+
+        function closeModal() {
+            document.getElementById('event-modal').classList.remove('open');
+            activeSelectedEvent = null;
+        }
+
+        function closeModalOnOverlay(event) {
+            if (event.target === document.getElementById('event-modal')) {
+                closeModal();
+            }
+        }
+
+        // Exportar a archivo iCalendar (.ics)
+        function exportToICal() {
+            if (!activeSelectedEvent) return;
+            const ev = activeSelectedEvent;
+            const start = ev.dateObj;
+            const end = new Date(start.getTime() + 3600000); // 1 hora de duración
+
+            const pad = (n) => String(n).padStart(2, '0');
+            const formatICSDate = (d) => `${d.getUTCFullYear()}${pad(d.getUTCMonth()+1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}00Z`;
+
+            const icsContent = [
+                'BEGIN:VCALENDAR',
+                'VERSION:2.0',
+                'PRODID:-//Cosmos Mataró//SKYCAL Astro Calendar//ES',
+                'CALSCALE:GREGORIAN',
+                'BEGIN:VEVENT',
+                `SUMMARY:${ev.icon} ${ev.name} (Cosmos Mataró)`,
+                `DESCRIPTION:${ev.description}\\nFecha local Mataró: ${ev.local.dateStr} ${ev.local.timeStr}`,
+                `LOCATION:Mataró, España (41.54°N, 2.44°E)`,
+                `DTSTART:${formatICSDate(start)}`,
+                `DTEND:${formatICSDate(end)}`,
+                `UID:skycal-${ev.jd}-${ev.typeCode}@cosmosmataro.org`,
+                'STATUS:CONFIRMED',
+                'END:VEVENT',
+                'END:VCALENDAR'
+            ].join('\r\n');
+
+            const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `${ev.name.toLowerCase().replace(/[^a-z0-9]/g, '_')}_cosmos_mataro.ics`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Soporte para URL params (p. ej. ?view=banner para embeber solo el ticker)
+        window.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const viewParam = urlParams.get('view');
+            if (viewParam === 'banner') {
+                document.querySelector('.app-header').style.display = 'none';
+                document.querySelector('.controls-bar').style.display = 'none';
+                document.getElementById('calendar-view').style.display = 'none';
+                document.getElementById('list-view').style.display = 'none';
+                document.querySelector('.app-footer').style.display = 'none';
+                document.body.style.background = 'transparent';
+                document.querySelector('.app-container').style.padding = '0.5rem';
+            }
+
+            renderTicker();
+            renderCalendar();
+        });
+    </script>
+</body>
+</html>
