@@ -1619,13 +1619,17 @@
                 ctx.textAlign = "center"; ctx.fillText(hl.label, x, padT + plotH + 6);
             });
             ctx.beginPath(); ctx.strokeStyle = "#facc15"; ctx.lineWidth = 2.2; samples.forEach((s, idx) => idx === 0 ? ctx.moveTo(fractionToX(s.fraction), altToY(s.sAlt)) : ctx.lineTo(fractionToX(s.fraction), altToY(s.sAlt))); ctx.stroke();
-            ctx.beginPath(); ctx.strokeStyle = "#f43f5e"; ctx.lineWidth = 2.2; samples.forEach((s, idx) => idx === 0 ? ctx.moveTo(fractionToX(s.fraction), altToY(s.mAlt)) : ctx.lineTo(fractionToX(s.fraction), altToY(s.mAlt))); ctx.stroke();
+            const moonIllum = eph.moonCulm.illum;
+            const moonOpacity = 0.10 + 0.90 * (moonIllum / 100);
+            ctx.beginPath(); ctx.strokeStyle = `rgba(244, 63, 94, ${moonOpacity.toFixed(3)})`; ctx.lineWidth = 1.3 + 0.9 * (moonIllum / 100);
+            ctx.shadowColor = `rgba(244, 63, 94, ${(moonOpacity * 0.7).toFixed(3)})`; ctx.shadowBlur = Math.round(5 * (moonIllum / 100));
+            samples.forEach((s, idx) => idx === 0 ? ctx.moveTo(fractionToX(s.fraction), altToY(s.mAlt)) : ctx.lineTo(fractionToX(s.fraction), altToY(s.mAlt))); ctx.stroke(); ctx.shadowBlur = 0;
             if (eph.moonCulm.alt > -90) {
                 const culmIdx = samples.findIndex(s => Math.abs(s.tDate.getTime() - eph.moonCulm.time.getTime()) < 180000);
                 if (culmIdx !== -1) {
                     const cx = fractionToX(samples[culmIdx].fraction), cy = altToY(eph.moonCulm.alt);
-                    ctx.beginPath(); ctx.fillStyle = "rgba(244, 63, 94, 0.35)"; ctx.arc(cx, cy, 8, 0, Math.PI * 2); ctx.fill();
-                    ctx.beginPath(); ctx.fillStyle = "#ffffff"; ctx.strokeStyle = "#f43f5e"; ctx.lineWidth = 2.5; ctx.arc(cx, cy, 4.5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+                    ctx.beginPath(); ctx.fillStyle = `rgba(244, 63, 94, ${(moonOpacity * 0.4).toFixed(3)})`; ctx.arc(cx, cy, 8, 0, Math.PI * 2); ctx.fill();
+                    ctx.beginPath(); ctx.fillStyle = `rgba(255, 255, 255, ${moonOpacity.toFixed(3)})`; ctx.strokeStyle = `rgba(244, 63, 94, ${moonOpacity.toFixed(3)})`; ctx.lineWidth = 2.5; ctx.arc(cx, cy, 4.5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
                 }
             }
             if (hoveredSampleIndex >= 0 && hoveredSampleIndex < samples.length) {
@@ -1861,12 +1865,14 @@
                 ctx.stroke();
                 ctx.shadowBlur = 0;
 
-                // 4. Onda Coral de la Luna (00h a 24h)
+                // 4. Onda Coral de la Luna (00h a 24h) con brillo según fase (10% en Luna Nueva a 100% en Luna Llena)
+                const moonIllum = dayData.moonIllum;
+                const moonOpacity = 0.10 + 0.90 * (moonIllum / 100);
                 ctx.beginPath();
-                ctx.strokeStyle = "#f43f5e";
-                ctx.lineWidth = 1.7;
-                ctx.shadowColor = "rgba(244, 63, 94, 0.45)";
-                ctx.shadowBlur = 3;
+                ctx.strokeStyle = `rgba(244, 63, 94, ${moonOpacity.toFixed(3)})`;
+                ctx.lineWidth = 1.1 + 0.9 * (moonIllum / 100);
+                ctx.shadowColor = `rgba(244, 63, 94, ${(moonOpacity * 0.6).toFixed(3)})`;
+                ctx.shadowBlur = Math.round(4 * (moonIllum / 100));
                 samples.forEach((s, idx) => {
                     const x = fracToX(s.frac);
                     const y = altToY(s.mAlt);
@@ -1876,19 +1882,19 @@
                 ctx.stroke();
                 ctx.shadowBlur = 0;
 
-                // 5. Marcador de Culminación Lunar
+                // 5. Marcador de Culminación Lunar (con brillo proporcional a la fase)
                 if (dayData.maxMoonAlt > -90) {
                     const cx = fracToX(dayData.maxMoonFrac);
                     const cy = altToY(dayData.maxMoonAlt);
 
                     ctx.beginPath();
-                    ctx.fillStyle = "rgba(244, 63, 94, 0.35)";
+                    ctx.fillStyle = `rgba(244, 63, 94, ${(moonOpacity * 0.35).toFixed(3)})`;
                     ctx.arc(cx, cy, 5, 0, Math.PI * 2);
                     ctx.fill();
 
                     ctx.beginPath();
-                    ctx.fillStyle = "#ffffff";
-                    ctx.strokeStyle = "#f43f5e";
+                    ctx.fillStyle = `rgba(255, 255, 255, ${moonOpacity.toFixed(3)})`;
+                    ctx.strokeStyle = `rgba(244, 63, 94, ${moonOpacity.toFixed(3)})`;
                     ctx.lineWidth = 1.5;
                     ctx.arc(cx, cy, 2.5, 0, Math.PI * 2);
                     ctx.fill();
