@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calibrador de Accidentes Lunares · Cosmos Mataró</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-dark: #070b14;
+            --panel-bg: rgba(13, 20, 36, 0.88);
+            --border-color: rgba(255, 255, 255, 0.1);
+            --accent-blue: #38bdf8;
+            --accent-green: #4ade80;
+            --accent-amber: #f59e0b;
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Outfit', sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+        }
+
+        /* Panel Lateral */
+        #sidebar {
+            width: 380px;
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            z-index: 10;
+        }
+
+        .header {
+            padding: 16px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header i {
+            font-size: 1.5rem;
+            color: var(--accent-blue);
+        }
+
+        .header h1 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+        }
+
+        .header p {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+        }
+
+        .instructions {
+            padding: 12px 16px;
+            background: rgba(56, 189, 248, 0.06);
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.8rem;
+            line-height: 1.4;
+            color: #bae6fd;
+        }
+
+        .features-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .feature-item:hover {
+            background: rgba(255, 255, 255, 0.07);
+            border-color: rgba(56, 189, 248, 0.3);
+        }
+
+        .feature-item.active {
+            background: rgba(56, 189, 248, 0.15);
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 12px rgba(56, 189, 248, 0.2);
+        }
+
+        .feat-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .feat-name {
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .feat-coords {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.72rem;
+            color: var(--text-dim);
+        }
+
+        .feat-tag {
+            font-size: 0.65rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .tag-crater { background: rgba(56, 189, 248, 0.2); color: #7dd3fc; }
+        .tag-mare { background: rgba(148, 163, 184, 0.2); color: #cbd5e1; }
+
+        .footer-panel {
+            padding: 14px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .btn-action {
+            width: 100%;
+            padding: 10px;
+            background: linear-gradient(135deg, #0284c7, #0369a1);
+            border: 1px solid #38bdf8;
+            border-radius: 8px;
+            color: #fff;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: transform 0.1s, box-shadow 0.15s;
+        }
+
+        .btn-action:hover {
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
+            transform: translateY(-1px);
+        }
+
+        .btn-action:active {
+            transform: translateY(0);
+        }
+
+        /* Lienzo Principal */
+        #canvas-container {
+            flex: 1;
+            position: relative;
+            cursor: crosshair;
+            background: radial-gradient(circle at center, #0b1220 0%, #03060c 100%);
+            overflow: hidden;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Lupa de precisión */
+        #loupe {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            border: 3px solid var(--accent-blue);
+            background: #000;
+            overflow: hidden;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.8), 0 0 15px rgba(56, 189, 248, 0.3);
+            pointer-events: none;
+            display: block;
+            z-index: 20;
+        }
+
+        #loupe-canvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        .loupe-crosshair {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 24px;
+            height: 24px;
+            pointer-events: none;
+        }
+
+        .loupe-crosshair::before, .loupe-crosshair::after {
+            content: '';
+            position: absolute;
+            background: #ef4444;
+        }
+
+        .loupe-crosshair::before { top: 11px; left: 0; width: 24px; height: 2px; }
+        .loupe-crosshair::after { top: 0; left: 11px; width: 2px; height: 24px; }
+
+        /* Controles flotantes en el lienzo */
+        .canvas-toolbar {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 8px;
+            background: var(--panel-bg);
+            padding: 6px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            z-index: 10;
+        }
+
+        .tool-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.78rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .tool-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Modal de Código */
+        #code-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+
+        .modal-content {
+            background: #0f172a;
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            width: 600px;
+            max-width: 90vw;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            padding: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .code-box {
+            background: #030712;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 12px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.78rem;
+            color: #38bdf8;
+            max-height: 320px;
+            overflow-y: auto;
+            white-space: pre;
+            user-select: text;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            background: #059669;
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            transition: transform 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+            z-index: 200;
+        }
+
+        .notification.show {
+            transform: translateX(-50%) translateY(0);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Panel Lateral -->
+    <aside id="sidebar">
+        <div class="header">
+            <i class="fa-solid fa-crosshairs"></i>
+            <div>
+                <h1>Calibrador Lunar</h1>
+                <p>Cosmos Mataró · Precisión Píxel a Píxel</p>
+            </div>
+        </div>
+
+        <div class="instructions">
+            <strong>Instrucciones:</strong>
+            <ol style="margin-left: 16px; margin-top: 4px;">
+                <li>Selecciona un accidente de la lista.</li>
+                <li>Haz <strong>clic</strong> o <strong>arrastra</strong> el punto sobre el mapa lunar.</li>
+                <li>Usa la rueda del ratón para hacer <strong>zoom</strong> y la lupa para máxima precisión.</li>
+                <li>Pulsa <strong>"Ver y Copiar Código JS"</strong> al terminar.</li>
+            </ol>
+        </div>
+
+        <div class="features-list" id="features-list">
+            <!-- Rellenado dinámicamente -->
+        </div>
+
+        <div class="footer-panel">
+            <button class="btn-action" onclick="showCodeModal()">
+                <i class="fa-solid fa-code"></i> Ver y Copiar Código JS
+            </button>
+            <button class="tool-btn" style="justify-content: center;" onclick="resetToInitial()">
+                <i class="fa-solid fa-rotate-left"></i> Restablecer valores iniciales
+            </button>
+        </div>
+    </aside>
+
+    <!-- Área del Canvas -->
+    <main id="canvas-container">
+        <div class="canvas-toolbar">
+            <button class="tool-btn" onclick="zoomIn()"><i class="fa-solid fa-plus"></i> Zoom +</button>
+            <button class="tool-btn" onclick="zoomOut()"><i class="fa-solid fa-minus"></i> Zoom -</button>
+            <button class="tool-btn" onclick="resetView()"><i class="fa-solid fa-compress"></i> Centrar</button>
+        </div>
+
+        <canvas id="moon-canvas"></canvas>
+
+        <!-- Lupa flotante -->
+        <div id="loupe">
+            <canvas id="loupe-canvas" width="180" height="180"></canvas>
+            <div class="loupe-crosshair"></div>
+        </div>
+    </main>
+
+    <!-- Modal de Código -->
+    <div id="code-modal" onclick="if(event.target === this) closeCodeModal()">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 style="font-size: 1.05rem;"><i class="fa-solid fa-code" style="color: var(--accent-blue);"></i> Código Calibrado</h3>
+                <button onclick="closeCodeModal()" style="background: none; border: none; color: #fff; font-size: 1.2rem; cursor: pointer;">&times;</button>
+            </div>
+            <p style="font-size: 0.8rem; color: var(--text-dim);">Copia este bloque o envíamelo para actualizar <code>lunareclipse.html</code>:</p>
+            <div class="code-box" id="code-output"></div>
+            <button class="btn-action" onclick="copyCodeToClipboard()">
+                <i class="fa-solid fa-copy"></i> Copiar al Portapapeles
+            </button>
+        </div>
+    </div>
+
+    <div class="notification" id="notification">¡Código copiado al portapapeles!</div>
+
+    <script>
+        // Lista de accidentes a calibrar (con las coordenadas calibradas por el usuario)
+        const initialFeatures = [
+            { name: "Tycho", nx: -0.076, ny: 0.712, type: 'crater' },
+            { name: "Copernicus", nx: -0.385, ny: -0.107, type: 'crater' },
+            { name: "Kepler", nx: -0.656, ny: -0.065, type: 'crater' },
+            { name: "Aristarchus", nx: -0.762, ny: -0.313, type: 'crater' },
+            { name: "Plato", nx: -0.211, ny: -0.760, type: 'crater' },
+            { name: "M. Imbrium", nx: -0.316, ny: -0.442, type: 'mare' },
+            { name: "M. Serenitatis", nx: 0.258, ny: -0.369, type: 'mare' },
+            { name: "M. Tranquillitatis", nx: 0.420, ny: -0.108, type: 'mare' },
+            { name: "M. Crisium", nx: 0.773, ny: -0.342, type: 'mare' },
+            { name: "Oceanus Procellarum", nx: -0.841, ny: -0.136, type: 'mare' },
+            { name: "M. Nubium", nx: -0.226, ny: 0.322, type: 'mare' },
+            { name: "M. Nectaris", nx: 0.572, ny: 0.219, type: 'mare' }
+        ];
+
+        let features = JSON.parse(JSON.stringify(initialFeatures));
+        let selectedIndex = 0;
+
+        // Estado del visor
+        let zoom = 1.0;
+        let panX = 0, panY = 0;
+        let isDragging = false;
+        let isDraggingPin = false;
+        let dragStartX = 0, dragStartY = 0;
+        let mouseCanvasX = 0, mouseCanvasY = 0;
+
+        const canvas = document.getElementById('moon-canvas');
+        const ctx = canvas.getContext('2d');
+        const loupeCanvas = document.getElementById('loupe-canvas');
+        const loupeCtx = loupeCanvas.getContext('2d');
+
+        const moonImg = new Image();
+        moonImg.src = 'realistic_moon.png';
+        moonImg.onload = () => {
+            render();
+        };
+
+        function init() {
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+            renderFeatureList();
+            setupEvents();
+            render();
+        }
+
+        function resizeCanvas() {
+            const container = document.getElementById('canvas-container');
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = container.clientWidth * dpr;
+            canvas.height = container.clientHeight * dpr;
+            render();
+        }
+
+        function renderFeatureList() {
+            const list = document.getElementById('features-list');
+            list.innerHTML = '';
+
+            features.forEach((f, idx) => {
+                const item = document.createElement('div');
+                item.className = 'feature-item ' + (idx === selectedIndex ? 'active' : '');
+                item.onclick = () => selectFeature(idx);
+
+                item.innerHTML = '<div class="feat-info">' +
+                    '<div class="feat-name">' + f.name + '</div>' +
+                    '<div class="feat-coords">x: ' + (f.nx >= 0 ? '+' : '') + f.nx.toFixed(3) + ', y: ' + (f.ny >= 0 ? '+' : '') + f.ny.toFixed(3) + '</div>' +
+                    '</div>' +
+                    '<span class="feat-tag tag-' + f.type + '">' + (f.type === 'crater' ? 'Cráter' : 'Mar') + '</span>';
+                list.appendChild(item);
+            });
+        }
+
+        function selectFeature(idx) {
+            selectedIndex = idx;
+            renderFeatureList();
+            render();
+        }
+
+        function setupEvents() {
+            canvas.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                const factor = e.deltaY < 0 ? 1.15 : 0.87;
+                zoom = Math.max(0.4, Math.min(8.0, zoom * factor));
+                render();
+                updateLoupe();
+            }, { passive: false });
+
+            canvas.addEventListener('mousedown', (e) => {
+                const rect = canvas.getBoundingClientRect();
+                const mouseX = e.clientX - rect.left;
+                const mouseY = e.clientY - rect.top;
+
+                // Comprobar si se ha pulsado sobre un pin existente
+                const clickedIdx = findPinAt(mouseX, mouseY);
+                if (clickedIdx !== -1) {
+                    selectedIndex = clickedIdx;
+                    isDraggingPin = true;
+                    renderFeatureList();
+                    render();
+                    return;
+                }
+
+                // Clic izquierdo: reposicionar el seleccionado
+                if (e.button === 0 && !e.shiftKey && !e.altKey) {
+                    repositionSelected(mouseX, mouseY);
+                    return;
+                }
+
+                // Clic con shift/medio: arrastrar vista
+                isDragging = true;
+                dragStartX = e.clientX - panX;
+                dragStartY = e.clientY - panY;
+            });
+
+            window.addEventListener('mousemove', (e) => {
+                const rect = canvas.getBoundingClientRect();
+                mouseCanvasX = e.clientX - rect.left;
+                mouseCanvasY = e.clientY - rect.top;
+
+                if (isDraggingPin) {
+                    repositionSelected(mouseCanvasX, mouseCanvasY);
+                    updateLoupe();
+                    return;
+                }
+
+                if (isDragging) {
+                    panX = e.clientX - dragStartX;
+                    panY = e.clientY - dragStartY;
+                    render();
+                }
+
+                updateLoupe();
+            });
+
+            window.addEventListener('mouseup', () => {
+                isDragging = false;
+                isDraggingPin = false;
+            });
+        }
+
+        function findPinAt(screenX, screenY) {
+            const dpr = window.devicePixelRatio || 1;
+            const w = canvas.width / dpr;
+            const h = canvas.height / dpr;
+            const cx = w / 2 + panX;
+            const cy = h / 2 + panY;
+            const rmPx = Math.min(w, h) * 0.42 * zoom;
+
+            for (let i = 0; i < features.length; i++) {
+                const px = cx + features[i].nx * rmPx;
+                const py = cy + features[i].ny * rmPx;
+                const dist = Math.hypot(screenX - px, screenY - py);
+                if (dist < 16) return i;
+            }
+            return -1;
+        }
+
+        function repositionSelected(screenX, screenY) {
+            const dpr = window.devicePixelRatio || 1;
+            const w = canvas.width / dpr;
+            const h = canvas.height / dpr;
+            const cx = w / 2 + panX;
+            const cy = h / 2 + panY;
+            const rmPx = Math.min(w, h) * 0.42 * zoom;
+
+            const nx = (screenX - cx) / rmPx;
+            const ny = (screenY - cy) / rmPx;
+
+            features[selectedIndex].nx = Math.max(-1, Math.min(1, nx));
+            features[selectedIndex].ny = Math.max(-1, Math.min(1, ny));
+
+            renderFeatureList();
+            render();
+        }
+
+        function render() {
+            const dpr = window.devicePixelRatio || 1;
+            const w = canvas.width / dpr;
+            const h = canvas.height / dpr;
+
+            ctx.save();
+            ctx.scale(dpr, dpr);
+            ctx.clearRect(0, 0, w, h);
+
+            const cx = w / 2 + panX;
+            const cy = h / 2 + panY;
+            const rmPx = Math.min(w, h) * 0.42 * zoom;
+
+            ctx.translate(cx, cy);
+
+            // Fondo de disco
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(0, 0, rmPx, 0, Math.PI * 2);
+            ctx.clip();
+
+            if (moonImg.complete && moonImg.naturalWidth > 0) {
+                // Mismo recorte simétrico idéntico a lunareclipse.html
+                ctx.drawImage(moonImg, 64, 32, 924, 960, -rmPx, -rmPx, rmPx * 2, rmPx * 2);
+            }
+            ctx.restore();
+
+            // Círculo del limbo lunar
+            ctx.beginPath();
+            ctx.arc(0, 0, rmPx, 0, Math.PI * 2);
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            // Ejes de coordenadas centrales tenues
+            ctx.beginPath();
+            ctx.strokeStyle = "rgba(56, 189, 248, 0.2)";
+            ctx.setLineDash([3, 3]);
+            ctx.moveTo(-rmPx, 0); ctx.lineTo(rmPx, 0);
+            ctx.moveTo(0, -rmPx); ctx.lineTo(0, rmPx);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Dibujar todos los pines
+            features.forEach((f, idx) => {
+                const px = f.nx * rmPx;
+                const py = f.ny * rmPx;
+                const isSel = (idx === selectedIndex);
+
+                ctx.save();
+                ctx.translate(px, py);
+
+                // Halo si está seleccionado
+                if (isSel) {
+                    ctx.beginPath();
+                    ctx.arc(0, 0, 10, 0, Math.PI * 2);
+                    ctx.fillStyle = "rgba(56, 189, 248, 0.35)";
+                    ctx.fill();
+                    ctx.strokeStyle = "#38bdf8";
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
+                }
+
+                // Pin central
+                ctx.beginPath();
+                ctx.arc(0, 0, isSel ? 4 : 3, 0, Math.PI * 2);
+                ctx.fillStyle = isSel ? "#f59e0b" : "#38bdf8";
+                ctx.fill();
+                ctx.strokeStyle = "#ffffff";
+                ctx.lineWidth = 1;
+                ctx.stroke();
+
+                // Rótulo
+                ctx.font = isSel ? "bold 11px 'Outfit', sans-serif" : "500 10px 'Outfit', sans-serif";
+                ctx.textAlign = "center";
+                ctx.shadowColor = "rgba(0, 0, 0, 0.95)";
+                ctx.shadowBlur = 4;
+                ctx.fillStyle = isSel ? "#fef08a" : "#ffffff";
+                ctx.fillText(f.name, 0, -8);
+
+                ctx.restore();
+            });
+
+            ctx.restore();
+        }
+
+        function updateLoupe() {
+            const loupe = document.getElementById('loupe');
+            if (!loupe || !moonImg.complete) return;
+
+            const dpr = window.devicePixelRatio || 1;
+            const w = canvas.width / dpr;
+            const h = canvas.height / dpr;
+            const cx = w / 2 + panX;
+            const cy = h / 2 + panY;
+            const rmPx = Math.min(w, h) * 0.42 * zoom;
+
+            loupeCtx.clearRect(0, 0, 180, 180);
+
+            // Dibujar sección ampliada (4x) centrada en el cursor
+            loupeCtx.save();
+            loupeCtx.translate(90, 90);
+            loupeCtx.scale(4.0, 4.0);
+            loupeCtx.translate(-mouseCanvasX, -mouseCanvasY);
+
+            loupeCtx.translate(cx, cy);
+
+            loupeCtx.beginPath();
+            loupeCtx.arc(0, 0, rmPx, 0, Math.PI * 2);
+            loupeCtx.clip();
+
+            loupeCtx.drawImage(moonImg, 64, 32, 924, 960, -rmPx, -rmPx, rmPx * 2, rmPx * 2);
+            loupeCtx.restore();
+        }
+
+        function zoomIn() { zoom = Math.min(8.0, zoom * 1.25); render(); }
+        function zoomOut() { zoom = Math.max(0.4, zoom / 1.25); render(); }
+        function resetView() { zoom = 1.0; panX = 0; panY = 0; render(); }
+        function resetToInitial() { features = JSON.parse(JSON.stringify(initialFeatures)); renderFeatureList(); render(); }
+
+        function generateCode() {
+            let code = 'const features = [\n';
+            features.forEach(f => {
+                const xSign = f.nx >= 0 ? 'rmPx * ' : '-rmPx * ';
+                const ySign = f.ny >= 0 ? 'rmPx * ' : '-rmPx * ';
+                const xVal = Math.abs(f.nx).toFixed(3);
+                const yVal = Math.abs(f.ny).toFixed(3);
+                code += '    { name: "' + f.name + '", x: ' + xSign + xVal + ', y: ' + ySign + yVal + ', type: \'' + f.type + '\' },\n';
+            });
+            code += '];';
+            return code;
+        }
+
+        function showCodeModal() {
+            document.getElementById('code-output').textContent = generateCode();
+            document.getElementById('code-modal').style.display = 'flex';
+        }
+
+        function closeCodeModal() {
+            document.getElementById('code-modal').style.display = 'none';
+        }
+
+        function copyCodeToClipboard() {
+            const code = generateCode();
+            navigator.clipboard.writeText(code).then(() => {
+                const notif = document.getElementById('notification');
+                notif.classList.add('show');
+                setTimeout(() => notif.classList.remove('show'), 2500);
+            });
+        }
+
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

@@ -492,7 +492,7 @@
             <i class="fa-solid fa-folder-open"></i> Cargar CSV Completo (11,900 Eclipses)
         </div>
         <div class="file-input-wrapper">
-            <button class="btn btn-secondary" style="width: 100%;"><i class="fa-solid fa-upload"></i> Cargar eclipse_besselian_from_mysqldump2.csv</button>
+            <button class="btn btn-secondary" style="width: 100%;"><i class="fa-solid fa-upload"></i> Cargar eclipse_besselian_elements.csv</button>
             <input type="file" id="csv-file-input" accept=".csv">
         </div>
     </div>
@@ -755,7 +755,7 @@
             });
         }
 
-        fetch('eclipse_besselian_from_mysqldump2.csv')
+        fetch('eclipse_besselian_elements.csv')
             .then(res => {
                 if(!res.ok) throw new Error("Fetch no disponible");
                 return res.text();

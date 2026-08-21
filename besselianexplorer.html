@@ -151,6 +151,8 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            height: 56px;
+            box-sizing: border-box;
         }
 
         .panel-header h1 {
@@ -233,11 +235,14 @@
         .checkbox-row {
             display: flex;
             align-items: center;
-            gap: 0.4rem;
+            gap: 0.45rem;
             font-size: 0.76rem;
+            line-height: 1.35;
             color: var(--text-primary);
             cursor: pointer;
             user-select: none;
+            margin: 0;
+            padding: 0;
         }
 
         .checkbox-row input {
@@ -246,6 +251,7 @@
             width: 13px;
             height: 13px;
             margin: 0;
+            padding: 0;
             flex-shrink: 0;
         }
 
@@ -301,43 +307,63 @@
             }
         }
 
-        /* Pantallas con poca altura vertical (laptops, móvil horizontal, iframes incrustados) */
-        @media (max-height: 700px) {
-            .sidebar-panel, .settings-panel {
-                gap: 6px;
-                max-height: calc(100vh - 20px);
-            }
-            .panel-player-section {
-                padding: 8px 10px;
-                gap: 5px;
-            }
-            .section-title {
-                font-size: 0.78rem;
-                margin-top: 2px;
-            }
-            .stat-grid {
-                gap: 2px 8px;
-            }
-            .stat-row {
-                font-size: 0.72rem;
-                padding: 1px 0;
-            }
-            .preset-chip {
-                padding: 3px 8px;
-                font-size: 0.72rem;
-            }
-        }
-
         .section-title {
             font-family: var(--font-heading);
-            font-size: 0.9rem;
-            font-weight: 600;
+            font-size: 0.85rem;
+            font-weight: 700;
             color: var(--text-secondary);
             text-transform: uppercase;
             letter-spacing: 0.05em;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
+            margin-top: 4px;
+            margin-bottom: 0;
+            line-height: 1.2;
+        }
+
+        .section-title i {
+            width: 14px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .section-title span {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .section-title-between {
+            display: flex !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            width: 100% !important;
+            gap: 4px !important;
+        }
+
+        .section-title-between > span:first-child {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        #csv-status-badge {
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 3px !important;
+            white-space: nowrap !important;
+            flex-shrink: 0 !important;
+            font-size: 0.68rem !important;
+            margin-left: auto !important;
+            text-align: right !important;
+        }
+
+        #csv-status-badge i {
+            width: auto !important;
+            font-size: 0.70rem !important;
         }
 
         
@@ -421,7 +447,7 @@
         /* Preset Quick Buttons */
         .quick-presets {
             display: flex;
-            flex-wrap: wrap;
+            flex-direction: column;
             gap: 6px;
         }
         .preset-chip {
@@ -433,6 +459,8 @@
             font-size: 0.8rem;
             cursor: pointer;
             transition: all 0.2s;
+            box-sizing: border-box;
+            width: 100%;
         }
         .preset-chip:hover, .preset-chip.active {
             background: rgba(56, 189, 248, 0.2);
@@ -637,9 +665,9 @@
             <div class="preset-chip" data-cat="9569">26 Ene 2028 (Anular España)</div>
         </div>
 
-        <div class="section-title" style="display: flex; justify-content: space-between; align-items: center;">
+        <div class="section-title section-title-between" style="margin-top: 4px;">
             <span><i class="fa-solid fa-magnifying-glass"></i> Buscar por Año</span>
-            <span id="csv-status-badge" style="font-size: 0.72rem; color: var(--text-secondary); font-weight: 600; text-transform: none; letter-spacing: 0; cursor: help;" title="Five Millennium Catalog of Solar Eclipses (-1999 a +3000) · Fred Espenak &amp; Jean Meeus (NASA GSFC)">
+            <span id="csv-status-badge" style="color: var(--text-secondary); font-weight: 600; text-transform: none; letter-spacing: 0; cursor: help;" title="Five Millennium Catalog of Solar Eclipses (-1999 a +3000) · Fred Espenak &amp; Jean Meeus (NASA GSFC)">
                 <i class="fa-solid fa-circle-notch fa-spin"></i> Cargando...
             </span>
         </div>
@@ -1096,7 +1124,7 @@
                     eclipseData = results.data;
                     const badge = document.getElementById('csv-status-badge');
                     if (badge) {
-                        badge.innerHTML = `<i class="fa-solid fa-check-circle"></i> ${eclipseData.length.toLocaleString()} eclipses`;
+                        badge.innerHTML = `<i class="fa-solid fa-check-circle"></i> ${eclipseData.length.toLocaleString()} eclipses (-1999-3000)`;
                         badge.style.color = 'var(--accent-green)';
                         badge.title = 'Five Millennium Catalog of Solar Eclipses (-1999 a +3000) · Fred Espenak & Jean Meeus (NASA GSFC)';
                         badge.style.cursor = 'help';
@@ -1122,8 +1150,8 @@
             });
         }
 
-        const CSV_LOCAL_PATH = 'eclipse_besselian_from_mysqldump2.csv';
-        const CSV_CDN_URL = 'https://cdn.jsdelivr.net/gh/diegorodriguezperegrin/besselian-explorer@main/eclipse_besselian_from_mysqldump2.csv';
+        const CSV_LOCAL_PATH = 'eclipse_besselian_elements.csv';
+        const CSV_CDN_URL = 'https://cdn.jsdelivr.net/gh/diegorodriguezperegrin/besselian-explorer@main/eclipse_besselian_elements.csv';
 
         fetch(CSV_LOCAL_PATH)
             .then(res => {
