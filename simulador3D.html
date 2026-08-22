@@ -4081,12 +4081,12 @@
             const deltaYears = SAROS_DAYS / 365.24219;
             const deltaAngleEarth = deltaYears * Math.PI * 2;
             
-            // Avanzar el sistema orbital por la resonancia entera exacta de Saros:
-            // +223 meses Sinódicos, +242 meses Draconíticos, +239 meses Anomalísticos
+            // Avanzar el sistema orbital por la resonancia armónica de Saros:
+            // 1 Saros = 223 meses Sinódicos ≈ 242 meses Draconíticos ≈ 239 meses Anomalísticos
             states.orbitEarth += deltaAngleEarth;
-            states.orbitMoon += deltaAngleEarth + 223 * Math.PI * 2;
-            states.precessionMoon += deltaAngleEarth - 19 * Math.PI * 2;
-            states.apsidesMoon += deltaAngleEarth - 16 * Math.PI * 2;
+            states.orbitMoon += 239 * Math.PI * 2;
+            states.precessionMoon -= (deltaYears / 18.61) * Math.PI * 2;
+            states.apsidesMoon += (deltaYears / 8.8504 + deltaYears / 18.61) * Math.PI * 2;
             
             // En 1 Saros (8h sobrantes), la rotación diurna terrestre se desplaza 1/3 de vuelta (120° al Oeste)
             states.rotEarth += deltaAngleEarth + (1 / 3) * Math.PI * 2;
@@ -4174,12 +4174,12 @@
             const deltaYears = EXELIGMOS_DAYS / 365.24219;
             const deltaAngleEarth = deltaYears * Math.PI * 2;
             
-            // Avanzar el sistema orbital por la resonancia entera exacta de Exeligmos (3 Saros):
+            // Avanzar el sistema orbital por la gran resonancia entera exacta de Exeligmos (3 Saros):
             // +669 meses Sinódicos, +726 meses Draconíticos, +717 meses Anomalísticos
             states.orbitEarth += deltaAngleEarth;
-            states.orbitMoon += deltaAngleEarth + 669 * Math.PI * 2;
-            states.precessionMoon += deltaAngleEarth - 57 * Math.PI * 2;
-            states.apsidesMoon += deltaAngleEarth - 48 * Math.PI * 2;
+            states.orbitMoon += 717 * Math.PI * 2;
+            states.precessionMoon -= (deltaYears / 18.61) * Math.PI * 2;
+            states.apsidesMoon += (deltaYears / 8.8504 + deltaYears / 18.61) * Math.PI * 2;
             
             // Giro diurno de la Tierra: En 3 Saros (1 Exeligmos), 3 x (1/3 de vuelta) = 1 vuelta entera (360° = 0° desplazamiento relativo)
             // La rotación de la Tierra vuelve a presentar la EXACTA MATEIXA cara/longitud geográfica de cara al Sol/Luna
@@ -4189,6 +4189,10 @@
             
             // Establecer el nuevo día actual como la base para el siguiente Exeligmos
             exeligmosStartDays = states.days;
+            
+            if (isPlaying) {
+                togglePlay();
+            }
             
             updatePositionsAndTilts();
             updateExeligmosWidget();
