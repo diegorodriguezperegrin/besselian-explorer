@@ -121,7 +121,7 @@
             overflow-x: hidden;
             scrollbar-width: thin;
             scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
-            transition: var(--transition-smooth);
+            transition: opacity 0.2s ease, transform 0.2s ease;
         }
 
         .settings-panel {
@@ -144,7 +144,7 @@
             overflow-x: hidden;
             scrollbar-width: thin;
             scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
-            transition: var(--transition-smooth);
+            transition: opacity 0.2s ease, transform 0.2s ease;
         }
 
         .sidebar-panel.collapsed {
@@ -231,21 +231,25 @@
         .reopen-btn {
             position: absolute;
             top: 15px;
-            z-index: 20;
-            background: var(--bg-panel);
+            z-index: 40;
+            background: rgba(12, 16, 25, 0.94);
             backdrop-filter: blur(16px);
             border: 1px solid var(--border-color);
             color: var(--text-primary);
             font-family: var(--font-heading);
             font-size: 0.85rem;
             font-weight: 600;
-            padding: 9px 14px;
+            height: 38px;
+            box-sizing: border-box;
+            padding: 0 14px;
             border-radius: 12px;
             cursor: pointer;
             display: none;
             align-items: center;
+            justify-content: center;
             gap: 8px;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+            line-height: 1;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7);
             transition: var(--transition-smooth);
         }
 
@@ -258,9 +262,9 @@
         }
 
         .reopen-btn:hover {
-            background: rgba(255, 255, 255, 0.12);
-            border-color: var(--border-color-active);
+            border-color: var(--accent-blue);
             color: var(--accent-blue);
+            background: rgba(15, 23, 42, 0.98);
         }
 
         /* Secciones y Títulos */
@@ -414,11 +418,11 @@
         .stat-lbl {
             color: var(--text-secondary);
             font-size: 0.75rem;
-            font-weight: 500;
+            font-weight: 400;
         }
         .stat-val {
             color: #f8fafc;
-            font-weight: 600;
+            font-weight: 400;
             font-size: 0.78rem;
             text-align: right;
             font-family: var(--font-body);
@@ -426,7 +430,7 @@
         .type-badge-sm {
             padding: 2px 6px;
             border-radius: 4px;
-            font-weight: 700;
+            font-weight: 400;
             font-size: 0.7rem;
             letter-spacing: 0.4px;
         }
@@ -804,9 +808,19 @@
 
         /* Responsive Mobile */
         @media (max-width: 768px) {
-            .sidebar-panel, .settings-panel {
-                width: calc(100vw - 30px);
-                max-height: 50vh;
+            .sidebar-panel {
+                width: min(calc(100vw - 30px), 350px);
+                max-width: 350px;
+                left: 15px;
+                right: auto;
+                max-height: calc(100vh - 30px);
+            }
+            .settings-panel {
+                width: min(calc(100vw - 30px), 320px);
+                max-width: 320px;
+                right: 15px;
+                left: auto;
+                max-height: calc(100vh - 30px);
             }
             .telescope-hud {
                 max-width: calc(100vw - 40px);

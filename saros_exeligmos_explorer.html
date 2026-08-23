@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Explorador de Exeligmos - Saros Solar - Cosmos Mataró</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Leaflet CSS & JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- PapaParse -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-space: #060911;
+            --bg-card: rgba(13, 18, 28, 0.88);
+            --bg-panel: rgba(10, 14, 23, 0.95);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --branch-1: #00e5ff;
+            --branch-2: #ff3366;
+            --branch-3: #ffc107;
+            --font-heading: 'Outfit', sans-serif;
+            --font-body: 'Plus Jakarta Sans', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            background-color: var(--bg-space);
+            color: var(--text-primary);
+            font-family: var(--font-body);
+            line-height: 1.5;
+            padding-bottom: 40px;
+        }
+        
+        header {
+            background: linear-gradient(180deg, rgba(15, 23, 42, 0.9) 0%, rgba(6, 9, 17, 0.6) 100%);
+            border-bottom: 1px solid var(--border-color);
+            padding: 20px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        
+        .header-title i {
+            font-size: 28px;
+            color: var(--branch-1);
+            filter: drop-shadow(0 0 10px rgba(0, 229, 255, 0.5));
+        }
+        
+        h1 {
+            font-family: var(--font-heading);
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 13px;
+        }
+        
+        .controls-bar {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        
+        .saros-select {
+            background: #0f172a;
+            border: 1px solid #334155;
+            color: #f8fafc;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-family: var(--font-body);
+            font-size: 14px;
+            font-weight: 600;
+            outline: none;
+            cursor: pointer;
+        }
+        
+        .saros-select:focus {
+            border-color: var(--branch-1);
+            box-shadow: 0 0 0 2px rgba(0, 229, 255, 0.25);
+        }
+        
+        .btn {
+            background: #1e293b;
+            border: 1px solid #334155;
+            color: #f8fafc;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+        
+        .btn:hover {
+            background: #334155;
+            border-color: var(--branch-1);
+            color: var(--branch-1);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+            border-color: #38bdf8;
+        }
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #0369a1 0%, #0284c7 100%);
+            color: #ffffff;
+        }
+        
+        .main-container {
+            max-width: 1440px;
+            margin: 0 auto;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 16px;
+        }
+        
+        .metric-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 16px 20px;
+            backdrop-filter: blur(12px);
+        }
+        
+        .metric-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+        
+        .metric-value {
+            font-size: 22px;
+            font-weight: 700;
+            font-family: var(--font-heading);
+            color: #f8fafc;
+        }
+        
+        .branch-badge {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+        
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 20px;
+            backdrop-filter: blur(12px);
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        
+        .card-title {
+            font-size: 17px;
+            font-weight: 700;
+            font-family: var(--font-heading);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        #map {
+            width: 100%;
+            height: 520px;
+            border-radius: 10px;
+            border: 1px solid #1e293b;
+            background: #090d16;
+        }
+        
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        @media (max-width: 960px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 320px;
+            width: 100%;
+        }
+        
+        .branch-toggles {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .toggle-btn {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1px solid;
+            transition: all 0.2s ease;
+            background: rgba(15, 23, 42, 0.6);
+        }
+        
+        .toggle-b1 { border-color: var(--branch-1); color: var(--branch-1); }
+        .toggle-b1.active { background: var(--branch-1); color: #000; }
+        
+        .toggle-b2 { border-color: var(--branch-2); color: var(--branch-2); }
+        .toggle-b2.active { background: var(--branch-2); color: #fff; }
+        
+        .toggle-b3 { border-color: var(--branch-3); color: var(--branch-3); }
+        .toggle-b3.active { background: var(--branch-3); color: #000; }
+        
+        .info-panel {
+            background: rgba(15, 23, 42, 0.7);
+            border-left: 4px solid var(--branch-1);
+            padding: 16px 20px;
+            border-radius: 0 10px 10px 0;
+            font-size: 13.5px;
+            color: #cbd5e1;
+            line-height: 1.6;
+        }
+        
+        .info-panel h3 {
+            color: #f8fafc;
+            font-size: 15px;
+            margin-bottom: 6px;
+            font-family: var(--font-heading);
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            text-align: left;
+        }
+        
+        th {
+            background: #0f172a;
+            color: #94a3b8;
+            padding: 10px 12px;
+            font-weight: 600;
+            border-bottom: 1px solid #334155;
+            position: sticky;
+            top: 0;
+        }
+        
+        td {
+            padding: 9px 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            font-family: var(--font-mono);
+        }
+        
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.04);
+        }
+        
+        .table-wrap {
+            max-height: 420px;
+            overflow-y: auto;
+            border-radius: 8px;
+            border: 1px solid #1e293b;
+        }
+        
+        .type-badge {
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+        .type-T { background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid #38bdf8; }
+        .type-A { background: rgba(251, 191, 36, 0.2); color: #fbbf24; border: 1px solid #fbbf24; }
+        .type-H { background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid #c084fc; }
+        .type-P { background: rgba(148, 163, 184, 0.2); color: #94a3b8; border: 1px solid #94a3b8; }
+        
+        .leaflet-popup-content-wrapper {
+            background: #0f172a;
+            color: #f8fafc;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.8);
+        }
+        .leaflet-popup-tip {
+            background: #0f172a;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="header-title">
+        <i class="fa-solid fa-earth-americas"></i>
+        <div>
+            <h1>Explorador de Exeligmos y Ciclos de Saros</h1>
+            <div class="subtitle">Análisis orbital de periodicidad longitudinal (3 Saros ≈ 54 años y 33 días) • Cosmos Mataró</div>
+        </div>
+    </div>
+    
+    <div class="controls-bar">
+        <label for="sarosSelect" style="font-size:13px; color:var(--text-secondary); font-weight:600;">Seleccionar Saros:</label>
+        <select id="sarosSelect" class="saros-select" onchange="changeSaros(this.value)">
+            <option value="136" selected>Saros 136 (71 eclipses | 1360 - 2622 d.C.) [Seleccionado]</option>
+        </select>
+        <button class="btn" onclick="toggleAnimation()"><i id="animIcon" class="fa-solid fa-play"></i> Animar Ciclos</button>
+    </div>
+</header>
+
+<div class="main-container">
+    
+    <!-- METRICS -->
+    <div class="metrics-grid">
+        <div class="metric-card">
+            <div class="metric-label">Total Eclipses en Serie</div>
+            <div class="metric-value" id="mTotal">71</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">Ramas de Exeligmo</div>
+            <div class="metric-value" style="color:var(--branch-1);">3 Ramas (24 / 24 / 23)</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">Intervalo Temporal</div>
+            <div class="metric-value" id="mYears">1360 – 2622 (1262 años)</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">Deriva Longitudinal</div>
+            <div class="metric-value" style="color:var(--branch-3);">~120° O / Saros ➔ 360° / Exeligmo</div>
+        </div>
+    </div>
+    
+    <!-- EXPLANATION PANEL -->
+    <div class="info-panel">
+        <h3>💡 ¿Por qué se forman 3 ramas de Exeligmo en cada serie de Saros?</h3>
+        Un ciclo de <strong>Saros</strong> dura exactamente 223 meses sinódicos (<strong>6585,3211 días ≈ 18 años, 11 días y 8 horas</strong>). Esas <strong>~8 horas adicionales</strong> (un tercio de día) hacen que la Tierra haya girado 120° más, desplazando cada eclipse sucesivo <strong>120° al Oeste en longitud</strong>.<br>
+        Un <strong>Exeligmos</strong> ("giro de rueda" en griego) equivale a <strong>3 ciclos de Saros</strong> (669 meses sinódicos ≈ <strong>54 años y 33 días</strong>). Al multiplicar 3 × 8h = 24h (3 × 120° = 360°), la rotación terrestre vuelve a alinearse y el eclipse se repite casi exactamente en la <strong>misma longitud geográfica</strong>, con una ligera deriva latitudinal y longitudinal. Por tanto, todo Saros se descompone de forma natural en <strong>3 canales o ramas de exeligmos paralelos</strong>.
+    </div>
+
+    <!-- MAP CARD -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">
+                <i class="fa-solid fa-map-location-dot" style="color:var(--branch-1);"></i>
+                Mapa Global de Trayectorias de Exeligmos (Latitud vs Longitud)
+            </div>
+            <div class="branch-toggles">
+                <button class="toggle-btn toggle-b1 active" onclick="toggleBranch(1)">Rama 1 (Cian)</button>
+                <button class="toggle-btn toggle-b2 active" onclick="toggleBranch(2)">Rama 2 (Rojo/Coral)</button>
+                <button class="toggle-btn toggle-b3 active" onclick="toggleBranch(3)">Rama 3 (Ámbar)</button>
+            </div>
+        </div>
+        <div id="map"></div>
+    </div>
+
+    <!-- CHARTS GRID -->
+    <div class="charts-grid">
+        <!-- LONGITUDE CHART -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">
+                    <i class="fa-solid fa-compass" style="color:var(--branch-1);"></i>
+                    Longitud vs Año (Corredores de Exeligmo)
+                </div>
+            </div>
+            <div class="chart-container">
+                <canvas id="lonChart"></canvas>
+            </div>
+        </div>
+        
+        <!-- LATITUDE CHART -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">
+                    <i class="fa-solid fa-arrows-up-down" style="color:var(--branch-2);"></i>
+                    Latitud vs Año (Migración Polo Sur ➔ Polo Norte)
+                </div>
+            </div>
+            <div class="chart-container">
+                <canvas id="latChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- DATA TABLE -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">
+                <i class="fa-solid fa-table-list" style="color:var(--branch-3);"></i>
+                Registro Completo de Eclipses por Exeligmo
+            </div>
+            <div style="font-size:13px; color:var(--text-secondary);">
+                Haga clic en una fila para centrar en el mapa
+            </div>
+        </div>
+        <div class="table-wrap">
+            <table id="eclipseTable">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Rama</th>
+                        <th>Fecha (A-M-D)</th>
+                        <th>Tipo</th>
+                        <th>Latitud</th>
+                        <th>Longitud</th>
+                        <th>Gamma</th>
+                        <th>Mag.</th>
+                        <th>Duración</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    const saros136Data = [{"seq": 1, "branch": 1, "exeligmos_idx": 1, "year": 1360, "month": 6, "day": 14, "eclipse_type": "Pb", "lat_dd_ge": -65.79539, "lng_dd_ge": 78.23389, "gamma": -1.52269, "magnitude": 0.0495, "central_duration": "00m00s", "duration_secs": 0.0}, {"seq": 2, "branch": 2, "exeligmos_idx": 1, "year": 1378, "month": 6, "day": 25, "eclipse_type": "P", "lat_dd_ge": -64.83696, "lng_dd_ge": -34.23383, "gamma": -1.43924, "magnitude": 0.19758, "central_duration": "00m00s", "duration_secs": 0.0}, {"seq": 3, "branch": 3, "exeligmos_idx": 1, "year": 1396, "month": 7, "day": 5, "eclipse_type": "P", "lat_dd_ge": -63.93783, "lng_dd_ge": -147.15405, "gamma": -1.35679, "magnitude": 0.34488, "central_duration": "00m00s", "duration_secs": 0.0}, {"seq": 4, "branch": 1, "exeligmos_idx": 2, "year": 1414, "month": 7, "day": 17, "eclipse_type": "P", "lat_dd_ge": -63.12066, "lng_dd_ge": 98.97498, "gamma": -1.27702, "magnitude": 0.48811, "central_duration": "00m00s", "duration_secs": 0.0}, {"seq": 5, "branch": 2, "exeligmos_idx": 2, "year": 1432, "month": 7, "day": 27, "eclipse_type": "P", "lat_dd_ge": -62.40535, "lng_dd_ge": -16.30096, "gamma": -1.20109, "magnitude": 0.62498, "central_duration": "00m00s", "duration_secs": 0.0}, {"seq": 6, "branch": 3, "exeligmos_idx": 2, "year": 1450, "month": 8, "day": 7, "eclipse_type": "P", "lat_dd_ge": -61.81003, "lng_dd_ge": -132.83051, "gamma": -1.12863, "magnitude": 0.75595, "central_duration": "00m00s", "duration_secs": 0.0}, {"seq": 7, "branch": 1, "exeligmos_idx": 3, "year": 1468, "month": 8, "day": 18, "eclipse_type": "P", "lat_dd_ge": -61.34829, "lng_dd_ge": 108.41168, "gamma": -1.0627, "magnitude": 0.87528, "central_duration": "00m00s", "duration_secs": 0.0}, {"seq": 8, "branch": 2, "exeligmos_idx": 3, "year": 1486, "month": 8, "day": 29, "eclipse_type": "P", "lat_dd_ge": -61.03318, "lng_dd_ge": -12.09949, "gamma": -1.0018, "magnitude": 0.98558, "central_duration": "00m00s", "duration_secs": 0.0}, {"seq": 9, "branch": 3, "exeligmos_idx": 3, "year": 1504, "month": 9, "day": 8, "eclipse_type": "A", "lat_dd_ge": -55.25795, "lng_dd_ge": -102.55817, "gamma": -0.94861, "magnitude": 0.99243, "central_duration": "00m32s", "duration_secs": 32.0}, {"seq": 10, "branch": 1, "exeligmos_idx": 4, "year": 1522, "month": 9, "day": 19, "eclipse_type": "A", "lat_dd_ge": -53.92814, "lng_dd_ge": 146.0788, "gamma": -0.90113, "magnitude": 0.99465, "central_duration": "00m23s", "duration_secs": 22.8}, {"seq": 11, "branch": 2, "exeligmos_idx": 4, "year": 1540, "month": 9, "day": 30, "eclipse_type": "A", "lat_dd_ge": -54.64392, "lng_dd_ge": 29.17462, "gamma": -0.86204, "magnitude": 0.99603, "central_duration": "00m17s", "duration_secs": 16.8}, {"seq": 12, "branch": 3, "exeligmos_idx": 4, "year": 1558, "month": 10, "day": 11, "eclipse_type": "A", "lat_dd_ge": -56.51095, "lng_dd_ge": -90.26978, "gamma": -0.82893, "magnitude": 0.99711, "central_duration": "00m12s", "duration_secs": 12.1}, {"seq": 13, "branch": 1, "exeligmos_idx": 5, "year": 1576, "month": 10, "day": 21, "eclipse_type": "A", "lat_dd_ge": -59.22755, "lng_dd_ge": 147.93915, "gamma": -0.80311, "magnitude": 0.99807, "central_duration": "00m08s", "duration_secs": 8.0}, {"seq": 14, "branch": 2, "exeligmos_idx": 5, "year": 1594, "month": 11, "day": 12, "eclipse_type": "A", "lat_dd_ge": -62.38128, "lng_dd_ge": 25.09918, "gamma": -0.78292, "magnitude": 0.99905, "central_duration": "00m04s", "duration_secs": 3.9}, {"seq": 15, "branch": 3, "exeligmos_idx": 5, "year": 1612, "month": 11, "day": 22, "eclipse_type": "H", "lat_dd_ge": -65.73377, "lng_dd_ge": -98.39301, "gamma": -0.76915, "magnitude": 1.00019, "central_duration": "00m01s", "duration_secs": 0.8}, {"seq": 16, "branch": 1, "exeligmos_idx": 6, "year": 1630, "month": 12, "day": 4, "eclipse_type": "H", "lat_dd_ge": -68.71751, "lng_dd_ge": 139.57312, "gamma": -0.75846, "magnitude": 1.00166, "central_duration": "00m07s", "duration_secs": 6.7}, {"seq": 17, "branch": 2, "exeligmos_idx": 6, "year": 1648, "month": 12, "day": 14, "eclipse_type": "H", "lat_dd_ge": -70.88467, "lng_dd_ge": 19.60107, "gamma": -0.75099, "magnitude": 1.0035, "central_duration": "00m14s", "duration_secs": 14.2}, {"seq": 18, "branch": 3, "exeligmos_idx": 6, "year": 1666, "month": 12, "day": 25, "eclipse_type": "H", "lat_dd_ge": -71.62112, "lng_dd_ge": -98.33618, "gamma": -0.74516, "magnitude": 1.00581, "central_duration": "00m24s", "duration_secs": 23.6}, {"seq": 19, "branch": 1, "exeligmos_idx": 7, "year": 1685, "month": 1, "day": 5, "eclipse_type": "H", "lat_dd_ge": -70.67144, "lng_dd_ge": 143.1347, "gamma": -0.74092, "magnitude": 1.00859, "central_duration": "00m35s", "duration_secs": 35.1}, {"seq": 20, "branch": 2, "exeligmos_idx": 7, "year": 1703, "month": 1, "day": 17, "eclipse_type": "H2", "lat_dd_ge": -67.94441, "lng_dd_ge": 22.16736, "gamma": -0.73447, "magnitude": 1.01198, "central_duration": "00m50s", "duration_secs": 49.6}, {"seq": 21, "branch": 3, "exeligmos_idx": 7, "year": 1721, "month": 1, "day": 27, "eclipse_type": "T", "lat_dd_ge": -64.047, "lng_dd_ge": -102.37689, "gamma": -0.72691, "magnitude": 1.01583, "central_duration": "01m07s", "duration_secs": 66.6}, {"seq": 22, "branch": 1, "exeligmos_idx": 8, "year": 1739, "month": 2, "day": 8, "eclipse_type": "T", "lat_dd_ge": -59.20044, "lng_dd_ge": 130.96179, "gamma": -0.71493, "magnitude": 1.02027, "central_duration": "01m27s", "duration_secs": 87.4}, {"seq": 23, "branch": 2, "exeligmos_idx": 8, "year": 1757, "month": 2, "day": 18, "eclipse_type": "T", "lat_dd_ge": -53.83243, "lng_dd_ge": 2.90558, "gamma": -0.69993, "magnitude": 1.02512, "central_duration": "01m51s", "duration_secs": 111.5}, {"seq": 24, "branch": 3, "exeligmos_idx": 8, "year": 1775, "month": 3, "day": 1, "eclipse_type": "T", "lat_dd_ge": -47.8994, "lng_dd_ge": -124.76648, "gamma": -0.67825, "magnitude": 1.0304, "central_duration": "02m20s", "duration_secs": 139.7}, {"seq": 25, "branch": 1, "exeligmos_idx": 9, "year": 1793, "month": 3, "day": 12, "eclipse_type": "T", "lat_dd_ge": -41.71213, "lng_dd_ge": 107.82288, "gamma": -0.65239, "magnitude": 1.03592, "central_duration": "02m51s", "duration_secs": 171.3}, {"seq": 26, "branch": 2, "exeligmos_idx": 9, "year": 1811, "month": 3, "day": 24, "eclipse_type": "T", "lat_dd_ge": -35.15727, "lng_dd_ge": -18.00024, "gamma": -0.61896, "magnitude": 1.04161, "central_duration": "03m27s", "duration_secs": 206.6}, {"seq": 27, "branch": 3, "exeligmos_idx": 9, "year": 1829, "month": 4, "day": 3, "eclipse_type": "T", "lat_dd_ge": -28.47885, "lng_dd_ge": -142.55988, "gamma": -0.58027, "magnitude": 1.04738, "central_duration": "04m05s", "duration_secs": 244.6}, {"seq": 28, "branch": 1, "exeligmos_idx": 10, "year": 1847, "month": 4, "day": 15, "eclipse_type": "T", "lat_dd_ge": -21.6146, "lng_dd_ge": 95.04724, "gamma": -0.53387, "magnitude": 1.05298, "central_duration": "04m44s", "duration_secs": 283.7}, {"seq": 29, "branch": 2, "exeligmos_idx": 10, "year": 1865, "month": 4, "day": 25, "eclipse_type": "T", "lat_dd_ge": -14.8323, "lng_dd_ge": -25.8053, "gamma": -0.48261, "magnitude": 1.05843, "central_duration": "05m23s", "duration_secs": 322.7}, {"seq": 30, "branch": 3, "exeligmos_idx": 10, "year": 1883, "month": 5, "day": 6, "eclipse_type": "T", "lat_dd_ge": -8.13072, "lng_dd_ge": -144.6134, "gamma": -0.42502, "magnitude": 1.06341, "central_duration": "05m58s", "duration_secs": 358.2}, {"seq": 31, "branch": 1, "exeligmos_idx": 11, "year": 1901, "month": 5, "day": 18, "eclipse_type": "T", "lat_dd_ge": -1.69041, "lng_dd_ge": 98.41724, "gamma": -0.36258, "magnitude": 1.068, "central_duration": "06m29s", "duration_secs": 388.7}, {"seq": 32, "branch": 2, "exeligmos_idx": 11, "year": 1919, "month": 5, "day": 29, "eclipse_type": "T", "lat_dd_ge": 4.38456, "lng_dd_ge": -16.70642, "gamma": -0.29548, "magnitude": 1.07186, "central_duration": "06m51s", "duration_secs": 410.7}, {"seq": 33, "branch": 3, "exeligmos_idx": 11, "year": 1937, "month": 6, "day": 8, "eclipse_type": "T", "lat_dd_ge": 9.9117, "lng_dd_ge": -130.51343, "gamma": -0.22531, "magnitude": 1.07513, "central_duration": "07m04s", "duration_secs": 424.0}, {"seq": 34, "branch": 1, "exeligmos_idx": 12, "year": 1955, "month": 6, "day": 20, "eclipse_type": "T", "lat_dd_ge": 14.76503, "lng_dd_ge": 116.9953, "gamma": -0.15278, "magnitude": 1.07756, "central_duration": "07m08s", "duration_secs": 427.7}, {"seq": 35, "branch": 2, "exeligmos_idx": 12, "year": 1973, "month": 6, "day": 30, "eclipse_type": "T", "lat_dd_ge": 18.83821, "lng_dd_ge": 5.63013, "gamma": -0.07853, "magnitude": 1.07921, "central_duration": "07m04s", "duration_secs": 423.5}, {"seq": 36, "branch": 3, "exeligmos_idx": 12, "year": 1991, "month": 7, "day": 11, "eclipse_type": "Tm", "lat_dd_ge": 22.00078, "lng_dd_ge": -105.211, "gamma": -0.00412, "magnitude": 1.07997, "central_duration": "06m53s", "duration_secs": 413.1}, {"seq": 37, "branch": 1, "exeligmos_idx": 13, "year": 2009, "month": 7, "day": 22, "eclipse_type": "T", "lat_dd_ge": 24.21987, "lng_dd_ge": 144.11816, "gamma": 0.06977, "magnitude": 1.07991, "central_duration": "06m39s", "duration_secs": 398.9}, {"seq": 38, "branch": 2, "exeligmos_idx": 13, "year": 2027, "month": 8, "day": 2, "eclipse_type": "T", "lat_dd_ge": 25.50236, "lng_dd_ge": 33.19617, "gamma": 0.14209, "magnitude": 1.07903, "central_duration": "06m23s", "duration_secs": 382.6}, {"seq": 39, "branch": 3, "exeligmos_idx": 13, "year": 2045, "month": 8, "day": 12, "eclipse_type": "T", "lat_dd_ge": 25.90992, "lng_dd_ge": -78.5365, "gamma": 0.21161, "magnitude": 1.07735, "central_duration": "06m06s", "duration_secs": 365.7}, {"seq": 40, "branch": 1, "exeligmos_idx": 14, "year": 2063, "month": 8, "day": 24, "eclipse_type": "T", "lat_dd_ge": 25.56131, "lng_dd_ge": 168.43854, "gamma": 0.27714, "magnitude": 1.07498, "central_duration": "05m49s", "duration_secs": 349.0}, {"seq": 41, "branch": 2, "exeligmos_idx": 14, "year": 2081, "month": 9, "day": 3, "eclipse_type": "T", "lat_dd_ge": 24.62752, "lng_dd_ge": 53.64404, "gamma": 0.33785, "magnitude": 1.07198, "central_duration": "05m33s", "duration_secs": 333.1}, {"seq": 42, "branch": 3, "exeligmos_idx": 14, "year": 2099, "month": 9, "day": 14, "eclipse_type": "T", "lat_dd_ge": 23.36221, "lng_dd_ge": -62.80865, "gamma": 0.39421, "magnitude": 1.06844, "central_duration": "05m18s", "duration_secs": 317.8}, {"seq": 43, "branch": 1, "exeligmos_idx": 15, "year": 2117, "month": 9, "day": 26, "eclipse_type": "T", "lat_dd_ge": 21.85602, "lng_dd_ge": 178.41077, "gamma": 0.44416, "magnitude": 1.06453, "central_duration": "05m03s", "duration_secs": 303.5}, {"seq": 44, "branch": 2, "exeligmos_idx": 15, "year": 2135, "month": 10, "day": 7, "eclipse_type": "T", "lat_dd_ge": 20.32561, "lng_dd_ge": 57.56433, "gamma": 0.48838, "magnitude": 1.0603, "central_duration": "04m50s", "duration_secs": 289.5}, {"seq": 45, "branch": 3, "exeligmos_idx": 15, "year": 2153, "month": 10, "day": 17, "eclipse_type": "T", "lat_dd_ge": 18.84556, "lng_dd_ge": -65.68121, "gamma": 0.52588, "magnitude": 1.05602, "central_duration": "04m36s", "duration_secs": 276.4}, {"seq": 46, "branch": 1, "exeligmos_idx": 16, "year": 2171, "month": 10, "day": 29, "eclipse_type": "T", "lat_dd_ge": 17.57572, "lng_dd_ge": 169.06488, "gamma": 0.55768, "magnitude": 1.05161, "central_duration": "04m23s", "duration_secs": 262.8}, {"seq": 47, "branch": 2, "exeligmos_idx": 16, "year": 2189, "month": 11, "day": 8, "eclipse_type": "T", "lat_dd_ge": 16.53037, "lng_dd_ge": 41.58557, "gamma": 0.58305, "magnitude": 1.04744, "central_duration": "04m10s", "duration_secs": 249.8}, {"seq": 48, "branch": 3, "exeligmos_idx": 16, "year": 2207, "month": 11, "day": 20, "eclipse_type": "T", "lat_dd_ge": 15.79049, "lng_dd_ge": -87.77844, "gamma": 0.60275, "magnitude": 1.0434, "central_duration": "03m56s", "duration_secs": 236.2}, {"seq": 49, "branch": 1, "exeligmos_idx": 17, "year": 2225, "month": 12, "day": 1, "eclipse_type": "T", "lat_dd_ge": 15.44325, "lng_dd_ge": 141.37372, "gamma": 0.61782, "magnitude": 1.03981, "central_duration": "03m43s", "duration_secs": 223.2}, {"seq": 50, "branch": 2, "exeligmos_idx": 17, "year": 2243, "month": 12, "day": 12, "eclipse_type": "T", "lat_dd_ge": 15.49502, "lng_dd_ge": 9.02008, "gamma": 0.62835, "magnitude": 1.03651, "central_duration": "03m30s", "duration_secs": 209.5}, {"seq": 51, "branch": 3, "exeligmos_idx": 17, "year": 2261, "month": 12, "day": 22, "eclipse_type": "T", "lat_dd_ge": 16.05703, "lng_dd_ge": -124.17255, "gamma": 0.63595, "magnitude": 1.03375, "central_duration": "03m17s", "duration_secs": 196.6}, {"seq": 52, "branch": 1, "exeligmos_idx": 18, "year": 2280, "month": 1, "day": 3, "eclipse_type": "T", "lat_dd_ge": 17.1665, "lng_dd_ge": 101.86292, "gamma": 0.64136, "magnitude": 1.03141, "central_duration": "03m04s", "duration_secs": 183.9}, {"seq": 53, "branch": 2, "exeligmos_idx": 18, "year": 2298, "month": 1, "day": 13, "eclipse_type": "T", "lat_dd_ge": 19.0039, "lng_dd_ge": -31.93066, "gamma": 0.64737, "magnitude": 1.02958, "central_duration": "02m52s", "duration_secs": 172.3}, {"seq": 54, "branch": 3, "exeligmos_idx": 18, "year": 2316, "month": 1, "day": 25, "eclipse_type": "T", "lat_dd_ge": 21.4236, "lng_dd_ge": -165.96118, "gamma": 0.65263, "magnitude": 1.02819, "central_duration": "02m42s", "duration_secs": 161.7}, {"seq": 55, "branch": 1, "exeligmos_idx": 19, "year": 2334, "month": 2, "day": 5, "eclipse_type": "T", "lat_dd_ge": 24.59656, "lng_dd_ge": 60.75983, "gamma": 0.66029, "magnitude": 1.02723, "central_duration": "02m33s", "duration_secs": 152.5}, {"seq": 56, "branch": 2, "exeligmos_idx": 19, "year": 2352, "month": 2, "day": 16, "eclipse_type": "T", "lat_dd_ge": 28.48791, "lng_dd_ge": -71.79834, "gamma": 0.67087, "magnitude": 1.02662, "central_duration": "02m24s", "duration_secs": 144.5}, {"seq": 57, "branch": 3, "exeligmos_idx": 19, "year": 2370, "month": 2, "day": 27, "eclipse_type": "T", "lat_dd_ge": 33.16196, "lng_dd_ge": 157.04822, "gamma": 0.68645, "magnitude": 1.02621, "central_duration": "02m17s", "duration_secs": 137.0}, {"seq": 58, "branch": 1, "exeligmos_idx": 20, "year": 2388, "month": 3, "day": 9, "eclipse_type": "T", "lat_dd_ge": 38.49569, "lng_dd_ge": 27.04034, "gamma": 0.70645, "magnitude": 1.02598, "central_duration": "02m10s", "duration_secs": 130.0}, {"seq": 59, "branch": 2, "exeligmos_idx": 20, "year": 2406, "month": 3, "day": 20, "eclipse_type": "T", "lat_dd_ge": 44.54952, "lng_dd_ge": -101.29578, "gamma": 0.7327, "magnitude": 1.02576, "central_duration": "02m03s", "duration_secs": 122.8}, {"seq": 60, "branch": 3, "exeligmos_idx": 20, "year": 2424, "month": 3, "day": 31, "eclipse_type": "T", "lat_dd_ge": 51.27394, "lng_dd_ge": 131.8736, "gamma": 0.76517, "magnitude": 1.02541, "central_duration": "01m55s", "duration_secs": 114.7}, {"seq": 61, "branch": 1, "exeligmos_idx": 21, "year": 2442, "month": 4, "day": 11, "eclipse_type": "T", "lat_dd_ge": 58.70994, "lng_dd_ge": 6.21802, "gamma": 0.80455, "magnitude": 1.02477, "central_duration": "01m45s", "duration_secs": 105.3}, {"seq": 62, "branch": 2, "exeligmos_idx": 21, "year": 2460, "month": 4, "day": 21, "eclipse_type": "T", "lat_dd_ge": 66.84565, "lng_dd_ge": -119.78821, "gamma": 0.85029, "magnitude": 1.02365, "central_duration": "01m34s", "duration_secs": 94.1}, {"seq": 63, "branch": 3, "exeligmos_idx": 21, "year": 2478, "month": 5, "day": 3, "eclipse_type": "T", "lat_dd_ge": 75.67027, "lng_dd_ge": 107.70239, "gamma": 0.90337, "magnitude": 1.02181, "central_duration": "01m20s", "duration_secs": 80.3}, {"seq": 64, "branch": 1, "exeligmos_idx": 22, "year": 2496, "month": 5, "day": 13, "eclipse_type": "T", "lat_dd_ge": 81.03557, "lng_dd_ge": -70.36237, "gamma": 0.96219, "magnitude": 1.01852, "central_duration": "01m02s", "duration_secs": 61.9}, {"seq": 65, "branch": 2, "exeligmos_idx": 22, "year": 2514, "month": 5, "day": 25, "eclipse_type": "P", "lat_dd_ge": 68.4724, "lng_dd_ge": 123.20929, "gamma": 1.02722, "magnitude": 0.95073, "central_duration": "00m00s", "duration_secs": 0.0}, {"seq": 66, "branch": 3, "exeligmos_idx": 22, "year": 2532, "month": 6, "day": 5, "eclipse_type": "P", "lat_dd_ge": 67.45393, "lng_dd_ge": 1.31793, "gamma": 1.09619, "magnitude": 0.82244, "central_duration": "00m00s", "duration_secs": 0.0}, {"seq": 67, "branch": 1, "exeligmos_idx": 23, "year": 2550, "month": 6, "day": 16, "eclipse_type": "P", "lat_dd_ge": 66.43889, "lng_dd_ge": -118.10565, "gamma": 1.17079, "magnitude": 0.68398, "central_duration": "00m00s", "duration_secs": 0.0}, {"seq": 68, "branch": 2, "exeligmos_idx": 23, "year": 2568, "month": 6, "day": 26, "eclipse_type": "P", "lat_dd_ge": 65.45629, "lng_dd_ge": 123.72583, "gamma": 1.24719, "magnitude": 0.54263, "central_duration": "00m00s", "duration_secs": 0.0}, {"seq": 69, "branch": 3, "exeligmos_idx": 23, "year": 2586, "month": 7, "day": 7, "eclipse_type": "P", "lat_dd_ge": 64.53547, "lng_dd_ge": 7.21796, "gamma": 1.32699, "magnitude": 0.39572, "central_duration": "00m00s", "duration_secs": 0.0}, {"seq": 70, "branch": 1, "exeligmos_idx": 24, "year": 2604, "month": 7, "day": 19, "eclipse_type": "P", "lat_dd_ge": 63.69588, "lng_dd_ge": -108.78601, "gamma": 1.40617, "magnitude": 0.25089, "central_duration": "00m00s", "duration_secs": 0.0}, {"seq": 71, "branch": 2, "exeligmos_idx": 24, "year": 2622, "month": 7, "day": 30, "eclipse_type": "Pe", "lat_dd_ge": 62.95942, "lng_dd_ge": 136.40948, "gamma": 1.48716, "magnitude": 0.10392, "central_duration": "00m00s", "duration_secs": 0.0}];
+    const sarosSummary = [{"saros": -13, "count": 2, "min_year": -1997, "max_year": -1979, "types": ["P", "Pe"]}, {"saros": -12, "count": 4, "min_year": -1986, "max_year": -1932, "types": ["P", "Pe"]}, {"saros": -11, "count": 8, "min_year": -1993, "max_year": -1867, "types": ["P", "Pe"]}, {"saros": -10, "count": 9, "min_year": -1982, "max_year": -1838, "types": ["P", "Pe"]}, {"saros": -9, "count": 12, "min_year": -1990, "max_year": -1791, "types": ["P", "Pe"]}, {"saros": -8, "count": 16, "min_year": -1997, "max_year": -1726, "types": ["P", "Pe"]}, {"saros": -7, "count": 16, "min_year": -1986, "max_year": -1715, "types": ["P", "Pe"]}, {"saros": -6, "count": 18, "min_year": -1993, "max_year": -1686, "types": ["P", "Pe"]}, {"saros": -5, "count": 22, "min_year": -1982, "max_year": -1603, "types": ["P", "Pe"]}, {"saros": -4, "count": 16, "min_year": -1989, "max_year": -1719, "types": ["H", "A", "P", "Pe"]}, {"saros": -3, "count": 12, "min_year": -1996, "max_year": -1798, "types": ["A", "P", "Pe"]}, {"saros": -2, "count": 18, "min_year": -1985, "max_year": -1679, "types": ["T", "T+", "P", "Pe"]}, {"saros": -1, "count": 18, "min_year": -1992, "max_year": -1686, "types": ["T", "H3", "H", "A", "P", "Pe"]}, {"saros": 0, "count": 18, "min_year": -1982, "max_year": -1675, "types": ["A", "P", "Pe"]}, {"saros": 1, "count": 23, "min_year": -1989, "max_year": -1592, "types": ["H", "H2", "T", "T-", "P", "Pe"]}, {"saros": 2, "count": 25, "min_year": -1996, "max_year": -1563, "types": ["T", "H3", "H", "A", "P", "Pe"]}, {"saros": 3, "count": 26, "min_year": -1985, "max_year": -1534, "types": ["A", "A-", "P", "Pe"]}, {"saros": 4, "count": 31, "min_year": -1992, "max_year": -1451, "types": ["H", "H2", "T", "P", "Pe"]}, {"saros": 5, "count": 33, "min_year": -1999, "max_year": -1422, "types": ["T", "H3", "H", "A", "P", "Pe"]}, {"saros": 6, "count": 34, "min_year": -1988, "max_year": -1393, "types": ["A", "An", "A+", "P", "Pe"]}, {"saros": 7, "count": 39, "min_year": -1995, "max_year": -1310, "types": ["A", "Hm", "H", "H2", "T", "P", "Pe"]}, {"saros": 8, "count": 40, "min_year": -1984, "max_year": -1281, "types": ["T", "Tm", "H", "A", "A+", "P", "Pe"]}, {"saros": 9, "count": 42, "min_year": -1991, "max_year": -1252, "types": ["A", "Am", "As", "P", "Pe"]}, {"saros": 10, "count": 47, "min_year": -1999, "max_year": -1169, "types": ["A", "Am", "H", "T", "P", "Pe"]}, {"saros": 11, "count": 48, "min_year": -1988, "max_year": -1140, "types": ["T", "Tm", "P", "Pe"]}, {"saros": 12, "count": 49, "min_year": -1995, "max_year": -1129, "types": ["A", "Am", "P", "Pe"]}, {"saros": 13, "count": 54, "min_year": -1984, "max_year": -1028, "types": ["A", "Am", "H", "T", "Ts", "P", "Pe"]}, {"saros": 14, "count": 54, "min_year": -1991, "max_year": -1035, "types": ["T", "Tm", "P", "Pe"]}, {"saros": 15, "count": 44, "min_year": -1998, "max_year": -1223, "types": ["T", "H", "Am", "A", "As", "P", "Pe"]}, {"saros": 16, "count": 59, "min_year": -1987, "max_year": -941, "types": ["A", "Am", "H", "T", "Tn", "P", "Pe"]}, {"saros": 17, "count": 50, "min_year": -1994, "max_year": -1111, "types": ["T", "Tm", "P", "Pe"]}, {"saros": 18, "count": 49, "min_year": -1983, "max_year": -1118, "types": ["T", "H", "Hm", "A", "P", "Pe"]}, {"saros": 19, "count": 54, "min_year": -1990, "max_year": -1035, "types": ["P", "A+", "An", "A", "Am", "H", "T", "Ts", "Pe"]}, {"saros": 20, "count": 56, "min_year": -1998, "max_year": -1006, "types": ["A", "H", "T", "Tm", "P", "Pe"]}, {"saros": 21, "count": 56, "min_year": -1987, "max_year": -995, "types": ["T", "H3", "H", "Hm", "A", "As", "P", "Pe"]}, {"saros": 22, "count": 61, "min_year": -1994, "max_year": -912, "types": ["A", "Am", "H", "T", "T+", "P", "Pe"]}, {"saros": 23, "count": 63, "min_year": -1983, "max_year": -865, "types": ["A", "H", "T", "Tm", "P", "Pe"]}, {"saros": 24, "count": 64, "min_year": -1990, "max_year": -854, "types": ["T", "H3", "H", "Hm", "A", "An", "P", "Pe"]}, {"saros": 25, "count": 69, "min_year": -1997, "max_year": -771, "types": ["P", "A", "Am", "H", "T", "T-", "Pe"]}, {"saros": 26, "count": 71, "min_year": -1986, "max_year": -724, "types": ["P", "A", "H", "T", "Tm", "Pe"]}, {"saros": 27, "count": 72, "min_year": -1993, "max_year": -713, "types": ["Pb", "P", "T", "H", "Hm", "A", "As", "A-", "Pe"]}, {"saros": 28, "count": 72, "min_year": -1910, "max_year": -630, "types": ["Pb", "P", "A-", "A", "Am", "Pe"]}, {"saros": 29, "count": 73, "min_year": -1881, "max_year": -583, "types": ["Pb", "P", "A", "H", "H2", "T", "Tm", "Pe"]}, {"saros": 30, "count": 80, "min_year": -1997, "max_year": -572, "types": ["P", "T", "H3", "H", "A", "Am", "An", "Pe"]}, {"saros": 31, "count": 74, "min_year": -1805, "max_year": -489, "types": ["Pb", "P", "A", "Am", "As", "Pe"]}, {"saros": 32, "count": 84, "min_year": -1957, "max_year": -460, "types": ["Pb", "P", "A", "H", "T", "Tm", "T+", "Pe"]}, {"saros": 33, "count": 84, "min_year": -1982, "max_year": -485, "types": ["Pb", "P", "T", "H3", "H", "Am", "A", "Pe"]}, {"saros": 34, "count": 86, "min_year": -1917, "max_year": -384, "types": ["Pb", "P", "A-", "A", "Am", "Pe"]}, {"saros": 35, "count": 84, "min_year": -1870, "max_year": -373, "types": ["Pb", "P", "A", "H", "T", "Tm", "Pe"]}, {"saros": 36, "count": 73, "min_year": -1859, "max_year": -561, "types": ["Pb", "P", "T-", "T", "Tm", "H3", "H", "A", "Pe"]}, {"saros": 37, "count": 73, "min_year": -1794, "max_year": -496, "types": ["Pb", "P", "A", "Am", "Pe"]}, {"saros": 38, "count": 73, "min_year": -1729, "max_year": -431, "types": ["Pb", "P", "A-", "A", "H", "T", "Tm", "Pe"]}, {"saros": 39, "count": 72, "min_year": -1718, "max_year": -438, "types": ["Pb", "P", "Tn", "T", "Tm", "H3", "H", "A", "Pe"]}, {"saros": 40, "count": 72, "min_year": -1653, "max_year": -373, "types": ["Pb", "P", "A-", "As", "A", "Am", "Pe"]}, {"saros": 41, "count": 72, "min_year": -1588, "max_year": -308, "types": ["Pb", "P", "An", "A", "H", "T", "Tm", "Pe"]}, {"saros": 42, "count": 72, "min_year": -1577, "max_year": -297, "types": ["Pb", "P", "T", "Tm", "H3", "H", "A", "A+", "Pe"]}, {"saros": 43, "count": 72, "min_year": -1512, "max_year": -232, "types": ["Pb", "P", "An", "A", "Am", "Pe"]}, {"saros": 44, "count": 72, "min_year": -1447, "max_year": -167, "types": ["Pb", "P", "A-", "A", "H", "T", "Tm", "Pe"]}, {"saros": 45, "count": 72, "min_year": -1436, "max_year": -156, "types": ["Pb", "P", "Tn", "T", "Tm", "H3", "H", "A", "A-", "Pe"]}, {"saros": 46, "count": 72, "min_year": -1371, "max_year": -91, "types": ["Pb", "P", "A", "Am", "A+", "Pe"]}, {"saros": 47, "count": 72, "min_year": -1306, "max_year": -26, "types": ["Pb", "P", "An", "A", "H", "T", "Tm", "Ts", "T-", "Pe"]}, {"saros": 48, "count": 74, "min_year": -1331, "max_year": -15, "types": ["Pb", "P", "Ts", "T", "Tm", "H", "A", "An", "Pe"]}, {"saros": 49, "count": 72, "min_year": -1248, "max_year": 32, "types": ["Pb", "P", "A", "Am", "Pe"]}, {"saros": 50, "count": 73, "min_year": -1201, "max_year": 97, "types": ["Pb", "P", "As", "A", "H", "T", "Tm", "Pe"]}, {"saros": 51, "count": 85, "min_year": -1407, "max_year": 108, "types": ["Pb", "P", "Tn", "T", "Tm", "H3", "H", "A", "Pe"]}, {"saros": 52, "count": 86, "min_year": -1378, "max_year": 155, "types": ["Pb", "P", "A", "Am", "An", "Pe"]}, {"saros": 53, "count": 84, "min_year": -1277, "max_year": 220, "types": ["Pb", "P", "A", "Hm", "H", "T", "T-", "Pe"]}, {"saros": 54, "count": 74, "min_year": -1284, "max_year": 32, "types": ["Pb", "P", "T-", "T", "Tm", "H3", "H", "A", "Pe"]}, {"saros": 55, "count": 73, "min_year": -1255, "max_year": 43, "types": ["Pb", "P", "A+", "A", "Am", "A-", "Pe"]}, {"saros": 56, "count": 74, "min_year": -1172, "max_year": 144, "types": ["Pb", "P", "A", "H", "Hm", "T", "Pe"]}, {"saros": 57, "count": 73, "min_year": -1161, "max_year": 137, "types": ["Pb", "P", "T+", "Tn", "T", "Tm", "H3", "H", "A", "Pe"]}, {"saros": 58, "count": 72, "min_year": -1114, "max_year": 166, "types": ["Pb", "P", "As", "A", "Am", "A+", "Pe"]}, {"saros": 59, "count": 72, "min_year": -1031, "max_year": 249, "types": ["Pb", "P", "A+", "An", "A", "H", "Hm", "T", "Pe"]}, {"saros": 60, "count": 72, "min_year": -1020, "max_year": 260, "types": ["Pb", "P", "T", "Tm", "H", "A", "A+", "Pe"]}, {"saros": 61, "count": 71, "min_year": -973, "max_year": 289, "types": ["Pb", "P", "T+", "T", "H", "A", "Am", "As", "Pe"]}, {"saros": 62, "count": 71, "min_year": -890, "max_year": 372, "types": ["Pb", "P", "A", "H", "Hm", "H2", "T", "Tn", "Pe"]}, {"saros": 63, "count": 72, "min_year": -879, "max_year": 401, "types": ["Pb", "P", "T", "Tm", "H", "A", "As", "Pe"]}, {"saros": 64, "count": 71, "min_year": -832, "max_year": 430, "types": ["Pb", "P", "T", "H", "A", "Am", "An", "A+", "Pe"]}, {"saros": 65, "count": 71, "min_year": -749, "max_year": 513, "types": ["Pb", "P", "A+", "A", "H", "Hm", "H2", "T", "T-", "Pe"]}, {"saros": 66, "count": 73, "min_year": -756, "max_year": 542, "types": ["Pb", "P", "T", "Tm", "H", "A", "A+", "Pe"]}, {"saros": 67, "count": 72, "min_year": -709, "max_year": 571, "types": ["Pb", "P", "T", "H", "A", "Am", "Pe"]}, {"saros": 68, "count": 72, "min_year": -626, "max_year": 654, "types": ["Pb", "P", "A-", "A", "H", "Hm", "T", "Pe"]}, {"saros": 69, "count": 78, "min_year": -724, "max_year": 665, "types": ["Pb", "P", "T", "Tm", "Pe"]}, {"saros": 70, "count": 84, "min_year": -821, "max_year": 676, "types": ["Pb", "P", "T", "H3", "H", "A", "Am", "Pe"]}, {"saros": 71, "count": 82, "min_year": -684, "max_year": 777, "types": ["Pb", "P", "An", "A", "Am", "H", "T", "Pe"]}, {"saros": 72, "count": 83, "min_year": -727, "max_year": 752, "types": ["Pb", "P", "T", "Tm", "Pe"]}, {"saros": 73, "count": 72, "min_year": -698, "max_year": 582, "types": ["Pb", "P", "T", "H", "A", "Am", "Pe"]}, {"saros": 74, "count": 75, "min_year": -615, "max_year": 719, "types": ["Pb", "P", "A", "Am", "H", "T", "Pe"]}, {"saros": 75, "count": 73, "min_year": -604, "max_year": 694, "types": ["Pb", "P", "T", "Tm", "Pe"]}, {"saros": 76, "count": 72, "min_year": -575, "max_year": 705, "types": ["Pb", "P", "T", "H", "A", "Am", "Pe"]}, {"saros": 77, "count": 71, "min_year": -474, "max_year": 788, "types": ["Pb", "P", "A+", "An", "A", "Am", "H", "T", "Pe"]}, {"saros": 78, "count": 72, "min_year": -463, "max_year": 817, "types": ["Pb", "P", "A", "H", "T", "Tm", "Pe"]}, {"saros": 79, "count": 71, "min_year": -434, "max_year": 828, "types": ["Pb", "P", "T+", "T", "H", "Am", "A", "A-", "Pe"]}, {"saros": 80, "count": 71, "min_year": -333, "max_year": 929, "types": ["Pb", "P", "A-", "A", "Am", "H", "T", "Tn", "Pe"]}, {"saros": 81, "count": 72, "min_year": -322, "max_year": 958, "types": ["Pb", "P", "A", "H", "T", "Tm", "Pe"]}, {"saros": 82, "count": 71, "min_year": -293, "max_year": 969, "types": ["Pb", "P", "T", "H", "A", "Am", "A+", "Pe"]}, {"saros": 83, "count": 71, "min_year": -210, "max_year": 1052, "types": ["Pb", "P", "An", "A", "Am", "H", "T", "T-", "Pe"]}, {"saros": 84, "count": 72, "min_year": -181, "max_year": 1099, "types": ["Pb", "P", "A", "H", "H2", "T", "Tm", "Pe"]}, {"saros": 85, "count": 72, "min_year": -170, "max_year": 1110, "types": ["Pb", "P", "T+", "T", "H3", "H", "A", "Am", "As", "A-", "Pe"]}, {"saros": 86, "count": 71, "min_year": -69, "max_year": 1193, "types": ["Pb", "P", "As", "A", "Am", "Pe"]}, {"saros": 87, "count": 73, "min_year": -76, "max_year": 1222, "types": ["Pb", "P", "H", "H2", "T", "Tm", "T-", "Pe"]}, {"saros": 88, "count": 83, "min_year": -246, "max_year": 1233, "types": ["Pb", "P", "T-", "T", "H3", "H", "A", "Am", "A+", "Pe"]}, {"saros": 89, "count": 73, "min_year": 18, "max_year": 1316, "types": ["Pb", "P", "A", "Am", "Pe"]}, {"saros": 90, "count": 83, "min_year": -134, "max_year": 1345, "types": ["Pb", "P", "H", "H2", "T", "Tm", "Pe"]}, {"saros": 91, "count": 75, "min_year": -159, "max_year": 1175, "types": ["Pb", "P", "T", "H3", "H", "A", "Pe"]}, {"saros": 92, "count": 74, "min_year": -76, "max_year": 1240, "types": ["Pb", "P", "A", "Am", "Pe"]}, {"saros": 93, "count": 74, "min_year": -29, "max_year": 1287, "types": ["Pb", "P", "A+", "A", "H", "T", "Tm", "Pe"]}, {"saros": 94, "count": 72, "min_year": -18, "max_year": 1262, "types": ["Pb", "P", "T", "Tm", "H", "A", "Pe"]}, {"saros": 95, "count": 71, "min_year": 47, "max_year": 1309, "types": ["Pb", "P", "A+", "A", "Am", "Pe"]}, {"saros": 96, "count": 72, "min_year": 94, "max_year": 1374, "types": ["Pb", "P", "A-", "As", "A", "H", "T", "Tm", "Pe"]}, {"saros": 97, "count": 71, "min_year": 123, "max_year": 1385, "types": ["Pb", "P", "Tn", "T", "Tm", "H", "A", "A-", "Pe"]}, {"saros": 98, "count": 71, "min_year": 188, "max_year": 1450, "types": ["Pb", "P", "A-", "As", "A", "Am", "Pe"]}, {"saros": 99, "count": 72, "min_year": 235, "max_year": 1515, "types": ["Pb", "P", "An", "A", "H", "T", "Tm", "Pe"]}, {"saros": 100, "count": 71, "min_year": 264, "max_year": 1526, "types": ["Pb", "P", "T", "Tm", "H", "A", "A+", "Pe"]}, {"saros": 101, "count": 71, "min_year": 329, "max_year": 1591, "types": ["Pb", "P", "A", "Am", "As", "Pe"]}, {"saros": 102, "count": 71, "min_year": 376, "max_year": 1638, "types": ["Pb", "P", "A", "H", "H2", "T", "Tm", "Tn", "Pe"]}, {"saros": 103, "count": 72, "min_year": 387, "max_year": 1667, "types": ["Pb", "P", "T", "Tm", "H", "A", "As", "A-", "Pe"]}, {"saros": 104, "count": 70, "min_year": 470, "max_year": 1714, "types": ["Pb", "P", "A-", "A", "Am", "An", "Pe"]}, {"saros": 105, "count": 72, "min_year": 499, "max_year": 1779, "types": ["Pb", "P", "A+", "A", "H", "H2", "T", "Tm", "T-", "Pe"]}, {"saros": 106, "count": 75, "min_year": 456, "max_year": 1790, "types": ["Pb", "P", "T", "Tm", "H", "A", "A+", "Pe"]}, {"saros": 107, "count": 72, "min_year": 557, "max_year": 1837, "types": ["Pb", "P", "A", "Am", "As", "Pe"]}, {"saros": 108, "count": 76, "min_year": 550, "max_year": 1902, "types": ["Pb", "P", "As", "A", "H", "H2", "T", "Tm", "Tn", "Pe"]}, {"saros": 109, "count": 81, "min_year": 416, "max_year": 1859, "types": ["Pb", "P", "Tn", "T", "Tm", "H3", "H", "A", "As", "Pe"]}, {"saros": 110, "count": 72, "min_year": 463, "max_year": 1743, "types": ["Pb", "P", "A", "Am", "Pe"]}, {"saros": 111, "count": 79, "min_year": 528, "max_year": 1935, "types": ["Pb", "P", "A", "H", "Hm", "T", "Pe"]}, {"saros": 112, "count": 72, "min_year": 539, "max_year": 1819, "types": ["Pb", "P", "T", "Tm", "H3", "H", "A", "Pe"]}, {"saros": 113, "count": 71, "min_year": 586, "max_year": 1848, "types": ["Pb", "P", "A", "Am", "Pe"]}, {"saros": 114, "count": 72, "min_year": 651, "max_year": 1931, "types": ["Pb", "P", "A-", "As", "A", "H", "Hm", "H2", "T", "Pe"]}, {"saros": 115, "count": 72, "min_year": 662, "max_year": 1942, "types": ["Pb", "P", "T", "Tm", "H", "A", "Pe"]}, {"saros": 116, "count": 70, "min_year": 727, "max_year": 1971, "types": ["Pb", "P", "A", "Am", "An", "Pe"]}, {"saros": 117, "count": 71, "min_year": 792, "max_year": 2054, "types": ["Pb", "P", "An", "A", "H", "H2", "T", "T-", "Pe"]}, {"saros": 118, "count": 72, "min_year": 803, "max_year": 2083, "types": ["Pb", "P", "T", "Tm", "H", "A", "A+", "Pe"]}, {"saros": 119, "count": 71, "min_year": 850, "max_year": 2112, "types": ["Pb", "P", "T+", "T", "H", "A", "Am", "A-", "Pe"]}, {"saros": 120, "count": 71, "min_year": 933, "max_year": 2195, "types": ["Pb", "P", "A", "H", "H2", "T", "Pe"]}, {"saros": 121, "count": 71, "min_year": 944, "max_year": 2206, "types": ["Pb", "P", "T", "Tm", "H", "A", "As", "Pe"]}, {"saros": 122, "count": 70, "min_year": 991, "max_year": 2235, "types": ["Pb", "P", "T", "H", "A", "Am", "An", "Pe"]}, {"saros": 123, "count": 70, "min_year": 1074, "max_year": 2318, "types": ["Pb", "P", "An", "A", "H", "Hm", "T", "T-", "Pe"]}, {"saros": 124, "count": 73, "min_year": 1049, "max_year": 2347, "types": ["Pb", "P", "T", "Tm", "H", "Pe"]}, {"saros": 125, "count": 73, "min_year": 1060, "max_year": 2358, "types": ["Pb", "P", "T", "H", "A", "Am", "Pe"]}, {"saros": 126, "count": 72, "min_year": 1179, "max_year": 2459, "types": ["Pb", "P", "As", "A", "Hm", "H", "T", "Pe"]}, {"saros": 127, "count": 82, "min_year": 991, "max_year": 2452, "types": ["Pb", "P", "T", "Tm", "Pe"]}, {"saros": 128, "count": 73, "min_year": 984, "max_year": 2282, "types": ["Pb", "P", "T", "H3", "H", "A", "Am", "An", "Pe"]}, {"saros": 129, "count": 80, "min_year": 1103, "max_year": 2528, "types": ["Pb", "P", "A", "Am", "H", "T", "Ts", "Pe"]}, {"saros": 130, "count": 73, "min_year": 1096, "max_year": 2394, "types": ["Pb", "P", "T", "Tm", "Pe"]}, {"saros": 131, "count": 70, "min_year": 1125, "max_year": 2369, "types": ["Pb", "P", "T", "H", "A", "Am", "Pe"]}, {"saros": 132, "count": 71, "min_year": 1208, "max_year": 2470, "types": ["Pb", "P", "A-", "A", "Am", "H", "T", "Pe"]}, {"saros": 133, "count": 72, "min_year": 1219, "max_year": 2499, "types": ["Pb", "P", "A+", "A", "H", "T", "Tm", "Ts", "Pe"]}, {"saros": 134, "count": 71, "min_year": 1248, "max_year": 2510, "types": ["Pb", "P", "Ts", "T", "H", "A", "Am", "Pe"]}, {"saros": 135, "count": 71, "min_year": 1331, "max_year": 2593, "types": ["Pb", "P", "A+", "An", "A", "Am", "H", "T", "Pe"]}, {"saros": 136, "count": 71, "min_year": 1360, "max_year": 2622, "types": ["Pb", "P", "A", "H", "H2", "T", "Tm", "Pe"]}, {"saros": 137, "count": 70, "min_year": 1389, "max_year": 2633, "types": ["Pb", "P", "T", "H", "A", "Am", "A-", "Pe"]}, {"saros": 138, "count": 70, "min_year": 1472, "max_year": 2716, "types": ["Pb", "P", "A-", "A", "Am", "H", "T", "Pe"]}, {"saros": 139, "count": 71, "min_year": 1501, "max_year": 2763, "types": ["Pb", "P", "H", "H2", "T", "Tm", "Pe"]}, {"saros": 140, "count": 71, "min_year": 1512, "max_year": 2774, "types": ["Pb", "P", "T-", "T", "H3", "H", "A", "Am", "An", "A+", "Pe"]}, {"saros": 141, "count": 70, "min_year": 1613, "max_year": 2857, "types": ["Pb", "P", "A", "Am", "Pe"]}, {"saros": 142, "count": 72, "min_year": 1624, "max_year": 2904, "types": ["Pb", "P", "H", "T", "Tm", "Tn", "Pe"]}, {"saros": 143, "count": 72, "min_year": 1617, "max_year": 2897, "types": ["Pb", "P", "T", "H3", "H", "A", "Am", "Pe"]}, {"saros": 144, "count": 70, "min_year": 1736, "max_year": 2980, "types": ["Pb", "P", "A", "Am", "Pe"]}, {"saros": 145, "count": 76, "min_year": 1639, "max_year": 2991, "types": ["Pb", "P", "A", "H", "T", "Tm", "Ts"]}, {"saros": 146, "count": 76, "min_year": 1541, "max_year": 2893, "types": ["Pb", "P", "T", "H3", "H", "Hm", "A", "Pe"]}, {"saros": 147, "count": 77, "min_year": 1624, "max_year": 2995, "types": ["Pb", "P", "An", "A", "Am"]}, {"saros": 148, "count": 75, "min_year": 1653, "max_year": 2987, "types": ["Pb", "P", "A-", "A", "H", "T", "Tm", "Pe"]}, {"saros": 149, "count": 71, "min_year": 1664, "max_year": 2926, "types": ["Pb", "P", "T+", "T", "Tm", "H", "A", "Pe"]}, {"saros": 150, "count": 71, "min_year": 1729, "max_year": 2991, "types": ["Pb", "P", "A-", "A", "Am", "Pe"]}, {"saros": 151, "count": 68, "min_year": 1776, "max_year": 2984, "types": ["Pb", "P", "An", "A", "H", "T", "Tm", "Ts"]}, {"saros": 152, "count": 67, "min_year": 1805, "max_year": 2995, "types": ["Pb", "P", "T-", "T", "Tm", "H", "A", "A+"]}, {"saros": 153, "count": 63, "min_year": 1870, "max_year": 2988, "types": ["Pb", "P", "A+", "An", "A", "Am"]}, {"saros": 154, "count": 61, "min_year": 1917, "max_year": 2999, "types": ["Pb", "P", "A-", "A", "H", "H2", "T", "Tm"]}, {"saros": 155, "count": 60, "min_year": 1928, "max_year": 2992, "types": ["Pb", "P", "T", "Tm", "H", "A"]}, {"saros": 156, "count": 55, "min_year": 2011, "max_year": 2985, "types": ["Pb", "P", "A", "Am"]}, {"saros": 157, "count": 53, "min_year": 2058, "max_year": 2996, "types": ["Pb", "P", "An", "A", "H", "T", "Tm"]}, {"saros": 158, "count": 52, "min_year": 2069, "max_year": 2988, "types": ["Pb", "P", "Ts", "T", "Tm", "H", "A"]}, {"saros": 159, "count": 49, "min_year": 2134, "max_year": 2999, "types": ["Pb", "P", "A", "Am", "A-"]}, {"saros": 160, "count": 46, "min_year": 2181, "max_year": 2992, "types": ["Pb", "P", "A", "H", "T", "Tm"]}, {"saros": 161, "count": 46, "min_year": 2174, "max_year": 2985, "types": ["Pb", "P", "T", "Tm", "H3", "H"]}, {"saros": 162, "count": 42, "min_year": 2257, "max_year": 2996, "types": ["Pb", "P", "A", "Am"]}, {"saros": 163, "count": 40, "min_year": 2286, "max_year": 2989, "types": ["Pb", "P", "A", "H", "T", "Tm"]}, {"saros": 164, "count": 51, "min_year": 2098, "max_year": 3000, "types": ["Pb", "P", "T-", "T", "Tm"]}, {"saros": 165, "count": 48, "min_year": 2145, "max_year": 2993, "types": ["Pb", "P", "A", "Am"]}, {"saros": 166, "count": 43, "min_year": 2228, "max_year": 2986, "types": ["Pb", "P", "A", "Am", "H"]}, {"saros": 167, "count": 45, "min_year": 2203, "max_year": 2996, "types": ["Pb", "P", "Tn", "T", "Tm"]}, {"saros": 168, "count": 42, "min_year": 2250, "max_year": 2989, "types": ["Pb", "P", "As", "A", "Am"]}, {"saros": 169, "count": 38, "min_year": 2333, "max_year": 3000, "types": ["Pb", "P", "An", "A", "H", "Hm"]}, {"saros": 170, "count": 37, "min_year": 2344, "max_year": 2993, "types": ["Pb", "P", "T-", "T", "Tm"]}, {"saros": 171, "count": 34, "min_year": 2391, "max_year": 2986, "types": ["Pb", "P", "A+", "An", "A"]}, {"saros": 172, "count": 30, "min_year": 2474, "max_year": 2997, "types": ["Pb", "P", "A-", "As", "A"]}, {"saros": 173, "count": 29, "min_year": 2485, "max_year": 2990, "types": ["Pb", "P", "T"]}, {"saros": 174, "count": 26, "min_year": 2532, "max_year": 2983, "types": ["Pb", "P", "T", "H", "A"]}, {"saros": 175, "count": 23, "min_year": 2597, "max_year": 2994, "types": ["Pb", "P", "An", "A"]}, {"saros": 176, "count": 22, "min_year": 2608, "max_year": 2987, "types": ["Pb", "P", "Ts", "T"]}, {"saros": 177, "count": 20, "min_year": 2655, "max_year": 2997, "types": ["Pb", "P", "T", "H3", "H", "A"]}, {"saros": 178, "count": 15, "min_year": 2738, "max_year": 2990, "types": ["Pb", "P", "A-", "A"]}, {"saros": 179, "count": 15, "min_year": 2731, "max_year": 2983, "types": ["Pb", "P", "T"]}, {"saros": 180, "count": 14, "min_year": 2760, "max_year": 2994, "types": ["Pb", "P", "T"]}, {"saros": 181, "count": 9, "min_year": 2843, "max_year": 2987, "types": ["Pb", "P", "A"]}, {"saros": 182, "count": 18, "min_year": 2691, "max_year": 2998, "types": ["Pb", "P"]}, {"saros": 183, "count": 19, "min_year": 2666, "max_year": 2991, "types": ["Pb", "P"]}, {"saros": 184, "count": 12, "min_year": 2785, "max_year": 2984, "types": ["Pb", "P"]}, {"saros": 185, "count": 14, "min_year": 2760, "max_year": 2995, "types": ["Pb", "P"]}, {"saros": 186, "count": 12, "min_year": 2789, "max_year": 2988, "types": ["Pb", "P"]}, {"saros": 187, "count": 8, "min_year": 2872, "max_year": 2998, "types": ["Pb", "P"]}, {"saros": 188, "count": 7, "min_year": 2883, "max_year": 2991, "types": ["Pb", "P"]}, {"saros": 189, "count": 5, "min_year": 2912, "max_year": 2984, "types": ["Pb", "P"]}, {"saros": 190, "count": 1, "min_year": 2995, "max_year": 2995, "types": ["Pb"]}];
+    
+    let currentData = saros136Data;
+    let map, markersLayer, linesLayer;
+    let lonChart, latChart;
+    let activeBranches = { 1: true, 2: true, 3: true };
+    let animInterval = null;
+    let animIndex = 0;
+    
+    const branchColors = {
+        1: '#00e5ff',
+        2: '#ff3366',
+        3: '#ffc107'
+    };
+
+    function initPage() {
+        populateSarosDropdown();
+        initMap();
+        initCharts();
+        renderData();
+    }
+    
+    function populateSarosDropdown() {
+        const select = document.getElementById('sarosSelect');
+        select.innerHTML = '';
+        sarosSummary.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s.saros;
+            opt.textContent = `Saros ${s.saros} (${s.count} eclipses | ${s.min_year} a ${s.max_year} d.C.)`;
+            if (s.saros === 136) opt.selected = true;
+            select.appendChild(opt);
+        });
+    }
+    
+    function initMap() {
+        map = L.map('map', {
+            center: [15, 0],
+            zoom: 2,
+            minZoom: 1.5,
+            maxZoom: 8,
+            worldCopyJump: true
+        });
+        
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://carto.com/">CARTO</a> &copy; OpenStreetMap contributors',
+            subdomains: 'abcd',
+            maxZoom: 19
+        }).addTo(map);
+        
+        linesLayer = L.layerGroup().addTo(map);
+        markersLayer = L.layerGroup().addTo(map);
+    }
+    
+    function initCharts() {
+        // Longitude chart
+        const ctxLon = document.getElementById('lonChart').getContext('2d');
+        lonChart = new Chart(ctxLon, {
+            type: 'line',
+            data: { datasets: [] },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { labels: { color: '#cbd5e1', font: { family: 'Plus Jakarta Sans', size: 11 } } },
+                    tooltip: {
+                        callbacks: {
+                            label: (ctx) => `Año ${ctx.raw.x}: ${ctx.raw.y.toFixed(2)}° (${ctx.raw.meta})`
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        type: 'linear',
+                        grid: { color: 'rgba(255,255,255,0.05)' },
+                        ticks: { color: '#94a3b8' },
+                        title: { display: true, text: 'Año del Eclipse', color: '#94a3b8' }
+                    },
+                    y: {
+                        min: -180,
+                        max: 180,
+                        grid: { color: 'rgba(255,255,255,0.05)' },
+                        ticks: { color: '#94a3b8', stepSize: 60 },
+                        title: { display: true, text: 'Longitud (°)', color: '#94a3b8' }
+                    }
+                }
+            }
+        });
+        
+        // Latitude chart
+        const ctxLat = document.getElementById('latChart').getContext('2d');
+        latChart = new Chart(ctxLat, {
+            type: 'line',
+            data: { datasets: [] },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { labels: { color: '#cbd5e1', font: { family: 'Plus Jakarta Sans', size: 11 } } },
+                    tooltip: {
+                        callbacks: {
+                            label: (ctx) => `Año ${ctx.raw.x}: ${ctx.raw.y.toFixed(2)}° (${ctx.raw.meta})`
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        type: 'linear',
+                        grid: { color: 'rgba(255,255,255,0.05)' },
+                        ticks: { color: '#94a3b8' },
+                        title: { display: true, text: 'Año del Eclipse', color: '#94a3b8' }
+                    },
+                    y: {
+                        min: -90,
+                        max: 90,
+                        grid: { color: 'rgba(255,255,255,0.05)' },
+                        ticks: { color: '#94a3b8', stepSize: 30 },
+                        title: { display: true, text: 'Latitud (°)', color: '#94a3b8' }
+                    }
+                }
+            }
+        });
+    }
+    
+    function renderData() {
+        markersLayer.clearLayers();
+        linesLayer.clearLayers();
+        
+        // Update metrics
+        document.getElementById('mTotal').textContent = currentData.length;
+        const minYear = Math.min(...currentData.map(d => d.year));
+        const maxYear = Math.max(...currentData.map(d => d.year));
+        document.getElementById('mYears').textContent = `${minYear} – ${maxYear} (${maxYear - minYear} años)`;
+        
+        // Render Map
+        [1, 2, 3].forEach(b => {
+            if (!activeBranches[b]) return;
+            const bData = currentData.filter(d => d.branch === b);
+            const color = branchColors[b];
+            
+            // Connected lines (split if crosses dateline)
+            let currentLine = [];
+            for (let i = 0; i < bData.length; i++) {
+                const pt = [bData[i].lat_dd_ge, bData[i].lng_dd_ge];
+                if (i > 0 && Math.abs(bData[i].lng_dd_ge - bData[i-1].lng_dd_ge) > 180) {
+                    if (currentLine.length > 1) {
+                        L.polyline(currentLine, { color: color, weight: 2, dashArray: '4, 6', opacity: 0.6 }).addTo(linesLayer);
+                    }
+                    currentLine = [pt];
+                } else {
+                    currentLine.push(pt);
+                }
+            }
+            if (currentLine.length > 1) {
+                L.polyline(currentLine, { color: color, weight: 2, dashArray: '4, 6', opacity: 0.6 }).addTo(linesLayer);
+            }
+            
+            // Markers
+            bData.forEach(d => {
+                const marker = L.circleMarker([d.lat_dd_ge, d.lng_dd_ge], {
+                    radius: d.eclipse_type.includes('T') ? 6 : (d.eclipse_type.includes('A') ? 5 : 4),
+                    fillColor: color,
+                    color: '#ffffff',
+                    weight: 1,
+                    opacity: 0.9,
+                    fillOpacity: 0.85
+                });
+                
+                const popupContent = `
+                    <div style="font-family:'Plus Jakarta Sans', sans-serif; font-size:12px;">
+                        <b style="color:${color}; font-size:14px;">Eclipse #${d.seq} (Rama ${d.branch})</b><br>
+                        <b>Fecha:</b> ${d.year}-${String(d.month).padStart(2,'0')}-${String(d.day).padStart(2,'0')}<br>
+                        <b>Tipo:</b> <span class="type-badge type-${d.eclipse_type.charAt(0)}">${d.eclipse_type}</span><br>
+                        <b>Coordenadas:</b> ${d.lat_dd_ge.toFixed(2)}°, ${d.lng_dd_ge.toFixed(2)}°<br>
+                        <b>Gamma:</b> ${d.gamma.toFixed(4)}<br>
+                        <b>Magnitud:</b> ${d.magnitude.toFixed(4)}<br>
+                        <b>Duración central:</b> ${d.central_duration}
+                    </div>
+                `;
+                marker.bindPopup(popupContent);
+                marker.addTo(markersLayer);
+            });
+        });
+        
+        // Update Charts
+        updateCharts();
+        
+        // Update Table
+        updateTable();
+    }
+    
+    function updateCharts() {
+        const lonDatasets = [];
+        const latDatasets = [];
+        
+        [1, 2, 3].forEach(b => {
+            if (!activeBranches[b]) return;
+            const bData = currentData.filter(d => d.branch === b);
+            const color = branchColors[b];
+            
+            lonDatasets.push({
+                label: `Rama ${b}`,
+                data: bData.map(d => ({ x: d.year, y: d.lng_dd_ge, meta: `Ecl #${d.seq} [${d.eclipse_type}]` })),
+                borderColor: color,
+                backgroundColor: color,
+                borderWidth: 2,
+                pointRadius: 4,
+                tension: 0.1
+            });
+            
+            latDatasets.push({
+                label: `Rama ${b}`,
+                data: bData.map(d => ({ x: d.year, y: d.lat_dd_ge, meta: `Ecl #${d.seq} [${d.eclipse_type}]` })),
+                borderColor: color,
+                backgroundColor: color,
+                borderWidth: 2,
+                pointRadius: 4,
+                tension: 0.1
+            });
+        });
+        
+        lonChart.data.datasets = lonDatasets;
+        lonChart.update();
+        
+        latChart.data.datasets = latDatasets;
+        latChart.update();
+    }
+    
+    function updateTable() {
+        const tbody = document.getElementById('tableBody');
+        tbody.innerHTML = '';
+        currentData.forEach(d => {
+            const tr = document.createElement('tr');
+            tr.style.cursor = 'pointer';
+            tr.onclick = () => {
+                map.setView([d.lat_dd_ge, d.lng_dd_ge], 4);
+            };
+            
+            const bColor = branchColors[d.branch];
+            tr.innerHTML = `
+                <td><b>#${d.seq}</b></td>
+                <td><span class="branch-badge" style="background:${bColor};"></span>Rama ${d.branch}</td>
+                <td>${d.year}-${String(d.month).padStart(2,'0')}-${String(d.day).padStart(2,'0')}</td>
+                <td><span class="type-badge type-${d.eclipse_type.charAt(0)}">${d.eclipse_type}</span></td>
+                <td>${d.lat_dd_ge.toFixed(2)}°</td>
+                <td>${d.lng_dd_ge.toFixed(2)}°</td>
+                <td>${d.gamma.toFixed(3)}</td>
+                <td>${d.magnitude.toFixed(3)}</td>
+                <td>${d.central_duration}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+    
+    function toggleBranch(branchNum) {
+        activeBranches[branchNum] = !activeBranches[branchNum];
+        const btn = document.querySelector(`.toggle-b${branchNum}`);
+        if (activeBranches[branchNum]) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+        renderData();
+    }
+    
+    function changeSaros(sarosNum) {
+        sarosNum = parseInt(sarosNum);
+        if (sarosNum === 136) {
+            currentData = saros136Data;
+            renderData();
+            return;
+        }
+        
+        // Fetch from CSV if available
+        Papa.parse('eclipse_besselian_elements.csv', {
+            download: true,
+            header: true,
+            dynamicTyping: true,
+            complete: function(results) {
+                const filtered = results.data.filter(r => r.saros === sarosNum && r.lat_dd_ge !== undefined && r.lat_dd_ge !== null);
+                filtered.sort((a,b) => a.year - b.year);
+                filtered.forEach((d, idx) => {
+                    d.seq = idx + 1;
+                    d.branch = ((d.seq - 1) % 3) + 1;
+                    d.exeligmos_idx = Math.floor((d.seq - 1) / 3) + 1;
+                });
+                currentData = filtered;
+                renderData();
+            }
+        });
+    }
+    
+    function toggleAnimation() {
+        const icon = document.getElementById('animIcon');
+        if (animInterval) {
+            clearInterval(animInterval);
+            animInterval = null;
+            icon.className = 'fa-solid fa-play';
+        } else {
+            icon.className = 'fa-solid fa-pause';
+            animIndex = 0;
+            markersLayer.clearLayers();
+            linesLayer.clearLayers();
+            
+            animInterval = setInterval(() => {
+                if (animIndex >= currentData.length) {
+                    clearInterval(animInterval);
+                    animInterval = null;
+                    icon.className = 'fa-solid fa-play';
+                    renderData();
+                    return;
+                }
+                
+                const d = currentData[animIndex];
+                const color = branchColors[d.branch];
+                const marker = L.circleMarker([d.lat_dd_ge, d.lng_dd_ge], {
+                    radius: 7,
+                    fillColor: color,
+                    color: '#ffffff',
+                    weight: 1.5,
+                    opacity: 1,
+                    fillOpacity: 0.9
+                }).addTo(markersLayer);
+                
+                map.panTo([d.lat_dd_ge, d.lng_dd_ge], { animate: true, duration: 0.3 });
+                animIndex++;
+            }, 350);
+        }
+    }
+    
+    window.addEventListener('DOMContentLoaded', initPage);
+</script>
+</body>
+</html>
