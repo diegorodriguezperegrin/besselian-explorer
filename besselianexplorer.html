@@ -361,12 +361,114 @@
             text-align: right !important;
         }
 
-        #csv-status-badge i {
-            width: auto !important;
-            font-size: 0.70rem !important;
+        /* Search Mode Switch (Año vs Saros) */
+        .search-mode-tabs {
+            display: flex;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 2px;
+            gap: 2px;
+            margin-bottom: 6px;
+        }
+        .search-mode-btn {
+            flex: 1;
+            padding: 5px 8px;
+            border-radius: 6px;
+            border: 1px solid transparent;
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 0.74rem;
+            font-weight: 600;
+            font-family: var(--font-heading);
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+        .search-mode-btn:hover {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .search-mode-btn.active {
+            background: rgba(56, 189, 248, 0.18);
+            color: var(--accent-blue);
+            border-color: rgba(56, 189, 248, 0.4);
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.15);
         }
 
-        
+        /* Interactive Saros Badge */
+        .interactive-saros {
+            cursor: pointer;
+            padding: 2px 6px;
+            border-radius: 6px;
+            background: rgba(56, 189, 248, 0.1);
+            border: 1px solid rgba(56, 189, 248, 0.25);
+            transition: var(--transition-smooth);
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .interactive-saros:hover {
+            background: rgba(56, 189, 248, 0.25);
+            border-color: var(--accent-blue);
+            color: #38bdf8;
+            transform: translateY(-1px);
+            box-shadow: 0 0 8px rgba(56, 189, 248, 0.3);
+        }
+
+        /* Saros Stepper (Orbital Navigation) */
+        .saros-stepper-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            padding: 6px 8px;
+            margin-top: 6px;
+            gap: 4px;
+        }
+        .stepper-btn {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: var(--text-primary);
+            font-size: 0.70rem;
+            font-weight: 600;
+            font-family: var(--font-heading);
+            padding: 4px 6px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            white-space: nowrap;
+        }
+        .stepper-btn:hover:not(:disabled) {
+            background: rgba(56, 189, 248, 0.2);
+            border-color: var(--accent-blue);
+            color: var(--accent-blue);
+            transform: translateY(-1px);
+        }
+        .stepper-btn:disabled {
+            opacity: 0.28;
+            cursor: not-allowed;
+            border-color: transparent;
+            background: rgba(255, 255, 255, 0.02);
+        }
+        .stepper-btn.exeligmos {
+            color: #fbbf24;
+            border-color: rgba(251, 191, 36, 0.25);
+        }
+        .stepper-btn.exeligmos:hover:not(:disabled) {
+            background: rgba(251, 191, 36, 0.2);
+            border-color: #fbbf24;
+            color: #fef08a;
+        }
 
         input[type="text"], input[type="number"], select {
             width: 100%;
@@ -671,8 +773,17 @@
             <div class="preset-chip" data-cat="9569">26 Ene 2028 (Anular España)</div>
         </div>
 
-        <div class="section-title section-title-between" style="margin-top: 4px;">
-            <span><i class="fa-solid fa-magnifying-glass"></i> Buscar por Año</span>
+        <div class="search-mode-tabs">
+            <button class="search-mode-btn active" id="btn-mode-year" title="Explorar catálogo por Año">
+                <i class="fa-solid fa-calendar-days"></i> Por Año
+            </button>
+            <button class="search-mode-btn" id="btn-mode-saros" title="Explorar serie por Ciclo de Saros (18 años 11 días)">
+                <i class="fa-solid fa-arrows-rotate"></i> Por Saros
+            </button>
+        </div>
+
+        <div class="section-title section-title-between" style="margin-top: 2px;">
+            <span id="search-section-label"><i class="fa-solid fa-magnifying-glass"></i> Buscar por Año</span>
             <span id="csv-status-badge" style="color: var(--text-secondary); font-weight: 600; text-transform: none; letter-spacing: 0; cursor: help;" title="Five Millennium Catalog of Solar Eclipses (-1999 a +3000) · Fred Espenak &amp; Jean Meeus (NASA GSFC)">
                 <i class="fa-solid fa-circle-notch fa-spin"></i> Cargando...
             </span>
@@ -697,7 +808,7 @@
                 </div>
                 <div class="stat-row">
                     <span class="stat-lbl">Saros:</span>
-                    <span class="stat-val" id="card-saros">136 <small style="color:var(--text-secondary); font-size:0.7rem;">(38/71)</small></span>
+                    <span class="stat-val interactive-saros" id="card-saros" title="Clic para explorar todos los eclipses de esta serie de Saros">136 <small style="color:var(--text-secondary); font-size:0.7rem;">(38/71)</small> <i class="fa-solid fa-arrow-up-right-from-square" style="font-size:0.65rem; opacity:0.8;"></i></span>
                 </div>
                 <div class="stat-row">
                     <span class="stat-lbl">Magnitud:</span>
@@ -731,6 +842,23 @@
                     <span class="stat-lbl">TD-UT:</span>
                     <span class="stat-val" id="card-dt">76.0 s</span>
                 </div>
+            </div>
+
+            <!-- Orbital Stepper: Navegación de 1 Saros (18a 11d) y Exeligmos (3 Saros = 54a 1m) -->
+            <div class="saros-stepper-row" id="saros-stepper-container">
+                <button class="stepper-btn exeligmos" id="btn-prev-exeligmos" title="Salto Exeligmos: -3 Saros (-54 años, 1 mes)">
+                    <i class="fa-solid fa-angles-left"></i> -54a
+                </button>
+                <button class="stepper-btn" id="btn-prev-saros" title="Salto Saros anterior: -1 Saros (-18 años, 11 días)">
+                    <i class="fa-solid fa-angle-left"></i> -18a
+                </button>
+                <span style="font-size:0.72rem; color:var(--text-secondary); font-weight:700;" id="stepper-seq-info" title="Número de secuencia / Total de eclipses de la serie">38 / 71</span>
+                <button class="stepper-btn" id="btn-next-saros" title="Salto Saros siguiente: +1 Saros (+18 años, 11 días)">
+                    +18a <i class="fa-solid fa-angle-right"></i>
+                </button>
+                <button class="stepper-btn exeligmos" id="btn-next-exeligmos" title="Salto Exeligmos: +3 Saros (+54 años, 1 mes)">
+                    +54a <i class="fa-solid fa-angles-right"></i>
+                </button>
             </div>
         </div>
 
@@ -781,6 +909,28 @@
                 <input type="checkbox" id="chk-show-totality" checked>
                 <span>Franja de totalidad</span>
             </label>
+            <label class="checkbox-row" style="color: var(--accent-blue); font-weight: 500;">
+                <input type="checkbox" id="chk-show-saros-family">
+                <span>Familia Saros 3D (±18a, ±54a)</span>
+            </label>
+            <div id="saros-family-legend" style="display: none; margin-left: 16px; margin-top: 1px; margin-bottom: 3px; padding: 4px 6px; background: rgba(0,0,0,0.35); border-radius: 8px; border: 1px solid rgba(255,255,255,0.06); font-size: 0.68rem; line-height: 1.45;">
+                <div style="display: flex; align-items: center; gap: 5px; color: #06b6d4;">
+                    <span style="display:inline-block; width:12px; height:2px; background:#06b6d4; border-radius:1px; flex-shrink:0;"></span>
+                    <span>-18a: Saros anterior (-120° Este)</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 5px; color: #818cf8;">
+                    <span style="display:inline-block; width:12px; height:2px; background:#818cf8; border-radius:1px; flex-shrink:0;"></span>
+                    <span>+18a: Saros siguiente (+120° Oeste)</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 5px; color: #fbbf24;">
+                    <span style="display:inline-block; width:12px; height:2px; background:#fbbf24; border-radius:1px; flex-shrink:0;"></span>
+                    <span>-54a: Exeligmos anterior (mismo meridiano)</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 5px; color: #34d399;">
+                    <span style="display:inline-block; width:12px; height:2px; background:#34d399; border-radius:1px; flex-shrink:0;"></span>
+                    <span>+54a: Exeligmos siguiente (mismo meridiano)</span>
+                </div>
+            </div>
             <label class="checkbox-row">
                 <input type="checkbox" id="chk-show-subsolar" checked>
                 <span>Punto subsolar (Sol en el cenit)</span>
@@ -1186,6 +1336,37 @@
         const yearInput = document.getElementById('year-input');
         const eclipseSelect = document.getElementById('eclipse-select');
         const MONTH_NAMES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+        let searchMode = 'year'; // 'year' | 'saros'
+
+        function setSearchMode(mode) {
+            searchMode = mode;
+            const btnYear = document.getElementById('btn-mode-year');
+            const btnSaros = document.getElementById('btn-mode-saros');
+            const label = document.getElementById('search-section-label');
+            const input = document.getElementById('year-input');
+
+            if (mode === 'saros') {
+                btnYear?.classList.remove('active');
+                btnSaros?.classList.add('active');
+                if (label) label.innerHTML = '<i class="fa-solid fa-arrows-rotate"></i> Buscar por Saros';
+                if (input) {
+                    input.placeholder = 'Saros';
+                    const sarosVal = currentEclipse?.saros || 136;
+                    input.value = sarosVal;
+                    filterEclipsesBySaros(sarosVal);
+                }
+            } else {
+                btnSaros?.classList.remove('active');
+                btnYear?.classList.add('active');
+                if (label) label.innerHTML = '<i class="fa-solid fa-magnifying-glass"></i> Buscar por Año';
+                if (input) {
+                    input.placeholder = 'Año';
+                    const yrVal = currentEclipse?.year || 2027;
+                    input.value = yrVal;
+                    filterEclipsesByYear(yrVal);
+                }
+            }
+        }
 
         function populateSelect(list) {
             eclipseSelect.innerHTML = '';
@@ -1195,7 +1376,17 @@
                 const typeCode = (e.eclipse_type || '').toUpperCase();
                 const typeName = typeCode.startsWith('T') ? 'Total' : typeCode.startsWith('A') ? 'Anular' : typeCode.startsWith('H') ? 'Híbrido' : 'Parcial';
                 opt.value = e.cat_no;
-                opt.text = `${e.day} de ${mName} (${typeName})`;
+                if (searchMode === 'saros') {
+                    const dur = e.central_duration ? ` · ${e.central_duration}` : '';
+                    const seq = (e.nSeq && e.nSer) ? `[${e.nSeq}/${e.nSer}] ` : '';
+                    const yStr = e.year < 0 ? `-${String(Math.abs(e.year)).padStart(4, '0')}` : String(e.year).padStart(4, '0');
+                    const mStr = String(e.month || 1).padStart(2, '0');
+                    const dStr = String(e.day || 1).padStart(2, '0');
+                    const isoDate = `${yStr}-${mStr}-${dStr}`;
+                    opt.text = `${seq}${isoDate} (${typeName}${dur})`;
+                } else {
+                    opt.text = `${e.day} de ${mName} (${typeName})`;
+                }
                 eclipseSelect.add(opt);
             });
         }
@@ -1204,9 +1395,87 @@
             const matches = eclipseData.filter(e => e.year === targetYear);
             if (matches.length > 0) {
                 populateSelect(matches);
-                selectEclipse(matches[0]);
+                selectEclipse(matches[0], true);
             } else {
                 eclipseSelect.innerHTML = `<option value="">Sin eclipses en ${targetYear}</option>`;
+            }
+        }
+
+        function filterEclipsesBySaros(sarosNum) {
+            const matches = eclipseData.filter(e => e.saros === sarosNum).sort((a, b) => (a.nSeq || a.year) - (b.nSeq || b.year));
+            if (matches.length > 0) {
+                populateSelect(matches);
+                const currentInList = matches.find(e => e.cat_no === currentEclipse?.cat_no);
+                if (currentInList) {
+                    eclipseSelect.value = currentInList.cat_no;
+                } else {
+                    selectEclipse(matches[0], false);
+                    eclipseSelect.value = matches[0].cat_no;
+                }
+            } else {
+                eclipseSelect.innerHTML = `<option value="">Sin eclipses en Saros ${sarosNum}</option>`;
+            }
+        }
+
+        function updateSarosStepper() {
+            const container = document.getElementById('saros-stepper-container');
+            if (!container) return;
+            if (!currentEclipse || !currentEclipse.saros) {
+                container.style.display = 'none';
+                return;
+            }
+            container.style.display = 'flex';
+
+            const sarosNum = currentEclipse.saros;
+            const members = eclipseData.filter(e => e.saros === sarosNum).sort((a, b) => (a.nSeq || a.year) - (b.nSeq || b.year));
+            const idx = members.findIndex(e => e.cat_no === currentEclipse.cat_no);
+
+            const btnPrevEx = document.getElementById('btn-prev-exeligmos');
+            const btnPrevSaros = document.getElementById('btn-prev-saros');
+            const btnNextSaros = document.getElementById('btn-next-saros');
+            const btnNextEx = document.getElementById('btn-next-exeligmos');
+            const seqInfo = document.getElementById('stepper-seq-info');
+
+            const curSeq = currentEclipse.nSeq || (idx >= 0 ? idx + 1 : '?');
+            const totSeq = currentEclipse.nSer || members.length || '?';
+            if (seqInfo) seqInfo.innerText = `${curSeq} / ${totSeq}`;
+
+            if (btnPrevEx) {
+                btnPrevEx.disabled = idx < 3;
+                if (idx >= 3) btnPrevEx.title = `Exeligmos anterior: ${members[idx - 3].year} (${members[idx - 3].eclipse_type}) [-54a]`;
+            }
+            if (btnPrevSaros) {
+                btnPrevSaros.disabled = idx < 1;
+                if (idx >= 1) btnPrevSaros.title = `Saros anterior: ${members[idx - 1].year} (${members[idx - 1].eclipse_type}) [-18a]`;
+            }
+            if (btnNextSaros) {
+                btnNextSaros.disabled = idx < 0 || idx >= members.length - 1;
+                if (idx >= 0 && idx < members.length - 1) btnNextSaros.title = `Saros siguiente: ${members[idx + 1].year} (${members[idx + 1].eclipse_type}) [+18a]`;
+            }
+            if (btnNextEx) {
+                btnNextEx.disabled = idx < 0 || idx >= members.length - 3;
+                if (idx >= 0 && idx < members.length - 3) btnNextEx.title = `Exeligmos siguiente: ${members[idx + 3].year} (${members[idx + 3].eclipse_type}) [+54a]`;
+            }
+        }
+
+        function jumpSaros(delta) {
+            if (!currentEclipse || !currentEclipse.saros) return;
+            const sarosNum = currentEclipse.saros;
+            const members = eclipseData.filter(e => e.saros === sarosNum).sort((a, b) => (a.nSeq || a.year) - (b.nSeq || b.year));
+            const idx = members.findIndex(e => e.cat_no === currentEclipse.cat_no);
+            const targetIdx = idx + delta;
+            if (targetIdx >= 0 && targetIdx < members.length) {
+                const targetEclipse = members[targetIdx];
+                if (searchMode === 'year') {
+                    if (yearInput) yearInput.value = targetEclipse.year;
+                    populateSelect(eclipseData.filter(e => e.year === targetEclipse.year));
+                } else {
+                    if (yearInput) yearInput.value = targetEclipse.saros;
+                    populateSelect(members);
+                }
+                // En navegación de Saros mantenemos la cámara fija para que el usuario aprecie el salto geográfico
+                selectEclipse(targetEclipse, false);
+                if (eclipseSelect) eclipseSelect.value = targetEclipse.cat_no;
             }
         }
 
@@ -1216,16 +1485,44 @@
             const val = e.target.value.trim();
             searchDebounceTimer = setTimeout(() => {
                 if (val.length >= 1) {
-                    const yr = parseInt(val);
-                    if (!isNaN(yr)) filterEclipsesByYear(yr);
+                    const num = parseInt(val);
+                    if (!isNaN(num)) {
+                        if (searchMode === 'saros') {
+                            filterEclipsesBySaros(num);
+                        } else {
+                            filterEclipsesByYear(num);
+                        }
+                    }
                 }
             }, 180);
         });
 
+        document.getElementById('btn-mode-year')?.addEventListener('click', () => setSearchMode('year'));
+        document.getElementById('btn-mode-saros')?.addEventListener('click', () => setSearchMode('saros'));
+
+        document.getElementById('card-saros')?.addEventListener('click', () => {
+            if (currentEclipse && currentEclipse.saros) {
+                setSearchMode('saros');
+                const input = document.getElementById('year-input');
+                if (input) input.value = currentEclipse.saros;
+                filterEclipsesBySaros(currentEclipse.saros);
+                if (eclipseSelect) eclipseSelect.value = currentEclipse.cat_no;
+            }
+        });
+
+        document.getElementById('btn-prev-exeligmos')?.addEventListener('click', () => jumpSaros(-3));
+        document.getElementById('btn-prev-saros')?.addEventListener('click', () => jumpSaros(-1));
+        document.getElementById('btn-next-saros')?.addEventListener('click', () => jumpSaros(1));
+        document.getElementById('btn-next-exeligmos')?.addEventListener('click', () => jumpSaros(3));
+
         eclipseSelect?.addEventListener('change', (e) => {
             const catNo = parseFloat(e.target.value);
             const found = eclipseData.find(item => item.cat_no === catNo);
-            if (found) selectEclipse(found);
+            if (found) {
+                // En modo Saros, preservar el punto de vista del usuario; en modo Año, recentrar
+                const autoRecenter = (searchMode !== 'saros');
+                selectEclipse(found, autoRecenter);
+            }
         });
 
         document.querySelectorAll('.preset-chip').forEach(chip => {
@@ -1236,9 +1533,12 @@
                 const catNo = parseFloat(this.dataset.cat);
                 const found = eclipseData.find(item => item.cat_no === catNo);
                 if (found) {
+                    if (searchMode === 'saros') {
+                        setSearchMode('year');
+                    }
                     if (yearInput) yearInput.value = found.year;
                     filterEclipsesByYear(found.year);
-                    selectEclipse(found);
+                    selectEclipse(found, true);
                     if (eclipseSelect) eclipseSelect.value = catNo;
                 }
             });
@@ -1247,7 +1547,7 @@
         // -------------------------------------------------------------
         // 4. PROYECCIÓN EXACTA Y ILUMINACIÓN SOLAR REALISTA
         // -------------------------------------------------------------
-        function selectEclipse(eclipse) {
+        function selectEclipse(eclipse, autoRecenter = false) {
             currentEclipse = eclipse;
             if (!eclipse) return;
 
@@ -1260,7 +1560,7 @@
             const sarosElem = document.getElementById('card-saros');
             if (sarosElem) {
                 const seq = (eclipse.nSeq && eclipse.nSer) ? ` <small style="color:var(--text-secondary); font-size:0.7rem;">(${eclipse.nSeq}/${eclipse.nSer})</small>` : '';
-                sarosElem.innerHTML = `${eclipse.saros || '--'}${seq}`;
+                sarosElem.innerHTML = `${eclipse.saros || '--'}${seq} <i class="fa-solid fa-arrow-up-right-from-square" style="font-size:0.65rem; opacity:0.8;"></i>`;
             }
 
             const gammaElem = document.getElementById('card-gamma');
@@ -1323,11 +1623,15 @@
             slider.value = tInit;
 
             drawShadowPath(eclipse);
+            drawSarosFamily(eclipse);
             updateShadowAtTime(tInit);
+            updateSarosStepper();
 
-            const maxLat = eclipse.lat_dd_ge || 0;
-            const maxLng = eclipse.lng_dd_ge || 0;
-            recenterEarth(maxLat, maxLng);
+            if (autoRecenter) {
+                const maxLat = eclipse.lat_dd_ge || 0;
+                const maxLng = eclipse.lng_dd_ge || 0;
+                recenterEarth(maxLat, maxLng);
+            }
         }
 
         // -------------------------------------------------------------
@@ -1382,6 +1686,7 @@
         let isomagnitudesGroup = null;
         let graticuleGroup = null;
         let utLinesGroup = null;
+        let sarosFamilyGroup = null;
 
         function createGraticule() {
             const group = new THREE.Group();
@@ -2182,6 +2487,71 @@
             }
         }
 
+        // -------------------------------------------------------------
+        // 4b. VISUALIZACIÓN MULTITRACK 3D: FAMILIA SAROS (±18a, ±54a)
+        // -------------------------------------------------------------
+        function drawSarosFamily(eclipse) {
+            if (sarosFamilyGroup) {
+                dispose3DObject(sarosFamilyGroup);
+                sarosFamilyGroup = null;
+            }
+
+            const showSarosFamily = document.getElementById('chk-show-saros-family')?.checked;
+            if (!showSarosFamily || !eclipse || !eclipse.saros) return;
+
+            const sarosNum = eclipse.saros;
+            const members = eclipseData.filter(e => e.saros === sarosNum).sort((a, b) => (a.nSeq || a.year) - (b.nSeq || b.year));
+            const curIndex = members.findIndex(e => e.cat_no === eclipse.cat_no);
+            if (curIndex === -1) return;
+
+            sarosFamilyGroup = new THREE.Group();
+
+            // Relaciones orbitales a graficar en 3D:
+            // 1. -1 Saros (-18.03 años): salto ~120° al Este (Cian #06b6d4)
+            // 2. +1 Saros (+18.03 años): salto ~120° al Oeste (Violeta #818cf8)
+            // 3. -3 Saros (-54.09 años, Exeligmos): retorno al mismo meridiano (Ámbar #fbbf24)
+            // 4. +3 Saros (+54.09 años, Exeligmos): retorno al mismo meridiano (Verde esmeralda #34d399)
+            const relations = [
+                { offset: -1, label: '-18a', color: 0x06b6d4, textColor: '#06b6d4', width: 2, opacity: 0.65 },
+                { offset: 1, label: '+18a', color: 0x818cf8, textColor: '#818cf8', width: 2, opacity: 0.65 },
+                { offset: -3, label: '-54a Exeligmos', color: 0xfbbf24, textColor: '#fbbf24', width: 2, opacity: 0.75 },
+                { offset: 3, label: '+54a Exeligmos', color: 0x34d399, textColor: '#34d399', width: 2, opacity: 0.75 }
+            ];
+
+            const showLabels = document.getElementById('chk-show-labels')?.checked ?? true;
+
+            relations.forEach(rel => {
+                const targetIdx = curIndex + rel.offset;
+                if (targetIdx >= 0 && targetIdx < members.length) {
+                    const member = members[targetIdx];
+                    const memberGeo = precomputeEclipseGeometry(member);
+                    if (memberGeo && memberGeo.centerCoords && memberGeo.centerCoords.length > 1) {
+                        const line = createSegmentedLine(memberGeo.centerCoords, rel.color, EARTH_RADIUS * 1.0035, rel.width, rel.opacity);
+                        if (line) sarosFamilyGroup.add(line);
+
+                        if (showLabels) {
+                            const lblText = `${member.year} (${rel.label})`;
+                            const sprite = createTextSprite(lblText, '#0f172a', '#ffffff', 0.60);
+                            if (sprite) {
+                                let lat = member.lat_dd_ge;
+                                let lng = member.lng_dd_ge;
+                                if (lat == null || lng == null) {
+                                    const midPt = memberGeo.centerCoords[Math.floor(memberGeo.centerCoords.length / 2)];
+                                    lat = midPt.lat;
+                                    lng = midPt.lng;
+                                }
+                                const pos = latLngToVector3(lat, lng, EARTH_RADIUS * 1.014);
+                                sprite.position.copy(pos);
+                                sarosFamilyGroup.add(sprite);
+                            }
+                        }
+                    }
+                }
+            });
+
+            earthGroup.add(sarosFamilyGroup);
+        }
+
         let currentTValEl = null;
 
         function updateShadowAtTime(t) {
@@ -2282,6 +2652,12 @@
             if (currentEclipse) drawShadowPath(currentEclipse);
         });
 
+        document.getElementById('chk-show-saros-family')?.addEventListener('change', (e) => {
+            const legend = document.getElementById('saros-family-legend');
+            if (legend) legend.style.display = e.target.checked ? 'block' : 'none';
+            if (currentEclipse) drawSarosFamily(currentEclipse);
+        });
+
         const chkIsomagnitudes = document.getElementById('chk-show-isomagnitudes');
         const chkLabels = document.getElementById('chk-show-labels');
         const lblLabels = document.getElementById('lbl-show-labels');
@@ -2302,7 +2678,10 @@
         });
 
         chkLabels?.addEventListener('change', () => {
-            if (currentEclipse) drawShadowPath(currentEclipse);
+            if (currentEclipse) {
+                drawShadowPath(currentEclipse);
+                drawSarosFamily(currentEclipse);
+            }
         });
 
         document.getElementById('chk-show-subsolar')?.addEventListener('change', (e) => {
