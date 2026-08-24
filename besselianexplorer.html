@@ -1343,11 +1343,12 @@
                             if (sMatch) durSec = ` ${parseInt(sMatch[1], 10)}s`;
                         }
                     }
+                    const sarosStr = e.saros ? `${e.saros} ` : '';
                     const yStr = e.year < 0 ? `-${Math.abs(e.year)}` : String(e.year);
                     const mStr = String(e.month || 1).padStart(2, '0');
                     const dStr = String(e.day || 1).padStart(2, '0');
                     const dateStr = `${yStr} ${mStr} ${dStr}`;
-                    opt.text = `${dateStr} ${typeName}${durSec}`;
+                    opt.text = `${sarosStr}${dateStr} ${typeName}${durSec}`;
                 } else {
                     opt.text = `${e.day} de ${mName} (${typeName})`;
                 }
