@@ -888,28 +888,6 @@
                 <input type="checkbox" id="chk-show-totality" checked>
                 <span>Franja de totalidad</span>
             </label>
-            <label class="checkbox-row" style="color: var(--accent-blue); font-weight: 500;">
-                <input type="checkbox" id="chk-show-saros-family">
-                <span>Familia Saros 3D (±18a, ±54a)</span>
-            </label>
-            <div id="saros-family-legend" style="display: none; margin-left: 16px; margin-top: 1px; margin-bottom: 3px; padding: 4px 6px; background: rgba(0,0,0,0.35); border-radius: 8px; border: 1px solid rgba(255,255,255,0.06); font-size: 0.68rem; line-height: 1.45;">
-                <div style="display: flex; align-items: center; gap: 5px; color: #06b6d4;">
-                    <span style="display:inline-block; width:12px; height:2px; background:#06b6d4; border-radius:1px; flex-shrink:0;"></span>
-                    <span>-18a: Saros anterior (-120° Este)</span>
-                </div>
-                <div style="display: flex; align-items: center; gap: 5px; color: #818cf8;">
-                    <span style="display:inline-block; width:12px; height:2px; background:#818cf8; border-radius:1px; flex-shrink:0;"></span>
-                    <span>+18a: Saros siguiente (+120° Oeste)</span>
-                </div>
-                <div style="display: flex; align-items: center; gap: 5px; color: #fbbf24;">
-                    <span style="display:inline-block; width:12px; height:2px; background:#fbbf24; border-radius:1px; flex-shrink:0;"></span>
-                    <span>-54a: Exeligmos anterior (mismo meridiano)</span>
-                </div>
-                <div style="display: flex; align-items: center; gap: 5px; color: #34d399;">
-                    <span style="display:inline-block; width:12px; height:2px; background:#34d399; border-radius:1px; flex-shrink:0;"></span>
-                    <span>+54a: Exeligmos siguiente (mismo meridiano)</span>
-                </div>
-            </div>
             <label class="checkbox-row">
                 <input type="checkbox" id="chk-show-subsolar" checked>
                 <span>Punto subsolar (Sol en el cenit)</span>
@@ -1599,7 +1577,6 @@
             slider.value = tInit;
 
             drawShadowPath(eclipse);
-            drawSarosFamily(eclipse);
             updateShadowAtTime(tInit);
             updateSarosStepper();
 
@@ -1662,7 +1639,6 @@
         let isomagnitudesGroup = null;
         let graticuleGroup = null;
         let utLinesGroup = null;
-        let sarosFamilyGroup = null;
 
         function createGraticule() {
             const group = new THREE.Group();
@@ -2463,71 +2439,6 @@
             }
         }
 
-        // -------------------------------------------------------------
-        // 4b. VISUALIZACIÓN MULTITRACK 3D: FAMILIA SAROS (±18a, ±54a)
-        // -------------------------------------------------------------
-        function drawSarosFamily(eclipse) {
-            if (sarosFamilyGroup) {
-                dispose3DObject(sarosFamilyGroup);
-                sarosFamilyGroup = null;
-            }
-
-            const showSarosFamily = document.getElementById('chk-show-saros-family')?.checked;
-            if (!showSarosFamily || !eclipse || !eclipse.saros) return;
-
-            const sarosNum = eclipse.saros;
-            const members = eclipseData.filter(e => e.saros === sarosNum).sort((a, b) => (a.nSeq || a.year) - (b.nSeq || b.year));
-            const curIndex = members.findIndex(e => e.cat_no === eclipse.cat_no);
-            if (curIndex === -1) return;
-
-            sarosFamilyGroup = new THREE.Group();
-
-            // Relaciones orbitales a graficar en 3D:
-            // 1. -1 Saros (-18.03 años): salto ~120° al Este (Cian #06b6d4)
-            // 2. +1 Saros (+18.03 años): salto ~120° al Oeste (Violeta #818cf8)
-            // 3. -3 Saros (-54.09 años, Exeligmos): retorno al mismo meridiano (Ámbar #fbbf24)
-            // 4. +3 Saros (+54.09 años, Exeligmos): retorno al mismo meridiano (Verde esmeralda #34d399)
-            const relations = [
-                { offset: -1, label: '-18a', color: 0x06b6d4, textColor: '#06b6d4', width: 2, opacity: 0.65 },
-                { offset: 1, label: '+18a', color: 0x818cf8, textColor: '#818cf8', width: 2, opacity: 0.65 },
-                { offset: -3, label: '-54a Exeligmos', color: 0xfbbf24, textColor: '#fbbf24', width: 2, opacity: 0.75 },
-                { offset: 3, label: '+54a Exeligmos', color: 0x34d399, textColor: '#34d399', width: 2, opacity: 0.75 }
-            ];
-
-            const showLabels = document.getElementById('chk-show-labels')?.checked ?? true;
-
-            relations.forEach(rel => {
-                const targetIdx = curIndex + rel.offset;
-                if (targetIdx >= 0 && targetIdx < members.length) {
-                    const member = members[targetIdx];
-                    const memberGeo = precomputeEclipseGeometry(member);
-                    if (memberGeo && memberGeo.centerCoords && memberGeo.centerCoords.length > 1) {
-                        const line = createSegmentedLine(memberGeo.centerCoords, rel.color, EARTH_RADIUS * 1.0035, rel.width, rel.opacity);
-                        if (line) sarosFamilyGroup.add(line);
-
-                        if (showLabels) {
-                            const lblText = `${member.year} (${rel.label})`;
-                            const sprite = createTextSprite(lblText, '#0f172a', '#ffffff', 0.60);
-                            if (sprite) {
-                                let lat = member.lat_dd_ge;
-                                let lng = member.lng_dd_ge;
-                                if (lat == null || lng == null) {
-                                    const midPt = memberGeo.centerCoords[Math.floor(memberGeo.centerCoords.length / 2)];
-                                    lat = midPt.lat;
-                                    lng = midPt.lng;
-                                }
-                                const pos = latLngToVector3(lat, lng, EARTH_RADIUS * 1.014);
-                                sprite.position.copy(pos);
-                                sarosFamilyGroup.add(sprite);
-                            }
-                        }
-                    }
-                }
-            });
-
-            earthGroup.add(sarosFamilyGroup);
-        }
-
         let currentTValEl = null;
 
         function updateShadowAtTime(t) {
@@ -2628,12 +2539,6 @@
             if (currentEclipse) drawShadowPath(currentEclipse);
         });
 
-        document.getElementById('chk-show-saros-family')?.addEventListener('change', (e) => {
-            const legend = document.getElementById('saros-family-legend');
-            if (legend) legend.style.display = e.target.checked ? 'block' : 'none';
-            if (currentEclipse) drawSarosFamily(currentEclipse);
-        });
-
         const chkIsomagnitudes = document.getElementById('chk-show-isomagnitudes');
         const chkLabels = document.getElementById('chk-show-labels');
         const lblLabels = document.getElementById('lbl-show-labels');
@@ -2656,7 +2561,6 @@
         chkLabels?.addEventListener('change', () => {
             if (currentEclipse) {
                 drawShadowPath(currentEclipse);
-                drawSarosFamily(currentEclipse);
             }
         });
 
