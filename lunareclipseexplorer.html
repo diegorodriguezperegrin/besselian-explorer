@@ -435,6 +435,25 @@
             letter-spacing: 0.4px;
         }
 
+        .interactive-saros {
+            cursor: pointer;
+            color: var(--accent-blue) !important;
+            padding: 2px 6px;
+            border-radius: 6px;
+            background: rgba(56, 189, 248, 0.08);
+            border: 1px solid rgba(56, 189, 248, 0.25);
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .interactive-saros:hover {
+            background: rgba(56, 189, 248, 0.2);
+            border-color: var(--accent-blue);
+            color: #fff !important;
+            transform: translateY(-1px);
+        }
+
         /* Ficha de Circunstancias Locales Mataró */
         .mataro-card {
             background: linear-gradient(135deg, rgba(14, 165, 233, 0.08), rgba(194, 65, 12, 0.06));
@@ -922,7 +941,7 @@
                 </div>
                 <div class="stat-row">
                     <span class="stat-lbl">Saros:</span>
-                    <span class="stat-val" id="card-saros">128</span>
+                    <span class="stat-val interactive-saros" id="card-saros" title="Abrir catálogo oficial de la serie Saros (NASA GSFC)">128 <i class="fa-solid fa-arrow-up-right-from-square" style="font-size:0.65rem; opacity:0.8;"></i></span>
                 </div>
                 <div class="stat-row">
                     <span class="stat-lbl">Magnitud:</span>
@@ -1217,6 +1236,13 @@
                 const ec = NASA_LUNAR_ECLIPSES.find(item => item.id === e.target.value);
                 if (ec) loadEclipse(ec);
             });
+
+            document.getElementById('card-saros')?.addEventListener('click', () => {
+                if (currentEclipse && currentEclipse.saros) {
+                    const sarosPadded = String(currentEclipse.saros).padStart(3, '0');
+                    window.open(`https://eclipse.gsfc.nasa.gov/LEsaros/LEsaros${sarosPadded}.html`, '_blank', 'noopener,noreferrer');
+                }
+            });
         }
 
         function selectPresetEclipse(dateStr) {
@@ -1260,7 +1286,11 @@
                 typeBadge.textContent = ec.type === 'T' ? 'TOTAL' : (ec.type === 'P' ? 'PARCIAL' : 'PENUMBRAL');
             }
 
-            if (document.getElementById('card-saros')) document.getElementById('card-saros').textContent = ec.saros;
+            const sarosElem = document.getElementById('card-saros');
+            if (sarosElem) {
+                sarosElem.innerHTML = `${ec.saros || '--'} <i class="fa-solid fa-arrow-up-right-from-square" style="font-size:0.65rem; opacity:0.8;"></i>`;
+                sarosElem.title = `Abrir catálogo oficial de la serie Saros ${ec.saros} (NASA GSFC)`;
+            }
             if (document.getElementById('card-um-mag')) document.getElementById('card-um-mag').textContent = ec.umMag > 0 ? ec.umMag.toFixed(4) : '--';
             if (document.getElementById('card-gamma')) document.getElementById('card-gamma').textContent = ec.gamma.toFixed(4);
             
