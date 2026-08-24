@@ -1325,7 +1325,7 @@
 
         function populateSelect(list) {
             eclipseSelect.innerHTML = '';
-            list.forEach(e => {
+            list.forEach((e, idx) => {
                 const opt = document.createElement('option');
                 const mName = MONTH_NAMES[(e.month || 1) - 1] || e.month;
                 const typeCode = (e.eclipse_type || '').toUpperCase();
@@ -1344,12 +1344,13 @@
                             if (sMatch) durSec = ` ${parseInt(sMatch[1], 10)}s`;
                         }
                     }
-                    const sarosStr = e.saros ? `${e.saros} ` : '';
+                    const nSeqVal = e.nSeq != null ? e.nSeq : (idx + 1);
+                    const seqStr = `${nSeqVal} `;
                     const yStr = e.year < 0 ? `-${Math.abs(e.year)}` : String(e.year);
                     const mStr = String(e.month || 1).padStart(2, '0');
                     const dStr = String(e.day || 1).padStart(2, '0');
                     const dateStr = `${yStr}-${mStr}-${dStr}`;
-                    opt.text = `${sarosStr}${dateStr} ${typeName}${durSec}`;
+                    opt.text = `${seqStr}${dateStr} ${typeName}${durSec}`;
                 } else {
                     opt.text = `${e.day} de ${mName} (${typeName})`;
                 }
