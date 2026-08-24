@@ -1331,13 +1331,23 @@
                 const typeName = typeCode.startsWith('T') ? 'Total' : typeCode.startsWith('A') ? 'Anular' : typeCode.startsWith('H') ? 'Híbrido' : 'Parcial';
                 opt.value = e.cat_no;
                 if (searchMode === 'saros') {
-                    const dur = e.central_duration ? ` · ${e.central_duration}` : '';
-                    const seq = (e.nSeq && e.nSer) ? `[${e.nSeq}/${e.nSer}] ` : '';
-                    const yStr = e.year < 0 ? `-${String(Math.abs(e.year)).padStart(4, '0')}` : String(e.year).padStart(4, '0');
+                    let durSec = '';
+                    if (e.duration_secs != null && e.duration_secs > 0) {
+                        durSec = ` ${Math.round(e.duration_secs)}s`;
+                    } else if (e.central_duration) {
+                        const mMatch = e.central_duration.match(/(\d+)m(\d+)s/);
+                        if (mMatch) {
+                            durSec = ` ${parseInt(mMatch[1], 10) * 60 + parseInt(mMatch[2], 10)}s`;
+                        } else {
+                            const sMatch = e.central_duration.match(/(\d+)s/);
+                            if (sMatch) durSec = ` ${parseInt(sMatch[1], 10)}s`;
+                        }
+                    }
+                    const yStr = e.year < 0 ? `-${Math.abs(e.year)}` : String(e.year);
                     const mStr = String(e.month || 1).padStart(2, '0');
                     const dStr = String(e.day || 1).padStart(2, '0');
-                    const isoDate = `${yStr}-${mStr}-${dStr}`;
-                    opt.text = `${seq}${isoDate} (${typeName}${dur})`;
+                    const dateStr = `${yStr} ${mStr} ${dStr}`;
+                    opt.text = `${dateStr} ${typeName}${durSec}`;
                 } else {
                     opt.text = `${e.day} de ${mName} (${typeName})`;
                 }
