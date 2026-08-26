@@ -3,20 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Besselian Explorer - Cosmos Mataró</title>
+    <title>Solar Eclipse Explorer - Cosmos Mataró</title>
     <meta name="description" content="Explorador interactivo de elementos besselianos y trayectorias de eclipses solares históricos y futuros (del -1999 al +3000) por Cosmos Mataró.">
     <meta name="theme-color" content="#060911">
     <meta name="author" content="Cosmos Mataró">
     
     <!-- Open Graph / Facebook / WhatsApp -->
     <meta property="og:type" content="website">
-    <meta property="og:title" content="Besselian Explorer - Cosmos Mataró">
+    <meta property="og:title" content="Solar Eclipse Explorer - Cosmos Mataró">
     <meta property="og:description" content="Simulación interactiva de eclipses solares con elementos besselianos de la NASA (Espenak & Meeus).">
     <meta property="og:image" content="https://raw.githubusercontent.com/diegorodriguezperegrin/besselian-explorer/main/preview.png">
     
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Besselian Explorer - Cosmos Mataró">
+    <meta name="twitter:title" content="Solar Eclipse Explorer - Cosmos Mataró">
     <meta name="twitter:description" content="Simulación 3D interactiva de eclipses solares con elementos besselianos de la NASA (Espenak & Meeus).">
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -737,7 +737,7 @@
     <div class="sidebar-panel" id="sidebar-panel" role="region" aria-label="Panel de selección de eclipse y datos">
         <div class="panel-header">
             <div>
-                <h1>Besselian Explorer</h1>
+                <h1>Solar Eclipse Explorer</h1>
                 <p>COSMOS MATARÓ</p>
             </div>
             <div class="panel-toggle" id="btn-toggle-left" title="Ocultar Panel"><i class="fa-solid fa-chevron-left"></i></div>
@@ -892,6 +892,10 @@
             <label class="checkbox-row">
                 <input type="checkbox" id="chk-show-subsolar" checked>
                 <span>Punto subsolar (Sol en el cenit)</span>
+            </label>
+            <label class="checkbox-row">
+                <input type="checkbox" id="chk-show-sublunar">
+                <span>Punto sublunar (Luna en el cenit)</span>
             </label>
             <label class="checkbox-row">
                 <input type="checkbox" id="chk-show-graticule">
@@ -1069,6 +1073,36 @@
 
         const subsolarMarkerGroup = createSubsolarMarker();
         earthGroup.add(subsolarMarkerGroup);
+
+        // Marcador 3D del Punto Sublunar (🌕 Cenit Lunar / Centro de Sombra)
+        function createSublunarMarker() {
+            const group = new THREE.Group();
+
+            // 1. Núcleo lunar esférico plateado
+            const coreGeo = new THREE.SphereGeometry(1.3, 24, 24);
+            const coreMat = new THREE.MeshBasicMaterial({ color: 0xe2e8f0 });
+            const coreMesh = new THREE.Mesh(coreGeo, coreMat);
+            group.add(coreMesh);
+
+            // 2. Halo lunar cian
+            const haloGeo = new THREE.SphereGeometry(2.0, 24, 24);
+            const haloMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.35 });
+            const haloMesh = new THREE.Mesh(haloGeo, haloMat);
+            group.add(haloMesh);
+
+            // 3. Rayo cenital hacia la Luna
+            const rayGeo = new THREE.CylinderGeometry(0.12, 0.12, 5.0, 8);
+            const rayMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.9 });
+            const rayMesh = new THREE.Mesh(rayGeo, rayMat);
+            rayMesh.position.y = 2.5;
+            group.add(rayMesh);
+
+            group.visible = false;
+            return group;
+        }
+
+        const sublunarMarkerGroup = createSublunarMarker();
+        earthGroup.add(sublunarMarkerGroup);
 
         // -------------------------------------------------------------
         // SHADER GPU DE SOMBRA SOBRE LA CARA DIURNA
@@ -2477,28 +2511,45 @@
             const l1 = (e.l10 || 0.54) + (e.l11 || 0)*t; 
             const l2 = Math.abs((e.l20 || 0.01) + (e.l21 || 0)*t);
 
+            // Vectores ortonormales exactos del Plano Fundamental Besseliano (w, u, v)
+            const wLocal = latLngToVector3(dDeg, -muDeg, 1.0).normalize();
+            const muRad = -muDeg * Math.PI / 180;
+            const uLocal = new THREE.Vector3(-Math.sin(muRad), 0, -Math.cos(muRad)).normalize();
+            const vLocal = new THREE.Vector3().crossVectors(wLocal, uLocal).normalize();
+
             // Posicionar Luz Solar Físicamente en la Cara Diurna (d, -mu)
             const sunVecWorld = latLngToVector3(dDeg, -muDeg, 400);
             sunLight.position.copy(sunVecWorld);
 
-            // Actualizar Marcador 3D del Punto Subsolar (☀️ Sol en el Cenit)
+            // 1. Actualizar Marcador 3D del Punto Subsolar (☀️ Sol en el Cenit: vector w)
             if (subsolarMarkerGroup) {
                 const showSubsolar = document.getElementById('chk-show-subsolar')?.checked ?? true;
                 subsolarMarkerGroup.visible = showSubsolar;
                 if (showSubsolar) {
-                    const normVec = latLngToVector3(dDeg, -muDeg, 1.0).normalize();
-                    const pos = normVec.clone().multiplyScalar(EARTH_RADIUS * 1.004);
+                    const pos = wLocal.clone().multiplyScalar(EARTH_RADIUS * 1.004);
                     subsolarMarkerGroup.position.copy(pos);
-                    subsolarMarkerGroup.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), normVec);
+                    subsolarMarkerGroup.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), wLocal);
                 }
             }
 
-            // Vectores ortonormales exactos del Plano Fundamental Besseliano (w, u, v)
-            const wLocal = latLngToVector3(dDeg, -muDeg, 1.0).normalize();
-            
-            const muRad = -muDeg * Math.PI / 180;
-            const uLocal = new THREE.Vector3(-Math.sin(muRad), 0, -Math.cos(muRad)).normalize();
-            const vLocal = new THREE.Vector3().crossVectors(wLocal, uLocal).normalize();
+            // 2. Actualizar Marcador 3D del Punto Sublunar Real (🌕 Luna en el Cenit: vector r_Luna = x*u + y*v + 60.27*w)
+            if (sublunarMarkerGroup) {
+                const showSublunar = document.getElementById('chk-show-sublunar')?.checked ?? false;
+                sublunarMarkerGroup.visible = showSublunar;
+                if (showSublunar) {
+                    // Distancia media Tierra-Luna en radios terrestres
+                    const MOON_DIST_RADII = 60.27;
+                    const moonVecGeocentric = new THREE.Vector3()
+                        .addScaledVector(uLocal, x)
+                        .addScaledVector(vLocal, y)
+                        .addScaledVector(wLocal, MOON_DIST_RADII)
+                        .normalize();
+
+                    const pos = moonVecGeocentric.clone().multiplyScalar(EARTH_RADIUS * 1.004);
+                    sublunarMarkerGroup.position.copy(pos);
+                    sublunarMarkerGroup.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), moonVecGeocentric);
+                }
+            }
 
             // Enviar uniforms exactos al Shader GPU
             shadowShaderMaterial.uniforms.uSunDir.value.copy(wLocal);
@@ -2585,6 +2636,10 @@
 
         document.getElementById('chk-show-subsolar')?.addEventListener('change', (e) => {
             if (subsolarMarkerGroup) subsolarMarkerGroup.visible = e.target.checked;
+        });
+
+        document.getElementById('chk-show-sublunar')?.addEventListener('change', (e) => {
+            if (sublunarMarkerGroup) sublunarMarkerGroup.visible = e.target.checked;
         });
 
         document.getElementById('chk-show-graticule')?.addEventListener('change', () => {

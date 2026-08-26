@@ -1,0 +1,1048 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secuencia Telescópica (Orientada al Horizonte) - Eclipse 28 Ago 2026 | Cosmos Mataró</title>
+    
+    <!-- Google Fonts & Font Awesome -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@300;400;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --bg-space: #04060d;
+            --bg-card: rgba(11, 16, 28, 0.94);
+            --bg-card-hover: rgba(16, 24, 42, 0.98);
+            --border-subtle: rgba(255, 255, 255, 0.08);
+            --border-active: rgba(56, 189, 248, 0.5);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-dim: #64748b;
+            --accent-blue: #38bdf8;
+            --accent-blood: #e11d48;
+            --accent-copper: #c2410c;
+            --accent-umbra: #991b1b;
+            --accent-penumbra: #93c5fd;
+            --accent-gold: #facc15;
+            --accent-green: #34d399;
+            --font-heading: 'Outfit', sans-serif;
+            --font-body: 'Plus Jakarta Sans', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-space);
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(56, 189, 248, 0.04) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(225, 29, 72, 0.05) 0%, transparent 40%);
+            color: var(--text-primary);
+            font-family: var(--font-body);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 1.5rem 1rem 3rem;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1240px;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        /* Header */
+        .poster-header {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 20px;
+            padding: 1.8rem 2.2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1.25rem;
+            box-shadow: 0 15px 35px -10px rgba(0, 0, 0, 0.7);
+        }
+
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            margin-bottom: 0.35rem;
+        }
+
+        .brand-badge {
+            background: rgba(56, 189, 248, 0.12);
+            color: var(--accent-blue);
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            font-weight: 600;
+            padding: 0.25rem 0.65rem;
+            border-radius: 999px;
+            border: 1px solid rgba(56, 189, 248, 0.25);
+            text-transform: uppercase;
+        }
+
+        .header-title {
+            font-family: var(--font-heading);
+            font-size: 1.85rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            background: linear-gradient(135deg, #ffffff 40%, var(--accent-penumbra) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header-subtitle {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-top: 0.25rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .nav-actions {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+        }
+
+        .btn-link {
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-subtle);
+            padding: 0.5rem 0.95rem;
+            border-radius: 10px;
+            font-size: 0.82rem;
+            font-family: var(--font-heading);
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            transition: all 0.2s ease;
+        }
+
+        .btn-link:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text-primary);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-primary {
+            background: rgba(56, 189, 248, 0.14);
+            color: var(--accent-blue);
+            border: 1px solid rgba(56, 189, 248, 0.35);
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-blue);
+            color: #050811;
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
+        }
+
+        /* Banner de Orientación al Cenit */
+        .zenith-banner {
+            background: linear-gradient(90deg, rgba(14, 165, 233, 0.12) 0%, rgba(245, 158, 11, 0.08) 100%);
+            border: 1px solid rgba(56, 189, 248, 0.25);
+            border-radius: 14px;
+            padding: 0.9rem 1.4rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+            font-size: 0.85rem;
+        }
+
+        .zenith-banner .desc {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: #e2e8f0;
+        }
+
+        .zenith-banner i.icon-zenith {
+            color: var(--accent-gold);
+            font-size: 1.25rem;
+        }
+
+        .zenith-banner .pill-zenith {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 0.3rem 0.75rem;
+            border-radius: 8px;
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: var(--accent-gold);
+        }
+
+        /* Grilla de la Secuencia Telescópica */
+        .sequence-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 1.1rem;
+        }
+
+        @media (max-width: 1100px) {
+            .sequence-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (max-width: 720px) {
+            .sequence-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .sequence-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 18px;
+            padding: 1.25rem 1rem 1.1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            box-shadow: 0 12px 30px -8px rgba(0, 0, 0, 0.6);
+            transition: all 0.25s ease;
+            overflow: hidden;
+        }
+
+        .sequence-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--border-active);
+            box-shadow: 0 18px 40px -10px rgba(56, 189, 248, 0.15);
+        }
+
+        .sequence-card.highlight {
+            border-color: rgba(250, 204, 21, 0.5);
+            background: linear-gradient(180deg, rgba(250, 204, 21, 0.05) 0%, rgba(13, 18, 30, 0.96) 100%);
+        }
+
+        .card-phase-tag {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 0.2rem 0.55rem;
+            border-radius: 6px;
+            margin-bottom: 0.35rem;
+            text-transform: uppercase;
+        }
+
+        .card-time {
+            font-family: var(--font-heading);
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.15rem;
+        }
+
+        .card-desc {
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            text-align: center;
+            margin-bottom: 0.9rem;
+            min-height: 2.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Canvas Telescópico */
+        .telescope-viewport {
+            width: 175px;
+            height: 175px;
+            border-radius: 50%;
+            position: relative;
+            background: #02040a;
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.9), 0 0 15px rgba(0, 0, 0, 0.5);
+            margin-bottom: 1.1rem;
+            overflow: hidden;
+        }
+
+        .sequence-card.highlight .telescope-viewport {
+            border-color: rgba(250, 204, 21, 0.6);
+            box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.9), 0 0 20px rgba(250, 204, 21, 0.2);
+        }
+
+        canvas.moon-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* Brújula / Indicador de Cenit */
+        .zenith-indicator {
+            position: absolute;
+            top: 6px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: var(--font-mono);
+            font-size: 8px;
+            font-weight: 700;
+            color: var(--accent-gold);
+            background: rgba(0, 0, 0, 0.65);
+            padding: 1px 4px;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        .horizon-indicator {
+            position: absolute;
+            bottom: 6px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: var(--font-mono);
+            font-size: 8px;
+            font-weight: 600;
+            color: var(--text-dim);
+            background: rgba(0, 0, 0, 0.65);
+            padding: 1px 4px;
+            border-radius: 3px;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        /* Coordenadas en la tarjeta */
+        .card-coords-box {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-subtle);
+            border-radius: 10px;
+            padding: 0.6rem 0.75rem;
+            font-size: 0.76rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+
+        .coord-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .coord-k {
+            color: var(--text-dim);
+        }
+
+        .coord-v {
+            font-family: var(--font-mono);
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* Sección Panorámica: La Luna sobre el Horizonte de Mataró */
+        .horizon-panorama-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 20px;
+            padding: 1.8rem 2.2rem;
+            box-shadow: 0 15px 35px -10px rgba(0, 0, 0, 0.7);
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        .panorama-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .panorama-title {
+            font-family: var(--font-heading);
+            font-size: 1.25rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .sky-timeline-canvas-box {
+            width: 100%;
+            height: 240px;
+            background: #000;
+            border-radius: 14px;
+            border: 1px solid var(--border-subtle);
+            position: relative;
+            overflow: hidden;
+        }
+
+        canvas#sky-panorama-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* Pie de página */
+        .poster-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            padding: 1rem 0.5rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        
+        <!-- Header -->
+        <header class="poster-header">
+            <div>
+                <div class="header-brand">
+                    <span class="brand-badge"><i class="fa-solid fa-moon"></i> Cosmos Mataró</span>
+                    <span class="brand-badge" style="background: rgba(245, 158, 11, 0.1); color: var(--accent-gold); border-color: rgba(245, 158, 11, 0.25);">Simulación Altazimutal</span>
+                </div>
+                <h1 class="header-title">Secuencia Telescópica Orientada al Horizonte</h1>
+                <div class="header-subtitle">
+                    <span><i class="fa-regular fa-calendar"></i> Eclipse Lunar Parcial • 28 de Agosto de 2026</span>
+                    <span><i class="fa-solid fa-location-crosshairs" style="color: var(--accent-blue);"></i> Mataró, Cataluña (41.54°N, 2.44°E · CEST / UTC+2)</span>
+                </div>
+            </div>
+
+            <div class="nav-actions">
+                <a href="grafico_eclipse_lunar_2026.html" class="btn-link">
+                    <i class="fa-solid fa-chart-pie"></i> Ver Diagrama de Contactos (Formato A)
+                </a>
+                <button class="btn-link btn-primary" onclick="window.print()">
+                    <i class="fa-solid fa-print"></i> Guardar PDF / Imprimir
+                </button>
+            </div>
+        </header>
+
+        <!-- Banner de Orientación al Cenit -->
+        <div class="zenith-banner">
+            <div class="desc">
+                <i class="fa-solid fa-compass icon-zenith"></i>
+                <div>
+                    <strong>Orientación Natural (A simple vista / Prismáticos / Montura Altazimutal):</strong>
+                    El punto superior de cada disco lunar apunta directamente al <strong>Cenit (\(\uparrow\))</strong> y la base hacia el <strong>Horizonte (\(\downarrow\))</strong>, aplicando el ángulo paraláctico local (\(q\)) exacto para cada instante.
+                </div>
+            </div>
+            <div class="pill-zenith">
+                <i class="fa-solid fa-arrow-up"></i> Cenit Local Arriba
+            </div>
+        </div>
+
+        <!-- 5 Tarjetas de la Secuencia Clave -->
+        <div class="sequence-grid">
+            
+            <!-- 1. P1: Inicio Penumbra -->
+            <div class="sequence-card">
+                <span class="card-phase-tag" style="background: rgba(147, 197, 253, 0.12); color: var(--accent-penumbra);">P1 · Penumbra</span>
+                <div class="card-time">03:24 <span style="font-size: 0.8rem; color: var(--text-dim);">CEST</span></div>
+                <div class="card-desc">Primer contacto penumbral. Luna alta en cielo oscuro.</div>
+                
+                <div class="telescope-viewport">
+                    <div class="zenith-indicator"><i class="fa-solid fa-arrow-up"></i> Cenit</div>
+                    <div class="horizon-indicator"><i class="fa-solid fa-arrow-down"></i> Horiz</div>
+                    <canvas id="canvas-p1" class="moon-canvas" width="350" height="350"></canvas>
+                </div>
+
+                <div class="card-coords-box">
+                    <div class="coord-row">
+                        <span class="coord-k">Altura (\(h\)):</span>
+                        <span class="coord-v" style="color: var(--accent-green);">+31.4°</span>
+                    </div>
+                    <div class="coord-row">
+                        <span class="coord-k">Acimut (\(A\)):</span>
+                        <span class="coord-v">219° (SO)</span>
+                    </div>
+                    <div class="coord-row">
+                        <span class="coord-k">Ángulo Paraláctico:</span>
+                        <span class="coord-v">+34.8°</span>
+                    </div>
+                    <div class="coord-row">
+                        <span class="coord-k">Fase Umbral:</span>
+                        <span class="coord-v">0%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. U1: Inicio Umbra (Parcial) -->
+            <div class="sequence-card">
+                <span class="card-phase-tag" style="background: rgba(225, 29, 72, 0.12); color: var(--accent-blood);">U1 · Umbra</span>
+                <div class="card-time">04:34 <span style="font-size: 0.8rem; color: var(--text-dim);">CEST</span></div>
+                <div class="card-desc">Primer mordisco umbral entrando por el limbo inferior izquierdo (~07:30).</div>
+                
+                <div class="telescope-viewport">
+                    <div class="zenith-indicator"><i class="fa-solid fa-arrow-up"></i> Cenit</div>
+                    <div class="horizon-indicator"><i class="fa-solid fa-arrow-down"></i> Horiz</div>
+                    <canvas id="canvas-u1" class="moon-canvas" width="350" height="350"></canvas>
+                </div>
+
+                <div class="card-coords-box">
+                    <div class="coord-row">
+                        <span class="coord-k">Altura (\(h\)):</span>
+                        <span class="coord-v" style="color: var(--accent-green);">+20.6°</span>
+                    </div>
+                    <div class="coord-row">
+                        <span class="coord-k">Acimut (\(A\)):</span>
+                        <span class="coord-v">236° (SO)</span>
+                    </div>
+                    <div class="coord-row">
+                        <span class="coord-k">Ángulo Paraláctico:</span>
+                        <span class="coord-v">+44.6°</span>
+                    </div>
+                    <div class="coord-row">
+                        <span class="coord-k">Fase Umbral:</span>
+                        <span class="coord-v" style="color: var(--accent-blood);">1% (Contacto)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Fase Intermedia (50%) -->
+            <div class="sequence-card">
+                <span class="card-phase-tag" style="background: rgba(249, 115, 22, 0.12); color: #fb923c;">Fase Media (50%)</span>
+                <div class="card-time">05:25 <span style="font-size: 0.8rem; color: var(--text-dim);">CEST</span></div>
+                <div class="card-desc">Sombra cobriza cubriendo el 50% de la Luna (crepúsculo en el este).</div>
+                
+                <div class="telescope-viewport">
+                    <div class="zenith-indicator"><i class="fa-solid fa-arrow-up"></i> Cenit</div>
+                    <div class="horizon-indicator"><i class="fa-solid fa-arrow-down"></i> Horiz</div>
+                    <canvas id="canvas-mid" class="moon-canvas" width="350" height="350"></canvas>
+                </div>
+
+                <div class="card-coords-box">
+                    <div class="coord-row">
+                        <span class="coord-k">Altura (\(h\)):</span>
+                        <span class="coord-v" style="color: var(--accent-gold);">+12.8°</span>
+                    </div>
+                    <div class="coord-row">
+                        <span class="coord-k">Acimut (\(A\)):</span>
+                        <span class="coord-v">245° (SO)</span>
+                    </div>
+                    <div class="coord-row">
+                        <span class="coord-k">Ángulo Paraláctico:</span>
+                        <span class="coord-v">+49.8°</span>
+                    </div>
+                    <div class="coord-row">
+                        <span class="coord-k">Fase Umbral:</span>
+                        <span class="coord-v" style="color: #fb923c;">52%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. MÁXIMO (93% - Clímax) -->
+            <div class="sequence-card highlight">
+                <span class="card-phase-tag" style="background: rgba(250, 204, 21, 0.18); color: var(--accent-gold); font-weight: 800;">MÁXIMO (93%)</span>
+                <div class="card-time" style="color: var(--accent-gold);">06:13 <span style="font-size: 0.8rem; color: var(--accent-gold);">CEST</span></div>
+                <div class="card-desc">Luna rojo-sangre casi total con fina hoz plateada superior derecha (~02:00).</div>
+                
+                <div class="telescope-viewport">
+                    <div class="zenith-indicator"><i class="fa-solid fa-arrow-up"></i> Cenit</div>
+                    <div class="horizon-indicator"><i class="fa-solid fa-arrow-down"></i> Horiz</div>
+                    <canvas id="canvas-max" class="moon-canvas" width="350" height="350"></canvas>
+                </div>
+
+                <div class="card-coords-box" style="border-color: rgba(250, 204, 21, 0.3);">
+                    <div class="coord-row">
+                        <span class="coord-k">Altura (\(h\)):</span>
+                        <span class="coord-v" style="color: var(--accent-gold); font-size: 0.85rem;">+4.8° (Muy baja)</span>
+                    </div>
+                    <div class="coord-row">
+                        <span class="coord-k">Acimut (\(A\)):</span>
+                        <span class="coord-v">254° (OSO)</span>
+                    </div>
+                    <div class="coord-row">
+                        <span class="coord-k">Ángulo Paraláctico:</span>
+                        <span class="coord-v">+52.9°</span>
+                    </div>
+                    <div class="coord-row">
+                        <span class="coord-k">Fase Umbral:</span>
+                        <span class="coord-v" style="color: var(--accent-gold); font-weight: 700;">93.0%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5. Ocaso / Puesta de Luna -->
+            <div class="sequence-card">
+                <span class="card-phase-tag" style="background: rgba(251, 146, 60, 0.15); color: #fdba74;">Ocaso Lunar</span>
+                <div class="card-time">~06:45 <span style="font-size: 0.8rem; color: var(--text-dim);">CEST</span></div>
+                <div class="card-desc">La Luna se oculta en el horizonte Oeste aún eclipsada al alba.</div>
+                
+                <div class="telescope-viewport">
+                    <div class="zenith-indicator"><i class="fa-solid fa-arrow-up"></i> Cenit</div>
+                    <div class="horizon-indicator"><i class="fa-solid fa-arrow-down"></i> Horiz</div>
+                    <canvas id="canvas-set" class="moon-canvas" width="350" height="350"></canvas>
+                </div>
+
+                <div class="card-coords-box">
+                    <div class="coord-row">
+                        <span class="coord-k">Altura (\(h\)):</span>
+                        <span class="coord-v" style="color: #fb923c;">0.0° (Horizonte)</span>
+                    </div>
+                    <div class="coord-row">
+                        <span class="coord-k">Acimut (\(A\)):</span>
+                        <span class="coord-v">260° (Oeste)</span>
+                    </div>
+                    <div class="coord-row">
+                        <span class="coord-k">Ángulo Paraláctico:</span>
+                        <span class="coord-v">+54.4°</span>
+                    </div>
+                    <div class="coord-row">
+                        <span class="coord-k">Fase Umbral:</span>
+                        <span class="coord-v" style="color: #fb923c;">~85%</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Vista Panorámica del Horizonte Occidental al Alba -->
+        <section class="horizon-panorama-card">
+            <div class="panorama-header">
+                <div class="panorama-title">
+                    <i class="fa-solid fa-mountain-sun" style="color: #fb923c;"></i>
+                    <span>Trayectoria y Descenso al Amanecer (Mataró / Horizonte OSO)</span>
+                </div>
+                <div style="font-size: 0.82rem; color: var(--text-dim);">
+                    <i class="fa-solid fa-sun" style="color: var(--accent-gold);"></i> Salida del Sol: <strong>07:08 CEST</strong> · Puesta de Luna: <strong>06:45 CEST</strong>
+                </div>
+            </div>
+
+            <div class="sky-timeline-canvas-box">
+                <canvas id="sky-panorama-canvas"></canvas>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="poster-footer">
+            <div>
+                <span>© 2026 Cosmos Mataró • Efemérides y cálculo de ángulo paraláctico según Jean Meeus y NASA GSFC</span>
+            </div>
+            <div>
+                <a href="lunareclipseexplorer.html" class="btn-link" style="font-size: 0.75rem;">
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i> Abrir Simulador 3D / Telescópico Completo
+                </a>
+            </div>
+        </footer>
+
+    </div>
+
+    <!-- Script de Renderizado Astronómico Exacto -->
+    <script>
+        const RAD = Math.PI / 180;
+        const DEG = 180 / Math.PI;
+
+        const MATARO_LAT = 41.54;
+        const MATARO_LON = 2.44;
+
+        // Datos del Eclipse 28 Ago 2026 (NASA Saros 138)
+        const ec2026 = {
+            maxMs: 1787890369000, // 2026-08-28 04:12:49 UTC -> 06:12:49 CEST
+            zenLat: -9.0,
+            zenLon: -63.0,
+            gamma: 0.4964,
+            saros: 138,
+            penMag: 1.9645,
+            umMag: 0.9299,
+            p1Ms: 1787880235000, // 03:23:55 CEST
+            u1Ms: 1787884426000, // 04:33:46 CEST
+            midMs: 1787887500000, // 05:25:00 CEST
+            u4Ms: 1787896312000, // 07:51:52 CEST
+            p4Ms: 1787900503000, // 09:01:43 CEST
+            setMs: 1787892300000  // ~06:45:00 CEST (Ocaso)
+        };
+
+        // Textura lunar
+        const moonImg = new Image();
+        moonImg.src = 'realistic_moon.png';
+        let moonLoaded = false;
+        moonImg.onload = () => {
+            moonLoaded = true;
+            renderAllSequenceFrames();
+            renderSkyPanorama();
+        };
+
+        // Inclinación del marco del eclipse respecto al ecuador celeste
+        function getEclipseFrameTilt(ec, tMs) {
+            const d = (tMs - Date.UTC(2000, 0, 1, 12, 0, 0)) / 86400000;
+            const T = d / 36525;
+            const L0 = (280.46646 + 36000.76983 * T) % 360;
+            const M = (357.52911 + 35999.05029 * T) * RAD;
+            const C = (1.914602 - 0.004817 * T) * Math.sin(M) + 0.02 * Math.sin(2 * M);
+            const sunLon = (L0 + C) * RAD;
+            const eps = 23.439291 * RAD;
+
+            const sinPsi = Math.sin(eps) * Math.cos(sunLon + Math.PI) / Math.cos(ec.zenLat * RAD);
+            const psiRad = Math.asin(Math.max(-1, Math.min(1, sinPsi)));
+            const orbitalTilt = (ec.saros % 2 === 0 ? 0.045 : -0.045);
+            return psiRad + orbitalTilt;
+        }
+
+        // Coordenadas horizontales y ángulo paraláctico para Mataró
+        function getMoonHorizontalCoords(zenLat, zenLonMax, tMs, maxMs, obsLat = MATARO_LAT, obsLon = MATARO_LON) {
+            const dtHours = (tMs - maxMs) / 3600000;
+            const zenLon = zenLonMax - dtHours * 15.041;
+            const phi1 = obsLat * RAD, phi2 = zenLat * RAD;
+            const dLon = (obsLon - zenLon) * RAD;
+            
+            const sinAlt = Math.sin(phi1) * Math.sin(phi2) + Math.cos(phi1) * Math.cos(phi2) * Math.cos(dLon);
+            const altRad = Math.asin(Math.max(-1, Math.min(1, sinAlt)));
+            const alt = altRad * DEG;
+
+            const cosAz = (Math.sin(phi2) - Math.sin(phi1) * Math.sin(altRad)) / (Math.cos(phi1) * Math.cos(altRad));
+            let az = Math.acos(Math.max(-1, Math.min(1, cosAz))) * DEG;
+            if (Math.sin(dLon) > 0) az = 360 - az;
+
+            const numQ = Math.sin(dLon) * Math.cos(phi1);
+            const denQ = Math.sin(phi1) * Math.cos(phi2) - Math.cos(phi1) * Math.sin(phi2) * Math.cos(dLon);
+            const qRad = Math.atan2(numQ, denQ);
+
+            return { alt, az, qRad, qDeg: qRad * DEG };
+        }
+
+        // Geometría del eclipse (Umbra, Penumbra y Luna en unidades normalizadas)
+        function getMoonShadowCoordsAtTime(tMs) {
+            const dtHours = (tMs - ec2026.maxMs) / 3600000;
+            const rMoon = 0.2725;
+            const rUmbra = 0.725;
+            const rPenumbra = 1.275;
+            // En coordenadas de pantalla (+Y hacia abajo):
+            // Gamma > 0 significa que la Luna pasa al NORTE (+Y celeste => -Y pantalla)
+            const yMax = -ec2026.gamma;
+            const vx = 0.540;
+
+            const x = -dtHours * vx;
+            const y = yMax;
+            const dist = Math.sqrt(x * x + y * y);
+            return { x, y, dist, rMoon, rUmbra, rPenumbra };
+        }
+
+        // Renderizado de cada fotograma telescópico individual
+        function renderTelescopicFrame(canvasId, tMs) {
+            const canvas = document.getElementById(canvasId);
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const w = canvas.width, h = canvas.height;
+            const cx = w / 2, cy = h / 2;
+
+            ctx.clearRect(0, 0, w, h);
+
+            // Fondo espacial
+            ctx.fillStyle = "#030611";
+            ctx.fillRect(0, 0, w, h);
+
+            const geo = getMoonShadowCoordsAtTime(tMs);
+            const horiz = getMoonHorizontalCoords(ec2026.zenLat, ec2026.zenLon, tMs, ec2026.maxMs);
+            const chiRad = getEclipseFrameTilt(ec2026, tMs);
+
+            // Rotación Altazimutal exacta: Cenit Arriba (rotAngle = qRad + chiRad)
+            const rotAngle = horiz.qRad + chiRad;
+
+            const rmPx = w * 0.40; // Radio lunar en píxeles
+            const scale = rmPx / geo.rMoon;
+            const ruPx = geo.rUmbra * scale;
+            const rpPx = geo.rPenumbra * scale;
+
+            // Posición de la sombra respecto a la Luna
+            // En el marco del eclipse, Luna está en (geo.x, geo.y).
+            // Centro de la sombra respecto a la Luna está en (-geo.x, -geo.y).
+            const sxShadow = -geo.x * scale;
+            const syShadow = -geo.y * scale;
+
+            ctx.save();
+            ctx.translate(cx, cy);
+
+            // 1. Dibujar Luna rotada para orientar su faz al Cenit
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(0, 0, rmPx, 0, Math.PI * 2);
+            ctx.clip();
+
+            // Dibujar textura de la Luna rotada según la orientación altazimutal
+            ctx.save();
+            ctx.rotate(rotAngle);
+            if (moonLoaded && moonImg.complete && moonImg.naturalWidth > 0) {
+                ctx.drawImage(moonImg, 64, 32, 924, 960, -rmPx, -rmPx, rmPx * 2, rmPx * 2);
+            } else {
+                ctx.fillStyle = "#e2e8f0";
+                ctx.fill();
+            }
+            ctx.restore();
+
+            // 2. Aplicar la Penumbra y Umbra Terrestre en la Luna
+            // La sombra entra desde el vector de posición en el marco celeste rotado por rotAngle
+            ctx.save();
+            ctx.rotate(rotAngle);
+
+            // Penumbra
+            const distFromShadowCenter = Math.sqrt(sxShadow * sxShadow + syShadow * syShadow);
+            if (distFromShadowCenter < (rpPx + rmPx)) {
+                const penMoonGrad = ctx.createRadialGradient(sxShadow, syShadow, ruPx, sxShadow, syShadow, rpPx);
+                penMoonGrad.addColorStop(0, "rgba(8, 12, 22, 0.70)");
+                penMoonGrad.addColorStop(0.35, "rgba(12, 18, 32, 0.45)");
+                penMoonGrad.addColorStop(0.70, "rgba(15, 24, 44, 0.22)");
+                penMoonGrad.addColorStop(0.95, "rgba(20, 32, 54, 0.06)");
+                penMoonGrad.addColorStop(1, "rgba(20, 32, 54, 0)");
+
+                ctx.fillStyle = penMoonGrad;
+                ctx.fillRect(-rmPx, -rmPx, rmPx * 2, rmPx * 2);
+            }
+
+            // Umbra Rayleigh Cobriza
+            ctx.beginPath();
+            ctx.arc(sxShadow, syShadow, ruPx, 0, Math.PI * 2);
+            
+            const rayleighGrad = ctx.createRadialGradient(sxShadow, syShadow, 0, sxShadow, syShadow, ruPx);
+            rayleighGrad.addColorStop(0, "rgba(35, 8, 5, 0.85)");       // Centro umbral denso
+            rayleighGrad.addColorStop(0.40, "rgba(75, 20, 10, 0.75)");   // Rojo oscuro
+            rayleighGrad.addColorStop(0.70, "rgba(135, 42, 18, 0.60)");  // Tono cobrizo
+            rayleighGrad.addColorStop(0.90, "rgba(185, 70, 26, 0.40)");  // Terracota
+            rayleighGrad.addColorStop(0.98, "rgba(220, 105, 45, 0.20)"); // Filo iluminado
+            rayleighGrad.addColorStop(1, "rgba(225, 110, 50, 0)");
+
+            ctx.fillStyle = rayleighGrad;
+            ctx.fill();
+
+            ctx.restore(); // Fin sombra rotada
+            ctx.restore(); // Fin clip luna
+
+            // Borde tenue iluminado
+            ctx.beginPath();
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
+            ctx.lineWidth = 1.2;
+            ctx.arc(0, 0, rmPx, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Retícula telescópica muy sutil
+            ctx.beginPath();
+            ctx.strokeStyle = "rgba(56, 189, 248, 0.15)";
+            ctx.setLineDash([2, 4]);
+            ctx.moveTo(-rmPx * 1.15, 0); ctx.lineTo(rmPx * 1.15, 0);
+            ctx.moveTo(0, -rmPx * 1.15); ctx.lineTo(0, rmPx * 1.15);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            ctx.restore();
+        }
+
+        function renderAllSequenceFrames() {
+            renderTelescopicFrame('canvas-p1', ec2026.p1Ms);
+            renderTelescopicFrame('canvas-u1', ec2026.u1Ms);
+            renderTelescopicFrame('canvas-mid', ec2026.midMs);
+            renderTelescopicFrame('canvas-max', ec2026.maxMs);
+            renderTelescopicFrame('canvas-set', ec2026.setMs);
+        }
+
+        // Renderizado del Panorama del Cielo y Descenso al Alba
+        function renderSkyPanorama() {
+            const canvas = document.getElementById('sky-panorama-canvas');
+            if (!canvas) return;
+            
+            const dpr = window.devicePixelRatio || 1;
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+
+            const ctx = canvas.getContext('2d');
+            ctx.scale(dpr, dpr);
+            const w = rect.width, h = rect.height;
+
+            // Gradiente del Cielo Crepuscular (de izquierda cielo negro 03:20 a derecha cielo del alba náutica/civil 06:45)
+            const skyGrad = ctx.createLinearGradient(0, 0, w, 0);
+            skyGrad.addColorStop(0, "#030611");      // 03:24 - Noche cerrada
+            skyGrad.addColorStop(0.35, "#060b1e");   // 04:34 - Noche estrellada
+            skyGrad.addColorStop(0.65, "#0b1736");   // 05:25 - Crepúsculo astronómico
+            skyGrad.addColorStop(0.85, "#15254d");   // 06:13 - Crepúsculo náutico (azul marino)
+            skyGrad.addColorStop(1.0, "#2c2448");    // 06:45 - Alba (tonos violetas y dorados en el horizonte)
+
+            ctx.fillStyle = skyGrad;
+            ctx.fillRect(0, 0, w, h);
+
+            // Resplandor dorado en el horizonte derecho (alba)
+            const dawnGlow = ctx.createRadialGradient(w * 0.95, h, 10, w * 0.95, h, w * 0.4);
+            dawnGlow.addColorStop(0, "rgba(249, 115, 22, 0.45)");
+            dawnGlow.addColorStop(0.5, "rgba(234, 88, 12, 0.18)");
+            dawnGlow.addColorStop(1, "rgba(234, 88, 12, 0)");
+            ctx.fillStyle = dawnGlow;
+            ctx.fillRect(0, 0, w, h);
+
+            // Línea del horizonte (mar / serralada de marina)
+            const horizonY = h - 28;
+            
+            // Relieve silueta de montaña / mar
+            ctx.fillStyle = "#020307";
+            ctx.beginPath();
+            ctx.moveTo(0, horizonY);
+            ctx.lineTo(w * 0.2, horizonY - 4);
+            ctx.lineTo(w * 0.45, horizonY - 8);
+            ctx.lineTo(w * 0.7, horizonY - 3);
+            ctx.lineTo(w * 0.88, horizonY - 6);
+            ctx.lineTo(w, horizonY);
+            ctx.lineTo(w, h);
+            ctx.lineTo(0, h);
+            ctx.closePath();
+            ctx.fill();
+
+            // Línea del horizonte rotulada
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.15)";
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
+            ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
+            ctx.font = "10px 'JetBrains Mono', monospace";
+            ctx.fillText("HORIZONTE OESTE (0° Altura)", 15, h - 10);
+            ctx.fillText("Mataró • Mar / Serralada", w - 160, h - 10);
+
+            // Alturas de referencia (10°, 20°, 30°)
+            const altLines = [
+                { alt: 10, y: horizonY - (horizonY - 20) * (10 / 35) },
+                { alt: 20, y: horizonY - (horizonY - 20) * (20 / 35) },
+                { alt: 30, y: horizonY - (horizonY - 20) * (30 / 35) }
+            ];
+
+            altLines.forEach(l => {
+                ctx.beginPath();
+                ctx.strokeStyle = "rgba(255, 255, 255, 0.05)";
+                ctx.setLineDash([3, 4]);
+                ctx.moveTo(0, l.y);
+                ctx.lineTo(w, l.y);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                ctx.fillStyle = "rgba(255, 255, 255, 0.25)";
+                ctx.fillText(`+${l.alt}°`, 12, l.y - 3);
+            });
+
+            // Dibujar las 5 Lunas a lo largo de la trayectoria descendente
+            const timelineSteps = [
+                { tMs: ec2026.p1Ms, label: "P1 (03:24)", xRatio: 0.12, hDeg: 31.4 },
+                { tMs: ec2026.u1Ms, label: "U1 (04:34)", xRatio: 0.32, hDeg: 20.6 },
+                { tMs: ec2026.midMs, label: "50% (05:25)", xRatio: 0.54, hDeg: 12.8 },
+                { tMs: ec2026.maxMs, label: "MÁX 93% (06:13)", xRatio: 0.77, hDeg: 4.8, max: true },
+                { tMs: ec2026.setMs, label: "Ocaso (~06:45)", xRatio: 0.93, hDeg: 0.0, set: true }
+            ];
+
+            // Curva de trayectoria
+            ctx.beginPath();
+            ctx.strokeStyle = "rgba(56, 189, 248, 0.35)";
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([4, 4]);
+
+            timelineSteps.forEach((s, idx) => {
+                const px = w * s.xRatio;
+                const py = horizonY - (horizonY - 20) * (s.hDeg / 35);
+                if (idx === 0) ctx.moveTo(px, py);
+                else ctx.lineTo(px, py);
+            });
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Dibujar cada miniatura
+            const rMini = 13;
+            timelineSteps.forEach(s => {
+                const px = w * s.xRatio;
+                const py = horizonY - (horizonY - 20) * (s.hDeg / 35);
+
+                ctx.save();
+                ctx.translate(px, py);
+
+                // Disco base iluminado
+                ctx.beginPath();
+                ctx.arc(0, 0, rMini, 0, Math.PI * 2);
+                ctx.fillStyle = "#e2e8f0";
+                ctx.fill();
+
+                // Aplicar sombra según la fase
+                if (s.max) {
+                    // Máximo 93%: sombra roja cobriza cubriendo casi todo salvo borde sup. dcho (~02:00)
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.arc(0, 0, rMini, 0, Math.PI * 2);
+                    ctx.clip();
+                    ctx.beginPath();
+                    ctx.arc(-rMini * 0.45, rMini * 0.45, rMini * 1.1, 0, Math.PI * 2);
+                    ctx.fillStyle = "rgba(180, 45, 20, 0.92)";
+                    ctx.fill();
+                    ctx.restore();
+                    
+                    ctx.beginPath();
+                    ctx.strokeStyle = "#facc15";
+                    ctx.lineWidth = 1.5;
+                    ctx.arc(0, 0, rMini, 0, Math.PI * 2);
+                    ctx.stroke();
+                } else if (s.set) {
+                    // Ocaso: Luna semisumergida en el horizonte
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.arc(0, 0, rMini, 0, Math.PI * 2);
+                    ctx.clip();
+                    ctx.beginPath();
+                    ctx.arc(-rMini * 0.4, rMini * 0.4, rMini * 1.0, 0, Math.PI * 2);
+                    ctx.fillStyle = "rgba(180, 50, 25, 0.88)";
+                    ctx.fill();
+                    ctx.restore();
+                } else if (s.tMs === ec2026.midMs) {
+                    // 50%: mitad inferior izquierda en umbra
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.arc(0, 0, rMini, 0, Math.PI * 2);
+                    ctx.clip();
+                    ctx.beginPath();
+                    ctx.arc(-rMini * 0.8, rMini * 0.8, rMini * 1.15, 0, Math.PI * 2);
+                    ctx.fillStyle = "rgba(140, 35, 15, 0.85)";
+                    ctx.fill();
+                    ctx.restore();
+                } else if (s.tMs === ec2026.u1Ms) {
+                    // U1: pequeño mordisco en el limbo inf. izq.
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.arc(0, 0, rMini, 0, Math.PI * 2);
+                    ctx.clip();
+                    ctx.beginPath();
+                    ctx.arc(-rMini * 1.5, rMini * 1.5, rMini * 1.2, 0, Math.PI * 2);
+                    ctx.fillStyle = "rgba(100, 20, 10, 0.85)";
+                    ctx.fill();
+                    ctx.restore();
+                }
+
+                ctx.restore();
+
+                // Rótulo
+                ctx.font = s.max ? "bold 10px 'Outfit', sans-serif" : "9px 'JetBrains Mono', monospace";
+                ctx.fillStyle = s.max ? "#facc15" : "#cbd5e1";
+                ctx.textAlign = "center";
+                ctx.fillText(s.label, px, py - 18);
+            });
+        }
+
+        window.addEventListener('resize', () => {
+            renderSkyPanorama();
+        });
+
+        // Primer renderizado de reserva
+        renderAllSequenceFrames();
+        renderSkyPanorama();
+    </script>
+
+</body>
+</html>
