@@ -2959,11 +2959,15 @@
                 }
             }
 
-            // 4. Posicionar Luna 3D en el Espacio con Acoplamiento de Marea
+            // 4. Posicionar Luna 3D y Órbita Lunar 3D en el Espacio
+            const xVal = x * EARTH_RADIUS;
+            const yVal = y * EARTH_RADIUS;
+            const zVal = Math.sqrt(Math.max(0, MOON_DIST * MOON_DIST - xVal * xVal - yVal * yVal));
+
             const moonPos = new THREE.Vector3()
-                .addScaledVector(uLocal, x * EARTH_RADIUS)
-                .addScaledVector(vLocal, y * EARTH_RADIUS)
-                .addScaledVector(wLocal, MOON_DIST);
+                .addScaledVector(uLocal, xVal)
+                .addScaledVector(vLocal, yVal)
+                .addScaledVector(wLocal, zVal);
 
             if (moonMesh3D) {
                 const showSpaceBodies = document.getElementById('chk-show-space-bodies')?.checked ?? true;
@@ -2972,6 +2976,39 @@
                     moonMesh3D.position.copy(moonPos);
                     moonMesh3D.lookAt(0, 0, 0);
                     moonMesh3D.rotateY(-Math.PI / 2);
+                }
+            }
+
+            // 4b. Actualizar Órbita Lunar 3D atravesando exactamente el centro del globo lunar
+            if (moonOrbitLine3D) {
+                const showOrbit = document.getElementById('chk-show-moon-orbit')?.checked ?? true;
+                moonOrbitLine3D.visible = showOrbit;
+                if (showOrbit) {
+                    const x1 = (currentEclipse.x1 || 0.54);
+                    const y1 = (currentEclipse.y1 || -0.20);
+                    const vOrb = new THREE.Vector3()
+                        .addScaledVector(uLocal, x1 * EARTH_RADIUS)
+                        .addScaledVector(vLocal, y1 * EARTH_RADIUS);
+
+                    const e1 = moonPos.clone().normalize();
+                    let normOrbit = new THREE.Vector3().crossVectors(e1, vOrb).normalize();
+                    if (normOrbit.lengthSq() < 0.001) {
+                        normOrbit = new THREE.Vector3(0, 1, 0);
+                    }
+                    const e2 = new THREE.Vector3().crossVectors(normOrbit, e1).normalize();
+
+                    const pts = [];
+                    const segments = 360;
+                    for (let i = 0; i <= segments; i++) {
+                        const theta = (i / segments) * Math.PI * 2;
+                        const p = new THREE.Vector3()
+                            .addScaledVector(e1, MOON_DIST * Math.cos(theta))
+                            .addScaledVector(e2, MOON_DIST * Math.sin(theta));
+                        pts.push(p);
+                    }
+
+                    moonOrbitLine3D.geometry.dispose();
+                    moonOrbitLine3D.geometry = new THREE.BufferGeometry().setFromPoints(pts);
                 }
             }
 
@@ -3011,11 +3048,7 @@
                 }
             }
 
-            // 6. Órbita Lunar en el Espacio
-            if (moonOrbitLine3D) {
-                const showOrbit = document.getElementById('chk-show-moon-orbit')?.checked ?? true;
-                moonOrbitLine3D.visible = showOrbit;
-            }
+            // 6. Órbita Lunar sincronizada arriba
 
             // Enviar uniforms exactos al Shader GPU
             shadowShaderMaterial.uniforms.uSunDir.value.copy(wLocal);
