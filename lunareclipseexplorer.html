@@ -1130,10 +1130,10 @@
                 <button class="ctrl-btn" onclick="stepTime(60000)" title="Avanzar 1 min"><i class="fa-solid fa-step-forward"></i></button>
                 <button class="ctrl-btn" onclick="stepTime(900000)" title="Avanzar 15 min"><i class="fa-solid fa-forward"></i></button>
                 <select class="search-input" id="sim-speed-select" style="padding: 4px 6px; font-size: 0.72rem;" onchange="setSimSpeed(this.value)">
-                    <option value="live">🔴 En vivo</option>
+                    <option value="live" selected>🔴 En vivo</option>
                     <option value="1">1×</option>
                     <option value="10">10×</option>
-                    <option value="60" selected>60×</option>
+                    <option value="60">60×</option>
                     <option value="300">300×</option>
                     <option value="1200">1200×</option>
                 </select>
@@ -1197,8 +1197,8 @@
         let simCurrentTimeMs = 0;
         let simStartTimeMs = 0, simEndTimeMs = 0;
         let isPlaying = false;
-        let isLiveMode = false;
-        let simSpeedMultiplier = 60;
+        let isLiveMode = true;
+        let simSpeedMultiplier = 1;
         let lastFrameTimestamp = null;
         let currentActiveView = '3d'; // '3d', 'telescopic'
 
@@ -1425,6 +1425,7 @@
             teleZoom = 1.0; telePanX = 0; telePanY = 0;
 
             updateTimeUI();
+            updateLiveBadgeState();
         }
 
         function positionTimelineMarker(elId, timeMs) {
