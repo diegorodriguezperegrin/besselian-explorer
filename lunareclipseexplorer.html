@@ -2291,15 +2291,13 @@
 
             scene3D.add(earthGroup);
 
-            // Marcador Subsolar (☀️ Sol en Cenit) - situado en el plano eclíptico Y=0 en el punto diurno hacia el Sol (+Z)
+            // Marcador Subsolar (☀️ Sol en Cenit) - anclado a la geografía terrestre
             subsolarMarkerGroup3D = createSubsolarMarker3D();
-            subsolarMarkerGroup3D.position.set(0, 0, EARTH_RADIUS * 1.004);
-            subsolarMarkerGroup3D.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 1));
-            scene3D.add(subsolarMarkerGroup3D);
+            earthMesh3D.add(subsolarMarkerGroup3D);
 
-            // Marcador Sublunar (🌕 Luna en Cenit) - situado en la superficie terrestre apuntando hacia la Luna
+            // Marcador Sublunar (🌕 Luna en Cenit) - anclado a la geografía terrestre
             sublunarMarkerGroup3D = createSublunarMarker3D();
-            scene3D.add(sublunarMarkerGroup3D);
+            earthMesh3D.add(sublunarMarkerGroup3D);
 
             // Shader de Difuminado Volumétrico Suave con la Distancia en el Espacio
             const coneVertexShader = `
@@ -2710,31 +2708,36 @@
             // Actualizar Marcadores 3D sobre la Tierra (Subsolar, Sublunar y Observador)
             const coords = getSubsolarAndSublunarCoords(simCurrentTimeMs);
 
-            // Inclinación física real del eje polar de la Tierra (Oblicuidad de la Eclíptica = 23.44°)
+            // Orientación física astronómica del globo terrestre:
+            // 1. Inclinación del eje polar respecto a la Eclíptica según la declinación subsolar (inclinación en X)
             if (earthGroup) {
-                earthGroup.rotation.z = 23.44 * RAD;
+                earthGroup.rotation.x = -coords.subsolar.lat * RAD;
+                earthGroup.rotation.z = 0;
             }
-            // Rotación diurna en tiempo real (15°/hora) según la hora UT
+            // 2. Rotación diurna en tiempo real: orienta el meridiano subsolar hacia el Sol (+Z) y el sublunar hacia la Luna (-Z)
             if (earthMesh3D) {
-                earthMesh3D.rotation.y = (90 - coords.sublunar.lon) * RAD;
+                earthMesh3D.rotation.y = (90 - coords.subsolar.lon) * RAD;
             }
 
-            // 1. Punto Subsolar (☀️ Sol en Cenit): siempre en el plano eclíptico Y=0 apuntando al Sol (+Z)
+            // 1. Punto Subsolar (☀️ Sol en Cenit): anclado a la coordenada geográfica real (latitud, longitud)
             if (subsolarMarkerGroup3D) {
                 const showSubsolar = document.getElementById('chk-show-subsolar')?.checked ?? true;
                 subsolarMarkerGroup3D.visible = showSubsolar;
-                subsolarMarkerGroup3D.position.set(0, 0, EARTH_RADIUS * 1.004);
-                subsolarMarkerGroup3D.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 1));
+                if (showSubsolar) {
+                    const solPos = latLngToVector3(coords.subsolar.lat, coords.subsolar.lon, EARTH_RADIUS * 1.004);
+                    subsolarMarkerGroup3D.position.copy(solPos);
+                    subsolarMarkerGroup3D.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), solPos.clone().normalize());
+                }
             }
 
-            // 2. Punto Sublunar (🌕 Luna en Cenit): situado en la superficie terrestre facing la Luna 3D
+            // 2. Punto Sublunar (🌕 Luna en Cenit): anclado a la coordenada geográfica real (latitud, longitud)
             if (sublunarMarkerGroup3D) {
                 const showSublunar = document.getElementById('chk-show-sublunar')?.checked ?? true;
                 sublunarMarkerGroup3D.visible = showSublunar;
                 if (showSublunar) {
-                    const sublunarDir = moonMesh3D.position.clone().normalize();
-                    sublunarMarkerGroup3D.position.copy(sublunarDir.clone().multiplyScalar(EARTH_RADIUS * 1.004));
-                    sublunarMarkerGroup3D.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), sublunarDir);
+                    const subPos = latLngToVector3(coords.sublunar.lat, coords.sublunar.lon, EARTH_RADIUS * 1.004);
+                    sublunarMarkerGroup3D.position.copy(subPos);
+                    sublunarMarkerGroup3D.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), subPos.clone().normalize());
                 }
             }
 
