@@ -882,8 +882,20 @@
         </div>
         <div class="panel-section" style="display: flex; flex-direction: column; gap: 0.45rem; background: rgba(255,255,255,0.03); padding: 0.5rem 0.65rem; border-radius: 12px; border: 1px solid var(--border-color);">
             <label class="checkbox-row">
+                <input type="checkbox" id="chk-show-space-bodies" checked>
+                <span>Sol y Luna 3D en el espacio</span>
+            </label>
+            <label class="checkbox-row">
+                <input type="checkbox" id="chk-show-space-cones" checked>
+                <span>Conos de sombra 3D (Umbra / Penumbra)</span>
+            </label>
+            <label class="checkbox-row">
+                <input type="checkbox" id="chk-show-moon-orbit" checked>
+                <span>Órbita de la Luna en el espacio</span>
+            </label>
+            <label class="checkbox-row">
                 <input type="checkbox" id="chk-show-shadow">
-                <span>Gradiente penumbral</span>
+                <span>Gradiente penumbral en la Tierra</span>
             </label>
             <label class="checkbox-row">
                 <input type="checkbox" id="chk-show-totality" checked>
@@ -937,7 +949,7 @@
         const container = document.getElementById('webgl-container');
         const scene = new THREE.Scene();
 
-        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 50000);
         // Orientar inicialmente la cámara hacia la cara diurna iluminada del eclipse por defecto (2 Ago 2027: 25.5°N, 33.2°E)
         camera.position.copy(latLngToVector3(25.52, 33.24, 210));
 
@@ -946,6 +958,24 @@
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         container.appendChild(renderer.domElement);
 
+        let focusedBody = null; // 'moon' | 'earth' | null
+        let cameraTransition = null;
+
+        function transitionCamera(targetLookAt, targetCamPos, durationMs = 700) {
+            const startTarget = controls ? controls.target.clone() : new THREE.Vector3(0, 0, 0);
+            const startCamPos = camera.position.clone();
+            const startTime = performance.now();
+
+            cameraTransition = {
+                startTarget: startTarget,
+                endTarget: targetLookAt.clone(),
+                startCamPos: startCamPos,
+                endCamPos: targetCamPos.clone(),
+                startTime: startTime,
+                duration: durationMs
+            };
+        }
+
         const OrbitControlsClass = THREE.OrbitControls || window.OrbitControls;
         let controls;
         if (OrbitControlsClass) {
@@ -953,12 +983,135 @@
             controls.enableDamping = true;
             controls.dampingFactor = 0.05;
             controls.rotateSpeed = 0.8;
-            controls.minDistance = 70;
-            controls.maxDistance = 400;
-            controls.addEventListener('start', () => { cameraTransition = null; });
+            controls.minDistance = 2.0;
+            controls.maxDistance = 5000;
+            controls.enablePan = true;
+            controls.screenSpacePanning = true;
+            controls.panSpeed = 1.2;
+            controls.zoomSpeed = 1.2;
+
+            controls.mouseButtons = {
+                LEFT: THREE.MOUSE.ROTATE,
+                MIDDLE: THREE.MOUSE.PAN,
+                RIGHT: THREE.MOUSE.PAN
+            };
+
+            renderer.domElement.addEventListener('pointerdown', (e) => {
+                if (e.altKey && e.button === 0) {
+                    try {
+                        Object.defineProperty(e, 'shiftKey', { get: () => true });
+                    } catch (_) {}
+                }
+            }, { capture: true });
+
+            renderer.domElement.style.touchAction = 'none';
+            renderer.domElement.style.userSelect = 'none';
+
+            controls.addEventListener('start', () => {
+                cameraTransition = null;
+                focusedBody = null;
+            });
         } else {
-            controls = { update: () => {} };
+            controls = { update: () => {}, target: new THREE.Vector3(0, 0, 0) };
         }
+
+        // Navegación con flechas del teclado y teclas WASD
+        window.addEventListener('keydown', (e) => {
+            if (!controls || !camera) return;
+            if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA')) return;
+
+            const panDist = Math.max(1.0, (camera.position.distanceTo(controls.target) || 200) * 0.04);
+            let moved = false;
+            const vRight = new THREE.Vector3().setFromMatrixColumn(camera.matrix, 0);
+            const vUp = new THREE.Vector3().setFromMatrixColumn(camera.matrix, 1);
+
+            if (e.code === 'ArrowLeft' || e.code === 'KeyA') {
+                controls.target.addScaledVector(vRight, -panDist);
+                camera.position.addScaledVector(vRight, -panDist);
+                moved = true;
+            } else if (e.code === 'ArrowRight' || e.code === 'KeyD') {
+                controls.target.addScaledVector(vRight, panDist);
+                camera.position.addScaledVector(vRight, panDist);
+                moved = true;
+            } else if (e.code === 'ArrowUp' || e.code === 'KeyW') {
+                controls.target.addScaledVector(vUp, panDist);
+                camera.position.addScaledVector(vUp, panDist);
+                moved = true;
+            } else if (e.code === 'ArrowDown' || e.code === 'KeyS') {
+                controls.target.addScaledVector(vUp, -panDist);
+                camera.position.addScaledVector(vUp, -panDist);
+                moved = true;
+            }
+
+            if (moved) {
+                e.preventDefault();
+                cameraTransition = null;
+                focusedBody = null;
+                controls.update();
+            }
+        });
+
+        // Navegación por doble clic / doble tap
+        renderer.domElement.addEventListener('dblclick', (e) => {
+            const raycaster = new THREE.Raycaster();
+            const mouse = new THREE.Vector2(
+                (e.clientX / window.innerWidth) * 2 - 1,
+                -(e.clientY / window.innerHeight) * 2 + 1
+            );
+            raycaster.setFromCamera(mouse, camera);
+
+            const rayOrigin = raycaster.ray.origin;
+            const rayDir = raycaster.ray.direction.clone().normalize();
+
+            // 1. Distancia del rayo a la Luna
+            let distToMoonRay = Infinity;
+            if (moonMesh3D && moonMesh3D.visible) {
+                const vMoon = moonMesh3D.position.clone().sub(rayOrigin);
+                const projMoon = vMoon.dot(rayDir);
+                if (projMoon > 0) {
+                    const closestMoon = rayOrigin.clone().addScaledVector(rayDir, projMoon);
+                    distToMoonRay = closestMoon.distanceTo(moonMesh3D.position);
+                }
+            }
+
+            // 2. Distancia del rayo a la Tierra (0,0,0)
+            let distToEarthRay = Infinity;
+            const vEarth = new THREE.Vector3(0, 0, 0).sub(rayOrigin);
+            const projEarth = vEarth.dot(rayDir);
+            if (projEarth > 0) {
+                const closestEarth = rayOrigin.clone().addScaledVector(rayDir, projEarth);
+                distToEarthRay = closestEarth.distanceTo(new THREE.Vector3(0, 0, 0));
+            }
+
+            const moonTolerance = Math.max(MOON_RADIUS * 4.0, 30.0);
+            const earthTolerance = Math.max(EARTH_RADIUS * 2.0, 60.0);
+
+            if (distToMoonRay < moonTolerance && distToMoonRay <= distToEarthRay && moonMesh3D) {
+                // Doble clic sobre la Luna -> Enfoque detallado
+                focusedBody = 'moon';
+                const moonPos = moonMesh3D.position.clone();
+                let viewDir = camera.position.clone().sub(moonPos);
+                if (viewDir.lengthSq() < 0.001) viewDir = new THREE.Vector3(0, 20, 60);
+                viewDir.normalize();
+                const targetCamPos = moonPos.clone().addScaledVector(viewDir, MOON_RADIUS * 3.2);
+                transitionCamera(moonPos, targetCamPos, 700);
+            } else if (distToEarthRay < earthTolerance) {
+                // Doble clic sobre la Tierra -> Enfoque sobre la Tierra
+                focusedBody = 'earth';
+                const earthPos = new THREE.Vector3(0, 0, 0);
+                let viewDir = camera.position.clone().sub(earthPos);
+                if (viewDir.lengthSq() < 0.001) viewDir = new THREE.Vector3(0, 50, 180);
+                viewDir.normalize();
+                const targetCamPos = earthPos.clone().addScaledVector(viewDir, EARTH_RADIUS * 4.0);
+                transitionCamera(earthPos, targetCamPos, 700);
+            } else {
+                // Doble clic en espacio vacío -> Vista global del sistema
+                focusedBody = null;
+                const globalTarget = new THREE.Vector3(0, 0, MOON_DIST * 0.4);
+                const globalCamPos = new THREE.Vector3(0, MOON_DIST * 0.8, MOON_DIST * 1.8);
+                transitionCamera(globalTarget, globalCamPos, 750);
+            }
+        });
 
         // Iluminación Física Realista del Terminador (Día vs Noche)
         const ambientLight = new THREE.AmbientLight(0x101a26, 0.35);
@@ -968,8 +1121,89 @@
         sunLight.position.set(150, 100, 250);
         scene.add(sunLight);
 
-        // Crear Esfera de la Tierra
+        // Constantes Físicas de Escala 3D
         const EARTH_RADIUS = 50;
+        const MOON_RADIUS = 13.635; // 0.2727 * 50
+        const MOON_DIST = 380.0;
+        const SUN_RADIUS = 75.0;
+        const SUN_DIST = 1400.0;
+
+        // ☀️ Sol 3D con Corona Radiante
+        let sunGroup3D, sunMesh3D, sunCoronaMesh3D;
+        const sunGeo = new THREE.SphereGeometry(SUN_RADIUS, 48, 48);
+        const sunMat = new THREE.MeshBasicMaterial({ color: 0xfffaed });
+        sunMesh3D = new THREE.Mesh(sunGeo, sunMat);
+
+        const coronaGeo = new THREE.RingGeometry(SUN_RADIUS * 1.02, SUN_RADIUS * 1.8, 64);
+        const coronaMat = new THREE.MeshBasicMaterial({
+            color: 0xffedd5,
+            side: THREE.DoubleSide,
+            transparent: true,
+            opacity: 0.40
+        });
+        sunCoronaMesh3D = new THREE.Mesh(coronaGeo, coronaMat);
+
+        sunGroup3D = new THREE.Group();
+        sunGroup3D.add(sunMesh3D);
+        sunGroup3D.add(sunCoronaMesh3D);
+        scene.add(sunGroup3D);
+
+        // 🌑 Luna 3D con Textura Equirrectangular NASA LRO
+        let moonMesh3D;
+        const moonGeo = new THREE.SphereGeometry(MOON_RADIUS, 48, 48);
+        const moonMat = new THREE.MeshPhongMaterial({
+            color: 0xe2e8f0,
+            shininess: 8
+        });
+        new THREE.TextureLoader().load('moon_topo_2048.jpg', function(texture) {
+            texture.needsUpdate = true;
+            moonMat.map = texture;
+            moonMat.needsUpdate = true;
+        });
+        moonMesh3D = new THREE.Mesh(moonGeo, moonMat);
+        scene.add(moonMesh3D);
+
+        // 🔦 Conos Volumétricos de Sombra 3D (Umbra y Penumbra)
+        let umbraConeMesh3D, penumbraConeMesh3D;
+        const umbraConeGeo = new THREE.CylinderGeometry(MOON_RADIUS, 2.0, MOON_DIST, 48, 1, true);
+        const umbraConeMat = new THREE.MeshBasicMaterial({
+            color: 0x0f172a,
+            transparent: true,
+            opacity: 0.55,
+            side: THREE.DoubleSide,
+            depthWrite: false
+        });
+        umbraConeMesh3D = new THREE.Mesh(umbraConeGeo, umbraConeMat);
+        umbraConeMesh3D.renderOrder = 2;
+        scene.add(umbraConeMesh3D);
+
+        const penumbraConeGeo = new THREE.CylinderGeometry(MOON_RADIUS, 28.0, MOON_DIST, 48, 1, true);
+        const penumbraConeMat = new THREE.MeshBasicMaterial({
+            color: 0x1e293b,
+            transparent: true,
+            opacity: 0.20,
+            side: THREE.DoubleSide,
+            depthWrite: false
+        });
+        penumbraConeMesh3D = new THREE.Mesh(penumbraConeGeo, penumbraConeMat);
+        penumbraConeMesh3D.renderOrder = 1;
+        scene.add(penumbraConeMesh3D);
+
+        // 궤 Órbita Lunar 3D en el Espacio
+        let moonOrbitLine3D;
+        const orbitGeo = new THREE.BufferGeometry();
+        const orbitMat = new THREE.LineBasicMaterial({
+            color: 0x38bdf8,
+            transparent: true,
+            opacity: 0.60,
+            depthWrite: false
+        });
+        moonOrbitLine3D = new THREE.Line(orbitGeo, orbitMat);
+        moonOrbitLine3D.frustumCulled = false;
+        moonOrbitLine3D.renderOrder = 5;
+        scene.add(moonOrbitLine3D);
+
+        // Crear Esfera de la Tierra
         const earthGeometry = new THREE.SphereGeometry(EARTH_RADIUS, 96, 96);
 
         // Textura terrestre 2048x1024 NASA (Carga inmediata garantizada sin errores de TDZ)
@@ -2378,12 +2612,47 @@
             return cachedEclipseGeometry;
         }
 
+        function updateMoonOrbit(eclipse) {
+            if (!moonOrbitLine3D || !eclipse) return;
+            const points = [];
+            const minT = eclipse.tmin != null ? eclipse.tmin : -2.5;
+            const maxT = eclipse.tmax != null ? eclipse.tmax : 2.5;
+            const steps = 120;
+            const dt = (maxT - minT) / steps;
+
+            for (let i = 0; i <= steps; i++) {
+                const t = minT + i * dt;
+                const x = (eclipse.x0 || 0) + (eclipse.x1 || 0)*t + (eclipse.x2 || 0)*t*t + (eclipse.x3 || 0)*t*t*t;
+                const y = (eclipse.y0 || 0) + (eclipse.y1 || 0)*t + (eclipse.y2 || 0)*t*t + (eclipse.y3 || 0)*t*t*t;
+                const dDeg = (eclipse.d0 || 0) + (eclipse.d1 || 0)*t;
+                let muDeg = (eclipse.mu0 || 0) + (eclipse.mu1 || 0)*t;
+                if (eclipse.dt) {
+                    muDeg -= 1.0027379 * (eclipse.dt / 240);
+                }
+                const wLocal = latLngToVector3(dDeg, -muDeg, 1.0).normalize();
+                const muRad = -muDeg * Math.PI / 180;
+                const uLocal = new THREE.Vector3(-Math.sin(muRad), 0, -Math.cos(muRad)).normalize();
+                const vLocal = new THREE.Vector3().crossVectors(wLocal, uLocal).normalize();
+
+                const pos = new THREE.Vector3()
+                    .addScaledVector(uLocal, x * EARTH_RADIUS)
+                    .addScaledVector(vLocal, y * EARTH_RADIUS)
+                    .addScaledVector(wLocal, MOON_DIST);
+                points.push(pos);
+            }
+
+            moonOrbitLine3D.geometry.dispose();
+            moonOrbitLine3D.geometry = new THREE.BufferGeometry().setFromPoints(points);
+        }
+
         function drawShadowPath(eclipse) {
             if (pathLine) { dispose3DObject(pathLine); pathLine = null; }
             if (totalityNorthLine) { dispose3DObject(totalityNorthLine); totalityNorthLine = null; }
             if (totalitySouthLine) { dispose3DObject(totalitySouthLine); totalitySouthLine = null; }
             if (isomagnitudesGroup) { dispose3DObject(isomagnitudesGroup); isomagnitudesGroup = null; }
             if (utLinesGroup) { dispose3DObject(utLinesGroup); utLinesGroup = null; }
+
+            updateMoonOrbit(eclipse);
 
             const data = precomputeEclipseGeometry(eclipse);
 
@@ -2552,6 +2821,70 @@
                 }
             }
 
+            // 3. Posicionar Sol 3D con Corona Radiante
+            if (sunGroup3D) {
+                const showSpaceBodies = document.getElementById('chk-show-space-bodies')?.checked ?? true;
+                sunGroup3D.visible = showSpaceBodies;
+                if (showSpaceBodies) {
+                    const sunPos = wLocal.clone().multiplyScalar(SUN_DIST);
+                    sunGroup3D.position.copy(sunPos);
+                    sunGroup3D.lookAt(0, 0, 0);
+                }
+            }
+
+            // 4. Posicionar Luna 3D en el Espacio con Acoplamiento de Marea
+            const moonPos = new THREE.Vector3()
+                .addScaledVector(uLocal, x * EARTH_RADIUS)
+                .addScaledVector(vLocal, y * EARTH_RADIUS)
+                .addScaledVector(wLocal, MOON_DIST);
+
+            if (moonMesh3D) {
+                const showSpaceBodies = document.getElementById('chk-show-space-bodies')?.checked ?? true;
+                moonMesh3D.visible = showSpaceBodies;
+                if (showSpaceBodies) {
+                    moonMesh3D.position.copy(moonPos);
+                    moonMesh3D.lookAt(0, 0, 0);
+                    moonMesh3D.rotateY(-Math.PI / 2);
+                }
+            }
+
+            // 5. Conos Volumétricos de Umbra y Penumbra 3D
+            const showSpaceCones = document.getElementById('chk-show-space-cones')?.checked ?? true;
+            if (umbraConeMesh3D && penumbraConeMesh3D) {
+                umbraConeMesh3D.visible = showSpaceCones;
+                penumbraConeMesh3D.visible = showSpaceCones;
+
+                if (showSpaceCones) {
+                    const fpCenter = new THREE.Vector3()
+                        .addScaledVector(uLocal, x * EARTH_RADIUS)
+                        .addScaledVector(vLocal, y * EARTH_RADIUS);
+                    
+                    const midPos = moonPos.clone().add(fpCenter).multiplyScalar(0.5);
+                    const coneDir = wLocal.clone();
+                    const coneQuat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), coneDir);
+
+                    // Cono de Umbra / Antumbra
+                    const umbRadBottom = Math.max(0.5, l2 * EARTH_RADIUS);
+                    umbraConeMesh3D.geometry.dispose();
+                    umbraConeMesh3D.geometry = new THREE.CylinderGeometry(MOON_RADIUS, umbRadBottom, MOON_DIST, 48, 1, true);
+                    umbraConeMesh3D.position.copy(midPos);
+                    umbraConeMesh3D.quaternion.copy(coneQuat);
+
+                    // Cono de Penumbra
+                    const penRadBottom = Math.max(1.0, l1 * EARTH_RADIUS);
+                    penumbraConeMesh3D.geometry.dispose();
+                    penumbraConeMesh3D.geometry = new THREE.CylinderGeometry(MOON_RADIUS, penRadBottom, MOON_DIST, 48, 1, true);
+                    penumbraConeMesh3D.position.copy(midPos);
+                    penumbraConeMesh3D.quaternion.copy(coneQuat);
+                }
+            }
+
+            // 6. Órbita Lunar en el Espacio
+            if (moonOrbitLine3D) {
+                const showOrbit = document.getElementById('chk-show-moon-orbit')?.checked ?? true;
+                moonOrbitLine3D.visible = showOrbit;
+            }
+
             // Enviar uniforms exactos al Shader GPU
             shadowShaderMaterial.uniforms.uSunDir.value.copy(wLocal);
             shadowShaderMaterial.uniforms.uVx.value.copy(uLocal);
@@ -2574,21 +2907,11 @@
             }
         }
 
-        let cameraTransition = null;
-
         function recenterEarth(lat, lng) {
-            const currentDist = camera.position.length() || 200;
+            focusedBody = 'earth';
+            const currentDist = Math.max(120, Math.min(camera.position.distanceTo(new THREE.Vector3(0, 0, 0)) || 210, 450));
             const targetPos = latLngToVector3(lat, lng, currentDist);
-            const startPos = camera.position.clone();
-            
-            if (startPos.distanceTo(targetPos) < 0.1) return;
-
-            cameraTransition = {
-                startPos: startPos,
-                targetPos: targetPos,
-                currentDist: currentDist,
-                progress: 0
-            };
+            transitionCamera(new THREE.Vector3(0, 0, 0), targetPos, 700);
         }
 
         document.getElementById('btn-recenter').addEventListener('click', () => {
@@ -2597,6 +2920,22 @@
                 const maxLng = currentEclipse.lng_dd_ge || 0;
                 recenterEarth(maxLat, maxLng);
             }
+        });
+
+        document.getElementById('chk-show-space-bodies')?.addEventListener('change', (e) => {
+            const vis = e.target.checked;
+            if (sunGroup3D) sunGroup3D.visible = vis;
+            if (moonMesh3D) moonMesh3D.visible = vis;
+        });
+
+        document.getElementById('chk-show-space-cones')?.addEventListener('change', (e) => {
+            const vis = e.target.checked;
+            if (umbraConeMesh3D) umbraConeMesh3D.visible = vis;
+            if (penumbraConeMesh3D) penumbraConeMesh3D.visible = vis;
+        });
+
+        document.getElementById('chk-show-moon-orbit')?.addEventListener('change', (e) => {
+            if (moonOrbitLine3D) moonOrbitLine3D.visible = e.target.checked;
         });
 
         document.getElementById('chk-show-shadow')?.addEventListener('change', (e) => {
@@ -2821,23 +3160,31 @@
                 updateShadowAtTime(currentT);
             }
 
-            // 2. Interpolación suave de cámara para recentrado
+            // 2. Interpolación suave de cámara y target
             if (cameraTransition) {
-                cameraTransition.progress += 0.04;
-                if (cameraTransition.progress < 1) {
-                    // Easing sinusoidal suave (aceleración y frenado natural)
-                    const ease = 0.5 * (1 - Math.cos(Math.PI * cameraTransition.progress));
-                    const tempPos = new THREE.Vector3().lerpVectors(cameraTransition.startPos, cameraTransition.targetPos, ease);
-                    if (tempPos.lengthSq() > 0.0001) {
-                        tempPos.normalize().multiplyScalar(cameraTransition.currentDist);
-                        camera.position.copy(tempPos);
-                    }
-                    camera.lookAt(0, 0, 0);
-                } else {
-                    camera.position.copy(cameraTransition.targetPos);
-                    camera.lookAt(0, 0, 0);
+                const now = performance.now();
+                const elapsed = now - cameraTransition.startTime;
+                const p = Math.min(1.0, elapsed / cameraTransition.duration);
+                // Ease in-out cubic
+                const ease = p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
+
+                if (controls && controls.target) {
+                    controls.target.lerpVectors(cameraTransition.startTarget, cameraTransition.endTarget, ease);
+                }
+                camera.position.lerpVectors(cameraTransition.startCamPos, cameraTransition.endCamPos, ease);
+
+                if (p >= 1.0) {
+                    if (controls && controls.target) controls.target.copy(cameraTransition.endTarget);
+                    camera.position.copy(cameraTransition.endCamPos);
                     cameraTransition = null;
                 }
+            } else if (focusedBody === 'moon' && moonMesh3D && controls) {
+                // Si la cámara está enfocando a la Luna y la simulación avanza, seguir suavemente el movimiento de la Luna
+                const prevTarget = controls.target.clone();
+                const curMoonPos = moonMesh3D.position.clone();
+                const deltaPos = curMoonPos.clone().sub(prevTarget);
+                controls.target.copy(curMoonPos);
+                camera.position.add(deltaPos);
             }
 
             controls.update();
