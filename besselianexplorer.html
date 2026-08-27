@@ -949,7 +949,7 @@
         const container = document.getElementById('webgl-container');
         const scene = new THREE.Scene();
 
-        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 50000);
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1.0, 100000);
         // Orientar inicialmente la cámara hacia la cara diurna iluminada del eclipse por defecto (2 Ago 2027: 25.5°N, 33.2°E)
         camera.position.copy(latLngToVector3(25.52, 33.24, 210));
 
@@ -984,7 +984,7 @@
             controls.dampingFactor = 0.05;
             controls.rotateSpeed = 0.8;
             controls.minDistance = 2.0;
-            controls.maxDistance = 5000;
+            controls.maxDistance = 50000;
             controls.enablePan = true;
             controls.screenSpacePanning = true;
             controls.panSpeed = 1.2;
@@ -1083,7 +1083,7 @@
                 distToEarthRay = closestEarth.distanceTo(new THREE.Vector3(0, 0, 0));
             }
 
-            const moonTolerance = Math.max(MOON_RADIUS * 4.0, 30.0);
+            const moonTolerance = Math.max(MOON_RADIUS * 6.0, 120.0);
             const earthTolerance = Math.max(EARTH_RADIUS * 2.0, 60.0);
 
             if (distToMoonRay < moonTolerance && distToMoonRay <= distToEarthRay && moonMesh3D) {
@@ -1093,7 +1093,7 @@
                 let viewDir = camera.position.clone().sub(moonPos);
                 if (viewDir.lengthSq() < 0.001) viewDir = new THREE.Vector3(0, 20, 60);
                 viewDir.normalize();
-                const targetCamPos = moonPos.clone().addScaledVector(viewDir, MOON_RADIUS * 3.2);
+                const targetCamPos = moonPos.clone().addScaledVector(viewDir, MOON_RADIUS * 3.8);
                 transitionCamera(moonPos, targetCamPos, 700);
             } else if (distToEarthRay < earthTolerance) {
                 // Doble clic sobre la Tierra -> Enfoque sobre la Tierra
@@ -1108,7 +1108,7 @@
                 // Doble clic en espacio vacío -> Vista global del sistema
                 focusedBody = null;
                 const globalTarget = new THREE.Vector3(0, 0, MOON_DIST * 0.4);
-                const globalCamPos = new THREE.Vector3(0, MOON_DIST * 0.8, MOON_DIST * 1.8);
+                const globalCamPos = new THREE.Vector3(0, MOON_DIST * 0.7, MOON_DIST * 1.5);
                 transitionCamera(globalTarget, globalCamPos, 750);
             }
         });
@@ -1121,12 +1121,12 @@
         sunLight.position.set(150, 100, 250);
         scene.add(sunLight);
 
-        // Constantes Físicas de Escala 3D
-        const EARTH_RADIUS = 50;
-        const MOON_RADIUS = 13.635; // 0.2727 * 50
-        const MOON_DIST = 380.0;
-        const SUN_RADIUS = 75.0;
-        const SUN_DIST = 1400.0;
+        // Constantes Físicas de Escala 3D Real (1 R_Tierra = 50 unidades)
+        const EARTH_RADIUS = 50.0;
+        const MOON_RADIUS = 13.635;  // 0.2727 * 50 = 1.737 km (Escala física real)
+        const MOON_DIST = 3016.5;    // 60.33 * 50 = 384.400 km (Distancia media física real Tierra-Luna)
+        const SUN_RADIUS = 250.0;    // Radio solar escalado para visibilidad y proporción angular
+        const SUN_DIST = 15000.0;    // Distancia solar en el espacio profundo
 
         // ☀️ Sol 3D con Corona Radiante Óptica (Additive Blending)
         function createSunCoronaTexture() {
@@ -2758,11 +2758,12 @@
             // Generar la órbita completa cerrada de 360° alrededor de la Tierra
             const pts = [];
             const segments = 180;
+            const orbitRadius = rMoonCenter.length();
             for (let i = 0; i <= segments; i++) {
                 const theta = (i / segments) * Math.PI * 2;
                 const pos = new THREE.Vector3()
-                    .addScaledVector(e1, MOON_DIST * Math.cos(theta))
-                    .addScaledVector(e2, MOON_DIST * Math.sin(theta));
+                    .addScaledVector(e1, orbitRadius * Math.cos(theta))
+                    .addScaledVector(e2, orbitRadius * Math.sin(theta));
                 pts.push(pos);
             }
 
