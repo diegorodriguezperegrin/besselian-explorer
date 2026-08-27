@@ -2514,37 +2514,21 @@
             penumbraConeMesh3D.renderOrder = 1;
             shadowConesGroup3D.add(penumbraConeMesh3D);
 
-            // Anillos de Sección Transversal a la Distancia Orbital de la Luna (z = -384.4 km)
-            const rUmbraSection = EARTH_RADIUS * (1.0 - MOON_DIST / umbraLength);             // 4.598 km
-            const rPenumbraSection = EARTH_RADIUS + ((SUN_RADIUS + EARTH_RADIUS) / SUN_DIST) * MOON_DIST; // 8.177 km
-
-            const umbraSectionGeo = new THREE.RingGeometry(rUmbraSection - 0.04, rUmbraSection + 0.04, 128);
-            const umbraSectionMat = new THREE.MeshBasicMaterial({ color: 0xef4444, side: THREE.DoubleSide, transparent: true, opacity: 0.85 });
-            const umbraSectionMesh = new THREE.Mesh(umbraSectionGeo, umbraSectionMat);
-            umbraSectionMesh.position.set(0, 0, -MOON_DIST);
-            umbraSectionMesh.renderOrder = 4;
-            shadowConesGroup3D.add(umbraSectionMesh);
-
-            const penSectionGeo = new THREE.RingGeometry(rPenumbraSection - 0.04, rPenumbraSection + 0.04, 128);
-            const penSectionMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, side: THREE.DoubleSide, transparent: true, opacity: 0.70 });
-            const penSectionMesh = new THREE.Mesh(penSectionGeo, penSectionMat);
-            penSectionMesh.position.set(0, 0, -MOON_DIST);
-            penSectionMesh.renderOrder = 3;
-            shadowConesGroup3D.add(penSectionMesh);
-
             // Luna 3D con Textura Equirrectangular Oficial NASA LRO (2048x1024)
             const moonGeo = new THREE.SphereGeometry(MOON_RADIUS, 64, 64);
+            const moonMat = new THREE.MeshPhongMaterial({
+                shininess: 6
+            });
             const texLoader = new THREE.TextureLoader();
             const moonSrc = (typeof MOON_TOPO_BASE64 !== 'undefined') ? MOON_TOPO_BASE64 : 'moon_topo_2048.jpg';
             const moonTexture3D = texLoader.load(moonSrc, function(tex) {
                 tex.needsUpdate = true;
-                if (moonMat) moonMat.needsUpdate = true;
+                if (moonMat) {
+                    moonMat.map = tex;
+                    moonMat.needsUpdate = true;
+                }
             });
-            
-            const moonMat = new THREE.MeshPhongMaterial({
-                map: moonTexture3D,
-                shininess: 6
-            });
+            moonMat.map = moonTexture3D;
             moonMesh3D = new THREE.Mesh(moonGeo, moonMat);
             scene3D.add(moonMesh3D);
 
@@ -2630,6 +2614,8 @@
         function update3DEclipseGeometry() {
             if (!moonMesh3D || !currentEclipse) return;
             const geo = getMoonShadowCoordsAtTime(simCurrentTimeMs);
+            const rUmbra3D = geo.rUmbraKm;
+            const rPenumbra3D = geo.rPenumbraKm;
 
             // Coordenadas 3D canónicas del eclipse en el sistema de referencia físico Tierra-Sol-Sombra:
             // - El eje Z (-Z) es el eje central de la sombra terrestre (línea Sol-Tierra-Sombra).
