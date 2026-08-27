@@ -2227,23 +2227,40 @@
             fillLight.position.set(0, 50, -500);
             scene3D.add(fillLight);
 
-            // ☀️ Sol 3D a Escala Física Real (Radio 696.34 unidades a 149.598 unidades = 1 UA)
+            // ☀️ Sol 3D con Corona Radiante Óptica (Additive Blending)
+            function createSunCoronaTexture() {
+                const canvas = document.createElement('canvas');
+                canvas.width = 512;
+                canvas.height = 512;
+                const ctx = canvas.getContext('2d');
+                const grad = ctx.createRadialGradient(256, 256, 110, 256, 256, 256);
+                grad.addColorStop(0.0, 'rgba(255, 255, 245, 1.0)');
+                grad.addColorStop(0.2, 'rgba(254, 240, 138, 0.80)');
+                grad.addColorStop(0.45, 'rgba(245, 158, 11, 0.40)');
+                grad.addColorStop(0.75, 'rgba(217, 119, 6, 0.12)');
+                grad.addColorStop(1.0, 'rgba(0, 0, 0, 0.0)');
+
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, 512, 512);
+                const tex = new THREE.CanvasTexture(canvas);
+                tex.needsUpdate = true;
+                return tex;
+            }
+
             const sunGeo = new THREE.SphereGeometry(SUN_RADIUS, 64, 64);
-            const sunMat = new THREE.MeshBasicMaterial({ color: 0xfff7e6 });
+            const sunMat = new THREE.MeshBasicMaterial({ color: 0xfffaed });
             sunMesh3D = new THREE.Mesh(sunGeo, sunMat);
             sunMesh3D.position.set(0, 0, SUN_DIST);
-            
-            // Corona solar radiante
-            const coronaGeo = new THREE.RingGeometry(SUN_RADIUS * 1.02, SUN_RADIUS * 1.65, 64);
-            const coronaMat = new THREE.MeshBasicMaterial({
-                color: 0xffedd5,
-                side: THREE.DoubleSide,
+
+            const coronaMat = new THREE.SpriteMaterial({
+                map: createSunCoronaTexture(),
                 transparent: true,
-                opacity: 0.45
+                blending: THREE.AdditiveBlending,
+                depthWrite: false
             });
-            const coronaMesh = new THREE.Mesh(coronaGeo, coronaMat);
-            coronaMesh.rotation.y = Math.PI;
-            sunMesh3D.add(coronaMesh);
+            const sunCoronaSprite = new THREE.Sprite(coronaMat);
+            sunCoronaSprite.scale.set(SUN_RADIUS * 4.2, SUN_RADIUS * 4.2, 1);
+            sunMesh3D.add(sunCoronaSprite);
             scene3D.add(sunMesh3D);
 
             // Esfera de la Tierra (Modelo de alta resolución NASA 2048x1024 + Atmósfera)
