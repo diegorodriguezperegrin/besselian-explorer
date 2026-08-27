@@ -3045,29 +3045,32 @@
                 }
             }
 
-            // 4b. Actualizar Órbita Lunar 3D con inclinación física exacta de 5.145° respecto a la Eclíptica
+            // 4b. Actualizar Órbita Lunar 3D con inclinación física exacta de 5.145° respecto al plano de la Eclíptica
             if (moonOrbitLine3D) {
                 const showOrbit = document.getElementById('chk-show-moon-orbit')?.checked ?? true;
                 moonOrbitLine3D.visible = showOrbit;
                 if (showOrbit) {
+                    // Base del plano de la Eclíptica: wLocal (hacia el Sol), uE (Este eclíptico), normEcliptic (Norte eclíptico)
                     const uP = new THREE.Vector3(0, 1, 0);
                     const uE = new THREE.Vector3().crossVectors(uP, wLocal).normalize();
                     const normEcliptic = new THREE.Vector3().crossVectors(wLocal, uE).normalize();
 
-                    // Inclinación física exacta de la órbita lunar i = 5.145° respecto a la Eclíptica
+                    // Inclinación física astronómica pura i = 5.145° respecto a la Eclíptica
                     const incRad = 5.145 * Math.PI / 180;
-                    const isAscending = ((currentEclipse.saros || 0) % 2 === 0);
-                    const sign = isAscending ? 1.0 : -1.0;
+                    // Sentido orbital ascendente/descendente según el signo de y1 (movimiento norte/sur del eje de sombra)
+                    const slope = (currentEclipse.y1 !== undefined && currentEclipse.y1 < 0) ? -1.0 : 1.0;
 
-                    // Normal del plano orbital inclinada exactamente 5.145°
+                    // Vector normal al plano orbital lunar inclinado 5.145° alrededor del eje nodal (wLocal)
+                    // normOrbit = cos(i)*normEcliptic - slope*sin(i)*uE
                     const normOrbit = new THREE.Vector3()
                         .addScaledVector(normEcliptic, Math.cos(incRad))
-                        .addScaledVector(wLocal, sign * Math.sin(incRad))
+                        .addScaledVector(uE, -slope * Math.sin(incRad))
                         .normalize();
 
+                    // Base ortonormal en el plano orbital pasando exactamente por la Luna
                     const e1 = moonPos.clone().normalize();
                     const e2 = new THREE.Vector3().crossVectors(normOrbit, e1).normalize();
-                    if (e2.dot(uE) < 0) e2.negate(); // Sentido orbital de Oeste a Este (+uE)
+                    if (e2.dot(uE) < 0) e2.negate(); // Sentido orbital de Oeste a Este
 
                     const pts = [];
                     const segments = 360;
