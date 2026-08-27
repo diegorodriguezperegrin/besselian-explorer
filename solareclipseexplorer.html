@@ -894,6 +894,10 @@
                 <span>Órbita de la Luna en el espacio</span>
             </label>
             <label class="checkbox-row">
+                <input type="checkbox" id="chk-show-ecliptic" checked>
+                <span>Plano de la Eclíptica (Malla 3D)</span>
+            </label>
+            <label class="checkbox-row">
                 <input type="checkbox" id="chk-show-shadow">
                 <span>Gradiente penumbral en la Tierra</span>
             </label>
@@ -1304,6 +1308,54 @@
         moonOrbitLine3D.frustumCulled = false;
         moonOrbitLine3D.renderOrder = 5;
         scene.add(moonOrbitLine3D);
+
+        // 🌐 Malla y Plano Eclíptico 3D de Referencia
+        let eclipticPlaneGroup3D;
+
+        function createEclipticPlane3D() {
+            const group = new THREE.Group();
+
+            // GridHelper 3D vectorial en el plano de la Eclíptica
+            // Tamaño: 8000 unidades, 80 divisiones (abarcando la órbita lunar a 3016.5)
+            // Ejes orientadores en Amarillo dorado (0xfacc15) y líneas secundarias en ámbar cálido (0x854d0e)
+            const gridHelper = new THREE.GridHelper(8000, 80, 0xfacc15, 0x854d0e);
+            gridHelper.material.transparent = true;
+            gridHelper.material.opacity = 0.45;
+            gridHelper.material.depthWrite = false;
+
+            // Shader de difuminado radial suave en los bordes exteriores (> 3200 unidades)
+            gridHelper.material.onBeforeCompile = (shader) => {
+                shader.vertexShader = `
+                    varying vec3 vWorldPos;
+                    ${shader.vertexShader}
+                `.replace(
+                    '#include <begin_vertex>',
+                    `
+                    #include <begin_vertex>
+                    vWorldPos = (modelMatrix * vec4(position, 1.0)).xyz;
+                    `
+                );
+                
+                shader.fragmentShader = `
+                    varying vec3 vWorldPos;
+                    ${shader.fragmentShader}
+                `.replace(
+                    '#include <dithering_fragment>',
+                    `
+                    #include <dithering_fragment>
+                    float dist = length(vWorldPos);
+                    float fade = 1.0 - smoothstep(3200.0, 4200.0, dist);
+                    gl_FragColor.a *= fade;
+                    `
+                );
+            };
+
+            group.add(gridHelper);
+            return group;
+        }
+
+        eclipticPlaneGroup3D = createEclipticPlane3D();
+        scene.add(eclipticPlaneGroup3D);
 
         // Crear Esfera de la Tierra
         const earthGeometry = new THREE.SphereGeometry(EARTH_RADIUS, 96, 96);
@@ -2959,6 +3011,20 @@
                 }
             }
 
+            // 3b. Orientar Plano Eclíptico 3D
+            if (eclipticPlaneGroup3D) {
+                const showEcliptic = document.getElementById('chk-show-ecliptic')?.checked ?? true;
+                eclipticPlaneGroup3D.visible = showEcliptic;
+                if (showEcliptic) {
+                    const uP = new THREE.Vector3(0, 1, 0);
+                    const uE = new THREE.Vector3().crossVectors(uP, wLocal).normalize();
+                    if (uE.lengthSq() > 0.001) {
+                        const normEcliptic = new THREE.Vector3().crossVectors(wLocal, uE).normalize();
+                        eclipticPlaneGroup3D.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), normEcliptic);
+                    }
+                }
+            }
+
             // 4. Posicionar Luna 3D y Órbita Lunar 3D en el Espacio
             const xVal = x * EARTH_RADIUS;
             const yVal = y * EARTH_RADIUS;
@@ -3101,6 +3167,9 @@
 
         document.getElementById('chk-show-moon-orbit')?.addEventListener('change', (e) => {
             if (moonOrbitLine3D) moonOrbitLine3D.visible = e.target.checked;
+        });
+        document.getElementById('chk-show-ecliptic')?.addEventListener('change', (e) => {
+            if (eclipticPlaneGroup3D) eclipticPlaneGroup3D.visible = e.target.checked;
         });
 
         document.getElementById('chk-show-shadow')?.addEventListener('change', (e) => {
