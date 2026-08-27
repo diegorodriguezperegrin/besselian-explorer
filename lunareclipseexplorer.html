@@ -1958,14 +1958,15 @@
             const gridGroup = new THREE.Group();
             
             // GridHelper 3D vectorial en el plano horizontal Y = 0 (Eclíptica)
-            // Tamaño: 1800 unidades (1.800.000 km), 90 divisiones (cuadrículas de 20.000 km)
-            // Ejes orientadores en Amarillo (0xfacc15) y líneas secundarias en ámbar cálido (0xa16207)
-            const gridHelper = new THREE.GridHelper(1800, 90, 0xfacc15, 0xa16207);
+            // Escala Unificada: 100 Diámetros Terrestres (1.274.200 km = 1.274,2 unidades)
+            // 100 divisiones -> Cada celda mide exactamente 1 Diámetro Terrestre (12,742 km)
+            // Ejes orientadores en Amarillo dorado (0xfacc15) y líneas secundarias en ámbar cálido (0xa16207)
+            const gridHelper = new THREE.GridHelper(1274.2, 100, 0xfacc15, 0xa16207);
             gridHelper.material.transparent = true;
-            gridHelper.material.opacity = 0.55;
+            gridHelper.material.opacity = 0.50;
             gridHelper.material.depthWrite = false;
 
-            // Inyección GLSL: Difumina suavemente la opacidad más allá de la órbita lunar (>400 unidades)
+            // Inyección GLSL: Difumina suavemente la opacidad más allá de la órbita lunar (446.000 - 637.000 km = 446 - 637 unidades)
             gridHelper.material.onBeforeCompile = (shader) => {
                 shader.vertexShader = `
                     varying vec3 vWorldPos;
@@ -1986,7 +1987,7 @@
                     `
                     #include <dithering_fragment>
                     float dist = length(vWorldPos.xz);
-                    float fade = 1.0 - smoothstep(420.0, 850.0, dist);
+                    float fade = 1.0 - smoothstep(446.0, 637.0, dist);
                     gl_FragColor.a *= fade;
                     `
                 );
