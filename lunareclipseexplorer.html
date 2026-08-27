@@ -3034,12 +3034,17 @@
             // Actualizar HUD superior flotante
             const horizCoords = getMoonHorizontalCoords(currentEclipse.zenLat, currentEclipse.zenLon, simCurrentTimeMs, currentEclipse.maxMs);
             updateTelescopeHUD(horizCoords);
+
+            // Actualizar visibilidad del chivato EN VIVO en cada frame según el reloj real
+            updateLiveBadgeState();
         }
 
         function updateLiveBadgeState() {
             const badge = document.getElementById('live-indicator-badge');
             if (!badge) return;
-            if (isLiveMode) {
+            const now = Date.now();
+            const isActuallyLive = isLiveMode && (now >= simStartTimeMs && now <= simEndTimeMs);
+            if (isActuallyLive) {
                 badge.style.display = 'flex';
                 const panel = document.getElementById('settings-panel');
                 if (panel && panel.classList.contains('collapsed')) {
