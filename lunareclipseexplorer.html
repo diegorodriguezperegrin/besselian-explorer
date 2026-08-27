@@ -2465,7 +2465,7 @@
             shadowConesGroup3D = new THREE.Group();
             scene3D.add(shadowConesGroup3D);
 
-            // Cono de Umbra Terrestre 3D a Escala Física Real (Rojo Umbral Terracota, convergente a z = -1.381,4 km)
+            // Cono de Umbra Terrestre 3D a Escala Física Real: convergiendo en z = -1.381,4 unidades (1.381.400 km)
             const umbraLength = SUN_DIST * (EARTH_RADIUS / (SUN_RADIUS - EARTH_RADIUS)); // ~1381.4
             const umbraGeo = new THREE.CylinderGeometry(EARTH_RADIUS, 0, umbraLength, 128, 1, true);
             umbraGeo.rotateX(Math.PI / 2);
@@ -2474,8 +2474,8 @@
                 depthWrite: false,
                 side: THREE.DoubleSide,
                 uniforms: {
-                    uColor: { value: new THREE.Color(0x991b1b) }, // Tono rojo cobrizo umbral idéntico a la vista telescópica
-                    uMaxOpacity: { value: 0.45 },
+                    uColor: { value: new THREE.Color(0x0a101d) }, // Tono oscuro y profundo de sombra espacial
+                    uMaxOpacity: { value: 0.60 },
                     uNearFadeStart: { value: 0.0 },
                     uNearFadeEnd: { value: -15.0 },
                     uFarFadeStart: { value: -500.0 },
@@ -2489,7 +2489,7 @@
             umbraConeMesh3D.renderOrder = 2;
             shadowConesGroup3D.add(umbraConeMesh3D);
 
-            // Cono de Penumbra Terrestre 3D a Escala Física Real (Azul translúcido suave)
+            // Cono de Penumbra Terrestre 3D a Escala Física Real (cono divergente)
             const penLength = 800.0;
             const penEndRadius = EARTH_RADIUS + ((SUN_RADIUS + EARTH_RADIUS) / SUN_DIST) * penLength; // ~10.12
             const penGeo = new THREE.CylinderGeometry(EARTH_RADIUS, penEndRadius, penLength, 128, 1, true);
@@ -2499,8 +2499,8 @@
                 depthWrite: false,
                 side: THREE.DoubleSide,
                 uniforms: {
-                    uColor: { value: new THREE.Color(0x1e293b) }, // Tono azulado de semisombra
-                    uMaxOpacity: { value: 0.20 },
+                    uColor: { value: new THREE.Color(0x1e293b) }, // Tono de semisombra tenue
+                    uMaxOpacity: { value: 0.25 },
                     uNearFadeStart: { value: 0.0 },
                     uNearFadeEnd: { value: -15.0 },
                     uFarFadeStart: { value: -500.0 },
@@ -2619,10 +2619,10 @@
 
             // Coordenadas 3D canónicas del eclipse en el sistema de referencia físico Tierra-Sol-Sombra:
             // - El eje Z (-Z) es el eje central de la sombra terrestre (línea Sol-Tierra-Sombra).
-            // - El eje X es la dirección del movimiento orbital transversal de la Luna a través de la sombra.
-            // - El eje Y es el parámetro de impacto Gamma (Norte/Sur celeste).
-            const x3D = geo.x * MOON_RADIUS;
-            const y3D = geo.y * MOON_RADIUS;
+            // - El eje X es el movimiento orbital lunar transversal de Oeste (-X) a Este (+X).
+            // - El eje Y es el parámetro de impacto Gamma (Norte +Y / Sur -Y celeste).
+            const x3D = -geo.x * MOON_RADIUS; // -geo.x: P1 (inicio) a la izquierda (-X) y P4 (fin) a la derecha (+X)
+            const y3D = (currentEclipse.gamma >= 0 ? 1 : -1) * Math.abs(geo.y) * MOON_RADIUS; // Gamma > 0 es Norte (+Y, arriba de la eclíptica)
             const z3D = -Math.sqrt(Math.max(0, MOON_DIST * MOON_DIST - x3D * x3D - y3D * y3D));
             const moonPos = new THREE.Vector3(x3D, y3D, z3D);
 
@@ -2635,7 +2635,8 @@
             const isAscending = (currentEclipse.saros % 2 === 0);
             const slope = (isAscending ? 1 : -1) * realSlope;
             const zMax = -Math.sqrt(Math.max(0, MOON_DIST * MOON_DIST - y3D * y3D));
-            const normOrbit = new THREE.Vector3(-zMax * slope, -zMax, y3D).normalize();
+            // Vector normal del plano orbital con pendiente dy/dx = +slope en el nodo ascendente
+            const normOrbit = new THREE.Vector3(zMax * slope, -zMax, y3D).normalize();
 
             // Base ortonormal en el plano orbital:
             const e1 = new THREE.Vector3(0, y3D, zMax).normalize();
@@ -2697,27 +2698,12 @@
                         return pts;
                     };
 
-                    // 1. Disco de Umbra (sección interior)
-                    const umbraDiscGeo = new THREE.CircleGeometry(rUmbra3D, 64);
-                    const umbraDiscMat = new THREE.MeshBasicMaterial({
-                        color: 0xef4444,
-                        transparent: true,
-                        opacity: 0.15,
-                        side: THREE.DoubleSide,
-                        depthWrite: false
-                    });
-                    const umbraDisc = new THREE.Mesh(umbraDiscGeo, umbraDiscMat);
-                    umbraDisc.position.set(0, 0, -MOON_DIST);
-                    umbraDisc.renderOrder = 3;
-                    umbraDisc.frustumCulled = false;
-                    eclipseLimitsGroup3D.add(umbraDisc);
-
-                    // Perímetro de Umbra
+                    // 1. Perímetro de Umbra (Línea sutil sin relleno chillón)
                     const umbraLineGeo = new THREE.BufferGeometry().setFromPoints(createCirclePoints(rUmbra3D));
                     const umbraLineMat = new THREE.LineBasicMaterial({
-                        color: 0xef4444,
+                        color: 0xc2410c,
                         transparent: true,
-                        opacity: 0.90,
+                        opacity: 0.85,
                         depthWrite: false
                     });
                     const umbraLine = new THREE.Line(umbraLineGeo, umbraLineMat);
@@ -2725,27 +2711,12 @@
                     umbraLine.frustumCulled = false;
                     eclipseLimitsGroup3D.add(umbraLine);
 
-                    // 2. Anillo de Penumbra (sección exterior)
-                    const penRingGeo = new THREE.RingGeometry(rUmbra3D, rPenumbra3D, 64);
-                    const penRingMat = new THREE.MeshBasicMaterial({
-                        color: 0x06b6d4,
-                        transparent: true,
-                        opacity: 0.08,
-                        side: THREE.DoubleSide,
-                        depthWrite: false
-                    });
-                    const penRing = new THREE.Mesh(penRingGeo, penRingMat);
-                    penRing.position.set(0, 0, -MOON_DIST);
-                    penRing.renderOrder = 2;
-                    penRing.frustumCulled = false;
-                    eclipseLimitsGroup3D.add(penRing);
-
-                    // Perímetro de Penumbra
+                    // 2. Perímetro de Penumbra (Línea celeste tenue)
                     const penLineGeo = new THREE.BufferGeometry().setFromPoints(createCirclePoints(rPenumbra3D));
                     const penLineMat = new THREE.LineBasicMaterial({
-                        color: 0x06b6d4,
+                        color: 0x38bdf8,
                         transparent: true,
-                        opacity: 0.80,
+                        opacity: 0.70,
                         depthWrite: false
                     });
                     const penLine = new THREE.Line(penLineGeo, penLineMat);
@@ -2762,7 +2733,7 @@
                     ];
                     const crossGeo = new THREE.BufferGeometry().setFromPoints(crossPts);
                     const crossMat = new THREE.LineBasicMaterial({
-                        color: 0x94a3b8,
+                        color: 0x64748b,
                         transparent: true,
                         opacity: 0.35,
                         depthWrite: false
@@ -2774,12 +2745,12 @@
 
                     // Rótulos de las secciones de sombra a la distancia lunar (si los rótulos están activados)
                     if (showLabels) {
-                        const umbraSectionSprite = createLimitSprite('Umbra', '#ef4444');
+                        const umbraSectionSprite = createLimitSprite('Umbra', '#c2410c');
                         umbraSectionSprite.scale.set(10, 2.5, 1);
                         umbraSectionSprite.position.set(0, rUmbra3D + 1.0, -MOON_DIST);
                         eclipseLimitsGroup3D.add(umbraSectionSprite);
 
-                        const penSectionSprite = createLimitSprite('Penumbra', '#06b6d4');
+                        const penSectionSprite = createLimitSprite('Penumbra', '#38bdf8');
                         penSectionSprite.scale.set(12, 3.0, 1);
                         penSectionSprite.position.set(0, rPenumbra3D + 1.2, -MOON_DIST);
                         eclipseLimitsGroup3D.add(penSectionSprite);
