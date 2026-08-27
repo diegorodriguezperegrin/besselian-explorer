@@ -833,9 +833,85 @@
                 left: auto;
                 max-height: calc(100vh - 30px);
             }
-            .telescope-hud {
-                max-width: calc(100vw - 40px);
-                top: 10px;
+        /* Indicador Flotante "EN VIVO" con LED y texto intermitente */
+        .live-indicator-badge {
+            position: absolute;
+            top: 20px;
+            right: 355px;
+            z-index: 24;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(15, 23, 42, 0.88);
+            backdrop-filter: blur(14px);
+            border: 1px solid rgba(239, 68, 68, 0.55);
+            padding: 6px 14px;
+            border-radius: 9999px;
+            box-shadow: 0 4px 20px rgba(239, 68, 68, 0.35);
+            pointer-events: none;
+            transition: right 0.25s ease, opacity 0.25s ease;
+        }
+
+        .live-indicator-badge.panel-collapsed {
+            right: 20px;
+        }
+
+        @keyframes pulseLed {
+            0% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.85);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.2);
+                box-shadow: 0 0 14px 5px rgba(239, 68, 68, 0.65);
+                opacity: 0.85;
+            }
+            100% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes pulseText {
+            0%, 100% {
+                opacity: 1;
+                text-shadow: 0 0 10px rgba(239, 68, 68, 0.8);
+            }
+            50% {
+                opacity: 0.35;
+                text-shadow: none;
+            }
+        }
+
+        .live-led {
+            width: 10px;
+            height: 10px;
+            background-color: #ef4444;
+            border-radius: 50%;
+            display: inline-block;
+            animation: pulseLed 1.2s infinite ease-in-out;
+        }
+
+        .live-text {
+            color: #ef4444;
+            font-size: 0.78rem;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            animation: pulseText 1.2s infinite ease-in-out;
+            font-family: inherit;
+        }
+
+        @media (max-width: 768px) {
+            .live-indicator-badge {
+                top: 12px;
+                right: 12px !important;
+                padding: 4px 10px;
+            }
+            .live-text {
+                font-size: 0.70rem;
             }
         }
     </style>
@@ -861,6 +937,12 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- Indicador Flotante "EN VIVO" con LED y texto rojo intermitente -->
+    <div id="live-indicator-badge" class="live-indicator-badge" style="display: none;">
+        <span class="live-led"></span>
+        <span class="live-text">En vivo</span>
     </div>
 
     <!-- Botones Flotantes para Reabrir Paneles cuando están colapsados -->
@@ -2946,11 +3028,28 @@
             updateTelescopeHUD(horizCoords);
         }
 
+        function updateLiveBadgeState() {
+            const badge = document.getElementById('live-indicator-badge');
+            if (!badge) return;
+            if (isLiveMode) {
+                badge.style.display = 'flex';
+                const panel = document.getElementById('settings-panel');
+                if (panel && panel.classList.contains('collapsed')) {
+                    badge.classList.add('panel-collapsed');
+                } else {
+                    badge.classList.remove('panel-collapsed');
+                }
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
         function onScrubTimeline(val) {
             if (isLiveMode) {
                 isLiveMode = false;
                 const sel = document.getElementById('sim-speed-select');
                 if (sel && sel.value === 'live') sel.value = '60';
+                updateLiveBadgeState();
             }
             const frac = val / 1000;
             simCurrentTimeMs = simStartTimeMs + frac * (simEndTimeMs - simStartTimeMs);
@@ -2964,6 +3063,7 @@
                 isPlaying = false;
                 const sel = document.getElementById('sim-speed-select');
                 if (sel && sel.value === 'live') sel.value = '60';
+                updateLiveBadgeState();
             } else {
                 isPlaying = !isPlaying;
             }
@@ -2975,6 +3075,7 @@
                 isLiveMode = false;
                 const sel = document.getElementById('sim-speed-select');
                 if (sel && sel.value === 'live') sel.value = '60';
+                updateLiveBadgeState();
             }
             simCurrentTimeMs = Math.max(simStartTimeMs, Math.min(simEndTimeMs, simCurrentTimeMs + deltaMs));
             updateTimeUI();
@@ -2990,6 +3091,7 @@
                 isLiveMode = false;
                 simSpeedMultiplier = parseFloat(speed);
             }
+            updateLiveBadgeState();
         }
 
         function jumpToContact(contactKey) {
@@ -2998,6 +3100,7 @@
                 isLiveMode = false;
                 const sel = document.getElementById('sim-speed-select');
                 if (sel && sel.value === 'live') sel.value = '60';
+                updateLiveBadgeState();
             }
             const ec = currentEclipse;
             let targetMs = ec.maxMs;
@@ -3101,12 +3204,15 @@
         function toggleSettingsPanel(show) {
             const panel = document.getElementById('settings-panel');
             const reopenBtn = document.getElementById('btn-reopen-right');
+            const badge = document.getElementById('live-indicator-badge');
             if (show) {
                 panel.classList.remove('collapsed');
                 reopenBtn.style.display = 'none';
+                if (badge) badge.classList.remove('panel-collapsed');
             } else {
                 panel.classList.add('collapsed');
                 reopenBtn.style.display = 'flex';
+                if (badge) badge.classList.add('panel-collapsed');
             }
         }
 
