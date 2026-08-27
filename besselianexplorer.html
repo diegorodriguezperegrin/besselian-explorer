@@ -1150,16 +1150,34 @@
 
         // 🌑 Luna 3D con Textura Equirrectangular NASA LRO
         let moonMesh3D;
-        const moonGeo = new THREE.SphereGeometry(MOON_RADIUS, 48, 48);
+        const moonGeo = new THREE.SphereGeometry(MOON_RADIUS, 64, 64);
         const moonMat = new THREE.MeshPhongMaterial({
-            color: 0xe2e8f0,
-            shininess: 8
+            color: 0xffffff,
+            shininess: 6,
+            emissive: new THREE.Color(0x333842) // Luz cenicienta física (Earthshine) para apreciar cráteres y mares
         });
-        new THREE.TextureLoader().load('moon_topo_2048.jpg', function(texture) {
-            texture.needsUpdate = true;
-            moonMat.map = texture;
-            moonMat.needsUpdate = true;
-        });
+
+        const moonTexLoader = new THREE.TextureLoader();
+        const MOON_TEX_LOCAL = 'moon_topo_2048.jpg';
+        const MOON_TEX_CDN = 'https://cdn.jsdelivr.net/gh/diegorodriguezperegrin/besselian-explorer@main/moon_topo_2048.jpg';
+
+        moonTexLoader.load(MOON_TEX_LOCAL,
+            function(texture) {
+                texture.needsUpdate = true;
+                moonMat.map = texture;
+                moonMat.needsUpdate = true;
+            },
+            undefined,
+            function() {
+                // Fallback automático si se ejecuta vía file:// y CORS bloquea el archivo local
+                moonTexLoader.load(MOON_TEX_CDN, function(texture) {
+                    texture.needsUpdate = true;
+                    moonMat.map = texture;
+                    moonMat.needsUpdate = true;
+                });
+            }
+        );
+
         moonMesh3D = new THREE.Mesh(moonGeo, moonMat);
         scene.add(moonMesh3D);
 
@@ -1190,8 +1208,8 @@
             varying vec2 vUv;
 
             void main() {
-                // Difuminado suave longitudinal (entre la Luna en vUv.y=1.0 y la Tierra en vUv.y=0.0)
-                float topFade = smoothstep(0.0, 0.15, vUv.y);
+                // Difuminado longitudinal suave: opacidad cero antes de alcanzar la superficie terrestre (vUv.y <= 0.12)
+                float topFade = smoothstep(0.12, 0.45, vUv.y);
                 float bottomFade = smoothstep(1.0, 0.85, vUv.y);
                 
                 // Difuminado transversal suave en los bordes de la silueta cónica (efecto Rim)
@@ -1199,7 +1217,8 @@
                 float rim = abs(dot(vNormal, viewDir));
                 float rimFade = smoothstep(0.04, 0.50, rim);
 
-                float alpha = uMaxOpacity * topFade * bottomFade * (0.40 + 0.60 * rimFade);
+                float alpha = uMaxOpacity * topFade * bottomFade * (0.35 + 0.65 * rimFade);
+                if (alpha <= 0.005) discard;
                 gl_FragColor = vec4(uColor, alpha);
             }
         `;
