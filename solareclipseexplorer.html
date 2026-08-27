@@ -882,10 +882,6 @@
         </div>
         <div class="panel-section" style="display: flex; flex-direction: column; gap: 0.45rem; background: rgba(255,255,255,0.03); padding: 0.5rem 0.65rem; border-radius: 12px; border: 1px solid var(--border-color);">
             <label class="checkbox-row">
-                <input type="checkbox" id="chk-show-space-bodies" checked>
-                <span>Sol y Luna 3D en el espacio</span>
-            </label>
-            <label class="checkbox-row">
                 <input type="checkbox" id="chk-show-space-cones" checked>
                 <span>Conos de sombra</span>
             </label>
@@ -3024,13 +3020,9 @@
 
             // 3. Posicionar Sol 3D con Corona Radiante
             if (sunGroup3D) {
-                const showSpaceBodies = document.getElementById('chk-show-space-bodies')?.checked ?? true;
-                sunGroup3D.visible = showSpaceBodies;
-                if (showSpaceBodies) {
-                    const sunPos = wLocal.clone().multiplyScalar(SUN_DIST);
-                    sunGroup3D.position.copy(sunPos);
-                    sunGroup3D.lookAt(0, 0, 0);
-                }
+                const sunPos = wLocal.clone().multiplyScalar(SUN_DIST);
+                sunGroup3D.position.copy(sunPos);
+                sunGroup3D.lookAt(0, 0, 0);
             }
 
             // 3b. Orientar Plano Eclíptico 3D
@@ -3058,13 +3050,9 @@
                 .addScaledVector(wLocal, zVal);
 
             if (moonMesh3D) {
-                const showSpaceBodies = document.getElementById('chk-show-space-bodies')?.checked ?? true;
-                moonMesh3D.visible = showSpaceBodies;
-                if (showSpaceBodies) {
-                    moonMesh3D.position.copy(moonPos);
-                    moonMesh3D.lookAt(0, 0, 0);
-                    moonMesh3D.rotateY(-Math.PI / 2);
-                }
+                moonMesh3D.position.copy(moonPos);
+                moonMesh3D.lookAt(0, 0, 0);
+                moonMesh3D.rotateY(-Math.PI / 2);
             }
 
             // 4b. Actualizar Órbita Lunar 3D con inclinación física exacta de 5.145° respecto al plano de la Eclíptica
@@ -3182,12 +3170,6 @@
                 const maxLng = currentEclipse.lng_dd_ge || 0;
                 recenterEarth(maxLat, maxLng);
             }
-        });
-
-        document.getElementById('chk-show-space-bodies')?.addEventListener('change', (e) => {
-            const vis = e.target.checked;
-            if (sunGroup3D) sunGroup3D.visible = vis;
-            if (moonMesh3D) moonMesh3D.visible = vis;
         });
 
         document.getElementById('chk-show-space-cones')?.addEventListener('change', (e) => {
