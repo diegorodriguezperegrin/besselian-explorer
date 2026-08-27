@@ -853,7 +853,7 @@
             top: 20px;
             right: 355px;
             z-index: 24;
-            display: flex;
+            display: none !important;
             align-items: center;
             gap: 8px;
             background: rgba(15, 23, 42, 0.92);
@@ -864,6 +864,10 @@
             box-shadow: 0 4px 20px rgba(239, 68, 68, 0.35);
             pointer-events: none;
             transition: right 0.25s ease, opacity 0.25s ease;
+        }
+
+        .live-indicator-badge.active {
+            display: flex !important;
             animation: blinkLiveBadge 1.0s infinite;
         }
 
@@ -3045,7 +3049,7 @@
             const now = Date.now();
             const isActuallyLive = isLiveMode && (now >= simStartTimeMs && now <= simEndTimeMs);
             if (isActuallyLive) {
-                badge.style.display = 'flex';
+                badge.classList.add('active');
                 const panel = document.getElementById('settings-panel');
                 if (panel && panel.classList.contains('collapsed')) {
                     badge.classList.add('panel-collapsed');
@@ -3053,7 +3057,7 @@
                     badge.classList.remove('panel-collapsed');
                 }
             } else {
-                badge.style.display = 'none';
+                badge.classList.remove('active');
             }
         }
 
@@ -3098,8 +3102,19 @@
         function setSimSpeed(speed) {
             if (speed === 'live') {
                 isLiveMode = true;
-                isPlaying = true;
-                document.getElementById('btn-play-pause').innerHTML = '<i class="fa-solid fa-pause"></i>';
+                const now = Date.now();
+                if (now < simStartTimeMs) {
+                    simCurrentTimeMs = simStartTimeMs;
+                    isPlaying = false;
+                } else if (now > simEndTimeMs) {
+                    simCurrentTimeMs = simEndTimeMs;
+                    isPlaying = false;
+                } else {
+                    simCurrentTimeMs = now;
+                    isPlaying = true;
+                }
+                document.getElementById('btn-play-pause').innerHTML = isPlaying ? '<i class="fa-solid fa-pause"></i>' : '<i class="fa-solid fa-play"></i>';
+                updateTimeUI();
             } else {
                 isLiveMode = false;
                 simSpeedMultiplier = parseFloat(speed);
