@@ -1605,9 +1605,15 @@
             const ec = currentEclipse;
             const dtHours = (tMs - ec.maxMs) / 3600000;
             
+            // Radios físicos exactos de la Umbra y Penumbra a la distancia orbital media de la Luna (384.400 km)
+            const umbraLength = SUN_DIST * (EARTH_RADIUS / (SUN_RADIUS - EARTH_RADIUS));
+            const rUmbraKm = EARTH_RADIUS * (1.0 - MOON_DIST / umbraLength);             // 4.598 km
+            const rPenumbraKm = EARTH_RADIUS + ((SUN_RADIUS + EARTH_RADIUS) / SUN_DIST) * MOON_DIST; // 8.177 km
+
+            // Proporciones adimensionales exactas respecto al radio lunar (1.737,4 km)
             const rMoon = 1.0;
-            const rUmbra = 2.70;
-            const rPenumbra = 4.65;
+            const rUmbra = rUmbraKm / MOON_RADIUS;         // 2.64653
+            const rPenumbra = rPenumbraKm / MOON_RADIUS;   // 4.70626
 
             // Distancia mínima exacta al centro de la sombra en el instante de Máximo (definición canónica de la NASA)
             let dMin;
@@ -1643,7 +1649,7 @@
             const y = yMax;
             const dist = Math.sqrt(x * x + y * y);
 
-            return { x, y, dist, rMoon, rUmbra, rPenumbra };
+            return { x, y, dist, rMoon, rUmbra, rPenumbra, rUmbraKm, rPenumbraKm };
         }
 
         function renderTelescopicView() {
@@ -2455,7 +2461,11 @@
                 }
             `;
 
-            // Cono de Umbra Terrestre a Escala Física Real: convergiendo en z = -1.381,4 unidades (1.381.400 km)
+            // Grupo general de Conos y Secciones de Sombra Terrestre 3D
+            shadowConesGroup3D = new THREE.Group();
+            scene3D.add(shadowConesGroup3D);
+
+            // Cono de Umbra Terrestre 3D a Escala Física Real (Rojo Umbral Terracota, convergente a z = -1.381,4 km)
             const umbraLength = SUN_DIST * (EARTH_RADIUS / (SUN_RADIUS - EARTH_RADIUS)); // ~1381.4
             const umbraGeo = new THREE.CylinderGeometry(EARTH_RADIUS, 0, umbraLength, 128, 1, true);
             umbraGeo.rotateX(Math.PI / 2);
@@ -2464,8 +2474,8 @@
                 depthWrite: false,
                 side: THREE.DoubleSide,
                 uniforms: {
-                    uColor: { value: new THREE.Color(0x0a101d) }, // Tono oscuro y profundo de sombra espacial
-                    uMaxOpacity: { value: 0.60 },
+                    uColor: { value: new THREE.Color(0x991b1b) }, // Tono rojo cobrizo umbral idéntico a la vista telescópica
+                    uMaxOpacity: { value: 0.45 },
                     uNearFadeStart: { value: 0.0 },
                     uNearFadeEnd: { value: -15.0 },
                     uFarFadeStart: { value: -500.0 },
@@ -2476,10 +2486,10 @@
             });
             umbraConeMesh3D = new THREE.Mesh(umbraGeo, umbraMat);
             umbraConeMesh3D.position.set(0, 0, -umbraLength / 2);
-            umbraConeMesh3D.renderOrder = 2; // Asegura que el cono interno siempre se dibuje
-            scene3D.add(umbraConeMesh3D);
+            umbraConeMesh3D.renderOrder = 2;
+            shadowConesGroup3D.add(umbraConeMesh3D);
 
-            // Cono de Penumbra Terrestre a Escala Física Real (cono divergente)
+            // Cono de Penumbra Terrestre 3D a Escala Física Real (Azul translúcido suave)
             const penLength = 800.0;
             const penEndRadius = EARTH_RADIUS + ((SUN_RADIUS + EARTH_RADIUS) / SUN_DIST) * penLength; // ~10.12
             const penGeo = new THREE.CylinderGeometry(EARTH_RADIUS, penEndRadius, penLength, 128, 1, true);
@@ -2489,8 +2499,8 @@
                 depthWrite: false,
                 side: THREE.DoubleSide,
                 uniforms: {
-                    uColor: { value: new THREE.Color(0x1e293b) }, // Tono de semisombra tenue
-                    uMaxOpacity: { value: 0.25 },
+                    uColor: { value: new THREE.Color(0x1e293b) }, // Tono azulado de semisombra
+                    uMaxOpacity: { value: 0.20 },
                     uNearFadeStart: { value: 0.0 },
                     uNearFadeEnd: { value: -15.0 },
                     uFarFadeStart: { value: -500.0 },
@@ -2502,7 +2512,25 @@
             penumbraConeMesh3D = new THREE.Mesh(penGeo, penMat);
             penumbraConeMesh3D.position.set(0, 0, -penLength / 2);
             penumbraConeMesh3D.renderOrder = 1;
-            scene3D.add(penumbraConeMesh3D);
+            shadowConesGroup3D.add(penumbraConeMesh3D);
+
+            // Anillos de Sección Transversal a la Distancia Orbital de la Luna (z = -384.4 km)
+            const rUmbraSection = EARTH_RADIUS * (1.0 - MOON_DIST / umbraLength);             // 4.598 km
+            const rPenumbraSection = EARTH_RADIUS + ((SUN_RADIUS + EARTH_RADIUS) / SUN_DIST) * MOON_DIST; // 8.177 km
+
+            const umbraSectionGeo = new THREE.RingGeometry(rUmbraSection - 0.04, rUmbraSection + 0.04, 128);
+            const umbraSectionMat = new THREE.MeshBasicMaterial({ color: 0xef4444, side: THREE.DoubleSide, transparent: true, opacity: 0.85 });
+            const umbraSectionMesh = new THREE.Mesh(umbraSectionGeo, umbraSectionMat);
+            umbraSectionMesh.position.set(0, 0, -MOON_DIST);
+            umbraSectionMesh.renderOrder = 4;
+            shadowConesGroup3D.add(umbraSectionMesh);
+
+            const penSectionGeo = new THREE.RingGeometry(rPenumbraSection - 0.04, rPenumbraSection + 0.04, 128);
+            const penSectionMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, side: THREE.DoubleSide, transparent: true, opacity: 0.70 });
+            const penSectionMesh = new THREE.Mesh(penSectionGeo, penSectionMat);
+            penSectionMesh.position.set(0, 0, -MOON_DIST);
+            penSectionMesh.renderOrder = 3;
+            shadowConesGroup3D.add(penSectionMesh);
 
             // Luna 3D con Textura Equirrectangular Oficial NASA LRO (2048x1024)
             const moonGeo = new THREE.SphereGeometry(MOON_RADIUS, 64, 64);
@@ -2898,8 +2926,7 @@
         }
 
         function toggle3DCones(show) {
-            if (umbraConeMesh3D) umbraConeMesh3D.visible = show;
-            if (penumbraConeMesh3D) penumbraConeMesh3D.visible = show;
+            if (shadowConesGroup3D) shadowConesGroup3D.visible = show;
             if (renderer3D && scene3D && camera3D) {
                 renderer3D.render(scene3D, camera3D);
             }
