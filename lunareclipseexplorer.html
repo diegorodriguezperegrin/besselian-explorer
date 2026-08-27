@@ -2619,9 +2619,9 @@
 
             // Coordenadas 3D canónicas del eclipse en el sistema de referencia físico Tierra-Sol-Sombra:
             // - El eje Z (-Z) es el eje central de la sombra terrestre (línea Sol-Tierra-Sombra).
-            // - El eje X es el movimiento orbital lunar transversal de Oeste (-X) a Este (+X).
+            // - El eje X es el movimiento orbital lunar transversal antihorario (de +X a -X en la sombra).
             // - El eje Y es el parámetro de impacto Gamma (Norte +Y / Sur -Y celeste).
-            const x3D = -geo.x * MOON_RADIUS; // -geo.x: P1 (inicio) a la izquierda (-X) y P4 (fin) a la derecha (+X)
+            const x3D = geo.x * MOON_RADIUS; // En P1 (inicio) a la derecha (+X) y en P4 (fin) a la izquierda (-X)
             const y3D = (currentEclipse.gamma >= 0 ? 1 : -1) * Math.abs(geo.y) * MOON_RADIUS; // Gamma > 0 es Norte (+Y, arriba de la eclíptica)
             const z3D = -Math.sqrt(Math.max(0, MOON_DIST * MOON_DIST - x3D * x3D - y3D * y3D));
             const moonPos = new THREE.Vector3(x3D, y3D, z3D);
@@ -2633,15 +2633,17 @@
             // Inclinación física astronómica pura del plano orbital lunar (i = 5.145°) respecto a la Eclíptica
             const realSlope = Math.tan(5.145 * RAD);
             const isAscending = (currentEclipse.saros % 2 === 0);
-            const slope = (isAscending ? 1 : -1) * realSlope;
+            // En sentido orbital antihorario (de derecha a izquierda a través de la sombra en -Z):
+            // al avanzar de +X a -X la Luna asciende del Nodo en Y=0 hacia el Norte (+Y > 0)
+            const slope = (isAscending ? -1 : 1) * realSlope;
             const zMax = -Math.sqrt(Math.max(0, MOON_DIST * MOON_DIST - y3D * y3D));
-            // Vector normal del plano orbital con pendiente dy/dx = +slope en el nodo ascendente
+            // Vector normal del plano orbital con pendiente dy/dx = slope
             const normOrbit = new THREE.Vector3(zMax * slope, -zMax, y3D).normalize();
 
             // Base ortonormal en el plano orbital:
             const e1 = new THREE.Vector3(0, y3D, zMax).normalize();
             const e2 = new THREE.Vector3().crossVectors(normOrbit, e1).normalize();
-            if (e2.x < 0) e2.negate(); // Sentido orbital de Oeste a Este (+X)
+            if (e2.x > 0) e2.negate(); // Sentido orbital de traslación hacia -X (antihorario)
 
             // Actualizar trayectoria orbital 3D alrededor de la Tierra pasando EXACTAMENTE por la Luna
             if (moonOrbitLine3D) {
@@ -2756,9 +2758,9 @@
                         eclipseLimitsGroup3D.add(penSectionSprite);
                     }
 
-                    // Vector unitario tangente a la órbita (+X / sentido de traslación lunar)
+                    // Vector unitario tangente a la órbita (sentido de traslación lunar hacia -X)
                     const uTangent = new THREE.Vector3().crossVectors(normOrbit, uNode).normalize();
-                    if (uTangent.x < 0) uTangent.negate();
+                    if (uTangent.x > 0) uTangent.negate();
 
                     const denom = MOON_DIST * Math.sin(5.145 * RAD);
                     const limTotalDeg = Math.asin(Math.max(0, rUmbra3D - MOON_RADIUS) / denom) * DEG;     // ~4.8°
