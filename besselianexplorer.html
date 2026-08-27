@@ -1514,13 +1514,8 @@
                     }
                     console.log(`Catálogo cargado: ${eclipseData.length} eclipses.`);
                     const defaultCat = 9568; // 2 de Agosto de 2027
-                    const found2027 = eclipseData.find(e => e.cat_no === defaultCat);
                     const targetYear = parseInt(yearInput?.value) || 2027;
-                    filterEclipsesByYear(targetYear);
-                    if (found2027 && targetYear === 2027) {
-                        selectEclipse(found2027, false);
-                        if (eclipseSelect) eclipseSelect.value = 9568;
-                    }
+                    filterEclipsesByYear(targetYear, defaultCat, false);
                 },
                 error: function(err) {
                     console.error("Error al procesar CSV:", err);
@@ -1627,11 +1622,13 @@
             });
         }
 
-        function filterEclipsesByYear(targetYear) {
+        function filterEclipsesByYear(targetYear, defaultCatNo = null, autoRecenter = true) {
             const matches = eclipseData.filter(e => e.year === targetYear);
             if (matches.length > 0) {
                 populateSelect(matches);
-                selectEclipse(matches[0], true);
+                const toSelect = (defaultCatNo ? matches.find(e => e.cat_no === defaultCatNo) : null) || matches[0];
+                selectEclipse(toSelect, autoRecenter);
+                if (eclipseSelect) eclipseSelect.value = toSelect.cat_no;
             } else {
                 eclipseSelect.innerHTML = `<option value="">Sin eclipses en ${targetYear}</option>`;
             }
@@ -1778,9 +1775,7 @@
                         setSearchMode('year');
                     }
                     if (yearInput) yearInput.value = found.year;
-                    filterEclipsesByYear(found.year);
-                    selectEclipse(found, true);
-                    if (eclipseSelect) eclipseSelect.value = catNo;
+                    filterEclipsesByYear(found.year, found.cat_no, true);
                 }
             });
         });
