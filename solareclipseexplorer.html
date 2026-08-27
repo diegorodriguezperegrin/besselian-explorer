@@ -938,7 +938,8 @@
         const scene = new THREE.Scene();
 
         const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(0, 0, 210);
+        // Orientar inicialmente la cámara hacia la cara diurna iluminada del eclipse por defecto (2 Ago 2027: 25.5°N, 33.2°E)
+        camera.position.copy(latLngToVector3(25.52, 33.24, 210));
 
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
@@ -1283,7 +1284,7 @@
                     const targetYear = parseInt(yearInput?.value) || 2027;
                     filterEclipsesByYear(targetYear);
                     if (found2027 && targetYear === 2027) {
-                        selectEclipse(found2027);
+                        selectEclipse(found2027, true);
                         if (eclipseSelect) eclipseSelect.value = 9568;
                     }
                 },
@@ -2757,7 +2758,7 @@
         // Inicializar selección por defecto: 2 de Agosto de 2027
         populateSelect(PRESET_ECLIPSES);
         const defaultPreset = PRESET_ECLIPSES.find(e => e.cat_no === 9568) || PRESET_ECLIPSES[1];
-        selectEclipse(defaultPreset);
+        selectEclipse(defaultPreset, true);
         eclipseSelect.value = 9568;
 
         // -------------------------------------------------------------
