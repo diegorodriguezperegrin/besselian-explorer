@@ -2614,35 +2614,56 @@
 
         function updateMoonOrbit(eclipse) {
             if (!moonOrbitLine3D || !eclipse) return;
-            const points = [];
-            const minT = eclipse.tmin != null ? eclipse.tmin : -2.5;
-            const maxT = eclipse.tmax != null ? eclipse.tmax : 2.5;
-            const steps = 120;
-            const dt = (maxT - minT) / steps;
 
-            for (let i = 0; i <= steps; i++) {
-                const t = minT + i * dt;
-                const x = (eclipse.x0 || 0) + (eclipse.x1 || 0)*t + (eclipse.x2 || 0)*t*t + (eclipse.x3 || 0)*t*t*t;
-                const y = (eclipse.y0 || 0) + (eclipse.y1 || 0)*t + (eclipse.y2 || 0)*t*t + (eclipse.y3 || 0)*t*t*t;
-                const dDeg = (eclipse.d0 || 0) + (eclipse.d1 || 0)*t;
-                let muDeg = (eclipse.mu0 || 0) + (eclipse.mu1 || 0)*t;
-                if (eclipse.dt) {
-                    muDeg -= 1.0027379 * (eclipse.dt / 240);
-                }
-                const wLocal = latLngToVector3(dDeg, -muDeg, 1.0).normalize();
-                const muRad = -muDeg * Math.PI / 180;
-                const uLocal = new THREE.Vector3(-Math.sin(muRad), 0, -Math.cos(muRad)).normalize();
-                const vLocal = new THREE.Vector3().crossVectors(wLocal, uLocal).normalize();
+            // Coordenadas besselianas y orientación en el centro del eclipse (t = 0)
+            const x0 = (eclipse.x0 || 0);
+            const y0 = (eclipse.y0 || 0);
+            const x1 = (eclipse.x1 || 0.54);
+            const y1 = (eclipse.y1 || -0.20);
+            const dDeg = (eclipse.d0 || 0);
+            let muDeg = (eclipse.mu0 || 0);
+            if (eclipse.dt) {
+                muDeg -= 1.0027379 * (eclipse.dt / 240);
+            }
 
+            const wLocal = latLngToVector3(dDeg, -muDeg, 1.0).normalize();
+            const muRad = -muDeg * Math.PI / 180;
+            const uLocal = new THREE.Vector3(-Math.sin(muRad), 0, -Math.cos(muRad)).normalize();
+            const vLocal = new THREE.Vector3().crossVectors(wLocal, uLocal).normalize();
+
+            // Posición geocéntrica de la Luna en el máximo eclipse
+            const rMoonCenter = new THREE.Vector3()
+                .addScaledVector(uLocal, x0 * EARTH_RADIUS)
+                .addScaledVector(vLocal, y0 * EARTH_RADIUS)
+                .addScaledVector(wLocal, MOON_DIST);
+
+            // Vector de velocidad orbital transversal (hacia el este)
+            const vOrb = new THREE.Vector3()
+                .addScaledVector(uLocal, x1 * EARTH_RADIUS)
+                .addScaledVector(vLocal, y1 * EARTH_RADIUS);
+
+            // Base ortonormal estricta del plano orbital lunar 3D
+            const e1 = rMoonCenter.clone().normalize();
+            let normOrbit = new THREE.Vector3().crossVectors(e1, vOrb).normalize();
+            if (normOrbit.lengthSq() < 0.001) {
+                normOrbit = new THREE.Vector3(0, 1, 0);
+            }
+            const e2 = new THREE.Vector3().crossVectors(normOrbit, e1).normalize();
+
+            // Generar la órbita completa cerrada de 360° alrededor de la Tierra
+            const pts = [];
+            const segments = 180;
+            for (let i = 0; i <= segments; i++) {
+                const theta = (i / segments) * Math.PI * 2;
                 const pos = new THREE.Vector3()
-                    .addScaledVector(uLocal, x * EARTH_RADIUS)
-                    .addScaledVector(vLocal, y * EARTH_RADIUS)
-                    .addScaledVector(wLocal, MOON_DIST);
-                points.push(pos);
+                    .addScaledVector(e1, MOON_DIST * Math.cos(theta))
+                    .addScaledVector(e2, MOON_DIST * Math.sin(theta));
+                pts.push(pos);
             }
 
             moonOrbitLine3D.geometry.dispose();
-            moonOrbitLine3D.geometry = new THREE.BufferGeometry().setFromPoints(points);
+            moonOrbitLine3D.geometry = new THREE.BufferGeometry().setFromPoints(pts);
+            moonOrbitLine3D.geometry.computeBoundingSphere();
         }
 
         function drawShadowPath(eclipse) {
