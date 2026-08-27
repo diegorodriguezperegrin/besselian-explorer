@@ -1165,25 +1165,72 @@
 
         // 🔦 Conos Volumétricos de Sombra 3D (Umbra y Penumbra)
         let umbraConeMesh3D, penumbraConeMesh3D;
+
+        // Shaders de Difuminado Volumétrico Suave estilo Lunar Eclipse Explorer
+        const coneVertexShader = `
+            precision highp float;
+            varying vec3 vWorldPos;
+            varying vec3 vNormal;
+            varying vec2 vUv;
+            void main() {
+                vUv = uv;
+                vNormal = normalize(normalMatrix * normal);
+                vec4 worldPos = modelMatrix * vec4(position, 1.0);
+                vWorldPos = worldPos.xyz;
+                gl_Position = projectionMatrix * viewMatrix * worldPos;
+            }
+        `;
+
+        const coneFragmentShader = `
+            precision highp float;
+            uniform vec3 uColor;
+            uniform float uMaxOpacity;
+            varying vec3 vWorldPos;
+            varying vec3 vNormal;
+            varying vec2 vUv;
+
+            void main() {
+                // Difuminado suave longitudinal (entre la Luna en vUv.y=1.0 y la Tierra en vUv.y=0.0)
+                float topFade = smoothstep(0.0, 0.15, vUv.y);
+                float bottomFade = smoothstep(1.0, 0.85, vUv.y);
+                
+                // Difuminado transversal suave en los bordes de la silueta cónica (efecto Rim)
+                vec3 viewDir = normalize(cameraPosition - vWorldPos);
+                float rim = abs(dot(vNormal, viewDir));
+                float rimFade = smoothstep(0.04, 0.50, rim);
+
+                float alpha = uMaxOpacity * topFade * bottomFade * (0.40 + 0.60 * rimFade);
+                gl_FragColor = vec4(uColor, alpha);
+            }
+        `;
+
         const umbraConeGeo = new THREE.CylinderGeometry(MOON_RADIUS, 2.0, MOON_DIST, 48, 1, true);
-        const umbraConeMat = new THREE.MeshBasicMaterial({
-            color: 0x0f172a,
+        const umbraConeMat = new THREE.ShaderMaterial({
             transparent: true,
-            opacity: 0.55,
+            depthWrite: false,
             side: THREE.DoubleSide,
-            depthWrite: false
+            uniforms: {
+                uColor: { value: new THREE.Color(0x0a101d) },
+                uMaxOpacity: { value: 0.60 }
+            },
+            vertexShader: coneVertexShader,
+            fragmentShader: coneFragmentShader
         });
         umbraConeMesh3D = new THREE.Mesh(umbraConeGeo, umbraConeMat);
         umbraConeMesh3D.renderOrder = 2;
         scene.add(umbraConeMesh3D);
 
         const penumbraConeGeo = new THREE.CylinderGeometry(MOON_RADIUS, 28.0, MOON_DIST, 48, 1, true);
-        const penumbraConeMat = new THREE.MeshBasicMaterial({
-            color: 0x1e293b,
+        const penumbraConeMat = new THREE.ShaderMaterial({
             transparent: true,
-            opacity: 0.20,
+            depthWrite: false,
             side: THREE.DoubleSide,
-            depthWrite: false
+            uniforms: {
+                uColor: { value: new THREE.Color(0x1e293b) },
+                uMaxOpacity: { value: 0.22 }
+            },
+            vertexShader: coneVertexShader,
+            fragmentShader: coneFragmentShader
         });
         penumbraConeMesh3D = new THREE.Mesh(penumbraConeGeo, penumbraConeMat);
         penumbraConeMesh3D.renderOrder = 1;
@@ -1393,18 +1440,26 @@
                         discard; // Fuera de la penumbra
                     }
 
-                    // 3. Penumbra oscura diurna
-                    float normDist = dist / uL1;
+                    // 3. Gradiente penumbral físico difuso continuo
+                    float normDist = clamp((dist - uL2) / max(0.0001, uL1 - uL2), 0.0, 1.0);
                     float factor = 1.0 - normDist;
-                    float alpha = factor * 0.90;
-                    vec3 col = vec3(0.01, 0.02, 0.05);
+                    // Atenuación suave difusa
+                    float penAlpha = pow(factor, 1.35) * 0.88;
+                    vec3 penCol = vec3(0.02, 0.04, 0.09);
 
                     // 4. Núcleo negro de totalidad / anularidad (Umbra)
+                    float alpha = 0.0;
+                    vec3 col = penCol;
+
                     if (dist <= uL2) {
-                        alpha = 0.98;
+                        float umbFactor = clamp(1.0 - (dist / max(0.0001, uL2)), 0.0, 1.0);
+                        alpha = mix(0.88, 0.98, smoothstep(0.0, 0.25, umbFactor));
                         col = vec3(0.0, 0.0, 0.0);
-                    } else if (uShowPenumbra < 0.5) {
-                        discard; // Si está desactivado el gradiente penumbral, ocultar penumbra y mantener umbra
+                    } else if (uShowPenumbra > 0.5) {
+                        alpha = penAlpha;
+                        col = penCol;
+                    } else {
+                        discard;
                     }
 
                     gl_FragColor = vec4(col, alpha);
