@@ -3018,19 +3018,23 @@
 
         function updateLiveBadgeState() {
             const badge = document.getElementById('live-indicator-badge');
-            if (!badge) return;
+            const playBtn = document.getElementById('btn-play-pause');
             const now = Date.now();
             const isActuallyLive = isLiveMode && (now >= simStartTimeMs && now <= simEndTimeMs);
             if (isActuallyLive) {
-                badge.classList.add('active');
-                const panel = document.getElementById('settings-panel');
-                if (panel && panel.classList.contains('collapsed')) {
-                    badge.classList.add('panel-collapsed');
-                } else {
-                    badge.classList.remove('panel-collapsed');
+                if (badge) {
+                    badge.classList.add('active');
+                    const panel = document.getElementById('settings-panel');
+                    if (panel && panel.classList.contains('collapsed')) {
+                        badge.classList.add('panel-collapsed');
+                    } else {
+                        badge.classList.remove('panel-collapsed');
+                    }
                 }
+                if (playBtn) playBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
             } else {
-                badge.classList.remove('active');
+                if (badge) badge.classList.remove('active');
+                if (isLiveMode && playBtn) playBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
             }
         }
 
