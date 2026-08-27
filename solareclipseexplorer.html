@@ -953,7 +953,7 @@
         const container = document.getElementById('webgl-container');
         const scene = new THREE.Scene();
 
-        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1.0, 100000);
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1.0, 5000000);
         // Orientar inicialmente la cámara hacia la cara diurna iluminada del eclipse por defecto (2 Ago 2027: 25.5°N, 33.2°E)
         camera.position.copy(latLngToVector3(25.52, 33.24, 210));
 
@@ -988,7 +988,7 @@
             controls.dampingFactor = 0.05;
             controls.rotateSpeed = 0.8;
             controls.minDistance = 2.0;
-            controls.maxDistance = 50000;
+            controls.maxDistance = 2500000;
             controls.enablePan = true;
             controls.screenSpacePanning = true;
             controls.panSpeed = 1.2;
@@ -1087,10 +1087,22 @@
                 distToEarthRay = closestEarth.distanceTo(new THREE.Vector3(0, 0, 0));
             }
 
+            // 3. Distancia del rayo al Sol
+            let distToSunRay = Infinity;
+            if (sunGroup3D && sunGroup3D.visible) {
+                const vSun = sunGroup3D.position.clone().sub(rayOrigin);
+                const projSun = vSun.dot(rayDir);
+                if (projSun > 0) {
+                    const closestSun = rayOrigin.clone().addScaledVector(rayDir, projSun);
+                    distToSunRay = closestSun.distanceTo(sunGroup3D.position);
+                }
+            }
+
             const moonTolerance = Math.max(MOON_RADIUS * 6.0, 120.0);
             const earthTolerance = Math.max(EARTH_RADIUS * 2.0, 60.0);
+            const sunTolerance = Math.max(SUN_RADIUS * 3.0, 20000.0);
 
-            if (distToMoonRay < moonTolerance && distToMoonRay <= distToEarthRay && moonMesh3D) {
+            if (distToMoonRay < moonTolerance && distToMoonRay <= distToEarthRay && distToMoonRay <= distToSunRay && moonMesh3D) {
                 // Doble clic sobre la Luna -> Enfoque detallado
                 focusedBody = 'moon';
                 const moonPos = moonMesh3D.position.clone();
@@ -1099,6 +1111,15 @@
                 viewDir.normalize();
                 const targetCamPos = moonPos.clone().addScaledVector(viewDir, MOON_RADIUS * 3.8);
                 transitionCamera(moonPos, targetCamPos, 700);
+            } else if (distToSunRay < sunTolerance && distToSunRay < distToEarthRay && distToSunRay < distToMoonRay) {
+                // Doble clic sobre el Sol -> Enfoque sobre el Sol
+                focusedBody = 'sun';
+                const sunPos = sunGroup3D.position.clone();
+                let viewDir = camera.position.clone().sub(sunPos);
+                if (viewDir.lengthSq() < 0.001) viewDir = new THREE.Vector3(0, 5000, 25000);
+                viewDir.normalize();
+                const targetCamPos = sunPos.clone().addScaledVector(viewDir, SUN_RADIUS * 4.0);
+                transitionCamera(sunPos, targetCamPos, 800);
             } else if (distToEarthRay < earthTolerance) {
                 // Doble clic sobre la Tierra -> Enfoque sobre la Tierra
                 focusedBody = 'earth';
@@ -1126,11 +1147,11 @@
         scene.add(sunLight);
 
         // Constantes Físicas de Escala 3D Real (1 R_Tierra = 50 unidades)
-        const EARTH_RADIUS = 50.0;
-        const MOON_RADIUS = 13.635;  // 0.2727 * 50 = 1.737 km (Escala física real)
-        const MOON_DIST = 3016.5;    // 60.33 * 50 = 384.400 km (Distancia media física real Tierra-Luna)
-        const SUN_RADIUS = 250.0;    // Radio solar escalado para visibilidad y proporción angular
-        const SUN_DIST = 15000.0;    // Distancia solar en el espacio profundo
+        const EARTH_RADIUS = 50.0;     // Radio Terrestre: 6.371 km
+        const MOON_RADIUS = 13.635;    // Radio Lunar: 1.737,4 km (0,2727 R_Tierra)
+        const MOON_DIST = 3016.5;      // Distancia Media Tierra-Luna: 384.400 km (60,33 R_Tierra)
+        const SUN_RADIUS = 5465.0;     // Radio Solar Real: 696.340 km (109,3 R_Tierra)
+        const SUN_DIST = 1174050.0;    // Distancia Media Tierra-Sol (1 UA): 149.598.000 km (23.481 R_Tierra)
 
         // ☀️ Sol 3D con Corona Radiante Óptica (Additive Blending)
         function createSunCoronaTexture() {
