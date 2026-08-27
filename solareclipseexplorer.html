@@ -1128,20 +1128,39 @@
         const SUN_RADIUS = 75.0;
         const SUN_DIST = 1400.0;
 
-        // ☀️ Sol 3D con Corona Radiante
+        // ☀️ Sol 3D con Corona Radiante Óptica (Additive Blending)
+        function createSunCoronaTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512;
+            canvas.height = 512;
+            const ctx = canvas.getContext('2d');
+            const grad = ctx.createRadialGradient(256, 256, 110, 256, 256, 256);
+            grad.addColorStop(0.0, 'rgba(255, 255, 245, 1.0)');
+            grad.addColorStop(0.2, 'rgba(254, 240, 138, 0.80)');
+            grad.addColorStop(0.45, 'rgba(245, 158, 11, 0.40)');
+            grad.addColorStop(0.75, 'rgba(217, 119, 6, 0.12)');
+            grad.addColorStop(1.0, 'rgba(0, 0, 0, 0.0)');
+
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, 512, 512);
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.needsUpdate = true;
+            return tex;
+        }
+
         let sunGroup3D, sunMesh3D, sunCoronaMesh3D;
         const sunGeo = new THREE.SphereGeometry(SUN_RADIUS, 48, 48);
         const sunMat = new THREE.MeshBasicMaterial({ color: 0xfffaed });
         sunMesh3D = new THREE.Mesh(sunGeo, sunMat);
 
-        const coronaGeo = new THREE.RingGeometry(SUN_RADIUS * 1.02, SUN_RADIUS * 1.8, 64);
-        const coronaMat = new THREE.MeshBasicMaterial({
-            color: 0xffedd5,
-            side: THREE.DoubleSide,
+        const coronaMat = new THREE.SpriteMaterial({
+            map: createSunCoronaTexture(),
             transparent: true,
-            opacity: 0.40
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
         });
-        sunCoronaMesh3D = new THREE.Mesh(coronaGeo, coronaMat);
+        sunCoronaMesh3D = new THREE.Sprite(coronaMat);
+        sunCoronaMesh3D.scale.set(SUN_RADIUS * 4.2, SUN_RADIUS * 4.2, 1);
 
         sunGroup3D = new THREE.Group();
         sunGroup3D.add(sunMesh3D);
@@ -1151,32 +1170,26 @@
         // 🌑 Luna 3D con Textura Equirrectangular NASA LRO
         let moonMesh3D;
         const moonGeo = new THREE.SphereGeometry(MOON_RADIUS, 64, 64);
-        const moonMat = new THREE.MeshPhongMaterial({
+        const moonMat = new THREE.MeshLambertMaterial({
             color: 0xffffff,
-            shininess: 6,
-            emissive: new THREE.Color(0x333842) // Luz cenicienta física (Earthshine) para apreciar cráteres y mares
+            emissive: new THREE.Color(0x707884), // Luz cenicienta física reflejada por la Tierra para revelar cráteres y mares
+            emissiveIntensity: 0.90
         });
 
         const moonTexLoader = new THREE.TextureLoader();
         const MOON_TEX_LOCAL = 'moon_topo_2048.jpg';
         const MOON_TEX_CDN = 'https://cdn.jsdelivr.net/gh/diegorodriguezperegrin/besselian-explorer@main/moon_topo_2048.jpg';
 
-        moonTexLoader.load(MOON_TEX_LOCAL,
-            function(texture) {
-                texture.needsUpdate = true;
-                moonMat.map = texture;
-                moonMat.needsUpdate = true;
-            },
-            undefined,
-            function() {
-                // Fallback automático si se ejecuta vía file:// y CORS bloquea el archivo local
-                moonTexLoader.load(MOON_TEX_CDN, function(texture) {
-                    texture.needsUpdate = true;
-                    moonMat.map = texture;
-                    moonMat.needsUpdate = true;
-                });
-            }
-        );
+        function applyMoonTexture(texture) {
+            texture.needsUpdate = true;
+            moonMat.map = texture;
+            moonMat.emissiveMap = texture;
+            moonMat.needsUpdate = true;
+        }
+
+        moonTexLoader.load(MOON_TEX_LOCAL, applyMoonTexture, undefined, function() {
+            moonTexLoader.load(MOON_TEX_CDN, applyMoonTexture);
+        });
 
         moonMesh3D = new THREE.Mesh(moonGeo, moonMat);
         scene.add(moonMesh3D);
