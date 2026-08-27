@@ -1958,14 +1958,14 @@
             const gridGroup = new THREE.Group();
             
             // GridHelper 3D vectorial en el plano horizontal Y = 0 (Eclíptica)
-            // Tamaño: 1200 unidades (1.200.000 km), 60 divisiones (cuadrículas de 20.000 km)
-            // Ejes orientadores en Amarillo (0xfacc15) y líneas secundarias en ámbar suave (0x854d0e)
-            const gridHelper = new THREE.GridHelper(1200, 60, 0xfacc15, 0x854d0e);
+            // Tamaño: 1800 unidades (1.800.000 km), 90 divisiones (cuadrículas de 20.000 km)
+            // Ejes orientadores en Amarillo (0xfacc15) y líneas secundarias en ámbar cálido (0xa16207)
+            const gridHelper = new THREE.GridHelper(1800, 90, 0xfacc15, 0xa16207);
             gridHelper.material.transparent = true;
-            gridHelper.material.opacity = 0.40;
+            gridHelper.material.opacity = 0.55;
             gridHelper.material.depthWrite = false;
 
-            // Inyección GLSL: Difumina la opacidad de las líneas con la distancia radial desde el centro (0,0,0)
+            // Inyección GLSL: Difumina suavemente la opacidad más allá de la órbita lunar (>400 unidades)
             gridHelper.material.onBeforeCompile = (shader) => {
                 shader.vertexShader = `
                     varying vec3 vWorldPos;
@@ -1986,7 +1986,7 @@
                     `
                     #include <dithering_fragment>
                     float dist = length(vWorldPos.xz);
-                    float fade = 1.0 - smoothstep(120.0, 580.0, dist);
+                    float fade = 1.0 - smoothstep(420.0, 850.0, dist);
                     gl_FragColor.a *= fade;
                     `
                 );
@@ -2021,6 +2021,93 @@
             return sprite;
         }
 
+        // --- Sistema de Enfoque y Transición Suave de Cámara 3D (Doble Clic / Doble Tap) ---
+        let cameraTransition3D = null;
+        let focusedBody3D = null; // 'moon', 'earth', o null (global)
+
+        function transitionCamera3D(targetControlsTarget, targetCameraPos, minDistance = 7.0, durationMs = 700) {
+            cameraTransition3D = {
+                startTarget: controls3D.target.clone(),
+                endTarget: targetControlsTarget.clone(),
+                startCamPos: camera3D.position.clone(),
+                endCamPos: targetCameraPos.clone(),
+                minDist: minDistance,
+                startTime: performance.now(),
+                duration: durationMs
+            };
+        }
+
+        function handle3DDoubleClick(clientX, clientY) {
+            if (!camera3D || !controls3D || currentActiveView !== '3d') return;
+
+            const rect = renderer3D.domElement.getBoundingClientRect();
+            const mouse = new THREE.Vector2(
+                ((clientX - rect.left) / rect.width) * 2 - 1,
+                -((clientY - rect.top) / rect.height) * 2 + 1
+            );
+
+            const raycaster = new THREE.Raycaster();
+            raycaster.setFromCamera(mouse, camera3D);
+
+            const rayOrigin = raycaster.ray.origin;
+            const rayDir = raycaster.ray.direction.clone().normalize();
+
+            // 1. Calcular distancia del rayo al centro de la Luna
+            let distToMoonRay = Infinity;
+            if (moonMesh3D) {
+                const vMoon = moonMesh3D.position.clone().sub(rayOrigin);
+                const projMoon = vMoon.dot(rayDir);
+                if (projMoon > 0) {
+                    const closestMoon = rayOrigin.clone().addScaledVector(rayDir, projMoon);
+                    distToMoonRay = closestMoon.distanceTo(moonMesh3D.position);
+                }
+            }
+
+            // 2. Calcular distancia del rayo al centro de la Tierra (0,0,0)
+            let distToEarthRay = Infinity;
+            const vEarth = new THREE.Vector3(0, 0, 0).sub(rayOrigin);
+            const projEarth = vEarth.dot(rayDir);
+            if (projEarth > 0) {
+                const closestEarth = rayOrigin.clone().addScaledVector(rayDir, projEarth);
+                distToEarthRay = closestEarth.distanceTo(new THREE.Vector3(0, 0, 0));
+            }
+
+            // Tolerancias de detección (amplias para que sea sumamente fácil acertar con doble clic)
+            const moonTolerance = Math.max(MOON_RADIUS * 5.0, 14.0);
+            const earthTolerance = Math.max(EARTH_RADIUS * 2.5, 20.0);
+
+            if (distToMoonRay < moonTolerance && distToMoonRay <= distToEarthRay && moonMesh3D) {
+                // Doble clic sobre la Luna -> Enfoque cercano detallado de la Luna
+                focusedBody3D = 'moon';
+                const moonPos = moonMesh3D.position.clone();
+                let viewDir = camera3D.position.clone().sub(moonPos);
+                if (viewDir.lengthSq() < 0.001) viewDir = new THREE.Vector3(0, 2, 8);
+                viewDir.normalize();
+
+                const targetCamPos = moonPos.clone().addScaledVector(viewDir, 8.5);
+                transitionCamera3D(moonPos, targetCamPos, 2.2, 700);
+            } else if (distToEarthRay < earthTolerance) {
+                // Doble clic sobre la Tierra -> Enfoque en el globo terráqueo
+                focusedBody3D = 'earth';
+                const earthPos = new THREE.Vector3(0, 0, 0);
+                let viewDir = camera3D.position.clone().sub(earthPos);
+                if (viewDir.lengthSq() < 0.001) viewDir = new THREE.Vector3(0, 30, 60);
+                viewDir.normalize();
+
+                const targetCamPos = earthPos.clone().addScaledVector(viewDir, 28.0);
+                transitionCamera3D(earthPos, targetCamPos, 7.0, 700);
+            } else {
+                // Doble clic en el espacio vacío -> Regreso a la Vista Global del Sistema de Eclipse
+                focusedBody3D = null;
+                transitionCamera3D(
+                    new THREE.Vector3(0, -10, -190),
+                    new THREE.Vector3(0, 130, 300),
+                    7.0,
+                    750
+                );
+            }
+        }
+
         function initThreeJS() {
             const container = document.getElementById('webgl-container');
             if (!container) return;
@@ -2041,8 +2128,90 @@
             controls3D.enableDamping = true;
             controls3D.dampingFactor = 0.05;
             controls3D.target.set(0, -10, -190);
-            controls3D.minDistance = 7.0;
+            controls3D.minDistance = 2.0;
             controls3D.maxDistance = 450000;
+            controls3D.enablePan = true;
+            controls3D.screenSpacePanning = true;
+            controls3D.panSpeed = 1.2;
+            controls3D.rotateSpeed = 0.9;
+            controls3D.zoomSpeed = 1.2;
+
+            // Botones del ratón: Clic derecho o botón central desplazan (Pan); Clic izquierdo orbita
+            // (Shift + Clic izquierdo o Ctrl + Clic izquierdo también desplazan nativamente)
+            controls3D.mouseButtons = {
+                LEFT: THREE.MOUSE.ROTATE,
+                MIDDLE: THREE.MOUSE.PAN,
+                RIGHT: THREE.MOUSE.PAN
+            };
+
+            // Soporte para que Alt + Clic también active el desplazamiento libre
+            renderer3D.domElement.addEventListener('pointerdown', (e) => {
+                if (e.altKey && e.button === 0) {
+                    try {
+                        Object.defineProperty(e, 'shiftKey', { get: () => true });
+                    } catch (_) {}
+                }
+            }, { capture: true });
+
+            renderer3D.domElement.style.touchAction = 'none';
+            renderer3D.domElement.style.userSelect = 'none';
+
+            controls3D.addEventListener('start', () => {
+                cameraTransition3D = null;
+                focusedBody3D = null;
+            });
+
+            // Soporte de flechas del teclado y teclas WASD para desplazamiento fino
+            window.addEventListener('keydown', (e) => {
+                if (currentActiveView !== '3d' || !controls3D || !camera3D) return;
+                if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA')) return;
+
+                const panDist = Math.max(1.0, (camera3D.position.distanceTo(controls3D.target) || 200) * 0.04);
+                let moved = false;
+                const vRight = new THREE.Vector3().setFromMatrixColumn(camera3D.matrix, 0);
+                const vUp = new THREE.Vector3().setFromMatrixColumn(camera3D.matrix, 1);
+
+                if (e.code === 'ArrowLeft' || e.code === 'KeyA') {
+                    controls3D.target.addScaledVector(vRight, -panDist);
+                    camera3D.position.addScaledVector(vRight, -panDist);
+                    moved = true;
+                } else if (e.code === 'ArrowRight' || e.code === 'KeyD') {
+                    controls3D.target.addScaledVector(vRight, panDist);
+                    camera3D.position.addScaledVector(vRight, panDist);
+                    moved = true;
+                } else if (e.code === 'ArrowUp' || e.code === 'KeyW') {
+                    controls3D.target.addScaledVector(vUp, panDist);
+                    camera3D.position.addScaledVector(vUp, panDist);
+                    moved = true;
+                } else if (e.code === 'ArrowDown' || e.code === 'KeyS') {
+                    controls3D.target.addScaledVector(vUp, -panDist);
+                    camera3D.position.addScaledVector(vUp, -panDist);
+                    moved = true;
+                }
+
+                if (moved) {
+                    e.preventDefault();
+                    cameraTransition3D = null;
+                    focusedBody3D = null;
+                    controls3D.update();
+                }
+            });
+
+            renderer3D.domElement.addEventListener('dblclick', (e) => {
+                handle3DDoubleClick(e.clientX, e.clientY);
+            });
+
+            let lastTapTime3D = 0;
+            renderer3D.domElement.addEventListener('touchend', (e) => {
+                const now = Date.now();
+                if (now - lastTapTime3D < 350 && e.changedTouches.length === 1) {
+                    const touch = e.changedTouches[0];
+                    handle3DDoubleClick(touch.clientX, touch.clientY);
+                    lastTapTime3D = 0;
+                } else {
+                    lastTapTime3D = now;
+                }
+            });
 
             // Iluminación Cósmica
             const sunLight = new THREE.DirectionalLight(0xfff7ed, 2.0);
@@ -2393,6 +2562,104 @@
                 }
 
                 if (showLimits) {
+                    // --- Secciones transversales ortogonales de Sombra a la distancia lunar (z = -MOON_DIST) ---
+                    const createCirclePoints = (radius, segments = 96) => {
+                        const pts = [];
+                        for (let i = 0; i <= segments; i++) {
+                            const theta = (i / segments) * Math.PI * 2;
+                            pts.push(new THREE.Vector3(radius * Math.cos(theta), radius * Math.sin(theta), -MOON_DIST));
+                        }
+                        return pts;
+                    };
+
+                    // 1. Disco de Umbra (sección interior)
+                    const umbraDiscGeo = new THREE.CircleGeometry(rUmbra3D, 64);
+                    const umbraDiscMat = new THREE.MeshBasicMaterial({
+                        color: 0xef4444,
+                        transparent: true,
+                        opacity: 0.15,
+                        side: THREE.DoubleSide,
+                        depthWrite: false
+                    });
+                    const umbraDisc = new THREE.Mesh(umbraDiscGeo, umbraDiscMat);
+                    umbraDisc.position.set(0, 0, -MOON_DIST);
+                    umbraDisc.renderOrder = 3;
+                    umbraDisc.frustumCulled = false;
+                    eclipseLimitsGroup3D.add(umbraDisc);
+
+                    // Perímetro de Umbra
+                    const umbraLineGeo = new THREE.BufferGeometry().setFromPoints(createCirclePoints(rUmbra3D));
+                    const umbraLineMat = new THREE.LineBasicMaterial({
+                        color: 0xef4444,
+                        transparent: true,
+                        opacity: 0.90,
+                        depthWrite: false
+                    });
+                    const umbraLine = new THREE.Line(umbraLineGeo, umbraLineMat);
+                    umbraLine.renderOrder = 5;
+                    umbraLine.frustumCulled = false;
+                    eclipseLimitsGroup3D.add(umbraLine);
+
+                    // 2. Anillo de Penumbra (sección exterior)
+                    const penRingGeo = new THREE.RingGeometry(rUmbra3D, rPenumbra3D, 64);
+                    const penRingMat = new THREE.MeshBasicMaterial({
+                        color: 0x06b6d4,
+                        transparent: true,
+                        opacity: 0.08,
+                        side: THREE.DoubleSide,
+                        depthWrite: false
+                    });
+                    const penRing = new THREE.Mesh(penRingGeo, penRingMat);
+                    penRing.position.set(0, 0, -MOON_DIST);
+                    penRing.renderOrder = 2;
+                    penRing.frustumCulled = false;
+                    eclipseLimitsGroup3D.add(penRing);
+
+                    // Perímetro de Penumbra
+                    const penLineGeo = new THREE.BufferGeometry().setFromPoints(createCirclePoints(rPenumbra3D));
+                    const penLineMat = new THREE.LineBasicMaterial({
+                        color: 0x06b6d4,
+                        transparent: true,
+                        opacity: 0.80,
+                        depthWrite: false
+                    });
+                    const penLine = new THREE.Line(penLineGeo, penLineMat);
+                    penLine.renderOrder = 4;
+                    penLine.frustumCulled = false;
+                    eclipseLimitsGroup3D.add(penLine);
+
+                    // Cruz de ejes ortogonales de la sombra
+                    const crossPts = [
+                        new THREE.Vector3(-rPenumbra3D * 1.12, 0, -MOON_DIST),
+                        new THREE.Vector3(rPenumbra3D * 1.12, 0, -MOON_DIST),
+                        new THREE.Vector3(0, -rPenumbra3D * 1.12, -MOON_DIST),
+                        new THREE.Vector3(0, rPenumbra3D * 1.12, -MOON_DIST)
+                    ];
+                    const crossGeo = new THREE.BufferGeometry().setFromPoints(crossPts);
+                    const crossMat = new THREE.LineBasicMaterial({
+                        color: 0x94a3b8,
+                        transparent: true,
+                        opacity: 0.35,
+                        depthWrite: false
+                    });
+                    const crossLines = new THREE.LineSegments(crossGeo, crossMat);
+                    crossLines.renderOrder = 3;
+                    crossLines.frustumCulled = false;
+                    eclipseLimitsGroup3D.add(crossLines);
+
+                    // Rótulos de las secciones de sombra a la distancia lunar (si los rótulos están activados)
+                    if (showLabels) {
+                        const umbraSectionSprite = createLimitSprite('Umbra', '#ef4444');
+                        umbraSectionSprite.scale.set(10, 2.5, 1);
+                        umbraSectionSprite.position.set(0, rUmbra3D + 1.0, -MOON_DIST);
+                        eclipseLimitsGroup3D.add(umbraSectionSprite);
+
+                        const penSectionSprite = createLimitSprite('Penumbra', '#06b6d4');
+                        penSectionSprite.scale.set(12, 3.0, 1);
+                        penSectionSprite.position.set(0, rPenumbra3D + 1.2, -MOON_DIST);
+                        eclipseLimitsGroup3D.add(penSectionSprite);
+                    }
+
                     // Vector unitario tangente a la órbita (+X / sentido de traslación lunar)
                     const uTangent = new THREE.Vector3().crossVectors(normOrbit, uNode).normalize();
                     if (uTangent.x < 0) uTangent.negate();
@@ -2550,6 +2817,25 @@
                     renderTelescopicView();
                 } else if (currentActiveView === '3d') {
                     update3DEclipseGeometry();
+
+                    // Interpolación suave de cámara y foco en 3D (cuando se activa por doble clic/tap)
+                    if (cameraTransition3D) {
+                        const elapsed = performance.now() - cameraTransition3D.startTime;
+                        const p = Math.min(1.0, elapsed / cameraTransition3D.duration);
+                        // Curva suave easeInOutCubic
+                        const ease = p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
+
+                        controls3D.target.lerpVectors(cameraTransition3D.startTarget, cameraTransition3D.endTarget, ease);
+                        camera3D.position.lerpVectors(cameraTransition3D.startCamPos, cameraTransition3D.endCamPos, ease);
+                        controls3D.minDistance = cameraTransition3D.minDist;
+
+                        if (p >= 1.0) {
+                            controls3D.target.copy(cameraTransition3D.endTarget);
+                            camera3D.position.copy(cameraTransition3D.endCamPos);
+                            cameraTransition3D = null;
+                        }
+                    }
+
                     if (controls3D) controls3D.update();
                     if (renderer3D && scene3D && camera3D) renderer3D.render(scene3D, camera3D);
                 }
