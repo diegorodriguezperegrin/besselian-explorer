@@ -3045,23 +3045,29 @@
                 }
             }
 
-            // 4b. Actualizar Órbita Lunar 3D atravesando exactamente el centro del globo lunar
+            // 4b. Actualizar Órbita Lunar 3D con inclinación física exacta de 5.145° respecto a la Eclíptica
             if (moonOrbitLine3D) {
                 const showOrbit = document.getElementById('chk-show-moon-orbit')?.checked ?? true;
                 moonOrbitLine3D.visible = showOrbit;
                 if (showOrbit) {
-                    const x1 = (currentEclipse.x1 || 0.54);
-                    const y1 = (currentEclipse.y1 || -0.20);
-                    const vOrb = new THREE.Vector3()
-                        .addScaledVector(uLocal, x1 * EARTH_RADIUS)
-                        .addScaledVector(vLocal, y1 * EARTH_RADIUS);
+                    const uP = new THREE.Vector3(0, 1, 0);
+                    const uE = new THREE.Vector3().crossVectors(uP, wLocal).normalize();
+                    const normEcliptic = new THREE.Vector3().crossVectors(wLocal, uE).normalize();
+
+                    // Inclinación física exacta de la órbita lunar i = 5.145° respecto a la Eclíptica
+                    const incRad = 5.145 * Math.PI / 180;
+                    const isAscending = ((currentEclipse.saros || 0) % 2 === 0);
+                    const sign = isAscending ? 1.0 : -1.0;
+
+                    // Normal del plano orbital inclinada exactamente 5.145°
+                    const normOrbit = new THREE.Vector3()
+                        .addScaledVector(normEcliptic, Math.cos(incRad))
+                        .addScaledVector(wLocal, sign * Math.sin(incRad))
+                        .normalize();
 
                     const e1 = moonPos.clone().normalize();
-                    let normOrbit = new THREE.Vector3().crossVectors(e1, vOrb).normalize();
-                    if (normOrbit.lengthSq() < 0.001) {
-                        normOrbit = new THREE.Vector3(0, 1, 0);
-                    }
                     const e2 = new THREE.Vector3().crossVectors(normOrbit, e1).normalize();
+                    if (e2.dot(uE) < 0) e2.negate(); // Sentido orbital de Oeste a Este (+uE)
 
                     const pts = [];
                     const segments = 360;
