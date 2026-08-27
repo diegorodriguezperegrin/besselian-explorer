@@ -1034,6 +1034,7 @@
                 <button class="ctrl-btn" onclick="stepTime(60000)" title="Avanzar 1 min"><i class="fa-solid fa-step-forward"></i></button>
                 <button class="ctrl-btn" onclick="stepTime(900000)" title="Avanzar 15 min"><i class="fa-solid fa-forward"></i></button>
                 <select class="search-input" id="sim-speed-select" style="padding: 4px 6px; font-size: 0.72rem;" onchange="setSimSpeed(this.value)">
+                    <option value="live">🔴 En vivo</option>
                     <option value="1">1×</option>
                     <option value="10">10×</option>
                     <option value="60" selected>60×</option>
@@ -1100,6 +1101,7 @@
         let simCurrentTimeMs = 0;
         let simStartTimeMs = 0, simEndTimeMs = 0;
         let isPlaying = false;
+        let isLiveMode = false;
         let simSpeedMultiplier = 60;
         let lastFrameTimestamp = null;
         let currentActiveView = '3d'; // '3d', 'telescopic'
@@ -1260,7 +1262,18 @@
 
             simStartTimeMs = ec.p1Ms - 20 * 60000;
             simEndTimeMs = ec.p4Ms + 20 * 60000;
-            simCurrentTimeMs = ec.maxMs;
+            if (isLiveMode) {
+                const now = Date.now();
+                if (now < simStartTimeMs) {
+                    simCurrentTimeMs = simStartTimeMs;
+                } else if (now > simEndTimeMs) {
+                    simCurrentTimeMs = simEndTimeMs;
+                } else {
+                    simCurrentTimeMs = now;
+                }
+            } else {
+                simCurrentTimeMs = ec.maxMs;
+            }
 
             // Actualizar tarjeta de parámetros estilo Besselian Explorer
             const typeBadge = document.getElementById('card-type');
@@ -2826,7 +2839,17 @@
                 const dtSec = (timestamp - lastFrameTimestamp) / 1000;
                 lastFrameTimestamp = timestamp;
 
-                if (isPlaying && currentEclipse) {
+                if (isLiveMode && currentEclipse) {
+                    const now = Date.now();
+                    if (now < simStartTimeMs) {
+                        simCurrentTimeMs = simStartTimeMs;
+                    } else if (now > simEndTimeMs) {
+                        simCurrentTimeMs = simEndTimeMs;
+                    } else {
+                        simCurrentTimeMs = now;
+                    }
+                    updateTimeUI();
+                } else if (isPlaying && currentEclipse) {
                     simCurrentTimeMs += dtSec * 1000 * simSpeedMultiplier;
                     if (simCurrentTimeMs > simEndTimeMs) {
                         simCurrentTimeMs = simStartTimeMs;
@@ -2886,15 +2909,28 @@
             const isPartial = (geo.dist < (geo.rUmbra + geo.rMoon));
             const isPenumbral = (geo.dist < (geo.rPenumbra + geo.rMoon));
 
+            let phaseHtml = '';
             if (isTotal) {
-                phaseLabel.innerHTML = '<span style="color: #fb923c;">🔴 Totalidad</span> · Luna de Sangre';
+                phaseHtml = '<span style="color: #fb923c;">🔴 Totalidad</span> · Luna de Sangre';
             } else if (isPartial) {
-                phaseLabel.innerHTML = '<span style="color: var(--accent-gold);">🌗 Fase Parcial</span> · Umbra';
+                phaseHtml = '<span style="color: var(--accent-gold);">🌗 Fase Parcial</span> · Umbra';
             } else if (isPenumbral) {
-                phaseLabel.innerHTML = '<span style="color: var(--accent-penumbra);">⚪ Penumbra</span>';
+                phaseHtml = '<span style="color: var(--accent-penumbra);">⚪ Penumbra</span>';
             } else {
-                phaseLabel.innerHTML = '<span style="color: var(--text-secondary);">🌕 Fuera de Sombra</span>';
+                phaseHtml = '<span style="color: var(--text-secondary);">🌕 Fuera de Sombra</span>';
             }
+
+            if (isLiveMode) {
+                const now = Date.now();
+                if (now < simStartTimeMs) {
+                    phaseHtml = '<span style="color: var(--accent-blue);">⏳ En espera del inicio en vivo</span>';
+                } else if (now > simEndTimeMs) {
+                    phaseHtml = '<span style="color: var(--text-dim);">⏹️ Eclipse finalizado (en pausa)</span>';
+                } else {
+                    phaseHtml += ' <span style="color: #ef4444; font-weight: 700; margin-left: 6px; letter-spacing: 0.5px;">🔴 EN VIVO</span>';
+                }
+            }
+            phaseLabel.innerHTML = phaseHtml;
 
             document.querySelectorAll('#mataro-contacts-tbody tr').forEach(r => r.classList.remove('active'));
             ['P1', 'U1', 'U2', 'MÁX', 'U3', 'U4', 'P4'].forEach(k => {
@@ -2911,6 +2947,11 @@
         }
 
         function onScrubTimeline(val) {
+            if (isLiveMode) {
+                isLiveMode = false;
+                const sel = document.getElementById('sim-speed-select');
+                if (sel && sel.value === 'live') sel.value = '60';
+            }
             const frac = val / 1000;
             simCurrentTimeMs = simStartTimeMs + frac * (simEndTimeMs - simStartTimeMs);
             updateTimeUI();
@@ -2918,22 +2959,46 @@
         }
 
         function togglePlayPause() {
-            isPlaying = !isPlaying;
-            document.getElementById('btn-play-pause').innerHTML = isPlaying ? '<i class="fa-solid fa-pause"></i>' : '<i class="fa-solid fa-play"></i>';
+            if (isLiveMode) {
+                isLiveMode = false;
+                isPlaying = false;
+                const sel = document.getElementById('sim-speed-select');
+                if (sel && sel.value === 'live') sel.value = '60';
+            } else {
+                isPlaying = !isPlaying;
+            }
+            document.getElementById('btn-play-pause').innerHTML = (isPlaying || isLiveMode) ? '<i class="fa-solid fa-pause"></i>' : '<i class="fa-solid fa-play"></i>';
         }
 
         function stepTime(deltaMs) {
+            if (isLiveMode) {
+                isLiveMode = false;
+                const sel = document.getElementById('sim-speed-select');
+                if (sel && sel.value === 'live') sel.value = '60';
+            }
             simCurrentTimeMs = Math.max(simStartTimeMs, Math.min(simEndTimeMs, simCurrentTimeMs + deltaMs));
             updateTimeUI();
             if (currentActiveView === 'telescopic') renderTelescopicView();
         }
 
         function setSimSpeed(speed) {
-            simSpeedMultiplier = parseFloat(speed);
+            if (speed === 'live') {
+                isLiveMode = true;
+                isPlaying = true;
+                document.getElementById('btn-play-pause').innerHTML = '<i class="fa-solid fa-pause"></i>';
+            } else {
+                isLiveMode = false;
+                simSpeedMultiplier = parseFloat(speed);
+            }
         }
 
         function jumpToContact(contactKey) {
             if (!currentEclipse) return;
+            if (isLiveMode) {
+                isLiveMode = false;
+                const sel = document.getElementById('sim-speed-select');
+                if (sel && sel.value === 'live') sel.value = '60';
+            }
             const ec = currentEclipse;
             let targetMs = ec.maxMs;
             if (contactKey === 'p1') targetMs = ec.p1Ms;
