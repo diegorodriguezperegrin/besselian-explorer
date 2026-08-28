@@ -967,6 +967,12 @@
         function transitionCamera(targetLookAt, targetCamPos, durationMs = 700) {
             const startTarget = controls ? controls.target.clone() : new THREE.Vector3(0, 0, 0);
             const startCamPos = camera.position.clone();
+            const startOffset = startCamPos.clone().sub(startTarget);
+            const endOffset = targetCamPos.clone().sub(targetLookAt);
+            const startDist = startOffset.length() || 210;
+            const endDist = endOffset.length() || startDist;
+            const startDir = startOffset.clone().normalize();
+            const endDir = endOffset.clone().normalize();
             const startTime = performance.now();
 
             cameraTransition = {
@@ -974,6 +980,10 @@
                 endTarget: targetLookAt.clone(),
                 startCamPos: startCamPos,
                 endCamPos: targetCamPos.clone(),
+                startDir: startDir,
+                endDir: endDir,
+                startDist: startDist,
+                endDist: endDist,
                 startTime: startTime,
                 duration: durationMs
             };
@@ -3169,7 +3179,8 @@
 
         function recenterEarth(lat, lng) {
             focusedBody = 'earth';
-            const currentDist = Math.max(120, Math.min(camera.position.distanceTo(new THREE.Vector3(0, 0, 0)) || 210, 450));
+            const center = controls ? controls.target : new THREE.Vector3(0, 0, 0);
+            const currentDist = camera.position.distanceTo(center) || 210;
             const targetPos = latLngToVector3(lat, lng, currentDist);
             transitionCamera(new THREE.Vector3(0, 0, 0), targetPos, 700);
         }
@@ -3431,7 +3442,7 @@
                 timeOrSceneChanged = true;
             }
 
-            // 2. Interpolación suave de cámara y target
+            // 2. Interpolación suave de cámara y target (Rotación esférica orbital a radio constante)
             if (cameraTransition) {
                 const now = performance.now();
                 const elapsed = now - cameraTransition.startTime;
@@ -3442,7 +3453,17 @@
                 if (controls && controls.target) {
                     controls.target.lerpVectors(cameraTransition.startTarget, cameraTransition.endTarget, ease);
                 }
-                camera.position.lerpVectors(cameraTransition.startCamPos, cameraTransition.endCamPos, ease);
+
+                // Rotación suave a lo largo del arco orbital esférico (evita hundirse en la Tierra y saltos de zoom)
+                const curDir = new THREE.Vector3().lerpVectors(cameraTransition.startDir, cameraTransition.endDir, ease);
+                if (curDir.lengthSq() < 0.0001) {
+                    curDir.add(new THREE.Vector3(0, 0.01, 0));
+                }
+                curDir.normalize();
+
+                const curDist = cameraTransition.startDist + (cameraTransition.endDist - cameraTransition.startDist) * ease;
+                const curTarget = (controls && controls.target) ? controls.target : new THREE.Vector3(0, 0, 0);
+                camera.position.copy(curTarget).addScaledVector(curDir, curDist);
 
                 if (p >= 1.0) {
                     if (controls && controls.target) controls.target.copy(cameraTransition.endTarget);
