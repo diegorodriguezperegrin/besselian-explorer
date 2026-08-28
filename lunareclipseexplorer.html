@@ -1130,8 +1130,8 @@
                 <button class="ctrl-btn" onclick="stepTime(60000)" title="Avanzar 1 min"><i class="fa-solid fa-step-forward"></i></button>
                 <button class="ctrl-btn" onclick="stepTime(900000)" title="Avanzar 15 min"><i class="fa-solid fa-forward"></i></button>
                 <select class="search-input" id="sim-speed-select" style="padding: 4px 6px; font-size: 0.72rem;" onchange="setSimSpeed(this.value)">
-                    <option value="live" selected>🔴 En vivo</option>
-                    <option value="1">1×</option>
+                    <option value="live">🔴 En vivo</option>
+                    <option value="1" selected>1×</option>
                     <option value="10">10×</option>
                     <option value="60">60×</option>
                     <option value="300">300×</option>
@@ -1208,7 +1208,7 @@
         let simCurrentTimeMs = 0;
         let simStartTimeMs = 0, simEndTimeMs = 0;
         let isPlaying = false;
-        let isLiveMode = true;
+        let isLiveMode = false;
         let simSpeedMultiplier = 1;
         let lastFrameTimestamp = null;
         let currentActiveView = '3d'; // '3d', 'telescopic'
@@ -3123,8 +3123,9 @@
         function stepTime(deltaMs) {
             if (isLiveMode) {
                 isLiveMode = false;
+                simSpeedMultiplier = 1;
                 const sel = document.getElementById('sim-speed-select');
-                if (sel && sel.value === 'live') sel.value = '60';
+                if (sel && sel.value === 'live') sel.value = '1';
                 updateLiveBadgeState();
             }
             simCurrentTimeMs = Math.max(simStartTimeMs, Math.min(simEndTimeMs, simCurrentTimeMs + deltaMs));
