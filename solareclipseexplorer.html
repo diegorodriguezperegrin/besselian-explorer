@@ -1009,8 +1009,11 @@
                 cameraTransition = null;
                 focusedBody = null;
             });
+            controls.addEventListener('change', () => {
+                needsRender = true;
+            });
         } else {
-            controls = { update: () => {}, target: new THREE.Vector3(0, 0, 0) };
+            controls = { update: () => false, target: new THREE.Vector3(0, 0, 0) };
         }
 
         // Navegación con flechas del teclado y teclas WASD
@@ -1602,6 +1605,7 @@
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
+            requestRender();
         });
 
         // Resiliencia ante pérdida transitoria de contexto WebGL en móviles / cambio de pestaña
@@ -3154,6 +3158,7 @@
             if (currentTValEl) {
                 currentTValEl.innerText = `t = ${t > 0 ? '+' : ''}${t.toFixed(2)}h (${String(utH).padStart(2,'0')}:${String(utM).padStart(2,'0')} UT)`;
             }
+            needsRender = true;
         }
 
         function recenterEarth(lat, lng) {
@@ -3175,13 +3180,16 @@
             const vis = e.target.checked;
             if (umbraConeMesh3D) umbraConeMesh3D.visible = vis;
             if (penumbraConeMesh3D) penumbraConeMesh3D.visible = vis;
+            requestRender();
         });
 
         document.getElementById('chk-show-moon-orbit')?.addEventListener('change', (e) => {
             if (moonOrbitLine3D) moonOrbitLine3D.visible = e.target.checked;
+            requestRender();
         });
         document.getElementById('chk-show-ecliptic')?.addEventListener('change', (e) => {
             if (eclipticPlaneGroup3D) eclipticPlaneGroup3D.visible = e.target.checked;
+            requestRender();
         });
 
         document.getElementById('chk-show-shadow')?.addEventListener('change', (e) => {
@@ -3189,10 +3197,12 @@
                 shadowShaderMaterial.uniforms.uShowPenumbra.value = e.target.checked ? 1.0 : 0.0;
                 shadowShaderMaterial.uniformsNeedUpdate = true;
             }
+            requestRender();
         });
 
         document.getElementById('chk-show-totality')?.addEventListener('change', () => {
             if (currentEclipse) drawShadowPath(currentEclipse);
+            requestRender();
         });
 
         const chkIsomagnitudes = document.getElementById('chk-show-isomagnitudes');
@@ -3212,24 +3222,29 @@
         chkIsomagnitudes?.addEventListener('change', () => {
             updateLabelsCheckboxState();
             if (currentEclipse) drawShadowPath(currentEclipse);
+            requestRender();
         });
 
         chkLabels?.addEventListener('change', () => {
             if (currentEclipse) {
                 drawShadowPath(currentEclipse);
             }
+            requestRender();
         });
 
         document.getElementById('chk-show-subsolar')?.addEventListener('change', (e) => {
             if (subsolarMarkerGroup) subsolarMarkerGroup.visible = e.target.checked;
+            requestRender();
         });
 
         document.getElementById('chk-show-sublunar')?.addEventListener('change', (e) => {
             if (sublunarMarkerGroup) sublunarMarkerGroup.visible = e.target.checked;
+            requestRender();
         });
 
         document.getElementById('chk-show-graticule')?.addEventListener('change', () => {
             updateGraticule();
+            requestRender();
         });
 
         // Inicializar el estado de disponibilidad del checkbox de rótulos
@@ -3248,6 +3263,7 @@
                 ambientLight.intensity = 0.35;
                 sunLight.intensity = 1.80;
             }
+            requestRender();
         }
 
         document.getElementById('chk-daylight-mode')?.addEventListener('change', updateLightingMode);
@@ -3381,12 +3397,19 @@
         };
 
         // -------------------------------------------------------------
-        // 8. BUCLE PRINCIPAL DE ANIMACIÓN 3D (Sincronizado a 60/120 FPS)
+        // 8. BUCLE PRINCIPAL DE ANIMACIÓN 3D (Reactivo bajo demanda)
         // -------------------------------------------------------------
+        let needsRender = true;
+        function requestRender() {
+            needsRender = true;
+        }
+
         function animate() {
             requestAnimationFrame(animate);
 
             const delta = Math.min(clock.getDelta(), 0.1); // Protección contra tirones si la pestaña pierde foco
+
+            let timeOrSceneChanged = false;
 
             // 1. Avance continuo y ultrasuave de la simulación temporal
             if (isPlaying && currentEclipse) {
@@ -3404,6 +3427,7 @@
                 }
                 timeSlider.value = currentT.toFixed(2);
                 updateShadowAtTime(currentT);
+                timeOrSceneChanged = true;
             }
 
             // 2. Interpolación suave de cámara y target
@@ -3424,6 +3448,7 @@
                     camera.position.copy(cameraTransition.endCamPos);
                     cameraTransition = null;
                 }
+                timeOrSceneChanged = true;
             } else if (focusedBody === 'moon' && moonMesh3D && controls) {
                 // Si la cámara está enfocando a la Luna y la simulación avanza, seguir suavemente el movimiento de la Luna
                 const prevTarget = controls.target.clone();
@@ -3431,10 +3456,15 @@
                 const deltaPos = curMoonPos.clone().sub(prevTarget);
                 controls.target.copy(curMoonPos);
                 camera.position.add(deltaPos);
+                timeOrSceneChanged = true;
             }
 
-            controls.update();
-            renderer.render(scene, camera);
+            const controlsMoved = controls ? controls.update() : false;
+
+            if (timeOrSceneChanged || controlsMoved || needsRender) {
+                renderer.render(scene, camera);
+                needsRender = false;
+            }
         }
 
         animate();

@@ -2282,6 +2282,9 @@
                 cameraTransition3D = null;
                 focusedBody3D = null;
             });
+            controls3D.addEventListener('change', () => {
+                scene3DNeedsRender = true;
+            });
 
             // Soporte de flechas del teclado y teclas WASD para desplazamiento fino
             window.addEventListener('keydown', (e) => {
@@ -2924,35 +2927,55 @@
             };
         }
 
-        // 6. Ciclo de Animación y Controles Temporales
+        // 6. Ciclo de Animación y Controles Temporales (Reactivo bajo demanda)
+        let scene3DNeedsRender = true;
+        let telescopicNeedsRender = true;
+
+        function requestRender3D() {
+            scene3DNeedsRender = true;
+        }
+
+        function requestRenderTelescopic() {
+            telescopicNeedsRender = true;
+        }
+
         function mainAnimationLoop(timestamp) {
             try {
                 if (!lastFrameTimestamp) lastFrameTimestamp = timestamp;
                 const dtSec = (timestamp - lastFrameTimestamp) / 1000;
                 lastFrameTimestamp = timestamp;
 
+                let timeChanged = false;
+
                 if (isLiveMode && currentEclipse) {
                     const now = Date.now();
+                    let targetTime = now;
                     if (now < simStartTimeMs) {
-                        simCurrentTimeMs = simStartTimeMs;
+                        targetTime = simStartTimeMs;
                     } else if (now > simEndTimeMs) {
-                        simCurrentTimeMs = simEndTimeMs;
-                    } else {
-                        simCurrentTimeMs = now;
+                        targetTime = simEndTimeMs;
                     }
-                    updateTimeUI();
+                    if (targetTime !== simCurrentTimeMs) {
+                        simCurrentTimeMs = targetTime;
+                        timeChanged = true;
+                        updateTimeUI();
+                    }
                 } else if (isPlaying && currentEclipse) {
                     simCurrentTimeMs += dtSec * 1000 * simSpeedMultiplier;
                     if (simCurrentTimeMs > simEndTimeMs) {
                         simCurrentTimeMs = simStartTimeMs;
                     }
+                    timeChanged = true;
                     updateTimeUI();
                 }
 
                 if (currentActiveView === 'telescopic') {
-                    renderTelescopicView();
+                    if (timeChanged || telescopicNeedsRender) {
+                        renderTelescopicView();
+                        telescopicNeedsRender = false;
+                    }
                 } else if (currentActiveView === '3d') {
-                    update3DEclipseGeometry();
+                    let cameraMoved = false;
 
                     // Interpolación suave de cámara y foco en 3D (cuando se activa por doble clic/tap)
                     if (cameraTransition3D) {
@@ -2970,10 +2993,16 @@
                             camera3D.position.copy(cameraTransition3D.endCamPos);
                             cameraTransition3D = null;
                         }
+                        cameraMoved = true;
                     }
 
-                    if (controls3D) controls3D.update();
-                    if (renderer3D && scene3D && camera3D) renderer3D.render(scene3D, camera3D);
+                    const controlsActive = controls3D ? controls3D.update() : false;
+
+                    if (timeChanged || cameraMoved || controlsActive || scene3DNeedsRender) {
+                        update3DEclipseGeometry();
+                        if (renderer3D && scene3D && camera3D) renderer3D.render(scene3D, camera3D);
+                        scene3DNeedsRender = false;
+                    }
                 }
             } catch (err) {
                 console.error("Frame render error:", err);
@@ -2984,6 +3013,8 @@
 
         function updateTimeUI() {
             if (!currentEclipse) return;
+            scene3DNeedsRender = true;
+            telescopicNeedsRender = true;
 
             const frac = Math.max(0, Math.min(1, (simCurrentTimeMs - simStartTimeMs) / (simEndTimeMs - simStartTimeMs)));
             document.getElementById('time-scrubber').value = Math.round(frac * 1000);
