@@ -250,17 +250,22 @@
             color: #fff;
         }
 
-        /* Barra Superior Flotante y Botones de Apertura */
+        /* Barra Flotante de Paneles Minimizados (Apilados a la izquierda) */
         .top-nav-bar {
             position: absolute;
             top: 15px;
             left: 15px;
-            right: 15px;
             z-index: 40;
             display: flex;
-            justify-content: space-between;
+            flex-direction: column;
+            align-items: flex-start;
             pointer-events: none;
             gap: 8px;
+            transition: left 0.25s ease;
+        }
+
+        .top-nav-bar.sidebar-open {
+            left: calc(15px + 350px + 10px);
         }
 
         .top-nav-bar > * {
@@ -1183,19 +1188,19 @@
         <span class="live-text">EN VIVO</span>
     </div>
 
-    <!-- Barra de Navegación Superior / Botones Flotantes de Paneles -->
+    <!-- Barra Flotante de Paneles Minimizados (Apilados a la izquierda) -->
     <div class="top-nav-bar" id="top-nav-bar">
         <button class="reopen-btn" id="btn-reopen-left" onclick="toggleSidebar(null)" title="Abrir/Cerrar panel de Eclipses">
             <i class="fa-solid fa-moon"></i>
             <span>Eclipses</span>
         </button>
-        <button class="reopen-btn" id="btn-reopen-dock" onclick="togglePlaybackDock(null)" title="Abrir/Cerrar Reproductor">
-            <i class="fa-solid fa-circle-play"></i>
-            <span>Reproducción</span>
-        </button>
         <button class="reopen-btn" id="btn-reopen-right" onclick="toggleSettingsPanel(null)" title="Abrir/Cerrar panel de Visualización">
             <i class="fa-solid fa-sliders"></i>
             <span>Visualización</span>
+        </button>
+        <button class="reopen-btn" id="btn-reopen-dock" onclick="togglePlaybackDock(null)" title="Abrir/Cerrar Reproductor">
+            <i class="fa-solid fa-circle-play"></i>
+            <span>Reproducción</span>
         </button>
     </div>
 
@@ -4082,6 +4087,7 @@
             const sidePanel = document.getElementById('sidebar-panel');
             const setPanel = document.getElementById('settings-panel');
             const dockPanel = document.getElementById('playback-dock');
+            const navBar = document.getElementById('top-nav-bar');
 
             const sideOpen = sidePanel && !sidePanel.classList.contains('collapsed');
             const setOpen = setPanel && !setPanel.classList.contains('collapsed');
@@ -4092,13 +4098,15 @@
             const btnDock = document.getElementById('btn-reopen-dock');
 
             if (isMobile) {
+                if (navBar) navBar.classList.remove('sidebar-open');
                 if (btnSide) { btnSide.style.display = 'inline-flex'; btnSide.classList.toggle('active-nav', sideOpen); }
-                if (btnDock) { btnDock.style.display = 'inline-flex'; btnDock.classList.toggle('active-nav', dockOpen); }
                 if (btnSet) { btnSet.style.display = 'inline-flex'; btnSet.classList.toggle('active-nav', setOpen); }
+                if (btnDock) { btnDock.style.display = 'inline-flex'; btnDock.classList.toggle('active-nav', dockOpen); }
             } else {
+                if (navBar) navBar.classList.toggle('sidebar-open', sideOpen);
                 if (btnSide) { btnSide.style.display = sideOpen ? 'none' : 'inline-flex'; btnSide.classList.remove('active-nav'); }
-                if (btnDock) { btnDock.style.display = dockOpen ? 'none' : 'inline-flex'; btnDock.classList.remove('active-nav'); }
                 if (btnSet) { btnSet.style.display = setOpen ? 'none' : 'inline-flex'; btnSet.classList.remove('active-nav'); }
+                if (btnDock) { btnDock.style.display = dockOpen ? 'none' : 'inline-flex'; btnDock.classList.remove('active-nav'); }
             }
         }
 
