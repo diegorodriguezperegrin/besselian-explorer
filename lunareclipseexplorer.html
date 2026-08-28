@@ -1266,6 +1266,11 @@
 
             switchMainView('3d');
 
+            if (window.innerWidth <= 768) {
+                toggleSidebar(true);
+                toggleSettingsPanel(false);
+            }
+
             requestAnimationFrame(mainAnimationLoop);
         });
 
@@ -3218,6 +3223,9 @@
             if (show) {
                 panel.classList.remove('collapsed');
                 reopenBtn.style.display = 'none';
+                if (window.innerWidth <= 768) {
+                    toggleSettingsPanel(false);
+                }
             } else {
                 panel.classList.add('collapsed');
                 reopenBtn.style.display = 'flex';
@@ -3232,6 +3240,9 @@
                 panel.classList.remove('collapsed');
                 reopenBtn.style.display = 'none';
                 if (badge) badge.classList.remove('panel-collapsed');
+                if (window.innerWidth <= 768) {
+                    toggleSidebar(false);
+                }
             } else {
                 panel.classList.add('collapsed');
                 reopenBtn.style.display = 'flex';

@@ -3296,9 +3296,9 @@
         btnToggleRight?.addEventListener('click', closeRightPanel);
         btnReopenRight?.addEventListener('click', openRightPanel);
 
-        // Si se carga inicialmente en pantalla pequeña, cerrar paneles para dejar ver el globo con los botones superiores
+        // Si se carga inicialmente en pantalla pequeña, abrir panel izquierdo y cerrar panel derecho
         if (window.innerWidth <= 768) {
-            closeLeftPanel();
+            openLeftPanel();
             closeRightPanel();
         }
 
