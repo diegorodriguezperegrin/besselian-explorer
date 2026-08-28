@@ -1080,7 +1080,7 @@
             position: absolute;
             top: 20px;
             right: 385px;
-            z-index: 24;
+            z-index: 35;
             display: none !important;
             align-items: center;
             gap: 8px;
@@ -1178,7 +1178,7 @@
     </div>
 
     <!-- Indicador Flotante "EN VIVO" con LED y texto rojo de parpadeo nítido -->
-    <div id="live-indicator-badge" class="live-indicator-badge" style="display: none;">
+    <div id="live-indicator-badge" class="live-indicator-badge">
         <span class="live-led"></span>
         <span class="live-text">EN VIVO</span>
     </div>
@@ -3793,6 +3793,28 @@
                 if (isLiveMode && playBtn) playBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
             }
         }
+
+        function checkLiveClockSync() {
+            if (isLiveMode && currentEclipse) {
+                const now = Date.now();
+                const isInside = (now >= simStartTimeMs && now <= simEndTimeMs);
+                isPlaying = isInside;
+                if (now !== simCurrentTimeMs) {
+                    simCurrentTimeMs = now;
+                    updateTimeUI();
+                    if (currentActiveView === 'telescopic') renderTelescopicView();
+                    scene3DNeedsRender = true;
+                } else {
+                    updateLiveBadgeState();
+                }
+            }
+        }
+
+        window.addEventListener('focus', checkLiveClockSync);
+        window.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') checkLiveClockSync();
+        });
+        setInterval(checkLiveClockSync, 250);
 
         function toggleLiveModeCheckbox(isChecked) {
             if (isChecked) {
