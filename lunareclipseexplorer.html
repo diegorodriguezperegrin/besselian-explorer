@@ -111,8 +111,8 @@
             top: 15px;
             left: 15px;
             width: 350px;
-            max-height: calc(100vh - 30px);
-            max-height: calc(100dvh - 30px);
+            max-height: calc(100vh - 120px);
+            max-height: calc(100dvh - 120px);
             z-index: 25;
             background: var(--bg-panel);
             backdrop-filter: blur(16px);
@@ -250,7 +250,7 @@
             color: #fff;
         }
 
-        /* Barra Flotante de Paneles Minimizados (Apilados a la izquierda) */
+        /* Barra Flotante de Paneles Minimizados (Apilados verticalmente a la izquierda) */
         .top-nav-bar {
             position: absolute;
             top: 15px;
@@ -261,11 +261,7 @@
             align-items: flex-start;
             pointer-events: none;
             gap: 8px;
-            transition: left 0.25s ease;
-        }
-
-        .top-nav-bar.sidebar-open {
-            left: calc(15px + 350px + 10px);
+            transition: top 0.25s ease;
         }
 
         .top-nav-bar > * {
@@ -4098,15 +4094,27 @@
             const btnDock = document.getElementById('btn-reopen-dock');
 
             if (isMobile) {
-                if (navBar) navBar.classList.remove('sidebar-open');
+                if (navBar) {
+                    navBar.style.left = '10px';
+                    navBar.style.top = '10px';
+                }
                 if (btnSide) { btnSide.style.display = 'inline-flex'; btnSide.classList.toggle('active-nav', sideOpen); }
                 if (btnSet) { btnSet.style.display = 'inline-flex'; btnSet.classList.toggle('active-nav', setOpen); }
                 if (btnDock) { btnDock.style.display = 'inline-flex'; btnDock.classList.toggle('active-nav', dockOpen); }
             } else {
-                if (navBar) navBar.classList.toggle('sidebar-open', sideOpen);
                 if (btnSide) { btnSide.style.display = sideOpen ? 'none' : 'inline-flex'; btnSide.classList.remove('active-nav'); }
                 if (btnSet) { btnSet.style.display = setOpen ? 'none' : 'inline-flex'; btnSet.classList.remove('active-nav'); }
                 if (btnDock) { btnDock.style.display = dockOpen ? 'none' : 'inline-flex'; btnDock.classList.remove('active-nav'); }
+
+                if (navBar) {
+                    navBar.style.left = '15px';
+                    if (sideOpen && sidePanel) {
+                        const sideHeight = sidePanel.offsetHeight;
+                        navBar.style.top = `${15 + sideHeight + 10}px`;
+                    } else {
+                        navBar.style.top = '15px';
+                    }
+                }
             }
         }
 
