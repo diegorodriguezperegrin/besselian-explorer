@@ -1417,6 +1417,10 @@
                     <input type="checkbox" id="chk-show-limits-labels">
                     <span>Rótulos de los límites</span>
                 </label>
+                <label class="checkbox-row disabled" id="lbl-show-tele-hud">
+                    <input type="checkbox" id="chk-show-tele-hud" checked disabled onchange="toggleTelescopeHUD(this.checked); if (this.checked && currentEclipse) updateTelescopeHUD(getMoonHorizontalCoords(currentEclipse.zenLat, currentEclipse.zenLon, simCurrentTimeMs, currentEclipse.maxMs));">
+                    <span>Rótulos de información superior (HUD)</span>
+                </label>
                 <label class="checkbox-row disabled" id="lbl-show-equatorial">
                     <input type="checkbox" id="chk-show-equatorial" disabled onchange="renderTelescopicView(); if (currentEclipse) updateTelescopeHUD(getMoonHorizontalCoords(currentEclipse.zenLat, currentEclipse.zenLon, simCurrentTimeMs, currentEclipse.maxMs));">
                     <span>Orientación ecuatorial (Norte arriba)</span>
@@ -1788,7 +1792,18 @@
             el.style.left = `calc(${pct}% + ${offsetPx.toFixed(2)}px)`;
         }
 
+        function toggleTelescopeHUD(show) {
+            const hud = document.getElementById('telescope-hud');
+            if (hud) hud.style.display = show ? 'flex' : 'none';
+        }
+
         function updateTelescopeHUD(horizCoords) {
+            const hud = document.getElementById('telescope-hud');
+            const chkHud = document.getElementById('chk-show-tele-hud');
+            const isVisible = !chkHud || chkHud.checked;
+            if (hud) hud.style.display = isVisible ? 'flex' : 'none';
+            if (!isVisible) return;
+
             const pillCoords = document.getElementById('hud-pill-coords');
             const pillOrient = document.getElementById('hud-pill-orient');
             if (!pillCoords || !pillOrient) return;
@@ -4037,8 +4052,9 @@
                 lblLimitLabels.classList.toggle('disabled', !enableSub);
             }
 
-            // Opciones de la Vista Telescópica 2D (Orientación ecuatorial, Rótulos lunares, Ejes de referencia)
+            // Opciones de la Vista Telescópica 2D (HUD superior, Orientación ecuatorial, Rótulos lunares, Ejes de referencia)
             const optTele = [
+                { lbl: 'lbl-show-tele-hud', chk: 'chk-show-tele-hud' },
                 { lbl: 'lbl-show-equatorial', chk: 'chk-show-equatorial' },
                 { lbl: 'lbl-show-features', chk: 'chk-show-features' },
                 { lbl: 'lbl-show-axes', chk: 'chk-show-axes' }
