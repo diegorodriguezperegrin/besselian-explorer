@@ -1239,7 +1239,7 @@
 
         // Variables de Three.js 3D
         let scene3D, camera3D, renderer3D, controls3D;
-        let sunMesh3D, earthGroup, earthMesh3D, atmosphereMesh3D, moonMesh3D, shadowConesGroup3D, umbraConeMesh3D, penumbraConeMesh3D, moonOrbitLine3D;
+        let sunMesh3D, earthGroup, earthMesh3D, atmosphereMesh3D, moonMesh3D, moonMat, shadowConesGroup3D, umbraConeMesh3D, penumbraConeMesh3D, moonOrbitLine3D;
         let subsolarMarkerGroup3D, sublunarMarkerGroup3D, observerMarkerGroup3D, eclipticPlaneGroup3D, nodeLine3D, graticuleGroup, eclipseLimitsGroup3D;
 
         // Constantes Físicas Globales 3D (1 unidad = 1.000 km)
@@ -2515,11 +2515,45 @@
             penumbraConeMesh3D.renderOrder = 1;
             shadowConesGroup3D.add(penumbraConeMesh3D);
 
-            // Luna 3D con Textura Equirrectangular Oficial NASA LRO (2048x1024)
+            // Luna 3D con Textura Equirrectangular Oficial NASA LRO (2048x1024) y Shader Volumétrico de Sombra
             const moonGeo = new THREE.SphereGeometry(MOON_RADIUS, 64, 64);
-            const moonMat = new THREE.MeshPhongMaterial({
+            moonMat = new THREE.MeshPhongMaterial({
                 shininess: 6
             });
+            moonMat.userData = {
+                uUmbraRadius: { value: 4.60 },
+                uPenumbraRadius: { value: 8.18 }
+            };
+            moonMat.onBeforeCompile = function(shader) {
+                shader.uniforms.uUmbraRadius = moonMat.userData.uUmbraRadius;
+                shader.uniforms.uPenumbraRadius = moonMat.userData.uPenumbraRadius;
+
+                shader.vertexShader = 'varying vec3 vWorldPos;\n' + shader.vertexShader.replace(
+                    '#include <worldpos_vertex>',
+                    `#include <worldpos_vertex>
+                    vWorldPos = (modelMatrix * vec4(transformed, 1.0)).xyz;`
+                );
+
+                shader.fragmentShader = 'varying vec3 vWorldPos;\nuniform float uUmbraRadius;\nuniform float uPenumbraRadius;\n' + shader.fragmentShader.replace(
+                    '#include <dithering_fragment>',
+                    `#include <dithering_fragment>
+                    float distShadow = length(vWorldPos.xy);
+                    if (distShadow < uUmbraRadius) {
+                        float uFrac = clamp((uUmbraRadius - distShadow) / (uUmbraRadius * 0.4), 0.0, 1.0);
+                        vec3 bloodRed = vec3(0.66, 0.20, 0.12);
+                        vec3 darkCopper = vec3(0.22, 0.06, 0.03);
+                        vec3 umbraTone = mix(bloodRed, darkCopper, uFrac);
+                        // Mezcla la textura lunar en umbra con la refracción atmosférica rojiza
+                        gl_FragColor.rgb = gl_FragColor.rgb * 0.12 + umbraTone * (0.38 + 0.15 * (1.0 - uFrac));
+                    } else if (distShadow < uPenumbraRadius) {
+                        float pFrac = (distShadow - uUmbraRadius) / (uPenumbraRadius - uUmbraRadius);
+                        float dimming = mix(0.30, 1.0, smoothstep(0.0, 1.0, pFrac));
+                        gl_FragColor.rgb *= dimming;
+                    }
+                    `
+                );
+            };
+
             const texLoader = new THREE.TextureLoader();
             const moonSrc = (typeof MOON_TOPO_BASE64 !== 'undefined') ? MOON_TOPO_BASE64 : 'moon_topo_2048.jpg';
             const moonTexture3D = texLoader.load(moonSrc, function(tex) {
@@ -2848,26 +2882,10 @@
                 observerMarkerGroup3D.visible = showObserver;
             }
 
-            // Enrojecimiento y atenuación lumínica continua y suave en 3D (Luna de Sangre en umbra)
-            const penDist = geo.rPenumbra + geo.rMoon;
-            const umbDist = geo.rUmbra + geo.rMoon;
-
-            if (geo.dist < umbDist) {
-                // Inmersión gradual en la umbra (0.0 en contacto exterior, 1.0 en inmersión total)
-                const uFrac = Math.max(0, Math.min(1, (umbDist - geo.dist) / (2 * geo.rMoon)));
-                const moonColor = new THREE.Color(0xffffff).lerp(new THREE.Color(0xa83220), uFrac * 0.75);
-                const moonEmissive = new THREE.Color(0x000000).lerp(new THREE.Color(0x350d08), uFrac * 0.90);
-                moonMesh3D.material.color.copy(moonColor);
-                moonMesh3D.material.emissive.copy(moonEmissive);
-            } else if (geo.dist < penDist) {
-                // Atenuación sutil continua a través de la penumbra
-                const pFrac = Math.max(0, Math.min(1, (penDist - geo.dist) / (penDist - umbDist)));
-                const moonColor = new THREE.Color(0xffffff).lerp(new THREE.Color(0xd1d5db), pFrac * 0.25);
-                moonMesh3D.material.color.copy(moonColor);
-                moonMesh3D.material.emissive.setHex(0x000000);
-            } else {
-                moonMesh3D.material.color.setHex(0xffffff);
-                moonMesh3D.material.emissive.setHex(0x000000);
+            // Actualizar radios del shader de sombra volumétrico de la Luna 3D
+            if (moonMat && moonMat.userData && moonMat.userData.uUmbraRadius) {
+                moonMat.userData.uUmbraRadius.value = rUmbra3D;
+                moonMat.userData.uPenumbraRadius.value = rPenumbra3D;
             }
         }
 
