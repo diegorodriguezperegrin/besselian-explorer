@@ -2812,12 +2812,12 @@
             // Orientación física astronómica del globo terrestre:
             // 1. Inclinación del eje polar respecto a la Eclíptica según la declinación subsolar (inclinación en X)
             if (earthGroup) {
-                earthGroup.rotation.x = -coords.subsolar.lat * RAD;
+                earthGroup.rotation.x = coords.subsolar.lat * RAD;
                 earthGroup.rotation.z = 0;
             }
             // 2. Rotación diurna en tiempo real: orienta el meridiano subsolar hacia el Sol (+Z) y el sublunar hacia la Luna (-Z)
             if (earthMesh3D) {
-                earthMesh3D.rotation.y = (90 - coords.subsolar.lon) * RAD;
+                earthMesh3D.rotation.y = (-90 - coords.subsolar.lon) * RAD;
             }
 
             // 1. Punto Subsolar (☀️ Sol en Cenit): anclado a la coordenada geográfica real (latitud, longitud)
