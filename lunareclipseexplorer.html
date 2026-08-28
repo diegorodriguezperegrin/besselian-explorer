@@ -833,6 +833,20 @@
                 left: auto;
                 max-height: calc(100vh - 30px);
             }
+            .telescope-hud {
+                max-width: calc(100vw - 40px);
+                top: 10px;
+            }
+            .live-indicator-badge {
+                top: 12px;
+                right: 12px !important;
+                padding: 4px 10px;
+            }
+            .live-text {
+                font-size: 0.70rem;
+            }
+        }
+
         /* Indicador Flotante "EN VIVO" con LED y texto rojo de parpadeo nítido */
         .live-indicator-badge {
             position: absolute;
@@ -909,17 +923,6 @@
             text-transform: uppercase;
             animation: blinkLiveText 1.0s infinite;
             font-family: inherit;
-        }
-
-        @media (max-width: 768px) {
-            .live-indicator-badge {
-                top: 12px;
-                right: 12px !important;
-                padding: 4px 10px;
-            }
-            .live-text {
-                font-size: 0.70rem;
-            }
         }
     </style>
 </head>
