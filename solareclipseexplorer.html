@@ -26,8 +26,8 @@
     <!-- Three.js y OrbitControls desde CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" integrity="sha384-CI3ELBVUz9XQO+97x6nwMDPosPR5XvsxW2ua7N1Xeygeh1IxtgqtCkGfQY9WWdHu" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js" integrity="sha384-wagZhIFgY4hD+7awjQjR4e2E294y6J2HSnd8eTNc15ZubTeQeVRZwhQJ+W6hnBsf" crossorigin="anonymous"></script>
-    <!-- PapaParse para procesamiento rápido de CSV en cliente -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js" integrity="sha384-D/t0ZMqQW31H3az8ktEiNb39wyKnS82iFY52QPACM+IjKW3jDUhyIgh2PApRqJZs" crossorigin="anonymous"></script>
+    <!-- Catálogo de Eclipses Solares de la NASA (5 Milenios: -1999 a 3000) -->
+    <script src="solar_eclipses_data.js"></script>
     <!-- Texturas Globales Base64 de la Tierra (Carga Offline 100% libre de CORS) -->
     <script src="textures_data.js"></script>
     <!-- FontAwesome icons -->
@@ -1692,67 +1692,22 @@
         // -------------------------------------------------------------
         // 3. CARGA Y SELECCIÓN DE DATOS
         // -------------------------------------------------------------
-        let eclipseData = [...PRESET_ECLIPSES];
-        let currentEclipse = PRESET_ECLIPSES.find(e => e.cat_no === 9568) || PRESET_ECLIPSES[1];
+        let eclipseData = (typeof NASA_SOLAR_ECLIPSES !== 'undefined' && NASA_SOLAR_ECLIPSES.length > 0)
+            ? NASA_SOLAR_ECLIPSES
+            : [...PRESET_ECLIPSES];
+        let currentEclipse = eclipseData.find(e => e.cat_no === 9568) || PRESET_ECLIPSES[1] || eclipseData[0];
         let isPlaying = false;
 
-        function loadCSVData(csvContent) {
-            Papa.parse(csvContent, {
-                worker: true,
-                header: true,
-                dynamicTyping: true,
-                skipEmptyLines: true,
-                complete: function(results) {
-                    eclipseData = results.data;
-                    const badge = document.getElementById('csv-status-badge');
-                    if (badge) {
-                        badge.innerHTML = `<i class="fa-solid fa-check-circle"></i> ${eclipseData.length.toLocaleString()} eclipses (-1999-3000)`;
-                        badge.style.color = 'var(--accent-green)';
-                        badge.title = 'Five Millennium Catalog of Solar Eclipses (-1999 a +3000) · Fred Espenak & Jean Meeus (NASA GSFC)';
-                        badge.style.cursor = 'help';
-                    }
-                    console.log(`Catálogo cargado: ${eclipseData.length} eclipses.`);
-                    const defaultCat = 9568; // 2 de Agosto de 2027
-                    const targetYear = parseInt(yearInput?.value) || 2027;
-                    filterEclipsesByYear(targetYear, defaultCat, false);
-                },
-                error: function(err) {
-                    console.error("Error al procesar CSV:", err);
-                    const badge = document.getElementById('csv-status-badge');
-                    if (badge) {
-                        badge.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Error CSV`;
-                        badge.style.color = 'var(--solar-red)';
-                    }
-                }
-            });
+        function updateCatalogBadge() {
+            const badge = document.getElementById('csv-status-badge');
+            if (badge) {
+                badge.innerHTML = `<i class="fa-solid fa-check-circle"></i> ${eclipseData.length.toLocaleString()} eclipses (-1999 a 3000)`;
+                badge.style.color = 'var(--accent-green)';
+                badge.title = 'Five Millennium Catalog of Solar Eclipses (-1999 a +3000) · Fred Espenak & Jean Meeus (NASA GSFC)';
+                badge.style.cursor = 'help';
+            }
         }
-
-        const CSV_LOCAL_PATH = 'eclipse_besselian_elements.csv';
-        const CSV_CDN_URL = 'https://cdn.jsdelivr.net/gh/diegorodriguezperegrin/besselian-explorer@main/eclipse_besselian_elements.csv';
-
-        fetch(CSV_LOCAL_PATH)
-            .then(res => {
-                if(!res.ok) throw new Error("Fetch local no disponible");
-                return res.text();
-            })
-            .then(data => loadCSVData(data))
-            .catch(err => {
-                console.log("Cargando CSV desde CDN GitHub/jsDelivr...");
-                fetch(CSV_CDN_URL)
-                    .then(res => {
-                        if(!res.ok) throw new Error("Fetch CDN no disponible");
-                        return res.text();
-                    })
-                    .then(data => loadCSVData(data))
-                    .catch(e => {
-                        console.log("Usando presets iniciales.");
-                        const badge = document.getElementById('csv-status-badge');
-                        if (badge) {
-                            badge.innerHTML = `<i class="fa-solid fa-star"></i> Presets activos`;
-                            badge.style.color = 'var(--accent-blue)';
-                        }
-                    });
-            });
+        updateCatalogBadge();
 
         const yearInput = document.getElementById('year-input');
         const eclipseSelect = document.getElementById('eclipse-select');
@@ -3374,10 +3329,9 @@
         playBtn.addEventListener('click', toggleSimulation);
 
         // Inicializar selección por defecto: 2 de Agosto de 2027
-        populateSelect(PRESET_ECLIPSES);
-        const defaultPreset = PRESET_ECLIPSES.find(e => e.cat_no === 9568) || PRESET_ECLIPSES[1];
-        selectEclipse(defaultPreset, true);
-        eclipseSelect.value = 9568;
+        const defaultCat = 9568;
+        if (yearInput) yearInput.value = 2027;
+        filterEclipsesByYear(2027, defaultCat, true);
 
         // -------------------------------------------------------------
         // 7. TELEMETRÍA Y PRUEBA DE ESTRÉS DE MEMORIA VRAM
