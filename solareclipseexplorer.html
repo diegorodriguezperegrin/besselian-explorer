@@ -931,6 +931,11 @@
     </div>
 
     <script>
+        let needsRender = true;
+        function requestRender() {
+            needsRender = true;
+        }
+
         // -------------------------------------------------------------
         // ECLIPSES PREDEFINIDOS CON DATOS BESSELIANOS RIGUROSOS
         // -------------------------------------------------------------
@@ -1390,6 +1395,7 @@
         const earthMap = new THREE.TextureLoader().load(earthSrc, function(texture) {
             texture.needsUpdate = true;
             earthMaterial.needsUpdate = true;
+            requestRender();
         });
         earthMaterial.map = earthMap;
 
@@ -3399,11 +3405,6 @@
         // -------------------------------------------------------------
         // 8. BUCLE PRINCIPAL DE ANIMACIÓN 3D (Reactivo bajo demanda)
         // -------------------------------------------------------------
-        let needsRender = true;
-        function requestRender() {
-            needsRender = true;
-        }
-
         function animate() {
             requestAnimationFrame(animate);
 

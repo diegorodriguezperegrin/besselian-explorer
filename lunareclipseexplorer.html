@@ -1193,6 +1193,17 @@
         const MATARO_LAT = 41.54, MATARO_LON = 2.44, RAD = Math.PI / 180, DEG = 180 / Math.PI;
 
         // Estado Global
+        let scene3DNeedsRender = true;
+        let telescopicNeedsRender = true;
+
+        function requestRender3D() {
+            scene3DNeedsRender = true;
+        }
+
+        function requestRenderTelescopic() {
+            telescopicNeedsRender = true;
+        }
+
         let currentEclipse = null;
         let simCurrentTimeMs = 0;
         let simStartTimeMs = 0, simEndTimeMs = 0;
@@ -2400,6 +2411,7 @@
             const earthTexture = new THREE.TextureLoader().load(earthSrc, function(tex) {
                 tex.needsUpdate = true;
                 earthMat.needsUpdate = true;
+                requestRender3D();
             });
             earthMat.map = earthTexture;
 
@@ -2570,6 +2582,7 @@
                     moonMat.map = tex;
                     moonMat.needsUpdate = true;
                 }
+                requestRender3D();
             });
             moonMat.map = moonTexture3D;
             moonMesh3D = new THREE.Mesh(moonGeo, moonMat);
@@ -2928,17 +2941,6 @@
         }
 
         // 6. Ciclo de Animación y Controles Temporales (Reactivo bajo demanda)
-        let scene3DNeedsRender = true;
-        let telescopicNeedsRender = true;
-
-        function requestRender3D() {
-            scene3DNeedsRender = true;
-        }
-
-        function requestRenderTelescopic() {
-            telescopicNeedsRender = true;
-        }
-
         function mainAnimationLoop(timestamp) {
             try {
                 if (!lastFrameTimestamp) lastFrameTimestamp = timestamp;
