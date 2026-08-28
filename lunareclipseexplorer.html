@@ -3018,8 +3018,6 @@
                     phaseHtml = '<span style="color: var(--accent-blue);">⏳ En espera del inicio en vivo</span>';
                 } else if (now > simEndTimeMs) {
                     phaseHtml = '<span style="color: var(--text-dim);">⏹️ Eclipse finalizado (en pausa)</span>';
-                } else {
-                    phaseHtml += ' <span style="color: #ef4444; font-weight: 700; margin-left: 6px; letter-spacing: 0.5px;">🔴 EN VIVO</span>';
                 }
             }
             phaseLabel.innerHTML = phaseHtml;
