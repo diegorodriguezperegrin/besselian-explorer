@@ -833,7 +833,7 @@
                 left: auto;
                 max-height: calc(100vh - 30px);
             }
-        /* Indicador Flotante "EN VIVO" con LED y texto intermitente */
+        /* Indicador Flotante "EN VIVO" con LED y texto rojo de parpadeo nítido */
         .live-indicator-badge {
             position: absolute;
             top: 20px;
@@ -842,45 +842,52 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            background: rgba(15, 23, 42, 0.88);
+            background: rgba(15, 23, 42, 0.92);
             backdrop-filter: blur(14px);
-            border: 1px solid rgba(239, 68, 68, 0.55);
+            border: 1px solid rgba(239, 68, 68, 0.6);
             padding: 6px 14px;
             border-radius: 9999px;
             box-shadow: 0 4px 20px rgba(239, 68, 68, 0.35);
             pointer-events: none;
             transition: right 0.25s ease, opacity 0.25s ease;
+            animation: blinkLiveBadge 1.0s infinite;
         }
 
         .live-indicator-badge.panel-collapsed {
             right: 20px;
         }
 
-        @keyframes pulseLed {
-            0% {
-                transform: scale(0.95);
-                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.85);
-                opacity: 1;
+        @keyframes blinkLiveBadge {
+            0%, 49.9% {
+                border-color: rgba(239, 68, 68, 0.85);
+                box-shadow: 0 0 16px 2px rgba(239, 68, 68, 0.45);
             }
-            50% {
-                transform: scale(1.2);
-                box-shadow: 0 0 14px 5px rgba(239, 68, 68, 0.65);
-                opacity: 0.85;
-            }
-            100% {
-                transform: scale(0.95);
-                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
-                opacity: 1;
+            50%, 100% {
+                border-color: rgba(239, 68, 68, 0.2);
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
             }
         }
 
-        @keyframes pulseText {
-            0%, 100% {
+        @keyframes blinkLiveLed {
+            0%, 49.9% {
                 opacity: 1;
-                text-shadow: 0 0 10px rgba(239, 68, 68, 0.8);
+                transform: scale(1.15);
+                box-shadow: 0 0 14px 4px rgba(239, 68, 68, 0.95);
             }
-            50% {
-                opacity: 0.35;
+            50%, 100% {
+                opacity: 0.15;
+                transform: scale(0.85);
+                box-shadow: none;
+            }
+        }
+
+        @keyframes blinkLiveText {
+            0%, 49.9% {
+                opacity: 1;
+                text-shadow: 0 0 12px rgba(239, 68, 68, 0.95);
+            }
+            50%, 100% {
+                opacity: 0.2;
                 text-shadow: none;
             }
         }
@@ -891,7 +898,7 @@
             background-color: #ef4444;
             border-radius: 50%;
             display: inline-block;
-            animation: pulseLed 1.2s infinite ease-in-out;
+            animation: blinkLiveLed 1.0s infinite;
         }
 
         .live-text {
@@ -900,7 +907,7 @@
             font-weight: 800;
             letter-spacing: 1.5px;
             text-transform: uppercase;
-            animation: pulseText 1.2s infinite ease-in-out;
+            animation: blinkLiveText 1.0s infinite;
             font-family: inherit;
         }
 
@@ -939,10 +946,10 @@
         </div>
     </div>
 
-    <!-- Indicador Flotante "EN VIVO" con LED y texto rojo intermitente -->
+    <!-- Indicador Flotante "EN VIVO" con LED y texto rojo de parpadeo nítido -->
     <div id="live-indicator-badge" class="live-indicator-badge" style="display: none;">
         <span class="live-led"></span>
-        <span class="live-text">En vivo</span>
+        <span class="live-text">EN VIVO</span>
     </div>
 
     <!-- Botones Flotantes para Reabrir Paneles cuando están colapsados -->
