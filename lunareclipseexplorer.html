@@ -4125,8 +4125,8 @@
                 if (navBar) {
                     navBar.style.left = '15px';
                     if (sideOpen && sidePanel) {
-                        const sideHeight = sidePanel.offsetHeight;
-                        navBar.style.top = `${15 + sideHeight + 10}px`;
+                        const sideBottom = sidePanel.offsetTop + sidePanel.offsetHeight;
+                        navBar.style.top = `${sideBottom + 8}px`;
                     } else {
                         navBar.style.top = '15px';
                     }
