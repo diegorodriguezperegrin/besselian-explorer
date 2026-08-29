@@ -1093,20 +1093,23 @@
                         <!-- Poblado dinámicamente -->
                     </datalist>
                 </div>
+                <button class="ctrl-btn" id="btn-toggle-custom-coords" onclick="toggleCustomCoords()" title="Ajustar coordenadas manuales (Lat/Lon)" style="width: 32px; height: 32px; padding: 0; flex-shrink: 0;">
+                    <i class="fa-solid fa-sliders"></i>
+                </button>
                 <button class="ctrl-btn" id="btn-observer-gps" onclick="detectUserLocation()" title="Detectar mi ubicación actual (GPS)" style="width: 32px; height: 32px; padding: 0; flex-shrink: 0;">
                     <i class="fa-solid fa-crosshairs"></i>
                 </button>
             </div>
             
-            <!-- Inputs para Coordenadas Personalizadas (oculto por defecto) -->
+            <!-- Inputs para Coordenadas Personalizadas -->
             <div id="observer-custom-coords" style="display: none; gap: 6px; align-items: center;">
                 <div style="flex: 1; display: flex; align-items: center; background: rgba(0,0,0,0.3); border: 1px solid rgba(56,189,248,0.25); border-radius: 6px; padding: 0 6px;">
                     <span style="font-size: 0.68rem; color: var(--text-secondary); margin-right: 4px;">Lat:</span>
-                    <input type="number" id="custom-obs-lat" step="0.01" value="41.54" style="width: 100%; background: transparent; border: none; color: #fff; font-size: 0.75rem; padding: 4px 0;" onchange="onCustomCoordsChange()">
+                    <input type="number" id="custom-obs-lat" step="0.01" value="41.54" style="width: 100%; background: transparent; border: none; color: #fff; font-size: 0.75rem; padding: 4px 0;" oninput="onCustomCoordsChange()" onchange="onCustomCoordsChange()">
                 </div>
                 <div style="flex: 1; display: flex; align-items: center; background: rgba(0,0,0,0.3); border: 1px solid rgba(56,189,248,0.25); border-radius: 6px; padding: 0 6px;">
                     <span style="font-size: 0.68rem; color: var(--text-secondary); margin-right: 4px;">Lon:</span>
-                    <input type="number" id="custom-obs-lon" step="0.01" value="2.44" style="width: 100%; background: transparent; border: none; color: #fff; font-size: 0.75rem; padding: 4px 0;" onchange="onCustomCoordsChange()">
+                    <input type="number" id="custom-obs-lon" step="0.01" value="2.44" style="width: 100%; background: transparent; border: none; color: #fff; font-size: 0.75rem; padding: 4px 0;" oninput="onCustomCoordsChange()" onchange="onCustomCoordsChange()">
                 </div>
             </div>
 
@@ -1642,6 +1645,25 @@
             populateObserverSelect('');
         }
 
+        function toggleCustomCoords(forceShow = null) {
+            const customBox = document.getElementById('observer-custom-coords');
+            if (!customBox) return;
+            const isVisible = customBox.style.display === 'flex';
+            const show = forceShow !== null ? forceShow : !isVisible;
+            customBox.style.display = show ? 'flex' : 'none';
+            const toggleBtn = document.getElementById('btn-toggle-custom-coords');
+            if (toggleBtn) {
+                toggleBtn.style.color = show ? 'var(--accent-blue)' : '';
+                toggleBtn.style.borderColor = show ? 'var(--accent-blue)' : '';
+            }
+            if (show) {
+                const latIn = document.getElementById('custom-obs-lat');
+                const lonIn = document.getElementById('custom-obs-lon');
+                if (latIn) latIn.value = currentObserver.lat;
+                if (lonIn) lonIn.value = currentObserver.lon;
+            }
+        }
+
         function onCustomCoordsChange() {
             const latIn = document.getElementById('custom-obs-lat');
             const lonIn = document.getElementById('custom-obs-lon');
@@ -1651,7 +1673,12 @@
             if (isNaN(lon)) lon = 0;
             lat = Math.max(-90, Math.min(90, lat));
             lon = Math.max(-180, Math.min(180, lon));
-            updateObserverPosition(lat, lon, currentObserver.name || 'Personalizado', null);
+            
+            const input = document.getElementById('observer-search-input');
+            if (input && input.value !== 'Personalizado') {
+                input.value = 'Personalizado';
+            }
+            updateObserverPosition(lat, lon, 'Personalizado', null);
         }
 
         function detectUserLocation() {
@@ -1705,6 +1732,12 @@
                 observerMarkerGroup3D.position.copy(latLngToVector3(lat, lon, EARTH_RADIUS * 1.004));
                 observerMarkerGroup3D.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), latLngToVector3(lat, lon, 1.0).normalize());
             }
+
+            // Sincronizar inputs numéricos de coordenadas
+            const latIn = document.getElementById('custom-obs-lat');
+            const lonIn = document.getElementById('custom-obs-lon');
+            if (latIn && document.activeElement !== latIn) latIn.value = lat;
+            if (lonIn && document.activeElement !== lonIn) lonIn.value = lon;
 
             // Actualizar etiquetas en la interfaz
             const titleEl = document.getElementById('observer-header-title');
