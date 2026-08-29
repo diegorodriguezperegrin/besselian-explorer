@@ -715,36 +715,36 @@
         .player-slider::-webkit-slider-thumb {
             -webkit-appearance: none;
             appearance: none;
-            width: 14px;
-            height: 14px;
+            width: 11px;
+            height: 11px;
             border-radius: 50%;
             background: var(--accent-blue);
-            box-shadow: 0 0 8px var(--accent-blue);
+            box-shadow: 0 0 6px var(--accent-blue);
             cursor: pointer;
             transition: transform 0.1s;
         }
 
         .player-slider::-moz-range-thumb {
-            width: 14px;
-            height: 14px;
+            width: 11px;
+            height: 11px;
             border-radius: 50%;
             background: var(--accent-blue);
-            box-shadow: 0 0 8px var(--accent-blue);
+            box-shadow: 0 0 6px var(--accent-blue);
             border: none;
             cursor: pointer;
             transition: transform 0.1s;
         }
 
         .player-slider::-webkit-slider-thumb:hover {
-            transform: scale(1.25);
+            transform: scale(1.2);
         }
 
         .contact-marker {
             position: absolute;
             top: 2px;
             width: 2px;
-            height: 12px;
-            background: rgba(255, 255, 255, 0.35);
+            height: 16px;
+            background: rgba(255, 255, 255, 0.45);
             z-index: 1;
             transform: translateX(-50%);
             pointer-events: none;
@@ -752,9 +752,9 @@
 
         .contact-marker.tot {
             background: var(--accent-copper);
-            height: 16px;
-            top: 0;
-            width: 2.5px;
+            height: 18px;
+            top: 1px;
+            width: 2px;
         }
 
         .player-ctrls-compact {
@@ -1748,8 +1748,8 @@
             el.style.display = 'block';
             const frac = Math.max(0, Math.min(1, (timeMs - simStartTimeMs) / (simEndTimeMs - simStartTimeMs)));
             const pct = frac * 100;
-            // Compensar el radio del botón deslizador (14px de ancho -> 7px de radio en los bordes)
-            const offsetPx = (1 - 2 * frac) * 7;
+            // Compensar el radio del botón deslizador (11px de ancho -> 5.5px de radio en los bordes)
+            const offsetPx = (1 - 2 * frac) * 5.5;
             el.style.left = `calc(${pct}% + ${offsetPx.toFixed(2)}px)`;
         }
 
