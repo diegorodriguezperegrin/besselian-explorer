@@ -365,7 +365,7 @@
         .section-title span {
             display: inline-flex;
             align-items: center;
-            gap: 6px;
+            gap: 10px;
         }
 
         .section-title-between {
@@ -379,7 +379,7 @@
         .section-title-between > span:first-child {
             display: inline-flex;
             align-items: center;
-            gap: 6px;
+            gap: 10px;
             white-space: nowrap;
             flex-shrink: 0;
         }
@@ -1113,9 +1113,9 @@
                 <i class="fa-solid fa-moon"></i>
                 <span>Eclipses</span>
             </button>
-            <button class="reopen-btn" id="btn-reopen-circumstances" onclick="toggleCircumstancesPanel(null)" title="Abrir/Cerrar Circunstancias Locales">
+            <button class="reopen-btn" id="btn-reopen-circumstances" onclick="toggleCircumstancesPanel(null)" title="Abrir/Cerrar Personalización">
                 <i class="fa-solid fa-location-dot"></i>
-                <span>Circunstancias</span>
+                <span>Personalización</span>
             </button>
         </div>
         <button class="reopen-btn" id="btn-reopen-right" onclick="toggleSettingsPanel(null)" title="Abrir/Cerrar panel de Visualización">
@@ -1214,11 +1214,11 @@
         </div>
     </aside>
 
-    <!-- PANEL DEDICADO: Circunstancias Locales del Observador -->
+    <!-- PANEL DEDICADO: Personalización del Observador y Circunstancias Locales -->
     <aside class="circumstances-panel" id="circumstances-panel">
         <div class="panel-header">
             <div>
-                <h1>Circunstancias</h1>
+                <h1>Personalización</h1>
                 <p id="observer-header-subtitle">MATARÓ (41.54°N, 2.44°E)</p>
             </div>
             <div class="panel-toggle" onclick="toggleCircumstancesPanel(false)" title="Cerrar panel"><i class="fa-solid fa-xmark"></i></div>
