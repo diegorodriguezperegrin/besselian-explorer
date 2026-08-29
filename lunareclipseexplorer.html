@@ -387,17 +387,18 @@
         #catalog-status-badge {
             display: inline-flex !important;
             align-items: center !important;
-            gap: 3px !important;
             white-space: nowrap !important;
             flex-shrink: 0 !important;
-            font-size: 0.68rem !important;
+            font-size: 0.72rem !important;
+            font-weight: 400 !important;
+            color: var(--text-dim) !important;
+            text-transform: none !important;
+            letter-spacing: 0 !important;
             margin-left: auto !important;
             text-align: right !important;
-        }
-
-        #catalog-status-badge i {
-            width: auto !important;
-            font-size: 0.70rem !important;
+            background: none !important;
+            border: none !important;
+            padding: 0 !important;
         }
 
         /* Presets Rápidos (Idénticos a Besselian Explorer) */
@@ -1147,9 +1148,7 @@
         <!-- Búsqueda por Año y Fecha (Estilo Besselian Explorer) -->
         <div class="section-title section-title-between">
             <span><i class="fa-solid fa-magnifying-glass"></i> Buscar por Año</span>
-            <span id="catalog-status-badge" style="color: #4ade80; font-weight: 600; text-transform: none; letter-spacing: 0; cursor: help;" title="Five Millennium Catalog of Lunar Eclipses (1801 a 2200) · Fred Espenak &amp; Jean Meeus (NASA GSFC)">
-                <i class="fa-solid fa-circle-check"></i> 851 eclipses (1801-2200)
-            </span>
+            <span id="catalog-status-badge" title="Five Millennium Catalog of Lunar Eclipses (1801 a 2200) · Fred Espenak &amp; Jean Meeus (NASA GSFC)">851 eclipses (1801-2200)</span>
         </div>
         <div class="search-row" style="display: flex; gap: 8px; align-items: center; margin-bottom: 6px;">
             <div style="width: 85px; flex-shrink: 0;">
