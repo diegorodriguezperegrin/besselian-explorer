@@ -870,46 +870,49 @@
             color: var(--accent-blue);
         }
 
-        /* HUD Superior Telescópico */
+        /* HUD Superior Telescópico Discreto */
         .telescope-hud {
             position: absolute;
-            top: 20px;
+            top: 16px;
             left: 50%;
             transform: translateX(-50%);
             display: flex;
+            flex-direction: column;
             align-items: center;
-            gap: 10px;
+            gap: 3px;
             z-index: 15;
             pointer-events: none;
             transition: var(--transition-smooth);
             max-width: calc(100vw - 720px);
             justify-content: center;
-            flex-wrap: wrap;
+            text-align: center;
         }
 
         .hud-pill {
-            background: rgba(12, 16, 25, 0.92);
-            border: 1px solid var(--border-color);
-            backdrop-filter: blur(16px);
-            border-radius: 20px;
-            padding: 6px 14px;
-            font-size: 0.78rem;
-            font-weight: 600;
-            color: var(--text-primary);
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55);
+            background: rgba(8, 12, 22, 0.65);
+            backdrop-filter: blur(8px);
+            border: none;
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-size: 0.74rem;
+            font-weight: 400;
+            color: rgba(226, 232, 240, 0.85);
+            box-shadow: none;
             display: flex;
             align-items: center;
-            gap: 7px;
+            justify-content: center;
             white-space: nowrap;
+            letter-spacing: 0.01em;
+            line-height: 1.3;
         }
 
         .hud-pill.altaz {
-            border-color: rgba(56, 189, 248, 0.45);
-            background: rgba(15, 23, 42, 0.94);
+            background: rgba(8, 12, 22, 0.65);
+            color: rgba(226, 232, 240, 0.85);
         }
 
         .hud-pill.warning {
-            border-color: rgba(239, 68, 68, 0.55);
+            background: rgba(35, 12, 16, 0.7);
             color: #fca5a5;
         }
 
@@ -1090,12 +1093,8 @@
         <div class="viewport-layer" id="layer-telescopic">
             <canvas id="canvas-telescopic"></canvas>
             <div class="telescope-hud" id="telescope-hud">
-                <div class="hud-pill altaz" id="hud-pill-orient">
-                    <i class="fa-solid fa-mountain-sun" style="color: var(--accent-blue);"></i> <span id="tele-pill-orient-text">Vista Local (Cenit arriba)</span>
-                </div>
-                <div class="hud-pill altaz" id="hud-pill-coords" style="display: flex;">
-                    <i class="fa-solid fa-location-dot" style="color: #38bdf8;"></i> <span id="tele-pill-location">Mataró</span>
-                </div>
+                <div class="hud-pill altaz" id="hud-pill-orient">Vista Local (Mataró · Cenit arriba)</div>
+                <div class="hud-pill altaz" id="hud-pill-coords" style="display: flex;">Alt: -- · Az: --</div>
             </div>
         </div>
     </div>
@@ -1725,10 +1724,13 @@
                 const chiRad = getEclipseFrameTilt(currentEclipse, simCurrentTimeMs);
                 const isEquatorial = document.getElementById('chk-show-equatorial') && document.getElementById('chk-show-equatorial').checked;
 
+                // Limpiar nombre del observador para evitar anidamientos de paréntesis como "Mataró (Cosmos Mataró)"
+                const cleanObsName = currentObserver.name.replace(/\s*\([^)]*\)/g, '').trim() || currentObserver.name;
+
                 if (isEquatorial) {
-                    pillOrient.innerHTML = '<i class="fa-solid fa-compass" style="color: #f59e0b;"></i> <span>Vista Ecuatorial (Norte arriba)</span>';
+                    pillOrient.textContent = 'Vista Ecuatorial (Norte arriba)';
                 } else {
-                    pillOrient.innerHTML = `<i class="fa-solid fa-mountain-sun" style="color: var(--accent-blue);"></i> <span>Vista Local (${currentObserver.name} · Cenit arriba)</span>`;
+                    pillOrient.textContent = `Vista Local (${cleanObsName} · Cenit arriba)`;
                 }
 
                 const totalVisualRotDeg = (isEquatorial ? chiRad : (horizCoords.qRad + chiRad)) * DEG;
@@ -1736,10 +1738,10 @@
                 const isAbove = horizCoords.alt > -0.5;
                 if (isAbove) {
                     pillCoords.className = 'hud-pill altaz';
-                    pillCoords.innerHTML = `<i class="fa-solid fa-location-dot" style="color: #38bdf8;"></i> <span>Alt: <strong>${horizCoords.alt.toFixed(1)}°</strong> · Az: <strong>${horizCoords.az.toFixed(1)}°</strong> · Paraláctico (q): <strong>${horizCoords.qDeg >= 0 ? '+' : ''}${horizCoords.qDeg.toFixed(1)}°</strong> (Rot. visual: <strong>${totalVisualRotDeg.toFixed(1)}°</strong>)</span>`;
+                    pillCoords.textContent = `Alt: ${horizCoords.alt.toFixed(1)}° · Az: ${horizCoords.az.toFixed(1)}° · Paraláctico (q): ${horizCoords.qDeg >= 0 ? '+' : ''}${horizCoords.qDeg.toFixed(1)}° (Rot. visual: ${totalVisualRotDeg.toFixed(1)}°)`;
                 } else {
                     pillCoords.className = 'hud-pill warning';
-                    pillCoords.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="color: #f87171;"></i> <span>Bajo el horizonte (${horizCoords.alt.toFixed(1)}°) · q: <strong>${horizCoords.qDeg >= 0 ? '+' : ''}${horizCoords.qDeg.toFixed(1)}°</strong></span>`;
+                    pillCoords.textContent = `Bajo el horizonte (${horizCoords.alt.toFixed(1)}°) · Paraláctico (q): ${horizCoords.qDeg >= 0 ? '+' : ''}${horizCoords.qDeg.toFixed(1)}°`;
                 }
             }
         }
