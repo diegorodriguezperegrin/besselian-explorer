@@ -1217,10 +1217,7 @@
     <!-- PANEL DEDICADO: Personalización del Observador y Circunstancias Locales -->
     <aside class="circumstances-panel" id="circumstances-panel">
         <div class="panel-header">
-            <div>
-                <h1>Personalización</h1>
-                <p id="observer-header-subtitle">MATARÓ (41.54°N, 2.44°E)</p>
-            </div>
+            <h1>Personalización</h1>
             <div class="panel-toggle" onclick="toggleCircumstancesPanel(false)" title="Cerrar panel"><i class="fa-solid fa-xmark"></i></div>
         </div>
 
@@ -1256,6 +1253,12 @@
                 <span style="font-size: 0.68rem; color: var(--text-secondary); margin-right: 4px;">Lon:</span>
                 <input type="number" id="custom-obs-lon" step="0.01" value="2.44" style="width: 100%; background: transparent; border: none; color: #fff; font-size: 0.75rem; padding: 4px 0;" oninput="onCustomCoordsChange()" onchange="onCustomCoordsChange()">
             </div>
+        </div>
+
+        <!-- Indicador de la Ubicación Seleccionada Activa -->
+        <div style="margin-top: 6px; margin-bottom: 2px; font-size: 0.74rem; color: var(--accent-blue); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 6px;">
+            <i class="fa-solid fa-location-crosshairs" style="font-size: 0.72rem;"></i>
+            <span id="observer-header-subtitle">MATARÓ (41.54°N, 2.44°E)</span>
         </div>
 
         <!-- Visibilidad y Fases Locales -->
