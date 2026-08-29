@@ -204,7 +204,7 @@
             border-radius: 4px;
         }
 
-        /* Cabeceras Sticky de los Paneles */
+        /* Cabeceras Sticky y Arrastrables de los Paneles */
         .panel-header {
             position: sticky;
             top: -16px;
@@ -223,6 +223,22 @@
             align-items: center;
             height: 56px;
             box-sizing: border-box;
+            cursor: grab;
+            user-select: none;
+            touch-action: none;
+        }
+
+        .panel-header:active, .panel-header.is-dragging {
+            cursor: grabbing;
+        }
+
+        body.is-dragging-panel {
+            user-select: none;
+            cursor: grabbing !important;
+        }
+        body.is-dragging-panel * {
+            user-select: none !important;
+            cursor: grabbing !important;
         }
 
         .panel-header h1 {
@@ -885,6 +901,10 @@
                 justify-content: center;
                 gap: 6px;
             }
+            .panel-header {
+                cursor: default !important;
+                touch-action: auto !important;
+            }
             .reopen-group-left {
                 gap: 6px;
             }
@@ -1454,9 +1474,9 @@
                 toggleSidebar(true);
                 toggleCircumstancesPanel(false);
                 toggleSettingsPanel(false);
-            } else {
-                updateTopNavButtonsState();
             }
+            initDraggablePanels();
+            updateTopNavButtonsState();
 
             requestAnimationFrame(mainAnimationLoop);
         });
@@ -3820,8 +3840,149 @@
             updateTopNavButtonsState();
         }
 
+        // =========================================================================
+        // GESTOR DE VENTANAS FLOTANTES ARRASTRABLES (ESTILO HÍBRIDO ESCRITORIO / MÓVIL)
+        // =========================================================================
+        let maxPanelZIndex = 30;
+
+        function bringPanelToFront(panel) {
+            if (!panel) return;
+            maxPanelZIndex++;
+            panel.style.zIndex = maxPanelZIndex;
+        }
+
+        function resetPanelDefaultPosition(panelId) {
+            const panel = document.getElementById(panelId);
+            if (!panel) return;
+            panel.style.left = '';
+            panel.style.top = '';
+            panel.style.right = '';
+            panel.style.bottom = '';
+            panel.style.margin = '';
+        }
+
+        function resetAllPanelsPositions() {
+            ['sidebar-panel', 'circumstances-panel', 'settings-panel'].forEach(id => {
+                resetPanelDefaultPosition(id);
+            });
+        }
+
+        function initDraggablePanels() {
+            const panels = [
+                document.getElementById('sidebar-panel'),
+                document.getElementById('circumstances-panel'),
+                document.getElementById('settings-panel')
+            ].filter(Boolean);
+
+            panels.forEach(panel => {
+                const header = panel.querySelector('.panel-header');
+                if (!header) return;
+
+                // Elevar al frente al hacer clic en cualquier parte del panel
+                panel.addEventListener('pointerdown', () => {
+                    bringPanelToFront(panel);
+                });
+
+                // Doble clic en la cabecera restablece su posición original anclada
+                header.addEventListener('dblclick', (e) => {
+                    if (window.innerWidth <= 900) return;
+                    if (e.target.closest('.panel-toggle') || e.target.closest('button') || e.target.closest('a')) return;
+                    resetPanelDefaultPosition(panel.id);
+                });
+
+                let isDragging = false;
+                let startX = 0, startY = 0;
+                let startLeft = 0, startTop = 0;
+
+                header.addEventListener('pointerdown', (e) => {
+                    // Desactivar arrastre libre en móviles o pantallas táctiles pequeñas
+                    if (window.innerWidth <= 900) return;
+                    // Evitar arrastre si se pulsa el botón de cerrar u otros controles interactivos
+                    if (e.target.closest('.panel-toggle') || e.target.closest('button') || e.target.closest('input') || e.target.closest('select') || e.target.closest('a')) return;
+                    // Solo responder al botón principal del ratón (0) o contacto táctil
+                    if (e.button !== 0) return;
+
+                    isDragging = true;
+                    header.setPointerCapture(e.pointerId);
+                    header.classList.add('is-dragging');
+                    document.body.classList.add('is-dragging-panel');
+                    bringPanelToFront(panel);
+
+                    const rect = panel.getBoundingClientRect();
+                    startX = e.clientX;
+                    startY = e.clientY;
+                    startLeft = rect.left;
+                    startTop = rect.top;
+
+                    // Fijar estilos en píxeles explícitos para movimiento fluido
+                    panel.style.left = `${startLeft}px`;
+                    panel.style.top = `${startTop}px`;
+                    panel.style.right = 'auto';
+                    panel.style.bottom = 'auto';
+                    panel.style.margin = '0';
+
+                    e.preventDefault();
+                });
+
+                header.addEventListener('pointermove', (e) => {
+                    if (!isDragging) return;
+                    const dx = e.clientX - startX;
+                    const dy = e.clientY - startY;
+
+                    const panelW = panel.offsetWidth;
+                    const panelH = panel.offsetHeight;
+                    const minLeft = 10;
+                    const maxLeft = Math.max(10, window.innerWidth - panelW - 10);
+                    const minTop = 10;
+                    const maxTop = Math.max(10, window.innerHeight - 60); // Cabecera siempre accesible
+
+                    let newLeft = startLeft + dx;
+                    let newTop = startTop + dy;
+
+                    newLeft = Math.max(minLeft, Math.min(maxLeft, newLeft));
+                    newTop = Math.max(minTop, Math.min(maxTop, newTop));
+
+                    panel.style.left = `${newLeft}px`;
+                    panel.style.top = `${newTop}px`;
+                });
+
+                const endDrag = (e) => {
+                    if (!isDragging) return;
+                    isDragging = false;
+                    try {
+                        header.releasePointerCapture(e.pointerId);
+                    } catch(err) {}
+                    header.classList.remove('is-dragging');
+                    document.body.classList.remove('is-dragging-panel');
+                };
+
+                header.addEventListener('pointerup', endDrag);
+                header.addEventListener('pointercancel', endDrag);
+            });
+        }
+
         window.addEventListener('resize', () => {
             updateTopNavButtonsState();
+            if (window.innerWidth <= 900) {
+                resetAllPanelsPositions();
+            } else {
+                // Mantener las ventanas dentro del viewport tras redimensionar la pantalla
+                ['sidebar-panel', 'circumstances-panel', 'settings-panel'].forEach(id => {
+                    const p = document.getElementById(id);
+                    if (!p || p.classList.contains('collapsed')) return;
+                    if (p.style.left && p.style.left !== '' && p.style.left !== 'auto') {
+                        const rect = p.getBoundingClientRect();
+                        const maxL = Math.max(10, window.innerWidth - p.offsetWidth - 10);
+                        const maxT = Math.max(10, window.innerHeight - 60);
+                        let curL = parseFloat(p.style.left) || rect.left;
+                        let curT = parseFloat(p.style.top) || rect.top;
+                        curL = Math.max(10, Math.min(maxL, curL));
+                        curT = Math.max(10, Math.min(maxT, curT));
+                        p.style.left = `${curL}px`;
+                        p.style.top = `${curT}px`;
+                    }
+                });
+            }
         });
 
         // Exportar a iCalendar (.ics)
