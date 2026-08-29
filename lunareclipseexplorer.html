@@ -1085,12 +1085,16 @@
             <button onclick="exportSelectedEclipseToICal()" style="background: none; border: none; color: var(--accent-blue); font-size: 0.72rem; cursor: pointer; text-decoration: underline;"><i class="fa-solid fa-calendar-plus"></i> iCal</button>
         </div>
         <div class="mataro-card">
-            <!-- Selector Unificado de Ubicación del Observador -->
+            <!-- Selector Unificado y Filtrable de Ubicación del Observador -->
             <div style="display: flex; gap: 8px; align-items: center;">
-                <div style="flex: 1; min-width: 0;">
-                    <select class="search-select" id="observer-location-select" style="width: 100%; height: 38px; box-sizing: border-box; padding: 0 30px 0 12px; font-size: 0.84rem; font-weight: 400; background-color: #0f172a; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 10px; color: #f8fafc;" onchange="onObserverSelectChange(this.value)">
-                        <!-- Poblado dinámicamente -->
-                    </select>
+                <div class="custom-combobox-container" id="observer-combobox-container" style="position: relative; flex: 1; min-width: 0;">
+                    <input type="text" class="search-select custom-combobox-input" id="observer-location-input" placeholder="Buscar o elegir ciudad..." value="Mataró (Cosmos Mataró)" style="width: 100%; height: 38px; box-sizing: border-box; padding: 0 32px 0 12px; font-size: 0.84rem; font-weight: 400; background-color: #0f172a; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 10px; color: #f8fafc; cursor: text; outline: none; text-overflow: ellipsis;" autocomplete="off" onfocus="openObserverDropdown(); this.select();" oninput="filterObserverDropdown(this.value)" onkeydown="onObserverInputKeyDown(event)">
+                    <span style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; color: #94a3b8; font-size: 0.72rem;"><i class="fa-solid fa-chevron-down"></i></span>
+                    
+                    <!-- Desplegable Filtrable Flotante Estilizado -->
+                    <div id="observer-dropdown-menu" class="custom-dropdown-menu" style="display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; max-height: 230px; overflow-y: auto; background: #0b1329; border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 10px; box-shadow: 0 12px 30px rgba(0,0,0,0.8); z-index: 1000; padding: 4px;">
+                        <!-- Poblado dinámicamente con filtrado sucesivo -->
+                    </div>
                 </div>
                 <button class="ctrl-btn" id="btn-toggle-custom-coords" onclick="toggleCustomCoords()" title="Ajustar coordenadas manuales (Lat/Lon)" style="width: 38px; height: 38px; padding: 0; flex-shrink: 0; border-radius: 10px;">
                     <i class="fa-solid fa-sliders"></i>
@@ -1574,50 +1578,157 @@
             }
         }
 
-        function populateObserverSelect() {
-            const sel = document.getElementById('observer-location-select');
-            if (!sel) return;
-            sel.innerHTML = '';
+        let activeDropdownIndex = -1;
 
-            OBSERVER_PRESETS.forEach((p, idx) => {
-                const opt = document.createElement('option');
-                opt.value = idx;
-                opt.textContent = p.name;
-                sel.appendChild(opt);
+        function populateObserverSelect() {
+            filterObserverDropdown('');
+        }
+
+        function openObserverDropdown() {
+            const input = document.getElementById('observer-location-input');
+            filterObserverDropdown(input ? input.value : '');
+            const menu = document.getElementById('observer-dropdown-menu');
+            if (menu) menu.style.display = 'block';
+        }
+
+        function closeObserverDropdown() {
+            const menu = document.getElementById('observer-dropdown-menu');
+            if (menu) menu.style.display = 'none';
+            activeDropdownIndex = -1;
+        }
+
+        function filterObserverDropdown(query = '') {
+            const menu = document.getElementById('observer-dropdown-menu');
+            if (!menu) return;
+            menu.innerHTML = '';
+            menu.style.display = 'block';
+
+            const cleanQuery = (query || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+            // Filtrado sucesivo: al teclear cada letra ('P', 'Pa', 'Par'...) filtra solo las que comiencen por ese prefijo
+            let matches = OBSERVER_PRESETS.filter(p => {
+                if (!cleanQuery) return true;
+                const cleanName = p.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                return cleanName.startsWith(cleanQuery);
             });
 
-            const optCustom = document.createElement('option');
-            optCustom.value = 'custom';
-            optCustom.textContent = '⚙️ Personalizado (Lat/Lon)...';
-            sel.appendChild(optCustom);
+            if (matches.length === 0 && cleanQuery) {
+                // Fallback secundario si no coincide por inicio
+                matches = OBSERVER_PRESETS.filter(p => {
+                    const cleanName = p.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                    return cleanName.includes(cleanQuery);
+                });
+            }
+
+            if (matches.length === 0) {
+                const noResult = document.createElement('div');
+                noResult.style.padding = '8px 12px';
+                noResult.style.fontSize = '0.78rem';
+                noResult.style.color = '#94a3b8';
+                noResult.textContent = 'Sin coincidencias. Pulsa ⚙️ para fijar Lat/Lon.';
+                menu.appendChild(noResult);
+                return;
+            }
+
+            matches.forEach((preset, idx) => {
+                const item = document.createElement('div');
+                item.className = 'dropdown-option-item';
+                item.style.padding = '7px 10px';
+                item.style.fontSize = '0.82rem';
+                item.style.color = (preset.name === currentObserver.name) ? 'var(--accent-blue)' : '#f8fafc';
+                item.style.fontWeight = (preset.name === currentObserver.name) ? '600' : '400';
+                item.style.cursor = 'pointer';
+                item.style.borderRadius = '6px';
+                item.style.transition = 'background 0.15s';
+                item.style.display = 'flex';
+                item.style.alignItems = 'center';
+                item.style.justifyContent = 'space-between';
+
+                let displayHtml = preset.name;
+                const cleanName = preset.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                if (cleanQuery && cleanName.startsWith(cleanQuery)) {
+                    const matchLen = cleanQuery.length;
+                    displayHtml = `<strong style="color: var(--accent-blue);">${preset.name.slice(0, matchLen)}</strong>${preset.name.slice(matchLen)}`;
+                }
+
+                item.innerHTML = `<span>${displayHtml}</span><span style="font-size: 0.70rem; color: #64748b; margin-left: 8px;">${preset.lat.toFixed(1)}°, ${preset.lon.toFixed(1)}°</span>`;
+
+                item.onmouseenter = () => { item.style.background = 'rgba(56, 189, 248, 0.18)'; };
+                item.onmouseleave = () => { if (idx !== activeDropdownIndex) item.style.background = 'transparent'; };
+
+                item.onclick = (e) => {
+                    e.stopPropagation();
+                    selectObserverPreset(preset);
+                };
+
+                menu.appendChild(item);
+            });
         }
 
-        function onObserverSelectChange(val) {
+        function selectObserverPreset(preset) {
+            const input = document.getElementById('observer-location-input');
+            if (input) input.value = preset.name;
             const customBox = document.getElementById('observer-custom-coords');
-            if (val === 'custom') {
-                toggleCustomCoords(true);
-                const latIn = document.getElementById('custom-obs-lat');
-                const lonIn = document.getElementById('custom-obs-lon');
-                const lat = latIn ? parseFloat(latIn.value) || 0 : currentObserver.lat;
-                const lon = lonIn ? parseFloat(lonIn.value) || 0 : currentObserver.lon;
-                updateObserverPosition(lat, lon, 'Personalizado', null);
-            } else {
-                if (customBox) customBox.style.display = 'none';
-                const toggleBtn = document.getElementById('btn-toggle-custom-coords');
-                if (toggleBtn) {
-                    toggleBtn.style.color = '';
-                    toggleBtn.style.borderColor = '';
+            if (customBox) customBox.style.display = 'none';
+            const toggleBtn = document.getElementById('btn-toggle-custom-coords');
+            if (toggleBtn) {
+                toggleBtn.style.color = '';
+                toggleBtn.style.borderColor = '';
+            }
+            updateObserverPosition(preset.lat, preset.lon, preset.name, preset.tz);
+            closeObserverDropdown();
+        }
+
+        function onObserverInputKeyDown(e) {
+            const menu = document.getElementById('observer-dropdown-menu');
+            if (!menu || menu.style.display === 'none') {
+                if (e.key === 'ArrowDown' || e.key === 'Enter') {
+                    openObserverDropdown();
+                    e.preventDefault();
                 }
-                const preset = OBSERVER_PRESETS[parseInt(val, 10)];
-                if (preset) {
-                    const latIn = document.getElementById('custom-obs-lat');
-                    const lonIn = document.getElementById('custom-obs-lon');
-                    if (latIn) latIn.value = preset.lat;
-                    if (lonIn) lonIn.value = preset.lon;
-                    updateObserverPosition(preset.lat, preset.lon, preset.name, preset.tz);
+                return;
+            }
+
+            const items = menu.querySelectorAll('.dropdown-option-item');
+            if (items.length === 0) return;
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                activeDropdownIndex = (activeDropdownIndex + 1) % items.length;
+                updateDropdownHighlight(items);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                activeDropdownIndex = (activeDropdownIndex - 1 + items.length) % items.length;
+                updateDropdownHighlight(items);
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (activeDropdownIndex >= 0 && activeDropdownIndex < items.length) {
+                    items[activeDropdownIndex].click();
+                } else if (items.length > 0) {
+                    items[0].click();
                 }
+            } else if (e.key === 'Escape') {
+                closeObserverDropdown();
             }
         }
+
+        function updateDropdownHighlight(items) {
+            items.forEach((it, idx) => {
+                if (idx === activeDropdownIndex) {
+                    it.style.background = 'rgba(56, 189, 248, 0.25)';
+                    it.scrollIntoView({ block: 'nearest' });
+                } else {
+                    it.style.background = 'transparent';
+                }
+            });
+        }
+
+        document.addEventListener('click', (e) => {
+            const container = document.getElementById('observer-combobox-container');
+            if (container && !container.contains(e.target)) {
+                closeObserverDropdown();
+            }
+        });
 
         function toggleCustomCoords(forceShow = null) {
             const customBox = document.getElementById('observer-custom-coords');
@@ -1648,8 +1759,8 @@
             lat = Math.max(-90, Math.min(90, lat));
             lon = Math.max(-180, Math.min(180, lon));
             
-            const sel = document.getElementById('observer-location-select');
-            if (sel) sel.value = 'custom';
+            const input = document.getElementById('observer-location-input');
+            if (input) input.value = 'Personalizado';
             updateObserverPosition(lat, lon, 'Personalizado', null);
         }
 
@@ -1670,8 +1781,8 @@
                         userTz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
                     } catch(e) {}
 
-                    const sel = document.getElementById('observer-location-select');
-                    if (sel) sel.value = 'custom';
+                    const input = document.getElementById('observer-location-input');
+                    if (input) input.value = 'Mi ubicación (GPS)';
                     toggleCustomCoords(true);
                     const latIn = document.getElementById('custom-obs-lat');
                     const lonIn = document.getElementById('custom-obs-lon');
@@ -1709,6 +1820,11 @@
             const lonIn = document.getElementById('custom-obs-lon');
             if (latIn && document.activeElement !== latIn) latIn.value = lat;
             if (lonIn && document.activeElement !== lonIn) lonIn.value = lon;
+
+            const locInput = document.getElementById('observer-location-input');
+            if (locInput && document.activeElement !== locInput) {
+                locInput.value = currentObserver.name;
+            }
 
             // Actualizar etiquetas en la interfaz
             const titleEl = document.getElementById('observer-header-title');
