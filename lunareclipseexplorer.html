@@ -1712,15 +1712,11 @@
             simEndTimeMs = ec.p4Ms + 20 * 60000;
             if (isLiveMode) {
                 const now = Date.now();
-                if (now < simStartTimeMs) {
-                    simCurrentTimeMs = simStartTimeMs;
-                } else if (now > simEndTimeMs) {
-                    simCurrentTimeMs = simEndTimeMs;
-                } else {
-                    simCurrentTimeMs = now;
-                }
+                simCurrentTimeMs = now;
+                isPlaying = (now >= simStartTimeMs && now <= simEndTimeMs);
             } else {
                 simCurrentTimeMs = ec.maxMs;
+                isPlaying = false;
             }
 
             // Actualizar tarjeta de parámetros estilo Besselian Explorer
@@ -3632,15 +3628,14 @@
 
                 if (isLiveMode && currentEclipse) {
                     const now = Date.now();
-                    let targetTime = now;
-                    if (now < simStartTimeMs) {
-                        targetTime = simStartTimeMs;
-                    } else if (now > simEndTimeMs) {
-                        targetTime = simEndTimeMs;
-                    }
-                    if (targetTime !== simCurrentTimeMs) {
-                        simCurrentTimeMs = targetTime;
+                    const isInside = (now >= simStartTimeMs && now <= simEndTimeMs);
+                    isPlaying = isInside;
+                    if (now !== simCurrentTimeMs) {
+                        simCurrentTimeMs = now;
                         timeChanged = true;
+                    }
+                    updateLiveBadgeState();
+                    if (timeChanged) {
                         updateTimeUI();
                     }
                 } else if (isPlaying && currentEclipse) {
@@ -3803,7 +3798,15 @@
             if (isChecked) {
                 setSimSpeed('live');
             } else {
-                setSimSpeed(simSpeedMultiplier || 1);
+                isLiveMode = false;
+                if (simCurrentTimeMs < simStartTimeMs || simCurrentTimeMs > simEndTimeMs) {
+                    simCurrentTimeMs = currentEclipse ? currentEclipse.maxMs : simStartTimeMs;
+                }
+                isPlaying = false;
+                updateLiveBadgeState();
+                updateTimeUI();
+                if (currentActiveView === 'telescopic') renderTelescopicView();
+                scene3DNeedsRender = true;
             }
         }
 
@@ -3821,10 +3824,19 @@
         function togglePlayPause() {
             if (isLiveMode) {
                 isLiveMode = false;
+                if (simCurrentTimeMs < simStartTimeMs || simCurrentTimeMs > simEndTimeMs) {
+                    simCurrentTimeMs = currentEclipse ? currentEclipse.maxMs : simStartTimeMs;
+                }
                 isPlaying = false;
                 updateLiveBadgeState();
+                updateTimeUI();
             } else {
                 isPlaying = !isPlaying;
+                if (isPlaying) {
+                    if (simCurrentTimeMs < simStartTimeMs || simCurrentTimeMs >= simEndTimeMs) {
+                        simCurrentTimeMs = simStartTimeMs;
+                    }
+                }
             }
             const playBtn = document.getElementById('btn-play-pause');
             if (playBtn) {
@@ -3836,6 +3848,9 @@
             // dir: 1 (adelante / fast-forward) o -1 (atrás / rewind)
             if (isLiveMode) {
                 isLiveMode = false;
+                if (simCurrentTimeMs < simStartTimeMs || simCurrentTimeMs > simEndTimeMs) {
+                    simCurrentTimeMs = currentEclipse ? currentEclipse.maxMs : simStartTimeMs;
+                }
                 updateLiveBadgeState();
             }
 
@@ -3912,16 +3927,10 @@
                 isLiveMode = true;
                 simPlayDirection = 1;
                 const now = Date.now();
-                if (now < simStartTimeMs) {
-                    simCurrentTimeMs = simStartTimeMs;
-                    isPlaying = false;
-                } else if (now > simEndTimeMs) {
-                    simCurrentTimeMs = simEndTimeMs;
-                    isPlaying = false;
-                } else {
-                    simCurrentTimeMs = now;
-                    isPlaying = true;
-                }
+                simCurrentTimeMs = now;
+                const isInside = (now >= simStartTimeMs && now <= simEndTimeMs);
+                isPlaying = isInside;
+
                 const playBtn = document.getElementById('btn-play-pause');
                 if (playBtn) playBtn.innerHTML = isPlaying ? '<i class="fa-solid fa-pause"></i>' : '<i class="fa-solid fa-play"></i>';
                 if (chkLive) chkLive.checked = true;
@@ -3929,7 +3938,11 @@
             } else {
                 isLiveMode = false;
                 simSpeedMultiplier = parseFloat(speed) || 1;
+                if (simCurrentTimeMs < simStartTimeMs || simCurrentTimeMs > simEndTimeMs) {
+                    simCurrentTimeMs = currentEclipse ? currentEclipse.maxMs : simStartTimeMs;
+                }
                 if (chkLive) chkLive.checked = false;
+                updateTimeUI();
             }
             updateLiveBadgeState();
         }
