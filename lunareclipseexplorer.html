@@ -1421,11 +1421,11 @@
         <!-- Fila Inferior: Botonera y Selector de Velocidad -->
         <div class="playback-dock-bottom">
             <div class="player-ctrls-compact">
-                <button class="ctrl-btn" onclick="stepTime(-900000)" title="Retroceder 15 min"><i class="fa-solid fa-backward"></i></button>
-                <button class="ctrl-btn" onclick="stepTime(-60000)" title="Retroceder 1 min"><i class="fa-solid fa-step-backward"></i></button>
+                <button class="ctrl-btn" id="btn-rewind" onclick="changeSpeedStep(-1)" title="Retroceder / Aumentar velocidad atrás (1x a 1200x)"><i class="fa-solid fa-backward"></i></button>
+                <button class="ctrl-btn" id="btn-prev-contact" onclick="jumpContactStep(-1)" title="Momento anterior del eclipse (P1, U1, Máx, U4, P4)"><i class="fa-solid fa-step-backward"></i></button>
                 <button class="ctrl-btn play-main" id="btn-play-pause" onclick="togglePlayPause()" title="Reproducir / Pausar"><i class="fa-solid fa-play"></i></button>
-                <button class="ctrl-btn" onclick="stepTime(60000)" title="Avanzar 1 min"><i class="fa-solid fa-step-forward"></i></button>
-                <button class="ctrl-btn" onclick="stepTime(900000)" title="Avanzar 15 min"><i class="fa-solid fa-forward"></i></button>
+                <button class="ctrl-btn" id="btn-next-contact" onclick="jumpContactStep(1)" title="Momento siguiente del eclipse (P1, U1, Máx, U4, P4)"><i class="fa-solid fa-step-forward"></i></button>
+                <button class="ctrl-btn" id="btn-fast-forward" onclick="changeSpeedStep(1)" title="Avanzar / Aumentar velocidad adelante (1x a 1200x)"><i class="fa-solid fa-forward"></i></button>
             </div>
             <div style="display: flex; align-items: center; gap: 8px;">
                 <span style="font-size: 0.72rem; color: var(--text-secondary); font-family: var(--font-heading); font-weight: 600;">Velocidad:</span>
@@ -1504,6 +1504,8 @@
         let simStartTimeMs = 0, simEndTimeMs = 0;
         let isPlaying = false;
         let isLiveMode = false;
+        const SPEED_STEPS = [1, 10, 60, 300, 1200];
+        let simPlayDirection = 1; // 1 = adelante, -1 = atrás
         let simSpeedMultiplier = 1;
         let lastFrameTimestamp = null;
         let currentActiveView = '3d'; // '3d', 'telescopic'
@@ -3606,9 +3608,11 @@
                         updateTimeUI();
                     }
                 } else if (isPlaying && currentEclipse) {
-                    simCurrentTimeMs += dtSec * 1000 * simSpeedMultiplier;
-                    if (simCurrentTimeMs > simEndTimeMs) {
+                    simCurrentTimeMs += dtSec * 1000 * simSpeedMultiplier * simPlayDirection;
+                    if (simPlayDirection > 0 && simCurrentTimeMs > simEndTimeMs) {
                         simCurrentTimeMs = simStartTimeMs;
+                    } else if (simPlayDirection < 0 && simCurrentTimeMs < simStartTimeMs) {
+                        simCurrentTimeMs = simEndTimeMs;
                     }
                     timeChanged = true;
                     updateTimeUI();
@@ -3771,30 +3775,90 @@
                 isLiveMode = false;
                 isPlaying = false;
                 const sel = document.getElementById('sim-speed-select');
-                if (sel && sel.value === 'live') sel.value = '60';
+                if (sel && sel.value === 'live') sel.value = '1';
                 updateLiveBadgeState();
             } else {
                 isPlaying = !isPlaying;
             }
-            document.getElementById('btn-play-pause').innerHTML = (isPlaying || isLiveMode) ? '<i class="fa-solid fa-pause"></i>' : '<i class="fa-solid fa-play"></i>';
+            const playBtn = document.getElementById('btn-play-pause');
+            if (playBtn) {
+                playBtn.innerHTML = (isPlaying || isLiveMode) ? '<i class="fa-solid fa-pause"></i>' : '<i class="fa-solid fa-play"></i>';
+            }
         }
 
-        function stepTime(deltaMs) {
+        function changeSpeedStep(dir) {
+            // dir: 1 (adelante / fast-forward) o -1 (atrás / rewind)
             if (isLiveMode) {
                 isLiveMode = false;
-                simSpeedMultiplier = 1;
-                const sel = document.getElementById('sim-speed-select');
-                if (sel && sel.value === 'live') sel.value = '1';
                 updateLiveBadgeState();
             }
-            simCurrentTimeMs = Math.max(simStartTimeMs, Math.min(simEndTimeMs, simCurrentTimeMs + deltaMs));
+
+            if (!isPlaying) {
+                // Si estaba pausado, arrancar en la dirección solicitada manteniendo la velocidad actual
+                simPlayDirection = dir;
+                isPlaying = true;
+            } else if (simPlayDirection !== dir) {
+                // Si estaba reproduciendo en el sentido opuesto, invertir sentido
+                simPlayDirection = dir;
+            } else {
+                // Si ya estaba reproduciendo en este mismo sentido, avanzar al siguiente escalón de velocidad (1 -> 10 -> 60 -> 300 -> 1200 -> 1)
+                const currentIdx = SPEED_STEPS.indexOf(simSpeedMultiplier);
+                let nextIdx = 0;
+                if (currentIdx !== -1) {
+                    nextIdx = (currentIdx + 1) % SPEED_STEPS.length;
+                }
+                simSpeedMultiplier = SPEED_STEPS[nextIdx];
+            }
+
+            // Sincronizar el desplegable de velocidad
+            const speedSelect = document.getElementById('sim-speed-select');
+            if (speedSelect) speedSelect.value = String(simSpeedMultiplier);
+
+            const playBtn = document.getElementById('btn-play-pause');
+            if (playBtn) playBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
+
             updateTimeUI();
             if (currentActiveView === 'telescopic') renderTelescopicView();
+            scene3DNeedsRender = true;
+        }
+
+        function jumpContactStep(dir) {
+            if (!currentEclipse) return;
+            if (isLiveMode) {
+                isLiveMode = false;
+                updateLiveBadgeState();
+            }
+
+            const ec = currentEclipse;
+            const allMoments = [];
+            if (ec.p1Ms) allMoments.push({ name: 'P1', timeMs: ec.p1Ms });
+            if (ec.u1Ms) allMoments.push({ name: 'U1', timeMs: ec.u1Ms });
+            if (ec.u2Ms) allMoments.push({ name: 'U2', timeMs: ec.u2Ms });
+            if (ec.maxMs) allMoments.push({ name: 'MÁX', timeMs: ec.maxMs });
+            if (ec.u3Ms) allMoments.push({ name: 'U3', timeMs: ec.u3Ms });
+            if (ec.u4Ms) allMoments.push({ name: 'U4', timeMs: ec.u4Ms });
+            if (ec.p4Ms) allMoments.push({ name: 'P4', timeMs: ec.p4Ms });
+
+            allMoments.sort((a, b) => a.timeMs - b.timeMs);
+
+            const EPS = 3000; // 3 segundos de margen para no quedar encallado en el mismo instante
+            if (dir > 0) {
+                const next = allMoments.find(m => m.timeMs > simCurrentTimeMs + EPS);
+                simCurrentTimeMs = next ? next.timeMs : simEndTimeMs;
+            } else {
+                const prev = [...allMoments].reverse().find(m => m.timeMs < simCurrentTimeMs - EPS);
+                simCurrentTimeMs = prev ? prev.timeMs : simStartTimeMs;
+            }
+
+            updateTimeUI();
+            if (currentActiveView === 'telescopic') renderTelescopicView();
+            scene3DNeedsRender = true;
         }
 
         function setSimSpeed(speed) {
             if (speed === 'live') {
                 isLiveMode = true;
+                simPlayDirection = 1;
                 const now = Date.now();
                 if (now < simStartTimeMs) {
                     simCurrentTimeMs = simStartTimeMs;
@@ -3806,11 +3870,12 @@
                     simCurrentTimeMs = now;
                     isPlaying = true;
                 }
-                document.getElementById('btn-play-pause').innerHTML = isPlaying ? '<i class="fa-solid fa-pause"></i>' : '<i class="fa-solid fa-play"></i>';
+                const playBtn = document.getElementById('btn-play-pause');
+                if (playBtn) playBtn.innerHTML = isPlaying ? '<i class="fa-solid fa-pause"></i>' : '<i class="fa-solid fa-play"></i>';
                 updateTimeUI();
             } else {
                 isLiveMode = false;
-                simSpeedMultiplier = parseFloat(speed);
+                simSpeedMultiplier = parseFloat(speed) || 1;
             }
             updateLiveBadgeState();
         }
