@@ -1088,7 +1088,7 @@
             <!-- Selector Filtrable de Ubicación del Observador -->
             <div style="display: flex; gap: 6px; align-items: center;">
                 <div style="position: relative; flex: 1;">
-                    <input type="text" class="search-input" id="observer-search-input" list="observer-datalist" placeholder="Escribir o elegir ciudad..." value="Mataró (Cosmos Mataró)" style="width: 100%; height: 32px; font-size: 0.76rem; padding: 0 10px; background-color: #0f172a; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 8px; color: #fff; box-sizing: border-box;" onfocus="this.select()" oninput="onObserverInput(this.value)" onchange="onObserverChange(this.value)">
+                    <input type="text" class="search-input" id="observer-search-input" list="observer-datalist" placeholder="Escribir o elegir ciudad..." value="Mataró (Cosmos Mataró)" style="width: 100%; height: 32px; font-size: 0.76rem; padding: 0 10px; background-color: #0f172a; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 8px; color: #fff; box-sizing: border-box;" onfocus="populateObserverSelect(''); this.select()" oninput="onObserverInput(this.value)" onchange="onObserverChange(this.value)">
                     <datalist id="observer-datalist">
                         <!-- Poblado dinámicamente -->
                     </datalist>
@@ -1572,12 +1572,21 @@
             }
         }
 
-        function populateObserverSelect() {
+        function populateObserverSelect(filterText = '') {
             const dl = document.getElementById('observer-datalist');
             if (!dl) return;
             dl.innerHTML = '';
 
-            OBSERVER_PRESETS.forEach(p => {
+            const query = filterText.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+            const matching = query.length === 0
+                ? OBSERVER_PRESETS
+                : OBSERVER_PRESETS.filter(p => {
+                    const cleanName = p.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                    return cleanName.startsWith(query);
+                });
+
+            matching.forEach(p => {
                 const opt = document.createElement('option');
                 opt.value = p.name;
                 dl.appendChild(opt);
@@ -1586,6 +1595,9 @@
 
         function onObserverInput(val) {
             const trimmed = val.trim();
+            // Filtrar estrictamente por prefijo (ciudades cuyo nombre COMIENCE por las letras tecleadas)
+            populateObserverSelect(trimmed);
+
             const preset = OBSERVER_PRESETS.find(p => p.name.toLowerCase() === trimmed.toLowerCase());
             if (preset) {
                 const customBox = document.getElementById('observer-custom-coords');
@@ -1600,9 +1612,15 @@
 
         function onObserverChange(val) {
             const trimmed = val.trim();
+            const cleanTrimmed = trimmed.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+            
+            // Buscar coincidencia exacta o cuyo nombre comience por el texto
             const preset = OBSERVER_PRESETS.find(p => p.name.toLowerCase() === trimmed.toLowerCase()) ||
-                           OBSERVER_PRESETS.find(p => p.name.toLowerCase().startsWith(trimmed.toLowerCase())) ||
-                           OBSERVER_PRESETS.find(p => p.name.toLowerCase().includes(trimmed.toLowerCase()));
+                           OBSERVER_PRESETS.find(p => {
+                               const cleanName = p.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                               return cleanName.startsWith(cleanTrimmed);
+                           });
+
             const customBox = document.getElementById('observer-custom-coords');
             if (preset) {
                 const input = document.getElementById('observer-search-input');
@@ -1621,6 +1639,7 @@
                 const lon = lonIn ? parseFloat(lonIn.value) || 0 : currentObserver.lon;
                 updateObserverPosition(lat, lon, trimmed, null);
             }
+            populateObserverSelect('');
         }
 
         function onCustomCoordsChange() {
