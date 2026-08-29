@@ -610,7 +610,7 @@
             bottom: 16px;
             left: 50%;
             transform: translateX(-50%);
-            width: min(calc(100vw - 32px), 580px);
+            width: min(calc(100vw - 32px), 640px);
             z-index: 22;
             background: var(--bg-panel);
             backdrop-filter: blur(16px);
@@ -630,6 +630,7 @@
             justify-content: space-between;
             align-items: center;
             gap: 12px;
+            width: 100%;
         }
 
         .playback-dock-bottom {
@@ -648,6 +649,7 @@
             align-items: center;
             gap: 6px;
             white-space: nowrap;
+            flex-shrink: 0;
         }
 
         .player-time-display {
@@ -656,8 +658,31 @@
             color: var(--text-secondary);
             display: flex;
             align-items: center;
+            justify-content: flex-end;
             gap: 14px;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .player-time-local-box {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
             white-space: nowrap;
+        }
+
+        .player-time-local-box #player-time-local-label {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .player-time-utc-box {
+            white-space: nowrap;
+            flex-shrink: 0;
         }
 
         .player-time-display strong {
@@ -1355,14 +1380,14 @@
 
     <!-- BARRA / CÁPSULA DE REPRODUCCIÓN FLOTANTE INFERIOR (PLAYBACK DOCK) -->
     <aside class="playback-dock" id="playback-dock">
-        <!-- Fila Superior: Estado de fase y Relojes duales -->
+        <!-- Fila Superior: Estado de fase, Hora Local y UTC al extremo derecho -->
         <div class="playback-dock-top">
             <div class="player-phase-badge" id="player-phase-label">
                 <span style="color: #fb923c;">🔴 Totalidad</span> · Luna de Sangre
             </div>
             <div class="player-time-display">
-                <span>UTC: <strong id="time-utc-text">18:11:43</strong></span>
-                <span><span id="player-time-local-label">Mataró:</span> <strong id="time-local-text">20:11 CEST</strong></span>
+                <span class="player-time-local-box"><span id="player-time-local-label">Mataró (Cosmos Mataró):</span> <strong id="time-local-text">20:11 CEST</strong></span>
+                <span class="player-time-utc-box">UTC: <strong id="time-utc-text">18:11:43</strong></span>
             </div>
         </div>
 
@@ -2046,8 +2071,7 @@
 
             const timeLocalLabel = document.getElementById('player-time-local-label');
             if (timeLocalLabel) {
-                const shortName = currentObserver.name.split(' ')[0].replace(/[\(\),]/g, '');
-                timeLocalLabel.textContent = `${shortName}:`;
+                timeLocalLabel.textContent = `${currentObserver.name}:`;
             }
 
             if (currentEclipse) {
