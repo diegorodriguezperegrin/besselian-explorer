@@ -1390,6 +1390,10 @@
                     <input type="checkbox" id="chk-show-limits-labels">
                     <span>Rótulos de los límites</span>
                 </label>
+                <label class="checkbox-row disabled" id="lbl-show-equatorial">
+                    <input type="checkbox" id="chk-show-equatorial" disabled onchange="renderTelescopicView(); if (currentEclipse) updateTelescopeHUD(getMoonHorizontalCoords(currentEclipse.zenLat, currentEclipse.zenLon, simCurrentTimeMs, currentEclipse.maxMs));">
+                    <span>Orientación ecuatorial (Norte arriba)</span>
+                </label>
                 <label class="checkbox-row disabled" id="lbl-show-features">
                     <input type="checkbox" id="chk-show-features" checked disabled onchange="renderTelescopicView()">
                     <span>Rótulos de accidentes lunares</span>
@@ -1719,8 +1723,15 @@
 
             if (horizCoords && currentEclipse) {
                 const chiRad = getEclipseFrameTilt(currentEclipse, simCurrentTimeMs);
-                const totalVisualRotDeg = (horizCoords.qRad + chiRad) * DEG;
-                pillOrient.innerHTML = `<i class="fa-solid fa-mountain-sun" style="color: var(--accent-blue);"></i> <span>Vista Local (${currentObserver.name} · Cenit arriba)</span>`;
+                const isEquatorial = document.getElementById('chk-show-equatorial') && document.getElementById('chk-show-equatorial').checked;
+
+                if (isEquatorial) {
+                    pillOrient.innerHTML = '<i class="fa-solid fa-compass" style="color: #f59e0b;"></i> <span>Vista Ecuatorial (Norte arriba)</span>';
+                } else {
+                    pillOrient.innerHTML = `<i class="fa-solid fa-mountain-sun" style="color: var(--accent-blue);"></i> <span>Vista Local (${currentObserver.name} · Cenit arriba)</span>`;
+                }
+
+                const totalVisualRotDeg = (isEquatorial ? chiRad : (horizCoords.qRad + chiRad)) * DEG;
                 pillCoords.style.display = 'flex';
                 const isAbove = horizCoords.alt > -0.5;
                 if (isAbove) {
@@ -2287,17 +2298,16 @@
 
             const showAxes = document.getElementById('chk-show-axes') ? document.getElementById('chk-show-axes').checked : true;
             const showFeatures = (chkFeatures ? chkFeatures.checked : true) && isZoomAllowed;
+            const isEquatorial = document.getElementById('chk-show-equatorial') && document.getElementById('chk-show-equatorial').checked;
 
             const horizCoords = getMoonHorizontalCoords(currentEclipse.zenLat, currentEclipse.zenLon, simCurrentTimeMs, currentEclipse.maxMs);
             const chiRad = getEclipseFrameTilt(currentEclipse, simCurrentTimeMs);
             
-            // Vista Local Altacimutal desde Mataró:
-            // La rotación total para llevar el Cenit arriba es la suma de:
-            // 1. Inclinación del plano del eclipse respecto al ecuador celeste (chi)
-            // 2. Ángulo paraláctico respecto al cenit local (q)
-            const rotAngle = horizCoords.qRad + chiRad;
+            // Si es Ecuatorial: Norte Celeste arriba (rotAngle = chiRad)
+            // Si es Altacimutal (Local): Cenit arriba (rotAngle = horizCoords.qRad + chiRad)
+            const rotAngle = isEquatorial ? chiRad : (horizCoords.qRad + chiRad);
 
-            // 1. Ejes de Referencia Altazimutales locales (fijos al visor con Cenit arriba)
+            // 1. Ejes de Referencia locales o ecuatoriales (fijos al visor)
             if (showAxes) {
                 ctx.save();
                 ctx.beginPath();
@@ -2308,26 +2318,49 @@
                 ctx.stroke();
 
                 ctx.font = "bold 11px 'Outfit', sans-serif";
-                ctx.fillStyle = "#38bdf8";
                 ctx.textAlign = "center";
-                ctx.fillText("▲ CENIT (Arriba)", 0, -rpPx * 1.4);
-                ctx.fillStyle = "rgba(255, 255, 255, 0.45)";
-                ctx.fillText("▼ HORIZONTE (Abajo)", 0, rpPx * 1.45);
 
-                // Flecha guía hacia el Norte Celeste (a ángulo q exacto del Cenit)
-                ctx.save();
-                ctx.rotate(horizCoords.qRad);
-                ctx.beginPath();
-                ctx.strokeStyle = "rgba(245, 158, 11, 0.65)";
-                ctx.setLineDash([3, 3]);
-                ctx.moveTo(0, 0);
-                ctx.lineTo(0, -rpPx * 1.35);
-                ctx.stroke();
-                ctx.setLineDash([]);
-                ctx.fillStyle = "#f59e0b";
-                ctx.font = "bold 10px 'JetBrains Mono', monospace";
-                ctx.fillText("N Celeste", 0, -rpPx * 1.38);
-                ctx.restore();
+                if (isEquatorial) {
+                    ctx.fillStyle = "#f59e0b";
+                    ctx.fillText("▲ NORTE CELESTE (Arriba)", 0, -rpPx * 1.4);
+                    ctx.fillStyle = "rgba(255, 255, 255, 0.45)";
+                    ctx.fillText("▼ SUR CELESTE (Abajo)", 0, rpPx * 1.45);
+
+                    // Flecha guía hacia el Cenit Local (a ángulo -q del Norte Celeste)
+                    ctx.save();
+                    ctx.rotate(-horizCoords.qRad);
+                    ctx.beginPath();
+                    ctx.strokeStyle = "rgba(56, 189, 248, 0.65)";
+                    ctx.setLineDash([3, 3]);
+                    ctx.moveTo(0, 0);
+                    ctx.lineTo(0, -rpPx * 1.35);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                    ctx.fillStyle = "#38bdf8";
+                    ctx.font = "bold 10px 'JetBrains Mono', monospace";
+                    ctx.fillText("Cenit Local", 0, -rpPx * 1.38);
+                    ctx.restore();
+                } else {
+                    ctx.fillStyle = "#38bdf8";
+                    ctx.fillText("▲ CENIT (Arriba)", 0, -rpPx * 1.4);
+                    ctx.fillStyle = "rgba(255, 255, 255, 0.45)";
+                    ctx.fillText("▼ HORIZONTE (Abajo)", 0, rpPx * 1.45);
+
+                    // Flecha guía hacia el Norte Celeste (a ángulo q exacto del Cenit)
+                    ctx.save();
+                    ctx.rotate(horizCoords.qRad);
+                    ctx.beginPath();
+                    ctx.strokeStyle = "rgba(245, 158, 11, 0.65)";
+                    ctx.setLineDash([3, 3]);
+                    ctx.moveTo(0, 0);
+                    ctx.lineTo(0, -rpPx * 1.35);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                    ctx.fillStyle = "#f59e0b";
+                    ctx.font = "bold 10px 'JetBrains Mono', monospace";
+                    ctx.fillText("N Celeste", 0, -rpPx * 1.38);
+                    ctx.restore();
+                }
 
                 ctx.restore();
             }
@@ -3812,8 +3845,9 @@
                 lblLimitLabels.classList.toggle('disabled', !enableSub);
             }
 
-            // Opciones de la Vista Telescópica 2D (Rótulos lunares, Ejes de referencia)
+            // Opciones de la Vista Telescópica 2D (Orientación ecuatorial, Rótulos lunares, Ejes de referencia)
             const optTele = [
+                { lbl: 'lbl-show-equatorial', chk: 'chk-show-equatorial' },
                 { lbl: 'lbl-show-features', chk: 'chk-show-features' },
                 { lbl: 'lbl-show-axes', chk: 'chk-show-axes' }
             ];
