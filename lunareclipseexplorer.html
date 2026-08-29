@@ -944,10 +944,10 @@
             <canvas id="canvas-telescopic"></canvas>
             <div class="telescope-hud" id="telescope-hud">
                 <div class="hud-pill altaz" id="hud-pill-orient">
-                    <i class="fa-solid fa-mountain-sun" style="color: var(--accent-blue);"></i> <span>Vista Local (Mataró · Cenit arriba)</span>
+                    <i class="fa-solid fa-mountain-sun" style="color: var(--accent-blue);"></i> <span id="tele-pill-orient-text">Vista Local (Cenit arriba)</span>
                 </div>
                 <div class="hud-pill altaz" id="hud-pill-coords" style="display: flex;">
-                    <i class="fa-solid fa-location-dot" style="color: #38bdf8;"></i> <span>Mataró</span>
+                    <i class="fa-solid fa-location-dot" style="color: #38bdf8;"></i> <span id="tele-pill-location">Mataró</span>
                 </div>
             </div>
         </div>
@@ -1079,12 +1079,34 @@
             </button>
         </div>
 
-        <!-- Circunstancias Locales para Mataró -->
-        <div class="section-title" style="display: flex; justify-content: space-between;">
-            <span><i class="fa-solid fa-location-dot" style="color: var(--accent-blue);"></i> Mataró (41.54°N, 2.44°E)</span>
+        <!-- Circunstancias Locales del Observador -->
+        <div class="section-title" style="display: flex; justify-content: space-between; align-items: center;">
+            <span id="observer-header-title"><i class="fa-solid fa-location-dot" style="color: var(--accent-blue);"></i> Mataró (41.54°N, 2.44°E)</span>
             <button onclick="exportSelectedEclipseToICal()" style="background: none; border: none; color: var(--accent-blue); font-size: 0.72rem; cursor: pointer; text-decoration: underline;"><i class="fa-solid fa-calendar-plus"></i> iCal</button>
         </div>
         <div class="mataro-card">
+            <!-- Selector de Ubicación del Observador -->
+            <div style="display: flex; gap: 6px; align-items: center;">
+                <select class="search-select" id="observer-location-select" style="flex: 1; height: 32px; font-size: 0.76rem; padding: 0 24px 0 8px; background-color: #0f172a;" onchange="onObserverSelectChange(this.value)">
+                    <!-- Poblado dinámicamente -->
+                </select>
+                <button class="ctrl-btn" id="btn-observer-gps" onclick="detectUserLocation()" title="Detectar mi ubicación actual (GPS)" style="width: 32px; height: 32px; padding: 0; flex-shrink: 0;">
+                    <i class="fa-solid fa-crosshairs"></i>
+                </button>
+            </div>
+            
+            <!-- Inputs para Coordenadas Personalizadas (oculto por defecto) -->
+            <div id="observer-custom-coords" style="display: none; gap: 6px; align-items: center;">
+                <div style="flex: 1; display: flex; align-items: center; background: rgba(0,0,0,0.3); border: 1px solid rgba(56,189,248,0.25); border-radius: 6px; padding: 0 6px;">
+                    <span style="font-size: 0.68rem; color: var(--text-secondary); margin-right: 4px;">Lat:</span>
+                    <input type="number" id="custom-obs-lat" step="0.01" value="41.54" style="width: 100%; background: transparent; border: none; color: #fff; font-size: 0.75rem; padding: 4px 0;" onchange="onCustomCoordsChange()">
+                </div>
+                <div style="flex: 1; display: flex; align-items: center; background: rgba(0,0,0,0.3); border: 1px solid rgba(56,189,248,0.25); border-radius: 6px; padding: 0 6px;">
+                    <span style="font-size: 0.68rem; color: var(--text-secondary); margin-right: 4px;">Lon:</span>
+                    <input type="number" id="custom-obs-lon" step="0.01" value="2.44" style="width: 100%; background: transparent; border: none; color: #fff; font-size: 0.75rem; padding: 4px 0;" onchange="onCustomCoordsChange()">
+                </div>
+            </div>
+
             <div class="mataro-badge-header">
                 <span style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 600;">Visibilidad Local:</span>
                 <span class="mataro-vis-tag vis-full" id="mataro-vis-badge"><i class="fa-solid fa-eye"></i> Visible al Orto</span>
@@ -1109,7 +1131,7 @@
             </div>
             <div class="player-time-display">
                 <span>UTC: <strong id="time-utc-text">18:11:43</strong></span>
-                <span>Mataró: <strong id="time-local-text">20:11 CEST</strong></span>
+                <span><span id="player-time-local-label">Mataró:</span> <strong id="time-local-text">20:11 CEST</strong></span>
             </div>
 
             <div class="player-slider-container">
@@ -1190,7 +1212,29 @@
 
     <!-- SCRIPT PRINCIPAL DE LA APLICACIÓN -->
     <script>
-        const MATARO_LAT = 41.54, MATARO_LON = 2.44, RAD = Math.PI / 180, DEG = 180 / Math.PI;
+        const RAD = Math.PI / 180, DEG = 180 / Math.PI;
+
+        const OBSERVER_PRESETS = [
+            { name: "Mataró (Cosmos Mataró)", lat: 41.54, lon: 2.44, tz: "Europe/Madrid" },
+            { name: "Bogotá (Colombia)", lat: 4.71, lon: -74.07, tz: "America/Bogota" },
+            { name: "Buenos Aires (Argentina)", lat: -34.60, lon: -58.38, tz: "America/Argentina/Buenos_Aires" },
+            { name: "Ciudad de México (México)", lat: 19.43, lon: -99.13, tz: "America/Mexico_City" },
+            { name: "El Cairo (Egipto)", lat: 30.04, lon: 31.24, tz: "Africa/Cairo" },
+            { name: "Greenwich / Londres (Reino Unido)", lat: 51.48, lon: 0.00, tz: "Europe/London" },
+            { name: "La Paz (Bolivia)", lat: -16.50, lon: -68.15, tz: "America/La_Paz" },
+            { name: "Lima (Perú)", lat: -12.05, lon: -77.04, tz: "America/Lima" },
+            { name: "Los Ángeles (EE. UU.)", lat: 34.05, lon: -118.24, tz: "America/Los_Angeles" },
+            { name: "Madrid (España)", lat: 40.42, lon: -3.70, tz: "Europe/Madrid" },
+            { name: "Nueva York (EE. UU.)", lat: 40.71, lon: -74.01, tz: "America/New_York" },
+            { name: "París (Francia)", lat: 48.86, lon: 2.35, tz: "Europe/Paris" },
+            { name: "Roma (Italia)", lat: 41.90, lon: 12.50, tz: "Europe/Rome" },
+            { name: "Santiago (Chile)", lat: -33.45, lon: -70.67, tz: "America/Santiago" },
+            { name: "Sídney (Australia)", lat: -33.87, lon: 151.21, tz: "Australia/Sydney" },
+            { name: "Tenerife / Obs. Teide (España)", lat: 28.30, lon: -16.51, tz: "Atlantic/Canary" },
+            { name: "Tokio (Japón)", lat: 35.68, lon: 139.69, tz: "Asia/Tokyo" }
+        ];
+
+        let currentObserver = { ...OBSERVER_PRESETS[0] };
 
         // Estado Global
         let scene3DNeedsRender = true;
@@ -1265,6 +1309,7 @@
         // Inicialización al cargar DOM
         window.addEventListener('DOMContentLoaded', () => {
             initSearchListeners();
+            populateObserverSelect();
             initTelescopicCanvas();
             initThreeJS();
             
@@ -1493,8 +1538,154 @@
             return chiRad;
         }
 
-        // 3. Circunstancias Locales para Mataró
-        function getMoonHorizontalCoords(zenLat, zenLonMax, tMs, maxMs, obsLat = MATARO_LAT, obsLon = MATARO_LON) {
+        // 3. Circunstancias Locales del Observador
+        function getTzAbbr(date, tz) {
+            try {
+                const parts = new Intl.DateTimeFormat('en-US', { timeZone: tz, timeZoneName: 'short' }).formatToParts(date);
+                const tzPart = parts.find(p => p.type === 'timeZoneName');
+                return tzPart ? tzPart.value : '';
+            } catch(e) {
+                return '';
+            }
+        }
+
+        function populateObserverSelect() {
+            const sel = document.getElementById('observer-location-select');
+            if (!sel) return;
+            sel.innerHTML = '';
+
+            OBSERVER_PRESETS.forEach((p, idx) => {
+                const opt = document.createElement('option');
+                opt.value = idx;
+                opt.textContent = p.name;
+                sel.appendChild(opt);
+            });
+
+            const optCustom = document.createElement('option');
+            optCustom.value = 'custom';
+            optCustom.textContent = '⚙️ Personalizado (Lat/Lon)...';
+            sel.appendChild(optCustom);
+        }
+
+        function onObserverSelectChange(val) {
+            const customBox = document.getElementById('observer-custom-coords');
+            if (val === 'custom') {
+                if (customBox) customBox.style.display = 'flex';
+                const latIn = document.getElementById('custom-obs-lat');
+                const lonIn = document.getElementById('custom-obs-lon');
+                const lat = latIn ? parseFloat(latIn.value) || 0 : currentObserver.lat;
+                const lon = lonIn ? parseFloat(lonIn.value) || 0 : currentObserver.lon;
+                updateObserverPosition(lat, lon, 'Personalizado', null);
+            } else {
+                if (customBox) customBox.style.display = 'none';
+                const preset = OBSERVER_PRESETS[parseInt(val, 10)];
+                if (preset) {
+                    const latIn = document.getElementById('custom-obs-lat');
+                    const lonIn = document.getElementById('custom-obs-lon');
+                    if (latIn) latIn.value = preset.lat;
+                    if (lonIn) lonIn.value = preset.lon;
+                    updateObserverPosition(preset.lat, preset.lon, preset.name, preset.tz);
+                }
+            }
+        }
+
+        function onCustomCoordsChange() {
+            const latIn = document.getElementById('custom-obs-lat');
+            const lonIn = document.getElementById('custom-obs-lon');
+            let lat = latIn ? parseFloat(latIn.value) : 0;
+            let lon = lonIn ? parseFloat(lonIn.value) : 0;
+            if (isNaN(lat)) lat = 0;
+            if (isNaN(lon)) lon = 0;
+            lat = Math.max(-90, Math.min(90, lat));
+            lon = Math.max(-180, Math.min(180, lon));
+            updateObserverPosition(lat, lon, 'Personalizado', null);
+        }
+
+        function detectUserLocation() {
+            if (!navigator.geolocation) {
+                alert("La geolocalización no está soportada por su navegador.");
+                return;
+            }
+            const gpsBtn = document.getElementById('btn-observer-gps');
+            if (gpsBtn) gpsBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    const lat = parseFloat(pos.coords.latitude.toFixed(2));
+                    const lon = parseFloat(pos.coords.longitude.toFixed(2));
+                    let userTz = 'UTC';
+                    try {
+                        userTz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+                    } catch(e) {}
+
+                    const sel = document.getElementById('observer-location-select');
+                    if (sel) sel.value = 'custom';
+                    const customBox = document.getElementById('observer-custom-coords');
+                    if (customBox) customBox.style.display = 'flex';
+                    const latIn = document.getElementById('custom-obs-lat');
+                    const lonIn = document.getElementById('custom-obs-lon');
+                    if (latIn) latIn.value = lat;
+                    if (lonIn) lonIn.value = lon;
+
+                    updateObserverPosition(lat, lon, 'Mi ubicación (GPS)', userTz);
+
+                    if (gpsBtn) gpsBtn.innerHTML = '<i class="fa-solid fa-crosshairs" style="color: #4ade80;"></i>';
+                    setTimeout(() => {
+                        if (gpsBtn) gpsBtn.innerHTML = '<i class="fa-solid fa-crosshairs"></i>';
+                    }, 2000);
+                },
+                (err) => {
+                    if (gpsBtn) gpsBtn.innerHTML = '<i class="fa-solid fa-crosshairs"></i>';
+                    alert(`No se pudo obtener la ubicación GPS: ${err.message || 'Permiso denegado'}`);
+                },
+                { timeout: 10000, maximumAge: 60000 }
+            );
+        }
+
+        function updateObserverPosition(lat, lon, name, tz) {
+            currentObserver.lat = lat;
+            currentObserver.lon = lon;
+            if (name) currentObserver.name = name;
+            currentObserver.tz = tz;
+
+            if (observerMarkerGroup3D) {
+                observerMarkerGroup3D.position.copy(latLngToVector3(lat, lon, EARTH_RADIUS * 1.004));
+                observerMarkerGroup3D.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), latLngToVector3(lat, lon, 1.0).normalize());
+            }
+
+            // Actualizar etiquetas en la interfaz
+            const titleEl = document.getElementById('observer-header-title');
+            if (titleEl) {
+                const latStr = `${Math.abs(lat).toFixed(2)}°${lat >= 0 ? 'N' : 'S'}`;
+                const lonStr = `${Math.abs(lon).toFixed(2)}°${lon >= 0 ? 'E' : 'W'}`;
+                titleEl.innerHTML = `<i class="fa-solid fa-location-dot" style="color: var(--accent-blue);"></i> ${currentObserver.name} (${latStr}, ${lonStr})`;
+            }
+
+            const obsChkLbl = document.querySelector('#lbl-show-observer span');
+            if (obsChkLbl) {
+                obsChkLbl.textContent = `Observador (${currentObserver.name})`;
+            }
+
+            const telePill = document.getElementById('tele-pill-location');
+            if (telePill) {
+                telePill.innerHTML = `<i class="fa-solid fa-location-dot" style="color: #38bdf8;"></i> <span>${currentObserver.name}</span>`;
+            }
+
+            const timeLocalLabel = document.getElementById('player-time-local-label');
+            if (timeLocalLabel) {
+                const shortName = currentObserver.name.split(' ')[0].replace(/[\(\),]/g, '');
+                timeLocalLabel.textContent = `${shortName}:`;
+            }
+
+            if (currentEclipse) {
+                renderMataroCircumstances();
+            }
+            updateTimeUI();
+            if (currentActiveView === 'telescopic') renderTelescopicView();
+            scene3DNeedsRender = true;
+        }
+
+        function getMoonHorizontalCoords(zenLat, zenLonMax, tMs, maxMs, obsLat = currentObserver.lat, obsLon = currentObserver.lon) {
             const dtHours = (tMs - maxMs) / 3600000;
             const zenLon = zenLonMax - dtHours * 15.041;
             const phi1 = obsLat * RAD, phi2 = zenLat * RAD;
@@ -1523,7 +1714,9 @@
 
         function renderMataroCircumstances() {
             const ec = currentEclipse;
+            if (!ec) return;
             const tbody = document.getElementById('mataro-contacts-tbody');
+            if (!tbody) return;
             const contacts = [
                 { key: 'P1', name: 'Inicio Penumbra', jumpKey: 'p1', ms: ec.p1Ms },
                 { key: 'U1', name: 'Inicio Umbra (Parcial)', jumpKey: 'u1', ms: ec.u1Ms },
@@ -1538,11 +1731,17 @@
             let rowsHtml = '';
 
             contacts.forEach(c => {
-                const coords = getMoonHorizontalCoords(ec.zenLat, ec.zenLon, c.ms, ec.maxMs);
+                const coords = getMoonHorizontalCoords(ec.zenLat, ec.zenLon, c.ms, ec.maxMs, currentObserver.lat, currentObserver.lon);
                 const isAbove = coords.alt > 0;
                 if (isAbove) visibleCount++;
 
-                const localTimeStr = new Intl.DateTimeFormat('es-ES', { timeZone: 'Europe/Madrid', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).format(new Date(c.ms));
+                let localTimeStr;
+                try {
+                    const tzOpt = currentObserver.tz ? { timeZone: currentObserver.tz } : {};
+                    localTimeStr = new Intl.DateTimeFormat('es-ES', { ...tzOpt, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).format(new Date(c.ms));
+                } catch(e) {
+                    localTimeStr = new Date(c.ms).toISOString().slice(11, 19) + ' UT';
+                }
 
                 const upCurve = `<svg style="width:10px; height:10px; vertical-align:-0.5px; margin-right:3px; display:inline-block;" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 19 C8 19 13 8 20 5"/><polyline points="14 5 20 5 20 11"/></svg>`;
                 const downCurve = `<svg style="width:10px; height:10px; vertical-align:-0.5px; margin-right:3px; display:inline-block;" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5 C8 5 13 16 20 19"/><polyline points="14 19 20 19 20 13"/></svg>`;
@@ -1562,21 +1761,23 @@
             tbody.innerHTML = rowsHtml;
 
             const badge = document.getElementById('mataro-vis-badge');
-            if (visibleCount === contacts.length) {
-                badge.className = 'mataro-vis-tag vis-full';
-                badge.innerHTML = '<i class="fa-solid fa-eye"></i> Visible Completo';
-            } else if (visibleCount > 0) {
-                const firstCoords = getMoonHorizontalCoords(ec.zenLat, ec.zenLon, contacts[0].ms, ec.maxMs);
-                if (firstCoords.alt <= 0) {
-                    badge.className = 'mataro-vis-tag vis-rise';
-                    badge.innerHTML = '<i class="fa-solid fa-moon"></i> Visible al Orto';
+            if (badge) {
+                if (visibleCount === contacts.length) {
+                    badge.className = 'mataro-vis-tag vis-full';
+                    badge.innerHTML = '<i class="fa-solid fa-eye"></i> Visible Completo';
+                } else if (visibleCount > 0) {
+                    const firstCoords = getMoonHorizontalCoords(ec.zenLat, ec.zenLon, contacts[0].ms, ec.maxMs, currentObserver.lat, currentObserver.lon);
+                    if (firstCoords.alt <= 0) {
+                        badge.className = 'mataro-vis-tag vis-rise';
+                        badge.innerHTML = '<i class="fa-solid fa-moon"></i> Visible al Orto';
+                    } else {
+                        badge.className = 'mataro-vis-tag vis-set';
+                        badge.innerHTML = '<i class="fa-solid fa-moon"></i> Visible al Ocaso';
+                    }
                 } else {
-                    badge.className = 'mataro-vis-tag vis-set';
-                    badge.innerHTML = '<i class="fa-solid fa-moon"></i> Visible al Ocaso';
+                    badge.className = 'mataro-vis-tag vis-none';
+                    badge.innerHTML = '<i class="fa-solid fa-eye-slash"></i> No Visible';
                 }
-            } else {
-                badge.className = 'mataro-vis-tag vis-none';
-                badge.innerHTML = '<i class="fa-solid fa-eye-slash"></i> No Visible';
             }
         }
 
@@ -2431,10 +2632,10 @@
             atmosphereMesh3D = new THREE.Mesh(atmosphereGeometry, atmosphereMaterial);
             earthGroup.add(atmosphereMesh3D);
 
-            // Marcador del Observador (📍 Mataró) - anclado a la superficie terrestre
+            // Marcador del Observador (📍 Posición Local) - anclado a la superficie terrestre
             observerMarkerGroup3D = createObserverMarker3D();
-            observerMarkerGroup3D.position.copy(latLngToVector3(MATARO_LAT, MATARO_LON, EARTH_RADIUS * 1.004));
-            observerMarkerGroup3D.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), latLngToVector3(MATARO_LAT, MATARO_LON, 1.0).normalize());
+            observerMarkerGroup3D.position.copy(latLngToVector3(currentObserver.lat, currentObserver.lon, EARTH_RADIUS * 1.004));
+            observerMarkerGroup3D.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), latLngToVector3(currentObserver.lat, currentObserver.lon, 1.0).normalize());
             earthMesh3D.add(observerMarkerGroup3D);
 
             // Red geográfica 3D (Paralelos y Meridianos cada 15°)
@@ -3023,10 +3224,18 @@
 
             const d = new Date(simCurrentTimeMs);
             const utcTimeStr = d.toISOString().slice(11, 19);
-            const localTimeStr = new Intl.DateTimeFormat('es-ES', { timeZone: 'Europe/Madrid', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).format(d);
+            let localTimeStr;
+            let tzAbbr = '';
+            try {
+                const tzOpt = currentObserver.tz ? { timeZone: currentObserver.tz } : {};
+                localTimeStr = new Intl.DateTimeFormat('es-ES', { ...tzOpt, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).format(d);
+                if (currentObserver.tz) tzAbbr = getTzAbbr(d, currentObserver.tz);
+            } catch(e) {
+                localTimeStr = utcTimeStr;
+            }
 
             document.getElementById('time-utc-text').textContent = utcTimeStr;
-            document.getElementById('time-local-text').textContent = `${localTimeStr} CEST`;
+            document.getElementById('time-local-text').textContent = `${localTimeStr}${tzAbbr ? ' ' + tzAbbr : ''}`;
 
             const geo = getMoonShadowCoordsAtTime(simCurrentTimeMs);
             const phaseLabel = document.getElementById('player-phase-label');
@@ -3293,8 +3502,8 @@
             const pad = (n) => String(n).padStart(2, '0');
             const format = (d) => `${d.getUTCFullYear()}${pad(d.getUTCMonth()+1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}00Z`;
 
-            const summary = `🌕 Eclipse Lunar ${ec.typeLabel} - Cosmos Mataró`;
-            const desc = `Eclipse Lunar ${ec.typeLabel} (Saros ${ec.saros}, Gamma ${ec.gamma.toFixed(2)}). Máximo: ${ec.timeTD} TD. Visible desde Mataró: ${document.getElementById('mataro-vis-badge').textContent}.`;
+            const summary = `🌕 Eclipse Lunar ${ec.typeLabel} - ${currentObserver.name}`;
+            const desc = `Eclipse Lunar ${ec.typeLabel} (Saros ${ec.saros}, Gamma ${ec.gamma.toFixed(2)}). Máximo: ${ec.timeTD} TD. Visibilidad en ${currentObserver.name}: ${document.getElementById('mataro-vis-badge')?.textContent || ''}.`;
 
             const icsData = `BEGIN:VCALENDAR
 VERSION:2.0
@@ -3306,14 +3515,14 @@ DTSTART:${format(start)}
 DTEND:${format(end)}
 SUMMARY:${summary}
 DESCRIPTION:${desc}
-LOCATION:Mataró, España (41.54N, 2.44E)
+LOCATION:${currentObserver.name} (${currentObserver.lat.toFixed(2)}N, ${currentObserver.lon.toFixed(2)}E)
 END:VEVENT
 END:VCALENDAR`;
 
             const blob = new Blob([icsData], { type: 'text/calendar;charset=utf-8' });
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
-            link.download = `Eclipse_Lunar_${ec.dateStr}.ics`;
+            link.download = `Eclipse_Lunar_${ec.dateStr}_${currentObserver.name.replace(/[^a-zA-Z0-9]/g, '_')}.ics`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
