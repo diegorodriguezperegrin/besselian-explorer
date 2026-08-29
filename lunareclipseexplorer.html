@@ -660,6 +660,70 @@
             gap: 8px;
         }
 
+        .live-toggle-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 3px 8px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            font-family: var(--font-heading);
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: var(--transition-smooth);
+            height: 28px;
+            white-space: nowrap;
+        }
+
+        .live-toggle-btn:hover {
+            background: rgba(239, 68, 68, 0.15);
+            border-color: rgba(239, 68, 68, 0.4);
+            color: #fff;
+        }
+
+        .live-toggle-btn.active {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: #ef4444;
+            color: #ef4444;
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.3);
+        }
+
+        .live-dot-mini {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #64748b;
+            display: inline-block;
+            transition: background-color 0.2s;
+        }
+
+        .live-toggle-btn.active .live-dot-mini {
+            background: #ef4444;
+            box-shadow: 0 0 6px #ef4444;
+            animation: blinkLiveLed 1.0s infinite;
+        }
+
+        .speed-select-compact {
+            padding: 3px 6px;
+            font-size: 0.72rem;
+            border-radius: 8px;
+            width: 68px;
+            height: 28px;
+            background-color: rgba(15, 23, 42, 0.85);
+            border: 1px solid var(--border-color);
+            color: #fff;
+            cursor: pointer;
+            outline: none;
+            transition: var(--transition-smooth);
+        }
+
+        .speed-select-compact:hover, .speed-select-compact:focus {
+            border-color: var(--accent-blue);
+        }
+
         .player-phase-badge {
             font-family: var(--font-heading);
             font-size: 0.80rem;
@@ -1467,15 +1531,20 @@
                 <button class="ctrl-btn" id="btn-fast-forward" onclick="changeSpeedStep(1)" title="Avanzar / Aumentar velocidad adelante (1x a 1200x)"><i class="fa-solid fa-forward"></i></button>
             </div>
             <div class="playback-dock-bottom-right">
-                <span style="font-size: 0.72rem; color: var(--text-secondary); font-family: var(--font-heading); font-weight: 600;">Velocidad:</span>
-                <select class="search-input" id="sim-speed-select" style="padding: 4px 8px; font-size: 0.74rem; border-radius: 8px; width: 105px;" onchange="setSimSpeed(this.value)">
-                    <option value="live">🔴 En vivo</option>
-                    <option value="1" selected>1×</option>
-                    <option value="10">10×</option>
-                    <option value="60">60×</option>
-                    <option value="300">300×</option>
-                    <option value="1200">1200×</option>
-                </select>
+                <button type="button" class="live-toggle-btn" id="btn-toggle-live" onclick="toggleLiveModeButton()" title="Sincronizar simulación con la hora real (En vivo)">
+                    <span class="live-dot-mini"></span>
+                    <span>En vivo</span>
+                </button>
+                <div style="display: flex; align-items: center; gap: 5px;">
+                    <span style="font-size: 0.70rem; color: var(--text-secondary); font-family: var(--font-heading); font-weight: 600;">Velocidad:</span>
+                    <select class="speed-select-compact" id="sim-speed-select" onchange="setSimSpeed(this.value)">
+                        <option value="1" selected>1×</option>
+                        <option value="10">10×</option>
+                        <option value="60">60×</option>
+                        <option value="300">300×</option>
+                        <option value="1200">1200×</option>
+                    </select>
+                </div>
             </div>
         </div>
     </aside>
@@ -3776,9 +3845,15 @@
 
         function updateLiveBadgeState() {
             const badge = document.getElementById('live-indicator-badge');
+            const liveBtn = document.getElementById('btn-toggle-live');
             const playBtn = document.getElementById('btn-play-pause');
             const now = Date.now();
             const isActuallyLive = isLiveMode && (now >= simStartTimeMs && now <= simEndTimeMs);
+
+            if (liveBtn) {
+                liveBtn.classList.toggle('active', isLiveMode);
+            }
+
             if (isActuallyLive) {
                 if (badge) {
                     badge.classList.add('active');
@@ -3796,11 +3871,21 @@
             }
         }
 
+        function toggleLiveModeButton() {
+            if (isLiveMode) {
+                isLiveMode = false;
+                simPlayDirection = 1;
+                simSpeedMultiplier = parseFloat(document.getElementById('sim-speed-select')?.value) || 1;
+                updateLiveBadgeState();
+                updateTimeUI();
+            } else {
+                setSimSpeed('live');
+            }
+        }
+
         function onScrubTimeline(val) {
             if (isLiveMode) {
                 isLiveMode = false;
-                const sel = document.getElementById('sim-speed-select');
-                if (sel && sel.value === 'live') sel.value = '60';
                 updateLiveBadgeState();
             }
             const frac = val / 1000;
@@ -3813,8 +3898,6 @@
             if (isLiveMode) {
                 isLiveMode = false;
                 isPlaying = false;
-                const sel = document.getElementById('sim-speed-select');
-                if (sel && sel.value === 'live') sel.value = '1';
                 updateLiveBadgeState();
             } else {
                 isPlaying = !isPlaying;
@@ -3915,6 +3998,8 @@
             } else {
                 isLiveMode = false;
                 simSpeedMultiplier = parseFloat(speed) || 1;
+                const speedSelect = document.getElementById('sim-speed-select');
+                if (speedSelect) speedSelect.value = String(simSpeedMultiplier);
             }
             updateLiveBadgeState();
         }
@@ -3923,8 +4008,6 @@
             if (!currentEclipse) return;
             if (isLiveMode) {
                 isLiveMode = false;
-                const sel = document.getElementById('sim-speed-select');
-                if (sel && sel.value === 'live') sel.value = '60';
                 updateLiveBadgeState();
             }
             const ec = currentEclipse;
