@@ -3921,6 +3921,7 @@
             const isMobile = window.innerWidth <= 900;
 
             if (targetState) {
+                resetPanelDefaultPosition('sidebar-panel');
                 panel.classList.remove('collapsed');
                 if (isMobile) {
                     toggleCircumstancesPanel(false);
@@ -3928,6 +3929,7 @@
                 }
             } else {
                 panel.classList.add('collapsed');
+                resetPanelDefaultPosition('sidebar-panel');
             }
             updateTopNavButtonsState();
         }
@@ -3940,6 +3942,7 @@
             const isMobile = window.innerWidth <= 900;
 
             if (targetState) {
+                resetPanelDefaultPosition('circumstances-panel');
                 panel.classList.remove('collapsed');
                 if (isMobile) {
                     toggleSidebar(false);
@@ -3947,6 +3950,7 @@
                 }
             } else {
                 panel.classList.add('collapsed');
+                resetPanelDefaultPosition('circumstances-panel');
             }
             updateTopNavButtonsState();
         }
@@ -3960,6 +3964,7 @@
             const isMobile = window.innerWidth <= 900;
 
             if (targetState) {
+                resetPanelDefaultPosition('settings-panel');
                 panel.classList.remove('collapsed');
                 if (badge) badge.classList.remove('panel-collapsed');
                 if (isMobile) {
@@ -3969,6 +3974,7 @@
             } else {
                 panel.classList.add('collapsed');
                 if (badge) badge.classList.add('panel-collapsed');
+                resetPanelDefaultPosition('settings-panel');
             }
             updateTopNavButtonsState();
         }
