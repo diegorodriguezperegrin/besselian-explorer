@@ -660,23 +660,7 @@
             gap: 8px;
         }
 
-        .speed-select-compact {
-            padding: 3px 6px;
-            font-size: 0.72rem;
-            border-radius: 8px;
-            width: 78px;
-            height: 28px;
-            background-color: rgba(15, 23, 42, 0.85);
-            border: 1px solid var(--border-color);
-            color: #fff;
-            cursor: pointer;
-            outline: none;
-            transition: var(--transition-smooth);
-        }
 
-        .speed-select-compact:hover, .speed-select-compact:focus {
-            border-color: var(--accent-blue);
-        }
 
         .player-phase-badge {
             font-family: var(--font-heading);
@@ -1485,21 +1469,10 @@
                 <button class="ctrl-btn" id="btn-fast-forward" onclick="changeSpeedStep(1)" title="Avanzar / Aumentar velocidad adelante (1x a 1200x)"><i class="fa-solid fa-forward"></i></button>
             </div>
             <div class="playback-dock-bottom-right">
-                <label class="checkbox-row" style="margin: 0; font-size: 0.72rem; white-space: nowrap; gap: 4px;">
+                <label class="checkbox-row" style="margin: 0; font-size: 0.74rem; white-space: nowrap; gap: 5px;">
                     <input type="checkbox" id="chk-live-mode" onchange="toggleLiveModeCheckbox(this.checked)">
                     <span>En vivo</span>
                 </label>
-                <div style="display: flex; align-items: center; gap: 5px;">
-                    <span style="font-size: 0.70rem; color: var(--text-secondary); font-family: var(--font-heading); font-weight: 600;">Velocidad:</span>
-                    <select class="speed-select-compact" id="sim-speed-select" onchange="setSimSpeed(this.value)">
-                        <option value="live">En vivo</option>
-                        <option value="1" selected>1×</option>
-                        <option value="10">10×</option>
-                        <option value="60">60×</option>
-                        <option value="300">300×</option>
-                        <option value="1200">1200×</option>
-                    </select>
-                </div>
             </div>
         </div>
     </aside>
@@ -3830,20 +3803,13 @@
             if (isChecked) {
                 setSimSpeed('live');
             } else {
-                const speedSelect = document.getElementById('sim-speed-select');
-                let targetSpeed = '1';
-                if (speedSelect && speedSelect.value !== 'live') {
-                    targetSpeed = speedSelect.value;
-                }
-                setSimSpeed(targetSpeed);
+                setSimSpeed(simSpeedMultiplier || 1);
             }
         }
 
         function onScrubTimeline(val) {
             if (isLiveMode) {
                 isLiveMode = false;
-                const speedSelect = document.getElementById('sim-speed-select');
-                if (speedSelect && speedSelect.value === 'live') speedSelect.value = String(simSpeedMultiplier || 1);
                 updateLiveBadgeState();
             }
             const frac = val / 1000;
@@ -3856,8 +3822,6 @@
             if (isLiveMode) {
                 isLiveMode = false;
                 isPlaying = false;
-                const speedSelect = document.getElementById('sim-speed-select');
-                if (speedSelect && speedSelect.value === 'live') speedSelect.value = String(simSpeedMultiplier || 1);
                 updateLiveBadgeState();
             } else {
                 isPlaying = !isPlaying;
@@ -3892,14 +3856,16 @@
                 simSpeedMultiplier = SPEED_STEPS[nextIdx];
             }
 
-            // Sincronizar el desplegable de velocidad y casilla
-            const speedSelect = document.getElementById('sim-speed-select');
-            if (speedSelect) speedSelect.value = String(simSpeedMultiplier);
             const chkLive = document.getElementById('chk-live-mode');
             if (chkLive) chkLive.checked = false;
 
             const playBtn = document.getElementById('btn-play-pause');
             if (playBtn) playBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
+
+            const fastBtn = document.getElementById('btn-fast-forward');
+            const rewBtn = document.getElementById('btn-rewind');
+            if (fastBtn) fastBtn.title = `Avanzar / Aumentar velocidad adelante (${simSpeedMultiplier}×)`;
+            if (rewBtn) rewBtn.title = `Retroceder / Aumentar velocidad atrás (${simSpeedMultiplier}×)`;
 
             updateTimeUI();
             if (currentActiveView === 'telescopic') renderTelescopicView();
@@ -3910,8 +3876,6 @@
             if (!currentEclipse) return;
             if (isLiveMode) {
                 isLiveMode = false;
-                const speedSelect = document.getElementById('sim-speed-select');
-                if (speedSelect && speedSelect.value === 'live') speedSelect.value = String(simSpeedMultiplier || 1);
                 updateLiveBadgeState();
             }
 
@@ -3942,7 +3906,6 @@
         }
 
         function setSimSpeed(speed) {
-            const speedSelect = document.getElementById('sim-speed-select');
             const chkLive = document.getElementById('chk-live-mode');
 
             if (speed === 'live') {
@@ -3961,13 +3924,11 @@
                 }
                 const playBtn = document.getElementById('btn-play-pause');
                 if (playBtn) playBtn.innerHTML = isPlaying ? '<i class="fa-solid fa-pause"></i>' : '<i class="fa-solid fa-play"></i>';
-                if (speedSelect) speedSelect.value = 'live';
                 if (chkLive) chkLive.checked = true;
                 updateTimeUI();
             } else {
                 isLiveMode = false;
                 simSpeedMultiplier = parseFloat(speed) || 1;
-                if (speedSelect) speedSelect.value = String(simSpeedMultiplier);
                 if (chkLive) chkLive.checked = false;
             }
             updateLiveBadgeState();
@@ -3977,8 +3938,6 @@
             if (!currentEclipse) return;
             if (isLiveMode) {
                 isLiveMode = false;
-                const speedSelect = document.getElementById('sim-speed-select');
-                if (speedSelect && speedSelect.value === 'live') speedSelect.value = String(simSpeedMultiplier || 1);
                 updateLiveBadgeState();
             }
             const ec = currentEclipse;
