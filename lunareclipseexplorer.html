@@ -1717,7 +1717,7 @@
             if (horizCoords && currentEclipse) {
                 const chiRad = getEclipseFrameTilt(currentEclipse, simCurrentTimeMs);
                 const totalVisualRotDeg = (horizCoords.qRad + chiRad) * DEG;
-                pillOrient.innerHTML = '<i class="fa-solid fa-mountain-sun" style="color: var(--accent-blue);"></i> <span>Vista Local (Mataró · Cenit arriba)</span>';
+                pillOrient.innerHTML = `<i class="fa-solid fa-mountain-sun" style="color: var(--accent-blue);"></i> <span>Vista Local (${currentObserver.name} · Cenit arriba)</span>`;
                 pillCoords.style.display = 'flex';
                 const isAbove = horizCoords.alt > -0.5;
                 if (isAbove) {
