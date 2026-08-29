@@ -264,48 +264,64 @@
             color: #fff;
         }
 
-        /* Botones de Reapertura Flotantes */
-        .reopen-btn {
+        /* Barra Superior Flotante y Botones de Apertura */
+        .top-nav-bar {
             position: absolute;
             top: 15px;
+            left: 15px;
+            right: 15px;
             z-index: 40;
+            display: flex;
+            justify-content: space-between;
+            pointer-events: none;
+            gap: 8px;
+        }
+
+        .top-nav-bar > * {
+            pointer-events: auto;
+        }
+
+        .reopen-group-left {
+            display: flex;
+            gap: 8px;
+            pointer-events: auto;
+        }
+
+        .reopen-btn {
             background: rgba(12, 16, 25, 0.94);
             backdrop-filter: blur(16px);
             border: 1px solid var(--border-color);
             color: var(--text-primary);
             font-family: var(--font-heading);
-            font-size: 0.85rem;
+            font-size: 0.82rem;
             font-weight: 600;
             height: 38px;
             box-sizing: border-box;
-            padding: 0 14px;
+            padding: 0 13px;
             border-radius: 12px;
             cursor: pointer;
             display: none;
             align-items: center;
             justify-content: center;
-            gap: 8px;
+            gap: 7px;
             line-height: 1;
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7);
             transition: var(--transition-smooth);
-        }
-
-        #btn-reopen-left {
-            left: 15px;
-        }
-
-        #btn-reopen-circumstances {
-            left: 135px;
-        }
-
-        #btn-reopen-right {
-            right: 15px;
+            white-space: nowrap;
+            user-select: none;
         }
 
         .reopen-btn:hover {
             border-color: var(--accent-blue);
             color: var(--accent-blue);
             background: rgba(15, 23, 42, 0.98);
+        }
+
+        .reopen-btn.active-nav {
+            border-color: var(--accent-blue) !important;
+            color: var(--accent-blue) !important;
+            background: rgba(56, 189, 248, 0.18) !important;
+            box-shadow: 0 0 12px rgba(56, 189, 248, 0.35) !important;
         }
 
         /* Secciones y Títulos */
@@ -851,7 +867,7 @@
             gap: 8px;
         }
 
-        @media (max-width: 1100px) {
+        @media (max-width: 1100px) and (min-width: 901px) {
             .circumstances-panel {
                 left: 15px;
                 top: 70px;
@@ -860,35 +876,46 @@
             }
         }
 
-        /* Responsive Mobile */
-        @media (max-width: 768px) {
-            .sidebar-panel {
-                width: min(calc(100vw - 30px), 350px);
-                max-width: 350px;
-                left: 15px;
-                right: auto;
-                max-height: calc(100vh - 30px);
+        /* Responsive Mobile & Tablet (<= 900px) */
+        @media (max-width: 900px) {
+            .top-nav-bar {
+                top: 10px;
+                left: 10px;
+                right: 10px;
+                justify-content: center;
+                gap: 6px;
             }
-            .circumstances-panel {
-                width: min(calc(100vw - 30px), 340px);
-                max-width: 340px;
-                left: 15px;
-                top: 15px;
-                max-height: calc(100vh - 30px);
+            .reopen-group-left {
+                gap: 6px;
             }
-            .settings-panel {
-                width: min(calc(100vw - 30px), 320px);
-                max-width: 320px;
-                right: 15px;
-                left: auto;
-                max-height: calc(100vh - 30px);
+            .reopen-btn {
+                display: inline-flex !important;
+                padding: 0 10px;
+                font-size: 0.78rem;
+                height: 36px;
+                border-radius: 10px;
+            }
+            .sidebar-panel, .circumstances-panel, .settings-panel {
+                width: min(calc(100vw - 20px), 360px) !important;
+                max-width: 360px !important;
+                left: 10px !important;
+                right: auto !important;
+                top: 54px !important;
+                max-height: calc(100vh - 66px) !important;
+                max-height: calc(100dvh - 66px) !important;
+                z-index: 50 !important;
+            }
+            .sidebar-panel.collapsed, .circumstances-panel.collapsed, .settings-panel.collapsed {
+                transform: translateY(-16px) scale(0.96) !important;
+                opacity: 0 !important;
+                pointer-events: none !important;
             }
             .telescope-hud {
                 max-width: calc(100vw - 40px);
-                top: 10px;
+                top: 56px;
             }
             .live-indicator-badge {
-                top: 12px;
+                top: 56px;
                 right: 12px !important;
                 padding: 4px 10px;
             }
@@ -1009,19 +1036,23 @@
         <span class="live-text">EN VIVO</span>
     </div>
 
-    <!-- Botones Flotantes para Reabrir Paneles cuando están colapsados -->
-    <button class="reopen-btn" id="btn-reopen-left" onclick="toggleSidebar(true)">
-        <i class="fa-solid fa-moon"></i>
-        <span>Eclipses</span>
-    </button>
-    <button class="reopen-btn" id="btn-reopen-circumstances" onclick="toggleCircumstancesPanel(true)">
-        <i class="fa-solid fa-location-dot"></i>
-        <span>Circunstancias</span>
-    </button>
-    <button class="reopen-btn" id="btn-reopen-right" onclick="toggleSettingsPanel(true)">
-        <i class="fa-solid fa-sliders"></i>
-        <span>Visualización</span>
-    </button>
+    <!-- Barra de Navegación Superior / Botones Flotantes de Paneles -->
+    <div class="top-nav-bar" id="top-nav-bar">
+        <div class="reopen-group-left">
+            <button class="reopen-btn" id="btn-reopen-left" onclick="toggleSidebar(null)" title="Abrir/Cerrar panel de Eclipses">
+                <i class="fa-solid fa-moon"></i>
+                <span>Eclipses</span>
+            </button>
+            <button class="reopen-btn" id="btn-reopen-circumstances" onclick="toggleCircumstancesPanel(null)" title="Abrir/Cerrar Circunstancias Locales">
+                <i class="fa-solid fa-location-dot"></i>
+                <span>Circunstancias</span>
+            </button>
+        </div>
+        <button class="reopen-btn" id="btn-reopen-right" onclick="toggleSettingsPanel(null)" title="Abrir/Cerrar panel de Visualización">
+            <i class="fa-solid fa-sliders"></i>
+            <span>Visualización</span>
+        </button>
+    </div>
 
     <!-- PANEL IZQUIERDO: Selección y Datos Astronómicos (NASA GSFC) -->
     <aside class="sidebar-panel" id="sidebar-panel">
@@ -1030,7 +1061,7 @@
                 <h1>Lunar Eclipse Explorer</h1>
                 <p>COSMOS MATARÓ</p>
             </div>
-            <div class="panel-toggle" onclick="toggleSidebar(false)" title="Ocultar panel"><i class="fa-solid fa-chevron-left"></i></div>
+            <div class="panel-toggle" onclick="toggleSidebar(false)" title="Cerrar panel"><i class="fa-solid fa-xmark"></i></div>
         </div>
 
         <!-- Eclipses Destacados (Limitados a 3) -->
@@ -1120,7 +1151,7 @@
                 <h1>Circunstancias</h1>
                 <p id="observer-header-subtitle">MATARÓ (41.54°N, 2.44°E)</p>
             </div>
-            <div class="panel-toggle" onclick="toggleCircumstancesPanel(false)" title="Ocultar panel"><i class="fa-solid fa-chevron-left"></i></div>
+            <div class="panel-toggle" onclick="toggleCircumstancesPanel(false)" title="Cerrar panel"><i class="fa-solid fa-xmark"></i></div>
         </div>
 
         <!-- Selector de Ubicación del Observador -->
@@ -1182,7 +1213,7 @@
     <aside class="settings-panel" id="settings-panel">
         <div class="panel-header">
             <h1>Visualización</h1>
-            <div class="panel-toggle" onclick="toggleSettingsPanel(false)" title="Ocultar panel"><i class="fa-solid fa-chevron-right"></i></div>
+            <div class="panel-toggle" onclick="toggleSettingsPanel(false)" title="Cerrar panel"><i class="fa-solid fa-xmark"></i></div>
         </div>
 
         <!-- Modos de Vista -->
@@ -1419,10 +1450,12 @@
 
             switchMainView('3d');
 
-            if (window.innerWidth <= 768) {
+            if (window.innerWidth <= 900) {
                 toggleSidebar(true);
                 toggleCircumstancesPanel(false);
                 toggleSettingsPanel(false);
+            } else {
+                updateTopNavButtonsState();
             }
 
             requestAnimationFrame(mainAnimationLoop);
@@ -3702,57 +3735,94 @@
             }
         }
 
-        function toggleSidebar(show) {
+        function updateTopNavButtonsState() {
+            const isMobile = window.innerWidth <= 900;
+            const sidePanel = document.getElementById('sidebar-panel');
+            const circPanel = document.getElementById('circumstances-panel');
+            const setPanel = document.getElementById('settings-panel');
+
+            const sideOpen = sidePanel && !sidePanel.classList.contains('collapsed');
+            const circOpen = circPanel && !circPanel.classList.contains('collapsed');
+            const setOpen = setPanel && !setPanel.classList.contains('collapsed');
+
+            const btnSide = document.getElementById('btn-reopen-left');
+            const btnCirc = document.getElementById('btn-reopen-circumstances');
+            const btnSet = document.getElementById('btn-reopen-right');
+
+            if (isMobile) {
+                if (btnSide) { btnSide.style.display = 'inline-flex'; btnSide.classList.toggle('active-nav', sideOpen); }
+                if (btnCirc) { btnCirc.style.display = 'inline-flex'; btnCirc.classList.toggle('active-nav', circOpen); }
+                if (btnSet) { btnSet.style.display = 'inline-flex'; btnSet.classList.toggle('active-nav', setOpen); }
+            } else {
+                if (btnSide) { btnSide.style.display = sideOpen ? 'none' : 'inline-flex'; btnSide.classList.remove('active-nav'); }
+                if (btnCirc) { btnCirc.style.display = circOpen ? 'none' : 'inline-flex'; btnCirc.classList.remove('active-nav'); }
+                if (btnSet) { btnSet.style.display = setOpen ? 'none' : 'inline-flex'; btnSet.classList.remove('active-nav'); }
+            }
+        }
+
+        function toggleSidebar(show = null) {
             const panel = document.getElementById('sidebar-panel');
-            const reopenBtn = document.getElementById('btn-reopen-left');
-            if (show) {
-                panel.classList.remove('collapsed');
-                if (reopenBtn) reopenBtn.style.display = 'none';
-                if (window.innerWidth <= 768) {
-                    toggleCircumstancesPanel(false);
-                    toggleSettingsPanel(false);
-                }
-            } else {
-                panel.classList.add('collapsed');
-                if (reopenBtn) reopenBtn.style.display = 'flex';
-            }
-        }
-
-        function toggleCircumstancesPanel(show) {
-            const panel = document.getElementById('circumstances-panel');
-            const reopenBtn = document.getElementById('btn-reopen-circumstances');
             if (!panel) return;
-            if (show) {
+            const isCurrentlyOpen = !panel.classList.contains('collapsed');
+            const targetState = (show !== null) ? show : !isCurrentlyOpen;
+            const isMobile = window.innerWidth <= 900;
+
+            if (targetState) {
                 panel.classList.remove('collapsed');
-                if (reopenBtn) reopenBtn.style.display = 'none';
-                if (window.innerWidth <= 768) {
+                if (isMobile) {
+                    toggleCircumstancesPanel(false);
+                    toggleSettingsPanel(false);
+                }
+            } else {
+                panel.classList.add('collapsed');
+            }
+            updateTopNavButtonsState();
+        }
+
+        function toggleCircumstancesPanel(show = null) {
+            const panel = document.getElementById('circumstances-panel');
+            if (!panel) return;
+            const isCurrentlyOpen = !panel.classList.contains('collapsed');
+            const targetState = (show !== null) ? show : !isCurrentlyOpen;
+            const isMobile = window.innerWidth <= 900;
+
+            if (targetState) {
+                panel.classList.remove('collapsed');
+                if (isMobile) {
                     toggleSidebar(false);
                     toggleSettingsPanel(false);
                 }
             } else {
                 panel.classList.add('collapsed');
-                if (reopenBtn) reopenBtn.style.display = 'flex';
             }
+            updateTopNavButtonsState();
         }
 
-        function toggleSettingsPanel(show) {
+        function toggleSettingsPanel(show = null) {
             const panel = document.getElementById('settings-panel');
-            const reopenBtn = document.getElementById('btn-reopen-right');
             const badge = document.getElementById('live-indicator-badge');
-            if (show) {
+            if (!panel) return;
+            const isCurrentlyOpen = !panel.classList.contains('collapsed');
+            const targetState = (show !== null) ? show : !isCurrentlyOpen;
+            const isMobile = window.innerWidth <= 900;
+
+            if (targetState) {
                 panel.classList.remove('collapsed');
-                if (reopenBtn) reopenBtn.style.display = 'none';
                 if (badge) badge.classList.remove('panel-collapsed');
-                if (window.innerWidth <= 768) {
+                if (isMobile) {
                     toggleSidebar(false);
                     toggleCircumstancesPanel(false);
                 }
             } else {
                 panel.classList.add('collapsed');
-                if (reopenBtn) reopenBtn.style.display = 'flex';
                 if (badge) badge.classList.add('panel-collapsed');
             }
+            updateTopNavButtonsState();
         }
+
+        window.addEventListener('resize', () => {
+            updateTopNavButtonsState();
+        });
 
         // Exportar a iCalendar (.ics)
         function exportSelectedEclipseToICal() {
