@@ -621,8 +621,14 @@
             flex-direction: column;
             gap: 6px;
             box-shadow: 0 12px 36px rgba(0, 0, 0, 0.7);
-            transition: var(--transition-smooth);
+            transition: opacity 0.25s ease, transform 0.25s ease;
             pointer-events: auto;
+        }
+
+        .playback-dock.collapsed {
+            transform: translate(-50%, calc(100% + 40px));
+            opacity: 0;
+            pointer-events: none;
         }
 
         .playback-dock-top {
@@ -634,10 +640,24 @@
         }
 
         .playback-dock-bottom {
-            display: flex;
-            justify-content: space-between;
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
             align-items: center;
-            gap: 12px;
+            width: 100%;
+            gap: 8px;
+        }
+
+        .playback-dock-bottom-left {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+        }
+
+        .playback-dock-bottom-right {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 8px;
         }
 
         .player-phase-badge {
@@ -1022,9 +1042,22 @@
                 padding: 8px 12px;
                 gap: 5px;
             }
+            .playback-dock.collapsed {
+                transform: translateY(calc(100% + 30px)) !important;
+                opacity: 0 !important;
+                pointer-events: none !important;
+            }
             .playback-dock-top {
                 flex-wrap: wrap;
                 gap: 4px;
+            }
+            .playback-dock-bottom {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            .playback-dock-bottom-left {
+                display: none;
             }
             .player-time-display {
                 gap: 8px;
@@ -1153,6 +1186,10 @@
         <button class="reopen-btn" id="btn-reopen-left" onclick="toggleSidebar(null)" title="Abrir/Cerrar panel de Eclipses">
             <i class="fa-solid fa-moon"></i>
             <span>Eclipses</span>
+        </button>
+        <button class="reopen-btn" id="btn-reopen-dock" onclick="togglePlaybackDock(null)" title="Abrir/Cerrar Reproductor">
+            <i class="fa-solid fa-circle-play"></i>
+            <span>Reproducción</span>
         </button>
         <button class="reopen-btn" id="btn-reopen-right" onclick="toggleSettingsPanel(null)" title="Abrir/Cerrar panel de Visualización">
             <i class="fa-solid fa-sliders"></i>
@@ -1395,7 +1432,7 @@
 
     <!-- BARRA / CÁPSULA DE REPRODUCCIÓN FLOTANTE INFERIOR (PLAYBACK DOCK) -->
     <aside class="playback-dock" id="playback-dock">
-        <!-- Fila Superior: Estado de fase, Hora Local y UTC al extremo derecho -->
+        <!-- Fila Superior: Estado de fase, Hora Local, UTC y Botón de Cierre -->
         <div class="playback-dock-top">
             <div class="player-phase-badge" id="player-phase-label">
                 <span style="color: #fb923c;">🔴 Totalidad</span> · Luna de Sangre
@@ -1404,6 +1441,7 @@
                 <span class="player-time-local-box"><span id="player-time-local-label">Mataró (Cosmos Mataró):</span> <strong id="time-local-text">20:11 CEST</strong></span>
                 <span class="player-time-utc-box">UTC: <strong id="time-utc-text">18:11:43</strong></span>
             </div>
+            <div class="panel-toggle" onclick="togglePlaybackDock(false)" title="Cerrar reproductor" style="width: 24px; height: 24px; font-size: 0.75rem; border-radius: 6px;"><i class="fa-solid fa-xmark"></i></div>
         </div>
 
         <!-- Línea de Tiempo / Scrubber con Marcadores -->
@@ -1418,8 +1456,9 @@
             <div class="contact-marker" id="marker-p4" title="P4: Fin Penumbra"></div>
         </div>
 
-        <!-- Fila Inferior: Botonera y Selector de Velocidad -->
+        <!-- Fila Inferior: Botonera centrada y Selector de Velocidad -->
         <div class="playback-dock-bottom">
+            <div class="playback-dock-bottom-left"></div>
             <div class="player-ctrls-compact">
                 <button class="ctrl-btn" id="btn-rewind" onclick="changeSpeedStep(-1)" title="Retroceder / Aumentar velocidad atrás (1x a 1200x)"><i class="fa-solid fa-backward"></i></button>
                 <button class="ctrl-btn" id="btn-prev-contact" onclick="jumpContactStep(-1)" title="Momento anterior del eclipse (P1, U1, Máx, U4, P4)"><i class="fa-solid fa-step-backward"></i></button>
@@ -1427,7 +1466,7 @@
                 <button class="ctrl-btn" id="btn-next-contact" onclick="jumpContactStep(1)" title="Momento siguiente del eclipse (P1, U1, Máx, U4, P4)"><i class="fa-solid fa-step-forward"></i></button>
                 <button class="ctrl-btn" id="btn-fast-forward" onclick="changeSpeedStep(1)" title="Avanzar / Aumentar velocidad adelante (1x a 1200x)"><i class="fa-solid fa-forward"></i></button>
             </div>
-            <div style="display: flex; align-items: center; gap: 8px;">
+            <div class="playback-dock-bottom-right">
                 <span style="font-size: 0.72rem; color: var(--text-secondary); font-family: var(--font-heading); font-weight: 600;">Velocidad:</span>
                 <select class="search-input" id="sim-speed-select" style="padding: 4px 8px; font-size: 0.74rem; border-radius: 8px; width: 105px;" onchange="setSimSpeed(this.value)">
                     <option value="live">🔴 En vivo</option>
@@ -3994,18 +4033,23 @@
             const isMobile = window.innerWidth <= 900;
             const sidePanel = document.getElementById('sidebar-panel');
             const setPanel = document.getElementById('settings-panel');
+            const dockPanel = document.getElementById('playback-dock');
 
             const sideOpen = sidePanel && !sidePanel.classList.contains('collapsed');
             const setOpen = setPanel && !setPanel.classList.contains('collapsed');
+            const dockOpen = dockPanel && !dockPanel.classList.contains('collapsed');
 
             const btnSide = document.getElementById('btn-reopen-left');
             const btnSet = document.getElementById('btn-reopen-right');
+            const btnDock = document.getElementById('btn-reopen-dock');
 
             if (isMobile) {
                 if (btnSide) { btnSide.style.display = 'inline-flex'; btnSide.classList.toggle('active-nav', sideOpen); }
+                if (btnDock) { btnDock.style.display = 'inline-flex'; btnDock.classList.toggle('active-nav', dockOpen); }
                 if (btnSet) { btnSet.style.display = 'inline-flex'; btnSet.classList.toggle('active-nav', setOpen); }
             } else {
                 if (btnSide) { btnSide.style.display = sideOpen ? 'none' : 'inline-flex'; btnSide.classList.remove('active-nav'); }
+                if (btnDock) { btnDock.style.display = dockOpen ? 'none' : 'inline-flex'; btnDock.classList.remove('active-nav'); }
                 if (btnSet) { btnSet.style.display = setOpen ? 'none' : 'inline-flex'; btnSet.classList.remove('active-nav'); }
             }
         }
@@ -4049,6 +4093,20 @@
                 panel.classList.add('collapsed');
                 if (badge) badge.classList.add('panel-collapsed');
                 resetPanelDefaultPosition('settings-panel');
+            }
+            updateTopNavButtonsState();
+        }
+
+        function togglePlaybackDock(show = null) {
+            const panel = document.getElementById('playback-dock');
+            if (!panel) return;
+            const isCurrentlyOpen = !panel.classList.contains('collapsed');
+            const targetState = (show !== null) ? show : !isCurrentlyOpen;
+
+            if (targetState) {
+                panel.classList.remove('collapsed');
+            } else {
+                panel.classList.add('collapsed');
             }
             updateTopNavButtonsState();
         }
