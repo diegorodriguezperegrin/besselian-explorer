@@ -793,6 +793,56 @@
             opacity: 0.4;
         }
 
+        /* Botón y Contenedor Desplegable de Más Capas */
+        .more-layers-btn {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px dashed rgba(56, 189, 248, 0.35);
+            border-radius: 8px;
+            color: var(--accent-blue);
+            font-family: var(--font-heading);
+            font-size: 0.74rem;
+            font-weight: 600;
+            padding: 6px 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            box-sizing: border-box;
+            transition: var(--transition-smooth);
+            margin-top: 4px;
+        }
+
+        .more-layers-btn:hover {
+            background: rgba(56, 189, 248, 0.12);
+            border-color: var(--accent-blue);
+            color: #fff;
+        }
+
+        .more-layers-btn i {
+            transition: transform 0.25s ease;
+            font-size: 0.70rem;
+        }
+
+        .more-layers-btn.expanded i {
+            transform: rotate(180deg);
+        }
+
+        .more-layers-container {
+            display: none;
+            flex-direction: column;
+            gap: 6px;
+            margin-top: 6px;
+            padding: 8px 10px;
+            background: rgba(0, 0, 0, 0.28);
+            border-radius: 8px;
+            border-left: 2px solid var(--accent-blue);
+        }
+
+        .more-layers-container.expanded {
+            display: flex;
+        }
+
         .cam-presets-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -1295,46 +1345,57 @@
             <i class="fa-solid fa-layer-group"></i> Capas y opciones
         </div>
         <div class="panel-section">
+            <!-- 3 Opciones Principales Siempre Visibles -->
             <label class="checkbox-row" id="lbl-show-cones">
                 <input type="checkbox" id="chk-show-cones" checked onchange="toggle3DCones(this.checked)">
                 <span>Conos de sombra</span>
-            </label>
-            <label class="checkbox-row" id="lbl-show-subsolar">
-                <input type="checkbox" id="chk-show-subsolar" checked>
-                <span>Punto subsolar (Sol en el cenit)</span>
-            </label>
-            <label class="checkbox-row" id="lbl-show-sublunar">
-                <input type="checkbox" id="chk-show-sublunar" checked>
-                <span>Punto sublunar (Luna en el cenit)</span>
             </label>
             <label class="checkbox-row" id="lbl-show-observer">
                 <input type="checkbox" id="chk-show-observer" checked>
                 <span>Observador (Mataró)</span>
             </label>
-            <label class="checkbox-row" id="lbl-show-graticule">
-                <input type="checkbox" id="chk-show-graticule">
-                <span>Red geográfica (Lat/Lon)</span>
-            </label>
             <label class="checkbox-row" id="lbl-show-ecliptic">
                 <input type="checkbox" id="chk-show-ecliptic" checked>
                 <span>Plano eclíptico y nodos</span>
             </label>
-            <label class="checkbox-row" id="lbl-show-limits">
-                <input type="checkbox" id="chk-show-limits" checked>
-                <span>Límites de eclipse en la órbita</span>
-            </label>
-            <label class="checkbox-row" id="lbl-show-limits-labels" style="padding-left: 28px;">
-                <input type="checkbox" id="chk-show-limits-labels">
-                <span>Rótulos de los límites</span>
-            </label>
-            <label class="checkbox-row disabled" id="lbl-show-features">
-                <input type="checkbox" id="chk-show-features" checked disabled onchange="renderTelescopicView()">
-                <span>Rótulos de accidentes lunares</span>
-            </label>
-            <label class="checkbox-row disabled" id="lbl-show-axes">
-                <input type="checkbox" id="chk-show-axes" checked disabled onchange="renderTelescopicView()">
-                <span id="lbl-show-axes-text">Ejes de referencia</span>
-            </label>
+
+            <!-- Botón Desplegable de Más Opciones -->
+            <button type="button" class="more-layers-btn" id="btn-toggle-more-layers" onclick="toggleMoreLayers()" title="Mostrar más capas y opciones astronómicas">
+                <span>Más opciones y capas</span>
+                <i class="fa-solid fa-chevron-down"></i>
+            </button>
+
+            <!-- Contenedor Desplegable de Opciones Secundarias -->
+            <div class="more-layers-container" id="more-layers-container">
+                <label class="checkbox-row" id="lbl-show-subsolar">
+                    <input type="checkbox" id="chk-show-subsolar" checked>
+                    <span>Punto subsolar (Sol en el cenit)</span>
+                </label>
+                <label class="checkbox-row" id="lbl-show-sublunar">
+                    <input type="checkbox" id="chk-show-sublunar" checked>
+                    <span>Punto sublunar (Luna en el cenit)</span>
+                </label>
+                <label class="checkbox-row" id="lbl-show-graticule">
+                    <input type="checkbox" id="chk-show-graticule">
+                    <span>Red geográfica (Lat/Lon)</span>
+                </label>
+                <label class="checkbox-row" id="lbl-show-limits">
+                    <input type="checkbox" id="chk-show-limits" checked>
+                    <span>Límites de eclipse en la órbita</span>
+                </label>
+                <label class="checkbox-row" id="lbl-show-limits-labels" style="padding-left: 24px;">
+                    <input type="checkbox" id="chk-show-limits-labels">
+                    <span>Rótulos de los límites</span>
+                </label>
+                <label class="checkbox-row disabled" id="lbl-show-features">
+                    <input type="checkbox" id="chk-show-features" checked disabled onchange="renderTelescopicView()">
+                    <span>Rótulos de accidentes lunares</span>
+                </label>
+                <label class="checkbox-row disabled" id="lbl-show-axes">
+                    <input type="checkbox" id="chk-show-axes" checked disabled onchange="renderTelescopicView()">
+                    <span id="lbl-show-axes-text">Ejes de referencia</span>
+                </label>
+            </div>
         </div>
     </aside>
 
@@ -3686,6 +3747,20 @@
         }
 
         // 7. Conmutación de Vistas y Gestión de Paneles
+        function toggleMoreLayers(forceState = null) {
+            const btn = document.getElementById('btn-toggle-more-layers');
+            const container = document.getElementById('more-layers-container');
+            if (!container || !btn) return;
+            const isCurrentlyOpen = container.classList.contains('expanded');
+            const newState = (forceState !== null) ? forceState : !isCurrentlyOpen;
+            container.classList.toggle('expanded', newState);
+            btn.classList.toggle('expanded', newState);
+            const span = btn.querySelector('span');
+            if (span) {
+                span.textContent = newState ? 'Menos opciones y capas' : 'Más opciones y capas';
+            }
+        }
+
         function updateLayerCheckboxesState(view) {
             const is3D = (view === '3d');
             
