@@ -1755,12 +1755,18 @@
 
         // 3. Circunstancias Locales del Observador
         function getTzAbbr(date, tz) {
+            if (!tz || tz === 'UTC') return 'UTC';
             try {
                 const parts = new Intl.DateTimeFormat('en-US', { timeZone: tz, timeZoneName: 'short' }).formatToParts(date);
                 const tzPart = parts.find(p => p.type === 'timeZoneName');
-                return tzPart ? tzPart.value : '';
+                let val = tzPart ? tzPart.value : '';
+                // Sustituir cualquier referencia a GMT por la nomenclatura oficial internacional UTC (ej. GMT+2 -> UTC+2, GMT -> UTC)
+                val = val.replace(/\bGMT([+-]\d+)?/gi, (match, offset) => {
+                    return offset ? `UTC${offset}` : 'UTC';
+                });
+                return val;
             } catch(e) {
-                return '';
+                return 'UTC';
             }
         }
 
@@ -2096,10 +2102,15 @@
 
                 let localTimeStr;
                 try {
-                    const tzOpt = currentObserver.tz ? { timeZone: currentObserver.tz } : {};
-                    localTimeStr = new Intl.DateTimeFormat('es-ES', { ...tzOpt, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).format(new Date(c.ms));
+                    if (currentObserver.tz) {
+                        const tzOpt = { timeZone: currentObserver.tz };
+                        localTimeStr = new Intl.DateTimeFormat('es-ES', { ...tzOpt, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).format(new Date(c.ms));
+                    } else {
+                        const offsetHours = Math.round((currentObserver.lon || 0) / 15);
+                        localTimeStr = new Date(c.ms + offsetHours * 3600000).toISOString().slice(11, 19);
+                    }
                 } catch(e) {
-                    localTimeStr = new Date(c.ms).toISOString().slice(11, 19) + ' UT';
+                    localTimeStr = new Date(c.ms).toISOString().slice(11, 19);
                 }
 
                 const upCurve = `<svg style="width:10px; height:10px; vertical-align:-0.5px; margin-right:3px; display:inline-block;" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 19 C8 19 13 8 20 5"/><polyline points="14 5 20 5 20 11"/></svg>`;
@@ -3586,11 +3597,19 @@
             let localTimeStr;
             let tzAbbr = '';
             try {
-                const tzOpt = currentObserver.tz ? { timeZone: currentObserver.tz } : {};
-                localTimeStr = new Intl.DateTimeFormat('es-ES', { ...tzOpt, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).format(d);
-                if (currentObserver.tz) tzAbbr = getTzAbbr(d, currentObserver.tz);
+                if (currentObserver.tz) {
+                    const tzOpt = { timeZone: currentObserver.tz };
+                    localTimeStr = new Intl.DateTimeFormat('es-ES', { ...tzOpt, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).format(d);
+                    tzAbbr = getTzAbbr(d, currentObserver.tz);
+                } else {
+                    const offsetHours = Math.round((currentObserver.lon || 0) / 15);
+                    const localMs = simCurrentTimeMs + offsetHours * 3600000;
+                    localTimeStr = new Date(localMs).toISOString().slice(11, 19);
+                    tzAbbr = offsetHours === 0 ? 'UTC' : (offsetHours > 0 ? `UTC+${offsetHours}` : `UTC${offsetHours}`);
+                }
             } catch(e) {
                 localTimeStr = utcTimeStr;
+                tzAbbr = 'UTC';
             }
 
             document.getElementById('time-utc-text').textContent = utcTimeStr;

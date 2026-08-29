@@ -1398,10 +1398,11 @@
                 minute: '2-digit',
                 hour12: false
             });
-            const tzName = new Intl.DateTimeFormat('es-ES', {
+            const tzNameRaw = new Intl.DateTimeFormat('es-ES', {
                 timeZone: 'Europe/Madrid',
                 timeZoneName: 'short'
             }).formatToParts(date).find(p => p.type === 'timeZoneName')?.value || 'CET';
+            const tzName = tzNameRaw.replace(/\bGMT([+-]\d+)?/gi, (match, offset) => offset ? `UTC${offset}` : 'UTC');
 
             // Componentes individuales para cálculo de calendario local
             const dtfParts = new Intl.DateTimeFormat('en-US', {
