@@ -660,57 +660,11 @@
             gap: 8px;
         }
 
-        .live-toggle-btn {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 3px 8px;
-            font-size: 0.72rem;
-            font-weight: 600;
-            font-family: var(--font-heading);
-            color: var(--text-secondary);
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            transition: var(--transition-smooth);
-            height: 28px;
-            white-space: nowrap;
-        }
-
-        .live-toggle-btn:hover {
-            background: rgba(239, 68, 68, 0.15);
-            border-color: rgba(239, 68, 68, 0.4);
-            color: #fff;
-        }
-
-        .live-toggle-btn.active {
-            background: rgba(239, 68, 68, 0.2);
-            border-color: #ef4444;
-            color: #ef4444;
-            box-shadow: 0 0 10px rgba(239, 68, 68, 0.3);
-        }
-
-        .live-dot-mini {
-            width: 7px;
-            height: 7px;
-            border-radius: 50%;
-            background: #64748b;
-            display: inline-block;
-            transition: background-color 0.2s;
-        }
-
-        .live-toggle-btn.active .live-dot-mini {
-            background: #ef4444;
-            box-shadow: 0 0 6px #ef4444;
-            animation: blinkLiveLed 1.0s infinite;
-        }
-
         .speed-select-compact {
             padding: 3px 6px;
             font-size: 0.72rem;
             border-radius: 8px;
-            width: 68px;
+            width: 78px;
             height: 28px;
             background-color: rgba(15, 23, 42, 0.85);
             border: 1px solid var(--border-color);
@@ -1531,13 +1485,14 @@
                 <button class="ctrl-btn" id="btn-fast-forward" onclick="changeSpeedStep(1)" title="Avanzar / Aumentar velocidad adelante (1x a 1200x)"><i class="fa-solid fa-forward"></i></button>
             </div>
             <div class="playback-dock-bottom-right">
-                <button type="button" class="live-toggle-btn" id="btn-toggle-live" onclick="toggleLiveModeButton()" title="Sincronizar simulación con la hora real (En vivo)">
-                    <span class="live-dot-mini"></span>
+                <label class="checkbox-row" style="margin: 0; font-size: 0.72rem; white-space: nowrap; gap: 4px;">
+                    <input type="checkbox" id="chk-live-mode" onchange="toggleLiveModeCheckbox(this.checked)">
                     <span>En vivo</span>
-                </button>
+                </label>
                 <div style="display: flex; align-items: center; gap: 5px;">
                     <span style="font-size: 0.70rem; color: var(--text-secondary); font-family: var(--font-heading); font-weight: 600;">Velocidad:</span>
                     <select class="speed-select-compact" id="sim-speed-select" onchange="setSimSpeed(this.value)">
+                        <option value="live">En vivo</option>
                         <option value="1" selected>1×</option>
                         <option value="10">10×</option>
                         <option value="60">60×</option>
@@ -3845,13 +3800,13 @@
 
         function updateLiveBadgeState() {
             const badge = document.getElementById('live-indicator-badge');
-            const liveBtn = document.getElementById('btn-toggle-live');
+            const chkLive = document.getElementById('chk-live-mode');
             const playBtn = document.getElementById('btn-play-pause');
             const now = Date.now();
             const isActuallyLive = isLiveMode && (now >= simStartTimeMs && now <= simEndTimeMs);
 
-            if (liveBtn) {
-                liveBtn.classList.toggle('active', isLiveMode);
+            if (chkLive) {
+                chkLive.checked = isLiveMode;
             }
 
             if (isActuallyLive) {
@@ -3871,21 +3826,24 @@
             }
         }
 
-        function toggleLiveModeButton() {
-            if (isLiveMode) {
-                isLiveMode = false;
-                simPlayDirection = 1;
-                simSpeedMultiplier = parseFloat(document.getElementById('sim-speed-select')?.value) || 1;
-                updateLiveBadgeState();
-                updateTimeUI();
-            } else {
+        function toggleLiveModeCheckbox(isChecked) {
+            if (isChecked) {
                 setSimSpeed('live');
+            } else {
+                const speedSelect = document.getElementById('sim-speed-select');
+                let targetSpeed = '1';
+                if (speedSelect && speedSelect.value !== 'live') {
+                    targetSpeed = speedSelect.value;
+                }
+                setSimSpeed(targetSpeed);
             }
         }
 
         function onScrubTimeline(val) {
             if (isLiveMode) {
                 isLiveMode = false;
+                const speedSelect = document.getElementById('sim-speed-select');
+                if (speedSelect && speedSelect.value === 'live') speedSelect.value = String(simSpeedMultiplier || 1);
                 updateLiveBadgeState();
             }
             const frac = val / 1000;
@@ -3898,6 +3856,8 @@
             if (isLiveMode) {
                 isLiveMode = false;
                 isPlaying = false;
+                const speedSelect = document.getElementById('sim-speed-select');
+                if (speedSelect && speedSelect.value === 'live') speedSelect.value = String(simSpeedMultiplier || 1);
                 updateLiveBadgeState();
             } else {
                 isPlaying = !isPlaying;
@@ -3932,9 +3892,11 @@
                 simSpeedMultiplier = SPEED_STEPS[nextIdx];
             }
 
-            // Sincronizar el desplegable de velocidad
+            // Sincronizar el desplegable de velocidad y casilla
             const speedSelect = document.getElementById('sim-speed-select');
             if (speedSelect) speedSelect.value = String(simSpeedMultiplier);
+            const chkLive = document.getElementById('chk-live-mode');
+            if (chkLive) chkLive.checked = false;
 
             const playBtn = document.getElementById('btn-play-pause');
             if (playBtn) playBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
@@ -3948,6 +3910,8 @@
             if (!currentEclipse) return;
             if (isLiveMode) {
                 isLiveMode = false;
+                const speedSelect = document.getElementById('sim-speed-select');
+                if (speedSelect && speedSelect.value === 'live') speedSelect.value = String(simSpeedMultiplier || 1);
                 updateLiveBadgeState();
             }
 
@@ -3978,6 +3942,9 @@
         }
 
         function setSimSpeed(speed) {
+            const speedSelect = document.getElementById('sim-speed-select');
+            const chkLive = document.getElementById('chk-live-mode');
+
             if (speed === 'live') {
                 isLiveMode = true;
                 simPlayDirection = 1;
@@ -3994,12 +3961,14 @@
                 }
                 const playBtn = document.getElementById('btn-play-pause');
                 if (playBtn) playBtn.innerHTML = isPlaying ? '<i class="fa-solid fa-pause"></i>' : '<i class="fa-solid fa-play"></i>';
+                if (speedSelect) speedSelect.value = 'live';
+                if (chkLive) chkLive.checked = true;
                 updateTimeUI();
             } else {
                 isLiveMode = false;
                 simSpeedMultiplier = parseFloat(speed) || 1;
-                const speedSelect = document.getElementById('sim-speed-select');
                 if (speedSelect) speedSelect.value = String(simSpeedMultiplier);
+                if (chkLive) chkLive.checked = false;
             }
             updateLiveBadgeState();
         }
@@ -4008,6 +3977,8 @@
             if (!currentEclipse) return;
             if (isLiveMode) {
                 isLiveMode = false;
+                const speedSelect = document.getElementById('sim-speed-select');
+                if (speedSelect && speedSelect.value === 'live') speedSelect.value = String(simSpeedMultiplier || 1);
                 updateLiveBadgeState();
             }
             const ec = currentEclipse;
