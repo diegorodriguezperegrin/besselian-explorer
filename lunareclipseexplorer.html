@@ -154,7 +154,37 @@
             transition: opacity 0.2s ease, transform 0.2s ease;
         }
 
+        .circumstances-panel {
+            position: absolute;
+            top: 15px;
+            left: 350px;
+            width: 330px;
+            max-height: calc(100vh - 30px);
+            max-height: calc(100dvh - 30px);
+            z-index: 25;
+            background: var(--bg-panel);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 16px 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            box-shadow: 0 12px 36px rgba(0, 0, 0, 0.65);
+            overflow-y: auto;
+            overflow-x: hidden;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+            transition: opacity 0.2s ease, transform 0.2s ease;
+        }
+
         .sidebar-panel.collapsed {
+            transform: translateX(calc(-100% - 30px));
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .circumstances-panel.collapsed {
             transform: translateX(calc(-100% - 30px));
             opacity: 0;
             pointer-events: none;
@@ -166,10 +196,10 @@
             pointer-events: none;
         }
 
-        .sidebar-panel::-webkit-scrollbar, .settings-panel::-webkit-scrollbar {
+        .sidebar-panel::-webkit-scrollbar, .circumstances-panel::-webkit-scrollbar, .settings-panel::-webkit-scrollbar {
             width: 5px;
         }
-        .sidebar-panel::-webkit-scrollbar-thumb, .settings-panel::-webkit-scrollbar-thumb {
+        .sidebar-panel::-webkit-scrollbar-thumb, .circumstances-panel::-webkit-scrollbar-thumb, .settings-panel::-webkit-scrollbar-thumb {
             background: rgba(255, 255, 255, 0.15);
             border-radius: 4px;
         }
@@ -262,6 +292,10 @@
 
         #btn-reopen-left {
             left: 15px;
+        }
+
+        #btn-reopen-circumstances {
+            left: 135px;
         }
 
         #btn-reopen-right {
@@ -817,6 +851,15 @@
             gap: 8px;
         }
 
+        @media (max-width: 1100px) {
+            .circumstances-panel {
+                left: 15px;
+                top: 70px;
+                width: min(calc(100vw - 30px), 340px);
+                max-width: 340px;
+            }
+        }
+
         /* Responsive Mobile */
         @media (max-width: 768px) {
             .sidebar-panel {
@@ -824,6 +867,13 @@
                 max-width: 350px;
                 left: 15px;
                 right: auto;
+                max-height: calc(100vh - 30px);
+            }
+            .circumstances-panel {
+                width: min(calc(100vw - 30px), 340px);
+                max-width: 340px;
+                left: 15px;
+                top: 15px;
                 max-height: calc(100vh - 30px);
             }
             .settings-panel {
@@ -964,6 +1014,10 @@
         <i class="fa-solid fa-moon"></i>
         <span>Eclipses</span>
     </button>
+    <button class="reopen-btn" id="btn-reopen-circumstances" onclick="toggleCircumstancesPanel(true)">
+        <i class="fa-solid fa-location-dot"></i>
+        <span>Circunstancias</span>
+    </button>
     <button class="reopen-btn" id="btn-reopen-right" onclick="toggleSettingsPanel(true)">
         <i class="fa-solid fa-sliders"></i>
         <span>Visualización</span>
@@ -1059,6 +1113,71 @@
         </div>
     </aside>
 
+    <!-- PANEL DEDICADO: Circunstancias Locales del Observador -->
+    <aside class="circumstances-panel" id="circumstances-panel">
+        <div class="panel-header">
+            <div>
+                <h1>Circunstancias</h1>
+                <p id="observer-header-subtitle">MATARÓ (41.54°N, 2.44°E)</p>
+            </div>
+            <div class="panel-toggle" onclick="toggleCircumstancesPanel(false)" title="Ocultar panel"><i class="fa-solid fa-chevron-left"></i></div>
+        </div>
+
+        <!-- Selector de Ubicación del Observador -->
+        <div class="section-title">
+            <i class="fa-solid fa-location-dot"></i> Ubicación del Observador
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center;">
+            <div class="custom-combobox-container" id="observer-combobox-container" style="position: relative; flex: 1; min-width: 0;">
+                <input type="text" class="search-select custom-combobox-input" id="observer-location-input" placeholder="Buscar o elegir ciudad..." value="Mataró (Cosmos Mataró)" style="width: 100%; height: 38px; box-sizing: border-box; padding: 0 32px 0 12px; font-size: 0.84rem; font-weight: 400; background-color: #0f172a; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 10px; color: #f8fafc; cursor: text; outline: none; text-overflow: ellipsis;" autocomplete="off" onfocus="openObserverDropdown(); this.select();" oninput="filterObserverDropdown(this.value)" onkeydown="onObserverInputKeyDown(event)">
+                <span style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; color: #94a3b8; font-size: 0.72rem;"><i class="fa-solid fa-chevron-down"></i></span>
+                
+                <!-- Desplegable Filtrable Flotante Estilizado -->
+                <div id="observer-dropdown-menu" class="custom-dropdown-menu" style="display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; max-height: 230px; overflow-y: auto; background: #0b1329; border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 10px; box-shadow: 0 12px 30px rgba(0,0,0,0.8); z-index: 1000; padding: 4px;">
+                    <!-- Poblado dinámicamente con filtrado sucesivo -->
+                </div>
+            </div>
+            <button class="ctrl-btn" id="btn-toggle-custom-coords" onclick="toggleCustomCoords()" title="Ajustar coordenadas manuales (Lat/Lon)" style="width: 38px; height: 38px; padding: 0; flex-shrink: 0; border-radius: 10px;">
+                <i class="fa-solid fa-sliders"></i>
+            </button>
+            <button class="ctrl-btn" id="btn-observer-gps" onclick="detectUserLocation()" title="Detectar mi ubicación actual (GPS)" style="width: 38px; height: 38px; padding: 0; flex-shrink: 0; border-radius: 10px;">
+                <i class="fa-solid fa-crosshairs"></i>
+            </button>
+        </div>
+        
+        <!-- Inputs para Coordenadas Personalizadas -->
+        <div id="observer-custom-coords" style="display: none; gap: 6px; align-items: center;">
+            <div style="flex: 1; display: flex; align-items: center; background: rgba(0,0,0,0.3); border: 1px solid rgba(56,189,248,0.25); border-radius: 6px; padding: 0 6px;">
+                <span style="font-size: 0.68rem; color: var(--text-secondary); margin-right: 4px;">Lat:</span>
+                <input type="number" id="custom-obs-lat" step="0.01" value="41.54" style="width: 100%; background: transparent; border: none; color: #fff; font-size: 0.75rem; padding: 4px 0;" oninput="onCustomCoordsChange()" onchange="onCustomCoordsChange()">
+            </div>
+            <div style="flex: 1; display: flex; align-items: center; background: rgba(0,0,0,0.3); border: 1px solid rgba(56,189,248,0.25); border-radius: 6px; padding: 0 6px;">
+                <span style="font-size: 0.68rem; color: var(--text-secondary); margin-right: 4px;">Lon:</span>
+                <input type="number" id="custom-obs-lon" step="0.01" value="2.44" style="width: 100%; background: transparent; border: none; color: #fff; font-size: 0.75rem; padding: 4px 0;" oninput="onCustomCoordsChange()" onchange="onCustomCoordsChange()">
+            </div>
+        </div>
+
+        <!-- Visibilidad y Fases Locales -->
+        <div class="section-title section-title-between">
+            <span><i class="fa-solid fa-eye"></i> Visibilidad Local</span>
+            <button onclick="exportSelectedEclipseToICal()" style="background: none; border: none; color: var(--accent-blue); font-size: 0.72rem; cursor: pointer; text-decoration: underline;"><i class="fa-solid fa-calendar-plus"></i> iCal</button>
+        </div>
+        <div class="mataro-card" style="margin-top: 0;">
+            <div class="mataro-badge-header">
+                <span style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 600;">Estado:</span>
+                <span class="mataro-vis-tag vis-full" id="mataro-vis-badge"><i class="fa-solid fa-eye"></i> Visible al Orto</span>
+            </div>
+            <table class="contacts-table" id="mataro-contacts-table">
+                <thead>
+                    <tr><th>Fase</th><th>Hora Local</th><th>Altitud</th><th>Azimut</th></tr>
+                </thead>
+                <tbody id="mataro-contacts-tbody">
+                    <!-- Rellenado dinámicamente -->
+                </tbody>
+            </table>
+        </div>
+    </aside>
+
     <!-- PANEL DERECHO: Visualización y Reproductor Temporal (Estilo Besselian Explorer) -->
     <aside class="settings-panel" id="settings-panel">
         <div class="panel-header">
@@ -1074,60 +1193,9 @@
             <button class="mode-btn active" id="btn-mode-3d" onclick="switchMainView('3d')" title="Vista orbital 3D en el espacio">
                 <i class="fa-solid fa-cube"></i> Espacio 3D
             </button>
-            <button class="mode-btn" id="btn-mode-telescopic" onclick="switchMainView('telescopic')" title="Vista telescópica local (Mataró)">
+            <button class="mode-btn" id="btn-mode-telescopic" onclick="switchMainView('telescopic')" title="Vista telescópica local (Observador)">
                 <i class="fa-solid fa-circle-dot"></i> Telescopio
             </button>
-        </div>
-
-        <!-- Circunstancias Locales del Observador -->
-        <div class="section-title" style="display: flex; justify-content: space-between; align-items: center;">
-            <span id="observer-header-title"><i class="fa-solid fa-location-dot" style="color: var(--accent-blue);"></i> Mataró (41.54°N, 2.44°E)</span>
-            <button onclick="exportSelectedEclipseToICal()" style="background: none; border: none; color: var(--accent-blue); font-size: 0.72rem; cursor: pointer; text-decoration: underline;"><i class="fa-solid fa-calendar-plus"></i> iCal</button>
-        </div>
-        <div class="mataro-card">
-            <!-- Selector Unificado y Filtrable de Ubicación del Observador -->
-            <div style="display: flex; gap: 8px; align-items: center;">
-                <div class="custom-combobox-container" id="observer-combobox-container" style="position: relative; flex: 1; min-width: 0;">
-                    <input type="text" class="search-select custom-combobox-input" id="observer-location-input" placeholder="Buscar o elegir ciudad..." value="Mataró (Cosmos Mataró)" style="width: 100%; height: 38px; box-sizing: border-box; padding: 0 32px 0 12px; font-size: 0.84rem; font-weight: 400; background-color: #0f172a; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 10px; color: #f8fafc; cursor: text; outline: none; text-overflow: ellipsis;" autocomplete="off" onfocus="openObserverDropdown(); this.select();" oninput="filterObserverDropdown(this.value)" onkeydown="onObserverInputKeyDown(event)">
-                    <span style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; color: #94a3b8; font-size: 0.72rem;"><i class="fa-solid fa-chevron-down"></i></span>
-                    
-                    <!-- Desplegable Filtrable Flotante Estilizado -->
-                    <div id="observer-dropdown-menu" class="custom-dropdown-menu" style="display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; max-height: 230px; overflow-y: auto; background: #0b1329; border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 10px; box-shadow: 0 12px 30px rgba(0,0,0,0.8); z-index: 1000; padding: 4px;">
-                        <!-- Poblado dinámicamente con filtrado sucesivo -->
-                    </div>
-                </div>
-                <button class="ctrl-btn" id="btn-toggle-custom-coords" onclick="toggleCustomCoords()" title="Ajustar coordenadas manuales (Lat/Lon)" style="width: 38px; height: 38px; padding: 0; flex-shrink: 0; border-radius: 10px;">
-                    <i class="fa-solid fa-sliders"></i>
-                </button>
-                <button class="ctrl-btn" id="btn-observer-gps" onclick="detectUserLocation()" title="Detectar mi ubicación actual (GPS)" style="width: 38px; height: 38px; padding: 0; flex-shrink: 0; border-radius: 10px;">
-                    <i class="fa-solid fa-crosshairs"></i>
-                </button>
-            </div>
-            
-            <!-- Inputs para Coordenadas Personalizadas -->
-            <div id="observer-custom-coords" style="display: none; gap: 6px; align-items: center;">
-                <div style="flex: 1; display: flex; align-items: center; background: rgba(0,0,0,0.3); border: 1px solid rgba(56,189,248,0.25); border-radius: 6px; padding: 0 6px;">
-                    <span style="font-size: 0.68rem; color: var(--text-secondary); margin-right: 4px;">Lat:</span>
-                    <input type="number" id="custom-obs-lat" step="0.01" value="41.54" style="width: 100%; background: transparent; border: none; color: #fff; font-size: 0.75rem; padding: 4px 0;" oninput="onCustomCoordsChange()" onchange="onCustomCoordsChange()">
-                </div>
-                <div style="flex: 1; display: flex; align-items: center; background: rgba(0,0,0,0.3); border: 1px solid rgba(56,189,248,0.25); border-radius: 6px; padding: 0 6px;">
-                    <span style="font-size: 0.68rem; color: var(--text-secondary); margin-right: 4px;">Lon:</span>
-                    <input type="number" id="custom-obs-lon" step="0.01" value="2.44" style="width: 100%; background: transparent; border: none; color: #fff; font-size: 0.75rem; padding: 4px 0;" oninput="onCustomCoordsChange()" onchange="onCustomCoordsChange()">
-                </div>
-            </div>
-
-            <div class="mataro-badge-header">
-                <span style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 600;">Visibilidad Local:</span>
-                <span class="mataro-vis-tag vis-full" id="mataro-vis-badge"><i class="fa-solid fa-eye"></i> Visible al Orto</span>
-            </div>
-            <table class="contacts-table" id="mataro-contacts-table">
-                <thead>
-                    <tr><th>Fase</th><th>Hora Local</th><th>Altitud</th><th>Azimut</th></tr>
-                </thead>
-                <tbody id="mataro-contacts-tbody">
-                    <!-- Rellenado dinámicamente -->
-                </tbody>
-            </table>
         </div>
 
         <!-- Reproductor Temporal Integrado -->
@@ -1353,6 +1421,7 @@
 
             if (window.innerWidth <= 768) {
                 toggleSidebar(true);
+                toggleCircumstancesPanel(false);
                 toggleSettingsPanel(false);
             }
 
@@ -1827,11 +1896,11 @@
             }
 
             // Actualizar etiquetas en la interfaz
-            const titleEl = document.getElementById('observer-header-title');
-            if (titleEl) {
+            const subtitleEl = document.getElementById('observer-header-subtitle');
+            if (subtitleEl) {
                 const latStr = `${Math.abs(lat).toFixed(2)}°${lat >= 0 ? 'N' : 'S'}`;
                 const lonStr = `${Math.abs(lon).toFixed(2)}°${lon >= 0 ? 'E' : 'W'}`;
-                titleEl.innerHTML = `<i class="fa-solid fa-location-dot" style="color: var(--accent-blue);"></i> ${currentObserver.name} (${latStr}, ${lonStr})`;
+                subtitleEl.textContent = `${currentObserver.name.toUpperCase()} (${latStr}, ${lonStr})`;
             }
 
             const obsChkLbl = document.querySelector('#lbl-show-observer span');
@@ -3638,13 +3707,31 @@
             const reopenBtn = document.getElementById('btn-reopen-left');
             if (show) {
                 panel.classList.remove('collapsed');
-                reopenBtn.style.display = 'none';
+                if (reopenBtn) reopenBtn.style.display = 'none';
                 if (window.innerWidth <= 768) {
+                    toggleCircumstancesPanel(false);
                     toggleSettingsPanel(false);
                 }
             } else {
                 panel.classList.add('collapsed');
-                reopenBtn.style.display = 'flex';
+                if (reopenBtn) reopenBtn.style.display = 'flex';
+            }
+        }
+
+        function toggleCircumstancesPanel(show) {
+            const panel = document.getElementById('circumstances-panel');
+            const reopenBtn = document.getElementById('btn-reopen-circumstances');
+            if (!panel) return;
+            if (show) {
+                panel.classList.remove('collapsed');
+                if (reopenBtn) reopenBtn.style.display = 'none';
+                if (window.innerWidth <= 768) {
+                    toggleSidebar(false);
+                    toggleSettingsPanel(false);
+                }
+            } else {
+                panel.classList.add('collapsed');
+                if (reopenBtn) reopenBtn.style.display = 'flex';
             }
         }
 
@@ -3654,14 +3741,15 @@
             const badge = document.getElementById('live-indicator-badge');
             if (show) {
                 panel.classList.remove('collapsed');
-                reopenBtn.style.display = 'none';
+                if (reopenBtn) reopenBtn.style.display = 'none';
                 if (badge) badge.classList.remove('panel-collapsed');
                 if (window.innerWidth <= 768) {
                     toggleSidebar(false);
+                    toggleCircumstancesPanel(false);
                 }
             } else {
                 panel.classList.add('collapsed');
-                reopenBtn.style.display = 'flex';
+                if (reopenBtn) reopenBtn.style.display = 'flex';
                 if (badge) badge.classList.add('panel-collapsed');
             }
         }
