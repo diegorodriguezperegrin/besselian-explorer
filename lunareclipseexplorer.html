@@ -632,34 +632,62 @@
             box-shadow: 0 0 10px rgba(56, 189, 248, 0.15);
         }
 
-        /* Sección del Reproductor Integrado en el Panel Derecho */
-        .panel-player-card {
-            background: rgba(0, 0, 0, 0.4);
+        /* =========================================================================
+           BARRA / CÁPSULA DE REPRODUCCIÓN FLOTANTE INFERIOR (PLAYBACK DOCK)
+           ========================================================================= */
+        .playback-dock {
+            position: absolute;
+            bottom: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: min(calc(100vw - 32px), 580px);
+            z-index: 22;
+            background: var(--bg-panel);
+            backdrop-filter: blur(16px);
             border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 12px;
+            border-radius: 16px;
+            padding: 10px 16px;
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 6px;
+            box-shadow: 0 12px 36px rgba(0, 0, 0, 0.7);
+            transition: var(--transition-smooth);
+            pointer-events: auto;
+        }
+
+        .playback-dock-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .playback-dock-bottom {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
         }
 
         .player-phase-badge {
             font-family: var(--font-heading);
-            font-size: 0.82rem;
+            font-size: 0.80rem;
             font-weight: 700;
             color: #fff;
             display: flex;
             align-items: center;
             gap: 6px;
+            white-space: nowrap;
         }
 
         .player-time-display {
             font-family: var(--font-mono);
-            font-size: 0.76rem;
+            font-size: 0.75rem;
             color: var(--text-secondary);
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            gap: 14px;
+            white-space: nowrap;
         }
 
         .player-time-display strong {
@@ -669,7 +697,7 @@
         .player-slider-container {
             position: relative;
             width: 100%;
-            height: 24px;
+            height: 20px;
             display: flex;
             align-items: center;
         }
@@ -721,9 +749,8 @@
 
         .player-ctrls-compact {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            gap: 4px;
+            gap: 6px;
         }
 
         .ctrl-btn {
@@ -747,8 +774,8 @@
         }
 
         .ctrl-btn.play-main {
-            width: 36px;
-            height: 36px;
+            width: 34px;
+            height: 34px;
             background: var(--accent-blue);
             color: #060911;
             border: none;
@@ -986,6 +1013,24 @@
             .telescope-hud {
                 max-width: calc(100vw - 40px);
                 top: 56px;
+            }
+            .playback-dock {
+                bottom: 8px;
+                left: 10px;
+                right: 10px;
+                transform: none;
+                width: calc(100vw - 20px) !important;
+                max-width: 100% !important;
+                padding: 8px 12px;
+                gap: 5px;
+            }
+            .playback-dock-top {
+                flex-wrap: wrap;
+                gap: 4px;
+            }
+            .player-time-display {
+                gap: 8px;
+                font-size: 0.70rem;
             }
             .live-indicator-badge {
                 top: 56px;
@@ -1281,7 +1326,7 @@
         </div>
     </aside>
 
-    <!-- PANEL DERECHO: Visualización y Reproductor Temporal (Estilo Besselian Explorer) -->
+    <!-- PANEL DERECHO: Visualización y Capas (Estilo Besselian Explorer) -->
     <aside class="settings-panel" id="settings-panel">
         <div class="panel-header">
             <h1>Visualización</h1>
@@ -1299,47 +1344,6 @@
             <button class="mode-btn" id="btn-mode-telescopic" onclick="switchMainView('telescopic')" title="Vista telescópica local (Observador)">
                 <i class="fa-solid fa-circle-dot"></i> Telescopio
             </button>
-        </div>
-
-        <!-- Reproductor Temporal Integrado -->
-        <div class="section-title">
-            <i class="fa-solid fa-circle-play"></i> Reproducción
-        </div>
-        <div class="panel-player-card">
-            <div class="player-phase-badge" id="player-phase-label">
-                <span style="color: #fb923c;">🔴 Totalidad</span> · Luna de Sangre
-            </div>
-            <div class="player-time-display">
-                <span>UTC: <strong id="time-utc-text">18:11:43</strong></span>
-                <span><span id="player-time-local-label">Mataró:</span> <strong id="time-local-text">20:11 CEST</strong></span>
-            </div>
-
-            <div class="player-slider-container">
-                <input type="range" class="player-slider" id="time-scrubber" min="0" max="1000" value="500" oninput="onScrubTimeline(this.value)">
-                <div class="contact-marker" id="marker-p1" title="P1: Inicio Penumbra"></div>
-                <div class="contact-marker" id="marker-u1" title="U1: Inicio Umbra (Parcial)"></div>
-                <div class="contact-marker tot" id="marker-u2" title="U2: Inicio Totalidad"></div>
-                <div class="contact-marker tot" id="marker-max" title="Máximo Eclipse" style="background: #fff; width: 2.5px;"></div>
-                <div class="contact-marker tot" id="marker-u3" title="U3: Fin Totalidad"></div>
-                <div class="contact-marker" id="marker-u4" title="U4: Fin Umbra"></div>
-                <div class="contact-marker" id="marker-p4" title="P4: Fin Penumbra"></div>
-            </div>
-
-            <div class="player-ctrls-compact">
-                <button class="ctrl-btn" onclick="stepTime(-900000)" title="Retroceder 15 min"><i class="fa-solid fa-backward"></i></button>
-                <button class="ctrl-btn" onclick="stepTime(-60000)" title="Retroceder 1 min"><i class="fa-solid fa-step-backward"></i></button>
-                <button class="ctrl-btn play-main" id="btn-play-pause" onclick="togglePlayPause()" title="Reproducir / Pausar"><i class="fa-solid fa-play"></i></button>
-                <button class="ctrl-btn" onclick="stepTime(60000)" title="Avanzar 1 min"><i class="fa-solid fa-step-forward"></i></button>
-                <button class="ctrl-btn" onclick="stepTime(900000)" title="Avanzar 15 min"><i class="fa-solid fa-forward"></i></button>
-                <select class="search-input" id="sim-speed-select" style="padding: 4px 6px; font-size: 0.72rem;" onchange="setSimSpeed(this.value)">
-                    <option value="live">🔴 En vivo</option>
-                    <option value="1" selected>1×</option>
-                    <option value="10">10×</option>
-                    <option value="60">60×</option>
-                    <option value="300">300×</option>
-                    <option value="1200">1200×</option>
-                </select>
-            </div>
         </div>
 
         <!-- Capas y Ajustes Visuales -->
@@ -1401,6 +1405,54 @@
                     <input type="checkbox" id="chk-show-axes" checked disabled onchange="renderTelescopicView()">
                     <span id="lbl-show-axes-text">Ejes de referencia</span>
                 </label>
+            </div>
+        </div>
+    </aside>
+
+    <!-- BARRA / CÁPSULA DE REPRODUCCIÓN FLOTANTE INFERIOR (PLAYBACK DOCK) -->
+    <aside class="playback-dock" id="playback-dock">
+        <!-- Fila Superior: Estado de fase y Relojes duales -->
+        <div class="playback-dock-top">
+            <div class="player-phase-badge" id="player-phase-label">
+                <span style="color: #fb923c;">🔴 Totalidad</span> · Luna de Sangre
+            </div>
+            <div class="player-time-display">
+                <span>UTC: <strong id="time-utc-text">18:11:43</strong></span>
+                <span><span id="player-time-local-label">Mataró:</span> <strong id="time-local-text">20:11 CEST</strong></span>
+            </div>
+        </div>
+
+        <!-- Línea de Tiempo / Scrubber con Marcadores -->
+        <div class="player-slider-container">
+            <input type="range" class="player-slider" id="time-scrubber" min="0" max="1000" value="500" oninput="onScrubTimeline(this.value)">
+            <div class="contact-marker" id="marker-p1" title="P1: Inicio Penumbra"></div>
+            <div class="contact-marker" id="marker-u1" title="U1: Inicio Umbra (Parcial)"></div>
+            <div class="contact-marker tot" id="marker-u2" title="U2: Inicio Totalidad"></div>
+            <div class="contact-marker tot" id="marker-max" title="Máximo Eclipse" style="background: #fff; width: 2.5px;"></div>
+            <div class="contact-marker tot" id="marker-u3" title="U3: Fin Totalidad"></div>
+            <div class="contact-marker" id="marker-u4" title="U4: Fin Umbra"></div>
+            <div class="contact-marker" id="marker-p4" title="P4: Fin Penumbra"></div>
+        </div>
+
+        <!-- Fila Inferior: Botonera y Selector de Velocidad -->
+        <div class="playback-dock-bottom">
+            <div class="player-ctrls-compact">
+                <button class="ctrl-btn" onclick="stepTime(-900000)" title="Retroceder 15 min"><i class="fa-solid fa-backward"></i></button>
+                <button class="ctrl-btn" onclick="stepTime(-60000)" title="Retroceder 1 min"><i class="fa-solid fa-step-backward"></i></button>
+                <button class="ctrl-btn play-main" id="btn-play-pause" onclick="togglePlayPause()" title="Reproducir / Pausar"><i class="fa-solid fa-play"></i></button>
+                <button class="ctrl-btn" onclick="stepTime(60000)" title="Avanzar 1 min"><i class="fa-solid fa-step-forward"></i></button>
+                <button class="ctrl-btn" onclick="stepTime(900000)" title="Avanzar 15 min"><i class="fa-solid fa-forward"></i></button>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 0.72rem; color: var(--text-secondary); font-family: var(--font-heading); font-weight: 600;">Velocidad:</span>
+                <select class="search-input" id="sim-speed-select" style="padding: 4px 8px; font-size: 0.74rem; border-radius: 8px; width: 105px;" onchange="setSimSpeed(this.value)">
+                    <option value="live">🔴 En vivo</option>
+                    <option value="1" selected>1×</option>
+                    <option value="10">10×</option>
+                    <option value="60">60×</option>
+                    <option value="300">300×</option>
+                    <option value="1200">1200×</option>
+                </select>
             </div>
         </div>
     </aside>
