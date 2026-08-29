@@ -1085,18 +1085,17 @@
             <button onclick="exportSelectedEclipseToICal()" style="background: none; border: none; color: var(--accent-blue); font-size: 0.72rem; cursor: pointer; text-decoration: underline;"><i class="fa-solid fa-calendar-plus"></i> iCal</button>
         </div>
         <div class="mataro-card">
-            <!-- Selector Filtrable de Ubicación del Observador -->
-            <div style="display: flex; gap: 6px; align-items: center;">
-                <div style="position: relative; flex: 1;">
-                    <input type="text" class="search-input" id="observer-search-input" list="observer-datalist" placeholder="Escribir o elegir ciudad..." value="Mataró (Cosmos Mataró)" style="width: 100%; height: 32px; font-size: 0.76rem; padding: 0 10px; background-color: #0f172a; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 8px; color: #fff; box-sizing: border-box;" onfocus="populateObserverSelect(''); this.select()" oninput="onObserverInput(this.value)" onchange="onObserverChange(this.value)">
-                    <datalist id="observer-datalist">
+            <!-- Selector Unificado de Ubicación del Observador -->
+            <div style="display: flex; gap: 8px; align-items: center;">
+                <div style="flex: 1; min-width: 0;">
+                    <select class="search-select" id="observer-location-select" style="width: 100%; height: 38px; box-sizing: border-box; padding: 0 30px 0 12px; font-size: 0.84rem; font-weight: 400; background-color: #0f172a; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 10px; color: #f8fafc;" onchange="onObserverSelectChange(this.value)">
                         <!-- Poblado dinámicamente -->
-                    </datalist>
+                    </select>
                 </div>
-                <button class="ctrl-btn" id="btn-toggle-custom-coords" onclick="toggleCustomCoords()" title="Ajustar coordenadas manuales (Lat/Lon)" style="width: 32px; height: 32px; padding: 0; flex-shrink: 0;">
+                <button class="ctrl-btn" id="btn-toggle-custom-coords" onclick="toggleCustomCoords()" title="Ajustar coordenadas manuales (Lat/Lon)" style="width: 38px; height: 38px; padding: 0; flex-shrink: 0; border-radius: 10px;">
                     <i class="fa-solid fa-sliders"></i>
                 </button>
-                <button class="ctrl-btn" id="btn-observer-gps" onclick="detectUserLocation()" title="Detectar mi ubicación actual (GPS)" style="width: 32px; height: 32px; padding: 0; flex-shrink: 0;">
+                <button class="ctrl-btn" id="btn-observer-gps" onclick="detectUserLocation()" title="Detectar mi ubicación actual (GPS)" style="width: 38px; height: 38px; padding: 0; flex-shrink: 0; border-radius: 10px;">
                     <i class="fa-solid fa-crosshairs"></i>
                 </button>
             </div>
@@ -1575,74 +1574,49 @@
             }
         }
 
-        function populateObserverSelect(filterText = '') {
-            const dl = document.getElementById('observer-datalist');
-            if (!dl) return;
-            dl.innerHTML = '';
+        function populateObserverSelect() {
+            const sel = document.getElementById('observer-location-select');
+            if (!sel) return;
+            sel.innerHTML = '';
 
-            const query = filterText.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-
-            const matching = query.length === 0
-                ? OBSERVER_PRESETS
-                : OBSERVER_PRESETS.filter(p => {
-                    const cleanName = p.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-                    return cleanName.startsWith(query);
-                });
-
-            matching.forEach(p => {
+            OBSERVER_PRESETS.forEach((p, idx) => {
                 const opt = document.createElement('option');
-                opt.value = p.name;
-                dl.appendChild(opt);
+                opt.value = idx;
+                opt.textContent = p.name;
+                sel.appendChild(opt);
             });
+
+            const optCustom = document.createElement('option');
+            optCustom.value = 'custom';
+            optCustom.textContent = '⚙️ Personalizado (Lat/Lon)...';
+            sel.appendChild(optCustom);
         }
 
-        function onObserverInput(val) {
-            const trimmed = val.trim();
-            // Filtrar estrictamente por prefijo (ciudades cuyo nombre COMIENCE por las letras tecleadas)
-            populateObserverSelect(trimmed);
-
-            const preset = OBSERVER_PRESETS.find(p => p.name.toLowerCase() === trimmed.toLowerCase());
-            if (preset) {
-                const customBox = document.getElementById('observer-custom-coords');
-                if (customBox) customBox.style.display = 'none';
-                const latIn = document.getElementById('custom-obs-lat');
-                const lonIn = document.getElementById('custom-obs-lon');
-                if (latIn) latIn.value = preset.lat;
-                if (lonIn) lonIn.value = preset.lon;
-                updateObserverPosition(preset.lat, preset.lon, preset.name, preset.tz);
-            }
-        }
-
-        function onObserverChange(val) {
-            const trimmed = val.trim();
-            const cleanTrimmed = trimmed.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-            
-            // Buscar coincidencia exacta o cuyo nombre comience por el texto
-            const preset = OBSERVER_PRESETS.find(p => p.name.toLowerCase() === trimmed.toLowerCase()) ||
-                           OBSERVER_PRESETS.find(p => {
-                               const cleanName = p.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-                               return cleanName.startsWith(cleanTrimmed);
-                           });
-
+        function onObserverSelectChange(val) {
             const customBox = document.getElementById('observer-custom-coords');
-            if (preset) {
-                const input = document.getElementById('observer-search-input');
-                if (input) input.value = preset.name;
-                if (customBox) customBox.style.display = 'none';
-                const latIn = document.getElementById('custom-obs-lat');
-                const lonIn = document.getElementById('custom-obs-lon');
-                if (latIn) latIn.value = preset.lat;
-                if (lonIn) lonIn.value = preset.lon;
-                updateObserverPosition(preset.lat, preset.lon, preset.name, preset.tz);
-            } else if (trimmed.length > 0) {
-                if (customBox) customBox.style.display = 'flex';
+            if (val === 'custom') {
+                toggleCustomCoords(true);
                 const latIn = document.getElementById('custom-obs-lat');
                 const lonIn = document.getElementById('custom-obs-lon');
                 const lat = latIn ? parseFloat(latIn.value) || 0 : currentObserver.lat;
                 const lon = lonIn ? parseFloat(lonIn.value) || 0 : currentObserver.lon;
-                updateObserverPosition(lat, lon, trimmed, null);
+                updateObserverPosition(lat, lon, 'Personalizado', null);
+            } else {
+                if (customBox) customBox.style.display = 'none';
+                const toggleBtn = document.getElementById('btn-toggle-custom-coords');
+                if (toggleBtn) {
+                    toggleBtn.style.color = '';
+                    toggleBtn.style.borderColor = '';
+                }
+                const preset = OBSERVER_PRESETS[parseInt(val, 10)];
+                if (preset) {
+                    const latIn = document.getElementById('custom-obs-lat');
+                    const lonIn = document.getElementById('custom-obs-lon');
+                    if (latIn) latIn.value = preset.lat;
+                    if (lonIn) lonIn.value = preset.lon;
+                    updateObserverPosition(preset.lat, preset.lon, preset.name, preset.tz);
+                }
             }
-            populateObserverSelect('');
         }
 
         function toggleCustomCoords(forceShow = null) {
@@ -1674,10 +1648,8 @@
             lat = Math.max(-90, Math.min(90, lat));
             lon = Math.max(-180, Math.min(180, lon));
             
-            const input = document.getElementById('observer-search-input');
-            if (input && input.value !== 'Personalizado') {
-                input.value = 'Personalizado';
-            }
+            const sel = document.getElementById('observer-location-select');
+            if (sel) sel.value = 'custom';
             updateObserverPosition(lat, lon, 'Personalizado', null);
         }
 
@@ -1698,10 +1670,9 @@
                         userTz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
                     } catch(e) {}
 
-                    const input = document.getElementById('observer-search-input');
-                    if (input) input.value = 'Mi ubicación (GPS)';
-                    const customBox = document.getElementById('observer-custom-coords');
-                    if (customBox) customBox.style.display = 'flex';
+                    const sel = document.getElementById('observer-location-select');
+                    if (sel) sel.value = 'custom';
+                    toggleCustomCoords(true);
                     const latIn = document.getElementById('custom-obs-lat');
                     const lonIn = document.getElementById('custom-obs-lon');
                     if (latIn) latIn.value = lat;
