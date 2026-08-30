@@ -1382,7 +1382,7 @@
             </label>
             <label class="checkbox-row" id="lbl-show-observer">
                 <input type="checkbox" id="chk-show-observer" checked>
-                <span>Observador (Mataró)</span>
+                <span>Observador</span>
             </label>
             <label class="checkbox-row" id="lbl-show-ecliptic">
                 <input type="checkbox" id="chk-show-ecliptic" checked>
@@ -1445,7 +1445,7 @@
                 <span style="color: #fb923c;">🔴 Totalidad</span> · Luna de Sangre
             </div>
             <div class="player-time-display">
-                <span class="player-time-local-box"><span id="player-time-local-label">Mataró (Cosmos Mataró):</span> <strong id="time-local-text">20:11 CEST</strong></span>
+                <span class="player-time-local-box"><span id="player-time-local-label">Observador:</span> <strong id="time-local-text">20:11 CEST</strong></span>
                 <span class="player-time-utc-box">UTC: <strong id="time-utc-text">18:11:43</strong></span>
             </div>
             <div class="panel-toggle" onclick="togglePlaybackDock(false)" title="Minimizar reproductor" style="width: 24px; height: 24px; font-size: 0.75rem; border-radius: 6px;"><i class="fa-solid fa-chevron-down"></i></div>
@@ -2129,7 +2129,7 @@
 
             const obsChkLbl = document.querySelector('#lbl-show-observer span');
             if (obsChkLbl) {
-                obsChkLbl.textContent = `Observador (${currentObserver.name})`;
+                obsChkLbl.textContent = 'Observador';
             }
 
             const telePill = document.getElementById('tele-pill-location');
@@ -2139,7 +2139,7 @@
 
             const timeLocalLabel = document.getElementById('player-time-local-label');
             if (timeLocalLabel) {
-                timeLocalLabel.textContent = `${currentObserver.name}:`;
+                timeLocalLabel.textContent = 'Observador:';
             }
 
             if (currentEclipse) {
