@@ -1350,7 +1350,7 @@
         </div>
         <div style="display: flex; gap: 8px; align-items: center;">
             <div class="custom-combobox-container" id="observer-combobox-container" style="position: relative; flex: 1; min-width: 0;">
-                <input type="text" class="search-select custom-combobox-input" id="observer-location-input" placeholder="Buscar o elegir ciudad..." value="Mataró (Cosmos Mataró)" style="width: 100%; height: 38px; box-sizing: border-box; padding: 0 32px 0 12px; font-size: 0.84rem; font-weight: 400; background-color: #0f172a; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 10px; color: #f8fafc; cursor: text; outline: none; text-overflow: ellipsis;" autocomplete="off" onfocus="openObserverDropdown(); this.select();" oninput="filterObserverDropdown(this.value)" onkeydown="onObserverInputKeyDown(event)">
+                <input type="text" class="search-select custom-combobox-input" id="observer-location-input" placeholder="Buscar o elegir ciudad..." value="Mataró (Cosmos Mataró, ES)" style="width: 100%; height: 38px; box-sizing: border-box; padding: 0 32px 0 12px; font-size: 0.84rem; font-weight: 400; background-color: #0f172a; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 10px; color: #f8fafc; cursor: text; outline: none; text-overflow: ellipsis;" autocomplete="off" onfocus="openObserverDropdown(); this.select();" oninput="filterObserverDropdown(this.value)" onkeydown="onObserverInputKeyDown(event)">
                 <span style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; color: #94a3b8; font-size: 0.72rem;"><i class="fa-solid fa-chevron-down"></i></span>
                 
                 <!-- Desplegable Filtrable Flotante Estilizado -->
@@ -1521,43 +1521,43 @@
         const RAD = Math.PI / 180, DEG = 180 / Math.PI;
 
         const OBSERVER_PRESETS = [
-            { name: "Mataró (Cosmos Mataró)", lat: 41.54, lon: 2.44, tz: "Europe/Madrid" },
-            { name: "A Coruña (España)", lat: 43.37, lon: -8.40, tz: "Europe/Madrid" },
-            { name: "Barcelona (España)", lat: 41.39, lon: 2.17, tz: "Europe/Madrid" },
-            { name: "Bilbao (España)", lat: 43.26, lon: -2.93, tz: "Europe/Madrid" },
-            { name: "Bogotá (Colombia)", lat: 4.71, lon: -74.07, tz: "America/Bogota" },
-            { name: "Buenos Aires (Argentina)", lat: -34.60, lon: -58.38, tz: "America/Argentina/Buenos_Aires" },
-            { name: "Caracas (Venezuela)", lat: 10.48, lon: -66.90, tz: "America/Caracas" },
-            { name: "Ciudad de México (México)", lat: 19.43, lon: -99.13, tz: "America/Mexico_City" },
-            { name: "El Cairo (Egipto)", lat: 30.04, lon: 31.24, tz: "Africa/Cairo" },
-            { name: "Granada (España)", lat: 37.18, lon: -3.60, tz: "Europe/Madrid" },
-            { name: "Greenwich / Londres (Reino Unido)", lat: 51.48, lon: 0.00, tz: "Europe/London" },
-            { name: "La Habana (Cuba)", lat: 23.11, lon: -82.37, tz: "America/Havana" },
-            { name: "La Paz (Bolivia)", lat: -16.50, lon: -68.15, tz: "America/La_Paz" },
-            { name: "Las Palmas de Gran Canaria (España)", lat: 28.12, lon: -15.43, tz: "Atlantic/Canary" },
-            { name: "Lima (Perú)", lat: -12.05, lon: -77.04, tz: "America/Lima" },
-            { name: "Lisboa (Portugal)", lat: 38.72, lon: -9.14, tz: "Europe/Lisbon" },
-            { name: "Los Ángeles (EE. UU.)", lat: 34.05, lon: -118.24, tz: "America/Los_Angeles" },
-            { name: "Madrid (España)", lat: 40.42, lon: -3.70, tz: "Europe/Madrid" },
-            { name: "Málaga (España)", lat: 36.72, lon: -4.42, tz: "Europe/Madrid" },
-            { name: "Medellín (Colombia)", lat: 6.24, lon: -75.58, tz: "America/Bogota" },
-            { name: "Montevideo (Uruguay)", lat: -34.90, lon: -56.16, tz: "America/Montevideo" },
-            { name: "Nueva York (EE. UU.)", lat: 40.71, lon: -74.01, tz: "America/New_York" },
-            { name: "Palma de Mallorca (España)", lat: 39.57, lon: 2.65, tz: "Europe/Madrid" },
-            { name: "París (Francia)", lat: 48.86, lon: 2.35, tz: "Europe/Paris" },
-            { name: "Quito (Ecuador)", lat: -0.18, lon: -78.47, tz: "America/Guayaquil" },
-            { name: "Río de Janeiro (Brasil)", lat: -22.91, lon: -43.17, tz: "America/Sao_Paulo" },
-            { name: "Roma (Italia)", lat: 41.90, lon: 12.50, tz: "Europe/Rome" },
-            { name: "San José (Costa Rica)", lat: 9.93, lon: -84.09, tz: "America/Costa_Rica" },
-            { name: "San Juan (Puerto Rico)", lat: 18.47, lon: -66.11, tz: "America/Puerto_Rico" },
-            { name: "Santiago (Chile)", lat: -33.45, lon: -70.67, tz: "America/Santiago" },
-            { name: "Santo Domingo (Rep. Dominicana)", lat: 18.49, lon: -69.93, tz: "America/Santo_Domingo" },
-            { name: "Sevilla (España)", lat: 37.39, lon: -5.98, tz: "Europe/Madrid" },
-            { name: "Sídney (Australia)", lat: -33.87, lon: 151.21, tz: "Australia/Sydney" },
-            { name: "Tenerife / Obs. Teide (España)", lat: 28.30, lon: -16.51, tz: "Atlantic/Canary" },
-            { name: "Tokio (Japón)", lat: 35.68, lon: 139.69, tz: "Asia/Tokyo" },
-            { name: "Valencia (España)", lat: 39.47, lon: -0.38, tz: "Europe/Madrid" },
-            { name: "Zaragoza (España)", lat: 41.65, lon: -0.88, tz: "Europe/Madrid" }
+            { name: "Mataró (Cosmos Mataró, ES)", lat: 41.54, lon: 2.44, tz: "Europe/Madrid" },
+            { name: "A Coruña (ES)", lat: 43.37, lon: -8.40, tz: "Europe/Madrid" },
+            { name: "Barcelona (ES)", lat: 41.39, lon: 2.17, tz: "Europe/Madrid" },
+            { name: "Bilbao (ES)", lat: 43.26, lon: -2.93, tz: "Europe/Madrid" },
+            { name: "Bogotá (CO)", lat: 4.71, lon: -74.07, tz: "America/Bogota" },
+            { name: "Buenos Aires (AR)", lat: -34.60, lon: -58.38, tz: "America/Argentina/Buenos_Aires" },
+            { name: "Caracas (VE)", lat: 10.48, lon: -66.90, tz: "America/Caracas" },
+            { name: "Ciudad de México (MX)", lat: 19.43, lon: -99.13, tz: "America/Mexico_City" },
+            { name: "El Cairo (EG)", lat: 30.04, lon: 31.24, tz: "Africa/Cairo" },
+            { name: "Granada (ES)", lat: 37.18, lon: -3.60, tz: "Europe/Madrid" },
+            { name: "Greenwich / Londres (GB)", lat: 51.48, lon: 0.00, tz: "Europe/London" },
+            { name: "La Habana (CU)", lat: 23.11, lon: -82.37, tz: "America/Havana" },
+            { name: "La Paz (BO)", lat: -16.50, lon: -68.15, tz: "America/La_Paz" },
+            { name: "Las Palmas de Gran Canaria (ES)", lat: 28.12, lon: -15.43, tz: "Atlantic/Canary" },
+            { name: "Lima (PE)", lat: -12.05, lon: -77.04, tz: "America/Lima" },
+            { name: "Lisboa (PT)", lat: 38.72, lon: -9.14, tz: "Europe/Lisbon" },
+            { name: "Los Ángeles (US)", lat: 34.05, lon: -118.24, tz: "America/Los_Angeles" },
+            { name: "Madrid (ES)", lat: 40.42, lon: -3.70, tz: "Europe/Madrid" },
+            { name: "Málaga (ES)", lat: 36.72, lon: -4.42, tz: "Europe/Madrid" },
+            { name: "Medellín (CO)", lat: 6.24, lon: -75.58, tz: "America/Bogota" },
+            { name: "Montevideo (UY)", lat: -34.90, lon: -56.16, tz: "America/Montevideo" },
+            { name: "Nueva York (US)", lat: 40.71, lon: -74.01, tz: "America/New_York" },
+            { name: "Palma de Mallorca (ES)", lat: 39.57, lon: 2.65, tz: "Europe/Madrid" },
+            { name: "París (FR)", lat: 48.86, lon: 2.35, tz: "Europe/Paris" },
+            { name: "Quito (EC)", lat: -0.18, lon: -78.47, tz: "America/Guayaquil" },
+            { name: "Río de Janeiro (BR)", lat: -22.91, lon: -43.17, tz: "America/Sao_Paulo" },
+            { name: "Roma (IT)", lat: 41.90, lon: 12.50, tz: "Europe/Rome" },
+            { name: "San José (CR)", lat: 9.93, lon: -84.09, tz: "America/Costa_Rica" },
+            { name: "San Juan (PR)", lat: 18.47, lon: -66.11, tz: "America/Puerto_Rico" },
+            { name: "Santiago (CL)", lat: -33.45, lon: -70.67, tz: "America/Santiago" },
+            { name: "Santo Domingo (DO)", lat: 18.49, lon: -69.93, tz: "America/Santo_Domingo" },
+            { name: "Sevilla (ES)", lat: 37.39, lon: -5.98, tz: "Europe/Madrid" },
+            { name: "Sídney (AU)", lat: -33.87, lon: 151.21, tz: "Australia/Sydney" },
+            { name: "Tenerife / Obs. Teide (ES)", lat: 28.30, lon: -16.51, tz: "Atlantic/Canary" },
+            { name: "Tokio (JP)", lat: 35.68, lon: 139.69, tz: "Asia/Tokyo" },
+            { name: "Valencia (ES)", lat: 39.47, lon: -0.38, tz: "Europe/Madrid" },
+            { name: "Zaragoza (ES)", lat: 41.65, lon: -0.88, tz: "Europe/Madrid" }
         ];
 
         let currentObserver = { ...OBSERVER_PRESETS[0] };
