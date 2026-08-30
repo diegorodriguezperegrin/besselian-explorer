@@ -1365,7 +1365,7 @@
         </div>
         <div style="display: flex; gap: 8px; align-items: center;">
             <div class="custom-combobox-container" id="observer-combobox-container" style="position: relative; flex: 1; min-width: 0;">
-                <input type="text" class="search-select custom-combobox-input" id="observer-location-input" placeholder="Buscar o elegir ciudad..." value="Mataró (Cosmos Mataró, ES)" style="width: 100%; height: 38px; box-sizing: border-box; padding: 0 32px 0 12px; font-size: 0.84rem; font-weight: 400; background-color: #0f172a; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 10px; color: #f8fafc; cursor: text; outline: none; text-overflow: ellipsis;" autocomplete="off" onfocus="openObserverDropdown(); this.select();" oninput="filterObserverDropdown(this.value)" onkeydown="onObserverInputKeyDown(event)">
+                <input type="text" class="search-select custom-combobox-input" id="observer-location-input" placeholder="Buscar o elegir ciudad..." value="Mataró (Cosmos Mataró, ES)" style="width: 100%; height: 38px; box-sizing: border-box; padding: 0 32px 0 12px; font-size: 0.84rem; font-weight: 400; background-color: #0f172a; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 10px; color: #f8fafc; cursor: text; outline: none; text-overflow: ellipsis;" autocomplete="off" onfocus="openObserverDropdown(); this.select();" oninput="filterObserverDropdown(this.value, true)" onkeydown="onObserverInputKeyDown(event)">
                 <span style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; color: #94a3b8; font-size: 0.72rem;"><i class="fa-solid fa-chevron-down"></i></span>
                 
                 <!-- Desplegable Filtrable Flotante Estilizado -->
@@ -1923,12 +1923,12 @@
         let activeDropdownIndex = -1;
 
         function populateObserverSelect() {
-            filterObserverDropdown('');
+            filterObserverDropdown('', false);
         }
 
         function openObserverDropdown() {
             const input = document.getElementById('observer-location-input');
-            filterObserverDropdown(input ? input.value : '');
+            filterObserverDropdown(input ? input.value : '', true);
             const menu = document.getElementById('observer-dropdown-menu');
             if (menu) menu.style.display = 'block';
         }
@@ -1939,11 +1939,11 @@
             activeDropdownIndex = -1;
         }
 
-        function filterObserverDropdown(query = '') {
+        function filterObserverDropdown(query = '', showMenu = true) {
             const menu = document.getElementById('observer-dropdown-menu');
             if (!menu) return;
             menu.innerHTML = '';
-            menu.style.display = 'block';
+            menu.style.display = showMenu ? 'block' : 'none';
 
             const cleanQuery = (query || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
