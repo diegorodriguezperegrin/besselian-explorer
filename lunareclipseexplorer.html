@@ -676,6 +676,33 @@
             flex-shrink: 0;
         }
 
+        .phase-dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            vertical-align: middle;
+            margin-right: 5px;
+            box-sizing: border-box;
+            flex-shrink: 0;
+        }
+        .phase-dot.total {
+            background: #ef4444;
+            box-shadow: 0 0 6px rgba(239, 68, 68, 0.6);
+        }
+        .phase-dot.umbra {
+            background: linear-gradient(90deg, #ef4444 50%, #94a3b8 50%);
+            box-shadow: 0 0 5px rgba(239, 68, 68, 0.4);
+        }
+        .phase-dot.penumbra {
+            background: #94a3b8;
+            box-shadow: 0 0 4px rgba(148, 163, 184, 0.3);
+        }
+        .phase-dot.out {
+            background: #ffffff;
+            box-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+        }
+
         .player-time-display {
             font-family: var(--font-mono);
             font-size: 0.75rem;
@@ -1441,7 +1468,7 @@
         <!-- Fila Superior: Estado de fase, Hora Local, UTC y Botón de Cierre -->
         <div class="playback-dock-top">
             <div class="player-phase-badge" id="player-phase-label">
-                <span style="color: #fb923c;">🔴 Totalidad</span>
+                <span style="color: #fca5a5;"><span class="phase-dot total"></span>Totalidad</span>
             </div>
             <div class="player-time-display">
                 <span class="player-time-local-box"><span id="player-time-local-label">Obs.:</span> <strong id="time-local-text">20:11 CEST</strong></span>
@@ -3745,13 +3772,13 @@
 
             let phaseHtml = '';
             if (isTotal) {
-                phaseHtml = '<span style="color: #fb923c;">🔴 Totalidad</span>';
+                phaseHtml = '<span style="color: #fca5a5;"><span class="phase-dot total"></span>Totalidad</span>';
             } else if (isPartial) {
-                phaseHtml = '<span style="color: var(--accent-gold);">🌗 Umbra</span>';
+                phaseHtml = '<span style="color: #fde047;"><span class="phase-dot umbra"></span>Umbra</span>';
             } else if (isPenumbral) {
-                phaseHtml = '<span style="color: var(--accent-penumbra);">⚪ Penumbra</span>';
+                phaseHtml = '<span style="color: #cbd5e1;"><span class="phase-dot penumbra"></span>Penumbra</span>';
             } else {
-                phaseHtml = '<span style="color: var(--text-secondary);">🌕 Fuera de Sombra</span>';
+                phaseHtml = '<span style="color: #f8fafc;"><span class="phase-dot out"></span>Fuera de sombra</span>';
             }
 
             if (isLiveMode) {
