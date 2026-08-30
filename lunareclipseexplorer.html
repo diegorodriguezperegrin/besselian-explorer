@@ -1441,7 +1441,7 @@
         <!-- Fila Superior: Estado de fase, Hora Local, UTC y Botón de Cierre -->
         <div class="playback-dock-top">
             <div class="player-phase-badge" id="player-phase-label">
-                <span style="color: #fb923c;">🔴 Totalidad</span> · Luna de Sangre
+                <span style="color: #fb923c;">🔴 Totalidad</span>
             </div>
             <div class="player-time-display">
                 <span class="player-time-local-box"><span id="player-time-local-label">Obs.:</span> <strong id="time-local-text">20:11 CEST</strong></span>
@@ -3745,9 +3745,9 @@
 
             let phaseHtml = '';
             if (isTotal) {
-                phaseHtml = '<span style="color: #fb923c;">🔴 Totalidad</span> · Luna de Sangre';
+                phaseHtml = '<span style="color: #fb923c;">🔴 Totalidad</span>';
             } else if (isPartial) {
-                phaseHtml = '<span style="color: var(--accent-gold);">🌗 Fase Parcial</span> · Umbra';
+                phaseHtml = '<span style="color: var(--accent-gold);">🌗 Umbra</span>';
             } else if (isPenumbral) {
                 phaseHtml = '<span style="color: var(--accent-penumbra);">⚪ Penumbra</span>';
             } else {
