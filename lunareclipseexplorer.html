@@ -1425,7 +1425,7 @@
 
             <!-- Botón Desplegable de Más Opciones -->
             <button type="button" class="more-layers-btn" id="btn-toggle-more-layers" onclick="toggleMoreLayers()" title="Mostrar más capas y opciones astronómicas">
-                <span>Más opciones y capas</span>
+                <span>Más...</span>
                 <i class="fa-solid fa-chevron-down"></i>
             </button>
 
@@ -4068,7 +4068,7 @@
             btn.classList.toggle('expanded', newState);
             const span = btn.querySelector('span');
             if (span) {
-                span.textContent = newState ? 'Menos opciones y capas' : 'Más opciones y capas';
+                span.textContent = newState ? 'Menos...' : 'Más...';
             }
         }
 
