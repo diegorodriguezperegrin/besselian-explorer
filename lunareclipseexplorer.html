@@ -3347,20 +3347,30 @@
 
             document.getElementById('chk-show-subsolar')?.addEventListener('change', (e) => {
                 if (subsolarMarkerGroup3D) subsolarMarkerGroup3D.visible = e.target.checked;
+                scene3DNeedsRender = true;
+                if (renderer3D && scene3D && camera3D) renderer3D.render(scene3D, camera3D);
             });
             document.getElementById('chk-show-sublunar')?.addEventListener('change', (e) => {
                 if (sublunarMarkerGroup3D) sublunarMarkerGroup3D.visible = e.target.checked;
+                scene3DNeedsRender = true;
+                if (renderer3D && scene3D && camera3D) renderer3D.render(scene3D, camera3D);
             });
             document.getElementById('chk-show-observer')?.addEventListener('change', (e) => {
                 if (observerMarkerGroup3D) observerMarkerGroup3D.visible = e.target.checked;
+                scene3DNeedsRender = true;
+                if (renderer3D && scene3D && camera3D) renderer3D.render(scene3D, camera3D);
             });
             document.getElementById('chk-show-graticule')?.addEventListener('change', (e) => {
                 if (graticuleGroup) graticuleGroup.visible = e.target.checked;
+                scene3DNeedsRender = true;
+                if (renderer3D && scene3D && camera3D) renderer3D.render(scene3D, camera3D);
             });
             document.getElementById('chk-show-ecliptic')?.addEventListener('change', (e) => {
                 const vis = e.target.checked;
                 if (eclipticPlaneGroup3D) eclipticPlaneGroup3D.visible = vis;
                 if (nodeLine3D) nodeLine3D.visible = vis;
+                scene3DNeedsRender = true;
+                if (renderer3D && scene3D && camera3D) renderer3D.render(scene3D, camera3D);
             });
 
             // Grupo 3D de Marcas de Límites de Eclipse sobre la Órbita Lunar
@@ -3377,10 +3387,15 @@
                 if (chkSub) chkSub.disabled = !enabled;
                 if (lblSub) lblSub.classList.toggle('disabled', !enabled);
                 if (eclipseLimitsGroup3D) eclipseLimitsGroup3D.visible = enabled;
+                update3DEclipseGeometry();
+                scene3DNeedsRender = true;
+                if (renderer3D && scene3D && camera3D) renderer3D.render(scene3D, camera3D);
             });
 
             document.getElementById('chk-show-limits-labels')?.addEventListener('change', () => {
                 update3DEclipseGeometry();
+                scene3DNeedsRender = true;
+                if (renderer3D && scene3D && camera3D) renderer3D.render(scene3D, camera3D);
             });
 
             window.addEventListener('resize', onWindowResize3D);
