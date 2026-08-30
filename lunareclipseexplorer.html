@@ -1233,6 +1233,20 @@
         <span class="live-text">EN VIVO</span>
     </div>
 
+    <!-- Banner Flotante para Modo Selección en el Globo 3D -->
+    <div id="globe-picking-banner" style="display: none; position: absolute; top: 18px; left: 50%; transform: translateX(-50%); z-index: 100; align-items: center; gap: 12px; background: rgba(11, 19, 41, 0.95); border: 1px solid var(--accent-blue); padding: 7px 14px; border-radius: 16px; box-shadow: 0 10px 32px rgba(0,0,0,0.85); backdrop-filter: blur(16px); pointer-events: auto; max-width: calc(100vw - 30px); box-sizing: border-box;">
+        <div style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: #f8fafc; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+            <i class="fa-solid fa-location-dot" style="color: var(--accent-blue); font-size: 0.95rem; flex-shrink: 0;"></i>
+            <span>Toca en la Tierra: <strong id="globe-picking-coords-text" style="color: var(--accent-blue);">--</strong></span>
+        </div>
+        <button class="primary-btn" onclick="confirmGlobePicking()" style="height: 32px; padding: 0 13px; font-size: 0.76rem; border-radius: 10px; background: var(--accent-blue); color: #020617; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; border: none; flex-shrink: 0;">
+            <i class="fa-solid fa-check"></i> Listo
+        </button>
+        <button class="ctrl-btn" onclick="cancelGlobePicking()" style="height: 32px; width: 32px; padding: 0; font-size: 0.80rem; border-radius: 10px; flex-shrink: 0;" title="Cancelar (Escape)">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+    </div>
+
     <!-- Barra Flotante de Paneles Minimizados (Apilados a la izquierda) -->
     <div class="top-nav-bar" id="top-nav-bar">
         <button class="reopen-btn" id="btn-reopen-left" onclick="toggleSidebar(null)" title="Abrir/Cerrar panel de Eclipses">
@@ -1373,6 +1387,9 @@
                     <!-- Poblado dinámicamente con filtrado sucesivo -->
                 </div>
             </div>
+            <button class="ctrl-btn" id="btn-pick-on-globe" onclick="toggleGlobePickingMode(true)" title="Marcar ubicación directamente en el globo terráqueo 3D" style="width: 38px; height: 38px; padding: 0; flex-shrink: 0; border-radius: 10px;">
+                <i class="fa-solid fa-earth-americas"></i>
+            </button>
             <button class="ctrl-btn" id="btn-toggle-custom-coords" onclick="toggleCustomCoords()" title="Ajustar coordenadas manuales (Lat/Lon)" style="width: 38px; height: 38px; padding: 0; flex-shrink: 0; border-radius: 10px;">
                 <i class="fa-solid fa-sliders"></i>
             </button>
@@ -1391,6 +1408,9 @@
                 <span style="font-size: 0.68rem; color: var(--text-secondary); margin-right: 4px;">Lon:</span>
                 <input type="number" id="custom-obs-lon" step="0.01" value="2.44" style="width: 100%; background: transparent; border: none; color: #fff; font-size: 0.75rem; padding: 4px 0;" oninput="onCustomCoordsChange()" onchange="onCustomCoordsChange()">
             </div>
+            <button class="ctrl-btn" onclick="toggleGlobePickingMode(true)" title="Marcar en el globo 3D" style="height: 28px; padding: 0 8px; font-size: 0.72rem; gap: 4px; border-radius: 6px; flex-shrink: 0;">
+                <i class="fa-solid fa-earth-americas"></i>
+            </button>
         </div>
 
         <!-- Indicador de la Ubicación Seleccionada Activa -->
@@ -2707,6 +2727,20 @@
             return new THREE.Vector3(x, y, z);
         }
 
+        function vector3ToLatLng(v) {
+            const r = v.length();
+            if (r === 0) return { lat: 0, lon: 0 };
+            const lat = Math.asin(Math.max(-1, Math.min(1, v.y / r))) * (180 / Math.PI);
+            let lon = Math.atan2(-v.z, v.x) * (180 / Math.PI);
+            return { lat, lon };
+        }
+
+        function formatLatLonString(lat, lon) {
+            const latDir = lat >= 0 ? 'N' : 'S';
+            const lonDir = lon >= 0 ? 'E' : 'O';
+            return `${Math.abs(lat).toFixed(2)}° ${latDir}, ${Math.abs(lon).toFixed(2)}° ${lonDir}`;
+        }
+
         // Marcador 3D del Punto Subsolar (☀️ Sol en Cenit)
         function createSubsolarMarker3D() {
             const group = new THREE.Group();
@@ -2983,6 +3017,197 @@
             }
         }
 
+        // =========================================================================
+        // MODO SELECCIÓN INTERACTIVA DE UBICACIÓN EN EL GLOBO TERRÁQUEO 3D
+        // =========================================================================
+        let isGlobePickingMode = false;
+        let preGlobePickingState = null;
+        let tempPickedLat = null;
+        let tempPickedLon = null;
+
+        function toggleGlobePickingMode(enable = null) {
+            const target = (enable !== null) ? enable : !isGlobePickingMode;
+            if (target) {
+                startGlobePickingMode();
+            } else {
+                confirmGlobePicking();
+            }
+        }
+
+        function startGlobePickingMode() {
+            if (isGlobePickingMode) return;
+            isGlobePickingMode = true;
+
+            const sidePanel = document.getElementById('sidebar-panel');
+            const setPanel = document.getElementById('settings-panel');
+            const dockPanel = document.getElementById('playback-dock');
+
+            preGlobePickingState = {
+                view: currentActiveView,
+                camPos: camera3D ? camera3D.position.clone() : new THREE.Vector3(0, 130, 300),
+                camTarget: controls3D ? controls3D.target.clone() : new THREE.Vector3(0, -10, -190),
+                minDist: controls3D ? controls3D.minDistance : 2.0,
+                maxDist: controls3D ? controls3D.maxDistance : 450000,
+                sideOpen: sidePanel && !sidePanel.classList.contains('collapsed'),
+                setOpen: setPanel && !setPanel.classList.contains('collapsed'),
+                dockOpen: dockPanel && !dockPanel.classList.contains('collapsed'),
+                prevLat: currentObserver.lat,
+                prevLon: currentObserver.lon,
+                prevName: currentObserver.name,
+                prevTz: currentObserver.tz
+            };
+
+            tempPickedLat = currentObserver.lat;
+            tempPickedLon = currentObserver.lon;
+
+            if (currentActiveView !== '3d') {
+                switchMainView('3d');
+            }
+
+            if (sidePanel) sidePanel.classList.add('collapsed');
+            if (setPanel) setPanel.classList.add('collapsed');
+            if (dockPanel) dockPanel.classList.add('collapsed');
+            updateTopNavButtonsState();
+
+            const banner = document.getElementById('globe-picking-banner');
+            if (banner) banner.style.display = 'flex';
+            const coordsText = document.getElementById('globe-picking-coords-text');
+            if (coordsText) coordsText.textContent = formatLatLonString(currentObserver.lat, currentObserver.lon);
+
+            if (renderer3D && renderer3D.domElement) {
+                renderer3D.domElement.style.cursor = 'crosshair';
+            }
+
+            let camDir = new THREE.Vector3(0, 0.4, 1);
+            if (earthMesh3D && observerMarkerGroup3D) {
+                const obsWorldPos = new THREE.Vector3();
+                observerMarkerGroup3D.getWorldPosition(obsWorldPos);
+                if (obsWorldPos.lengthSq() > 0.1) {
+                    camDir.copy(obsWorldPos).normalize();
+                }
+            }
+            const targetCamPos = camDir.multiplyScalar(15.5);
+            if (controls3D) {
+                controls3D.minDistance = 7.0;
+                controls3D.maxDistance = 60.0;
+            }
+            transitionCamera3D(new THREE.Vector3(0, 0, 0), targetCamPos, 7.0, 800);
+            requestRender3D();
+        }
+
+        function handleGlobePickingClick(clientX, clientY) {
+            if (!camera3D || !earthMesh3D) return;
+
+            const rect = renderer3D.domElement.getBoundingClientRect();
+            const mouse = new THREE.Vector2(
+                ((clientX - rect.left) / rect.width) * 2 - 1,
+                -((clientY - rect.top) / rect.height) * 2 + 1
+            );
+
+            const raycaster = new THREE.Raycaster();
+            raycaster.setFromCamera(mouse, camera3D);
+
+            const intersects = raycaster.intersectObject(earthMesh3D, false);
+            if (intersects.length > 0) {
+                const hitPoint = intersects[0].point;
+                const localPoint = earthMesh3D.worldToLocal(hitPoint.clone());
+                const { lat, lon } = vector3ToLatLng(localPoint);
+
+                tempPickedLat = Math.round(lat * 100) / 100;
+                tempPickedLon = Math.round(lon * 100) / 100;
+
+                if (observerMarkerGroup3D) {
+                    observerMarkerGroup3D.position.copy(latLngToVector3(tempPickedLat, tempPickedLon, EARTH_RADIUS * 1.004));
+                    observerMarkerGroup3D.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), latLngToVector3(tempPickedLat, tempPickedLon, 1.0).normalize());
+                }
+
+                const coordsText = document.getElementById('globe-picking-coords-text');
+                if (coordsText) {
+                    coordsText.textContent = formatLatLonString(tempPickedLat, tempPickedLon);
+                }
+
+                const latIn = document.getElementById('custom-obs-lat');
+                const lonIn = document.getElementById('custom-obs-lon');
+                if (latIn) latIn.value = tempPickedLat;
+                if (lonIn) lonIn.value = tempPickedLon;
+
+                requestRender3D();
+            }
+        }
+
+        function confirmGlobePicking() {
+            if (!isGlobePickingMode) return;
+            isGlobePickingMode = false;
+
+            const banner = document.getElementById('globe-picking-banner');
+            if (banner) banner.style.display = 'none';
+
+            if (renderer3D && renderer3D.domElement) {
+                renderer3D.domElement.style.cursor = '';
+            }
+
+            if (tempPickedLat !== null && tempPickedLon !== null) {
+                let matchedPreset = null;
+                for (const p of OBSERVER_PRESETS) {
+                    const dLat = (p.lat - tempPickedLat) * 111.0;
+                    const dLon = (p.lon - tempPickedLon) * 111.0 * Math.cos(tempPickedLat * RAD);
+                    const distKm = Math.hypot(dLat, dLon);
+                    if (distKm < 40) {
+                        matchedPreset = p;
+                        break;
+                    }
+                }
+                const name = matchedPreset ? matchedPreset.name : `Lat: ${tempPickedLat.toFixed(2)}°, Lon: ${tempPickedLon.toFixed(2)}°`;
+                const tz = matchedPreset ? matchedPreset.tz : (Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC");
+                
+                const input = document.getElementById('observer-location-input');
+                if (input) input.value = name;
+                updateObserverPosition(tempPickedLat, tempPickedLon, name, tz);
+            }
+
+            if (preGlobePickingState) {
+                if (controls3D) {
+                    controls3D.minDistance = preGlobePickingState.minDist;
+                    controls3D.maxDistance = preGlobePickingState.maxDist;
+                }
+                if (preGlobePickingState.sideOpen) toggleSidebar(true);
+                if (preGlobePickingState.setOpen) toggleSettingsPanel(true);
+                if (preGlobePickingState.dockOpen) togglePlaybackDock(true);
+                transitionCamera3D(preGlobePickingState.camTarget, preGlobePickingState.camPos, preGlobePickingState.minDist, 700);
+                preGlobePickingState = null;
+            }
+            requestRender3D();
+        }
+
+        function cancelGlobePicking() {
+            if (!isGlobePickingMode) return;
+            isGlobePickingMode = false;
+
+            const banner = document.getElementById('globe-picking-banner');
+            if (banner) banner.style.display = 'none';
+
+            if (renderer3D && renderer3D.domElement) {
+                renderer3D.domElement.style.cursor = '';
+            }
+
+            if (preGlobePickingState) {
+                updateObserverPosition(preGlobePickingState.prevLat, preGlobePickingState.prevLon, preGlobePickingState.prevName, preGlobePickingState.prevTz);
+                const input = document.getElementById('observer-location-input');
+                if (input) input.value = preGlobePickingState.prevName;
+
+                if (controls3D) {
+                    controls3D.minDistance = preGlobePickingState.minDist;
+                    controls3D.maxDistance = preGlobePickingState.maxDist;
+                }
+                if (preGlobePickingState.sideOpen) toggleSidebar(true);
+                if (preGlobePickingState.setOpen) toggleSettingsPanel(true);
+                if (preGlobePickingState.dockOpen) togglePlaybackDock(true);
+                transitionCamera3D(preGlobePickingState.camTarget, preGlobePickingState.camPos, preGlobePickingState.minDist, 700);
+                preGlobePickingState = null;
+            }
+            requestRender3D();
+        }
+
         function initThreeJS() {
             const container = document.getElementById('webgl-container');
             if (!container) return;
@@ -3077,6 +3302,29 @@
 
             renderer3D.domElement.addEventListener('dblclick', (e) => {
                 handle3DDoubleClick(e.clientX, e.clientY);
+            });
+
+            let globePointerStartX = 0, globePointerStartY = 0;
+            let globePointerStartTime = 0;
+
+            renderer3D.domElement.addEventListener('pointerdown', (e) => {
+                globePointerStartX = e.clientX;
+                globePointerStartY = e.clientY;
+                globePointerStartTime = Date.now();
+            });
+
+            renderer3D.domElement.addEventListener('pointerup', (e) => {
+                const dist = Math.hypot(e.clientX - globePointerStartX, e.clientY - globePointerStartY);
+                const time = Date.now() - globePointerStartTime;
+                if (isGlobePickingMode && dist < 6 && time < 450 && e.button === 0) {
+                    handleGlobePickingClick(e.clientX, e.clientY);
+                }
+            });
+
+            window.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && isGlobePickingMode) {
+                    cancelGlobePicking();
+                }
             });
 
             let lastTapTime3D = 0;
