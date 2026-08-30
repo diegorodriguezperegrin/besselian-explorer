@@ -636,10 +636,13 @@
         .playback-dock-top {
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            align-items: baseline;
             gap: 10px;
             width: 100%;
-            height: 24px;
+        }
+
+        .playback-dock-top .panel-toggle {
+            align-self: center;
         }
 
         .playback-dock-bottom {
@@ -668,19 +671,13 @@
             font-size: 0.78rem;
             font-weight: 700;
             color: #fff;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
             white-space: nowrap;
             flex-shrink: 0;
-            line-height: 1;
-            transform: translateY(-1.5px);
         }
 
         .player-phase-badge > span {
             display: inline-flex;
             align-items: center;
-            line-height: 1;
         }
 
         .phase-dot {
@@ -691,6 +688,7 @@
             margin-right: 5px;
             box-sizing: border-box;
             flex-shrink: 0;
+            vertical-align: middle;
         }
         .phase-dot.total {
             background: #ef4444;
@@ -714,12 +712,11 @@
             font-size: 0.75rem;
             color: var(--text-secondary);
             display: inline-flex;
-            align-items: center;
+            align-items: baseline;
             justify-content: flex-end;
             gap: 12px;
             flex: 1;
             min-width: 0;
-            line-height: 1;
         }
 
         .player-time-local-box, .player-time-utc-box {
