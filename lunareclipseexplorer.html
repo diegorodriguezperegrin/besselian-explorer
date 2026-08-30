@@ -1826,9 +1826,7 @@
             }
 
             if (document.getElementById('card-coords')) {
-                const latStr = `${Math.abs(ec.zenLat).toFixed(1)}${ec.zenLat >= 0 ? 'N' : 'S'}`;
-                const lonStr = `${Math.abs(ec.zenLon).toFixed(1)}${ec.zenLon >= 0 ? 'E' : 'W'}`;
-                document.getElementById('card-coords').textContent = `${latStr} ${lonStr}`;
+                document.getElementById('card-coords').textContent = formatLatLonString(ec.zenLat, ec.zenLon, 1);
             }
 
             if (document.getElementById('card-dt')) document.getElementById('card-dt').textContent = `${ec.dt || 0}s`;
@@ -2013,7 +2011,7 @@
                     displayHtml = `<strong style="color: var(--accent-blue);">${preset.name.slice(0, matchLen)}</strong>${preset.name.slice(matchLen)}`;
                 }
 
-                item.innerHTML = `<span>${displayHtml}</span><span style="font-size: 0.70rem; color: #64748b; margin-left: 8px;">${preset.lat.toFixed(1)}°, ${preset.lon.toFixed(1)}°</span>`;
+                item.innerHTML = `<span>${displayHtml}</span><span style="font-size: 0.70rem; color: #64748b; margin-left: 8px;">${formatLatLonString(preset.lat, preset.lon, 1)}</span>`;
 
                 item.onmouseenter = () => { item.style.background = 'rgba(56, 189, 248, 0.18)'; };
                 item.onmouseleave = () => { if (idx !== activeDropdownIndex) item.style.background = 'transparent'; };
@@ -2121,9 +2119,10 @@
             lat = Math.max(-90, Math.min(90, lat));
             lon = Math.max(-180, Math.min(180, lon));
             
+            const coordsStr = formatLatLonString(lat, lon, 2);
             const input = document.getElementById('observer-location-input');
-            if (input) input.value = 'Personalizado';
-            updateObserverPosition(lat, lon, 'Personalizado', null);
+            if (input) input.value = coordsStr;
+            updateObserverPosition(lat, lon, coordsStr, null);
         }
 
         function detectUserLocation() {
@@ -2143,15 +2142,16 @@
                         userTz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
                     } catch(e) {}
 
+                    const coordsStr = formatLatLonString(lat, lon, 2);
                     const input = document.getElementById('observer-location-input');
-                    if (input) input.value = 'Mi ubicación (GPS)';
+                    if (input) input.value = coordsStr;
                     toggleCustomCoords(true);
                     const latIn = document.getElementById('custom-obs-lat');
                     const lonIn = document.getElementById('custom-obs-lon');
                     if (latIn) latIn.value = lat;
                     if (lonIn) lonIn.value = lon;
 
-                    updateObserverPosition(lat, lon, 'Mi ubicación (GPS)', userTz);
+                    updateObserverPosition(lat, lon, coordsStr, userTz);
 
                     if (gpsBtn) gpsBtn.innerHTML = '<i class="fa-solid fa-crosshairs" style="color: #4ade80;"></i>';
                     setTimeout(() => {
@@ -2191,9 +2191,12 @@
             // Actualizar etiquetas en la interfaz
             const subtitleEl = document.getElementById('observer-header-subtitle');
             if (subtitleEl) {
-                const latStr = `${Math.abs(lat).toFixed(2)}°${lat >= 0 ? 'N' : 'S'}`;
-                const lonStr = `${Math.abs(lon).toFixed(2)}°${lon >= 0 ? 'E' : 'W'}`;
-                subtitleEl.textContent = `${currentObserver.name.toUpperCase()} (${latStr}, ${lonStr})`;
+                const coordsStr = formatLatLonString(lat, lon, 2);
+                if (currentObserver.name && currentObserver.name !== coordsStr && currentObserver.name !== 'Personalizado' && !currentObserver.name.startsWith('Lat:')) {
+                    subtitleEl.textContent = `${currentObserver.name.toUpperCase()} · ${coordsStr}`;
+                } else {
+                    subtitleEl.textContent = coordsStr;
+                }
             }
 
             const obsChkLbl = document.querySelector('#lbl-show-observer span');
@@ -2735,10 +2738,10 @@
             return { lat, lon };
         }
 
-        function formatLatLonString(lat, lon) {
+        function formatLatLonString(lat, lon, precision = 2) {
             const latDir = lat >= 0 ? 'N' : 'S';
             const lonDir = lon >= 0 ? 'E' : 'O';
-            return `${Math.abs(lat).toFixed(2)}° ${latDir}, ${Math.abs(lon).toFixed(2)}° ${lonDir}`;
+            return `${Math.abs(lat).toFixed(precision)}°${latDir} ${Math.abs(lon).toFixed(precision)}°${lonDir}`;
         }
 
         // Marcador 3D del Punto Subsolar (☀️ Sol en Cenit)
@@ -3157,7 +3160,7 @@
                         break;
                     }
                 }
-                const name = matchedPreset ? matchedPreset.name : `Lat: ${tempPickedLat.toFixed(2)}°, Lon: ${tempPickedLon.toFixed(2)}°`;
+                const name = matchedPreset ? matchedPreset.name : formatLatLonString(tempPickedLat, tempPickedLon, 2);
                 const tz = matchedPreset ? matchedPreset.tz : (Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC");
                 
                 const input = document.getElementById('observer-location-input');
@@ -4708,7 +4711,7 @@ DTSTART:${format(start)}
 DTEND:${format(end)}
 SUMMARY:${summary}
 DESCRIPTION:${desc}
-LOCATION:${currentObserver.name} (${currentObserver.lat.toFixed(2)}N, ${currentObserver.lon.toFixed(2)}E)
+LOCATION:${currentObserver.name} (${formatLatLonString(currentObserver.lat, currentObserver.lon, 2)})
 END:VEVENT
 END:VCALENDAR`;
 
