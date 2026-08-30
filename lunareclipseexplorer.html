@@ -285,7 +285,7 @@
             height: 38px;
             box-sizing: border-box;
             padding: 0 13px;
-            border-radius: 12px;
+            border-radius: 16px;
             cursor: pointer;
             display: none;
             align-items: center;
@@ -859,7 +859,7 @@
             align-items: center;
             gap: 0.45rem;
             font-size: 0.76rem;
-            line-height: 1.35;
+            line-height: 1.25;
             color: var(--text-primary);
             cursor: pointer;
             user-select: none;
@@ -889,6 +889,12 @@
             opacity: 0.4;
         }
 
+        .panel-section {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
         /* Botón y Contenedor Desplegable de Más Capas */
         .more-layers-btn {
             background: rgba(255, 255, 255, 0.04);
@@ -898,7 +904,7 @@
             font-family: var(--font-heading);
             font-size: 0.74rem;
             font-weight: 600;
-            padding: 6px 10px;
+            padding: 5px 10px;
             cursor: pointer;
             display: flex;
             align-items: center;
@@ -906,7 +912,7 @@
             width: 100%;
             box-sizing: border-box;
             transition: var(--transition-smooth);
-            margin-top: 4px;
+            margin-top: 1px;
         }
 
         .more-layers-btn:hover {
@@ -927,12 +933,12 @@
         .more-layers-container {
             display: none;
             flex-direction: column;
-            gap: 6px;
-            margin-top: 6px;
-            padding: 8px 10px;
-            background: rgba(0, 0, 0, 0.28);
-            border-radius: 8px;
-            border-left: 2px solid var(--accent-blue);
+            gap: 5px;
+            margin-top: 1px;
+            padding: 0;
+            background: transparent;
+            border: none;
+            border-radius: 0;
         }
 
         .more-layers-container.expanded {
@@ -1035,35 +1041,44 @@
         /* Responsive Mobile & Tablet (<= 900px) */
         @media (max-width: 900px) {
             .top-nav-bar {
-                top: 10px;
-                left: 10px;
-                right: 10px;
-                justify-content: center;
-                gap: 6px;
+                top: 15px;
+                left: 15px;
+                display: flex;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
             }
             .panel-header {
                 cursor: default !important;
                 touch-action: auto !important;
             }
             .reopen-btn {
-                display: inline-flex !important;
-                padding: 0 10px;
-                font-size: 0.78rem;
-                height: 36px;
-                border-radius: 10px;
+                padding: 0 13px;
+                font-size: 0.82rem;
+                height: 38px;
+                border-radius: 16px;
             }
-            .sidebar-panel, .settings-panel {
-                width: min(calc(100vw - 20px), 360px) !important;
-                max-width: 360px !important;
-                left: 10px !important;
+            .sidebar-panel {
+                width: min(calc(100vw - 30px), 350px) !important;
+                max-width: 350px !important;
+                left: 15px !important;
+                top: 15px !important;
+                max-height: calc(100vh - 110px) !important;
+                max-height: calc(100dvh - 110px) !important;
+                z-index: 50 !important;
+            }
+            .settings-panel {
+                width: min(calc(100vw - 30px), 350px) !important;
+                max-width: 350px !important;
+                left: 15px !important;
                 right: auto !important;
-                top: 54px !important;
-                max-height: calc(100vh - 66px) !important;
-                max-height: calc(100dvh - 66px) !important;
+                top: 61px !important;
+                max-height: calc(100vh - 80px) !important;
+                max-height: calc(100dvh - 80px) !important;
                 z-index: 50 !important;
             }
             .sidebar-panel.collapsed, .settings-panel.collapsed {
-                transform: translateY(-16px) scale(0.96) !important;
+                transform: translateX(calc(-100% - 30px)) !important;
                 opacity: 0 !important;
                 pointer-events: none !important;
             }
@@ -4144,7 +4159,6 @@
         }
 
         function updateTopNavButtonsState() {
-            const isMobile = window.innerWidth <= 900;
             const sidePanel = document.getElementById('sidebar-panel');
             const setPanel = document.getElementById('settings-panel');
             const dockPanel = document.getElementById('playback-dock');
@@ -4158,27 +4172,40 @@
             const btnSet = document.getElementById('btn-reopen-right');
             const btnDock = document.getElementById('btn-reopen-dock');
 
-            if (isMobile) {
-                if (navBar) {
-                    navBar.style.left = '10px';
-                    navBar.style.top = '10px';
-                }
-                if (btnSide) { btnSide.style.display = 'inline-flex'; btnSide.classList.toggle('active-nav', sideOpen); }
-                if (btnSet) { btnSet.style.display = 'inline-flex'; btnSet.classList.toggle('active-nav', setOpen); }
-                if (btnDock) { btnDock.style.display = 'inline-flex'; btnDock.classList.toggle('active-nav', dockOpen); }
-            } else {
-                if (btnSide) { btnSide.style.display = sideOpen ? 'none' : 'inline-flex'; btnSide.classList.remove('active-nav'); }
-                if (btnSet) { btnSet.style.display = setOpen ? 'none' : 'inline-flex'; btnSet.classList.remove('active-nav'); }
-                if (btnDock) { btnDock.style.display = dockOpen ? 'none' : 'inline-flex'; btnDock.classList.remove('active-nav'); }
+            if (btnSide) { btnSide.style.display = sideOpen ? 'none' : 'inline-flex'; btnSide.classList.remove('active-nav'); }
+            if (btnSet) { btnSet.style.display = setOpen ? 'none' : 'inline-flex'; btnSet.classList.remove('active-nav'); }
+            if (btnDock) { btnDock.style.display = dockOpen ? 'none' : 'inline-flex'; btnDock.classList.remove('active-nav'); }
 
-                if (navBar) {
-                    navBar.style.left = '15px';
-                    if (sideOpen && sidePanel) {
-                        const sideBottom = sidePanel.offsetTop + sidePanel.offsetHeight;
-                        navBar.style.top = `${sideBottom + 8}px`;
-                    } else {
-                        navBar.style.top = '15px';
+            const isSmall = window.innerWidth <= 900;
+
+            if (navBar) {
+                navBar.style.left = '15px';
+                if (sideOpen && sidePanel) {
+                    const sideBottom = sidePanel.offsetTop + sidePanel.offsetHeight;
+                    navBar.style.top = `${sideBottom + 8}px`;
+                    if (btnSide) {
+                        btnSide.style.position = '';
+                        btnSide.style.top = '';
+                        btnSide.style.left = '';
+                        btnSide.style.zIndex = '';
                     }
+                } else if (isSmall && setOpen && setPanel) {
+                    if (btnSide) {
+                        btnSide.style.position = 'fixed';
+                        btnSide.style.top = '15px';
+                        btnSide.style.left = '15px';
+                        btnSide.style.zIndex = '45';
+                    }
+                    const setBottom = setPanel.offsetTop + setPanel.offsetHeight;
+                    navBar.style.top = `${setBottom + 8}px`;
+                } else {
+                    if (btnSide) {
+                        btnSide.style.position = '';
+                        btnSide.style.top = '';
+                        btnSide.style.left = '';
+                        btnSide.style.zIndex = '';
+                    }
+                    navBar.style.top = '15px';
                 }
             }
         }
@@ -4195,6 +4222,7 @@
                 panel.classList.remove('collapsed');
                 if (isMobile) {
                     toggleSettingsPanel(false);
+                    togglePlaybackDock(false);
                 }
             } else {
                 panel.classList.add('collapsed');
@@ -4360,9 +4388,33 @@
             });
         }
 
+        let lastObservedWindowWidth = window.innerWidth;
+
         window.addEventListener('resize', () => {
-            updateTopNavButtonsState();
-            if (window.innerWidth <= 900) {
+            const isSmall = window.innerWidth <= 900;
+            const wasLarge = lastObservedWindowWidth > 900;
+            lastObservedWindowWidth = window.innerWidth;
+
+            if (isSmall && wasLarge) {
+                // Al reducir la pantalla a pequeña (<= 900px):
+                const sidePanel = document.getElementById('sidebar-panel');
+                const setPanel = document.getElementById('settings-panel');
+                const dockPanel = document.getElementById('playback-dock');
+
+                const sideOpen = sidePanel && !sidePanel.classList.contains('collapsed');
+                const setOpen = setPanel && !setPanel.classList.contains('collapsed');
+
+                if (sideOpen) {
+                    // Si Eclipses estaba abierto (o todos estaban abiertos):
+                    // El panel Eclipses prevalece, y se minimizan Visualización y Reproductor
+                    if (setPanel) setPanel.classList.add('collapsed');
+                    if (dockPanel) dockPanel.classList.add('collapsed');
+                } else if (setOpen) {
+                    // Si Eclipses estaba cerrado y solo Visualización y Reproductor estaban abiertos:
+                    // Se mantienen abiertos
+                }
+                resetAllPanelsPositions();
+            } else if (isSmall) {
                 resetAllPanelsPositions();
             } else {
                 // Mantener las ventanas dentro del viewport tras redimensionar la pantalla
@@ -4382,6 +4434,8 @@
                     }
                 });
             }
+
+            updateTopNavButtonsState();
         });
 
         // Exportar a iCalendar (.ics)
