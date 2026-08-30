@@ -603,6 +603,48 @@
             box-shadow: 0 0 10px rgba(56, 189, 248, 0.15);
         }
 
+        /* Grupo Segmentado de Herramientas de Ubicación (3 Posiciones) */
+        .location-tools-group {
+            display: inline-flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 2px;
+            gap: 2px;
+            flex-shrink: 0;
+            height: 38px;
+            box-sizing: border-box;
+        }
+
+        .location-tool-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            border: 1px solid transparent;
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 0.84rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition-smooth);
+            padding: 0;
+        }
+
+        .location-tool-btn:hover {
+            color: var(--accent-blue);
+            background: rgba(56, 189, 248, 0.12);
+        }
+
+        .location-tool-btn.active {
+            background: rgba(56, 189, 248, 0.20);
+            color: var(--accent-blue);
+            border-color: rgba(56, 189, 248, 0.4);
+            box-shadow: 0 0 8px rgba(56, 189, 248, 0.15);
+        }
+
         /* =========================================================================
            BARRA / CÁPSULA DE REPRODUCCIÓN FLOTANTE INFERIOR (PLAYBACK DOCK)
            ========================================================================= */
@@ -1387,15 +1429,19 @@
                     <!-- Poblado dinámicamente con filtrado sucesivo -->
                 </div>
             </div>
-            <button class="ctrl-btn" id="btn-pick-on-globe" onclick="toggleGlobePickingMode(true)" title="Marcar ubicación directamente en el globo terráqueo 3D" style="width: 38px; height: 38px; padding: 0; flex-shrink: 0; border-radius: 10px;">
-                <i class="fa-solid fa-earth-americas"></i>
-            </button>
-            <button class="ctrl-btn" id="btn-toggle-custom-coords" onclick="toggleCustomCoords()" title="Ajustar coordenadas manuales (Lat/Lon)" style="width: 38px; height: 38px; padding: 0; flex-shrink: 0; border-radius: 10px;">
-                <i class="fa-solid fa-sliders"></i>
-            </button>
-            <button class="ctrl-btn" id="btn-observer-gps" onclick="detectUserLocation()" title="Detectar mi ubicación actual (GPS)" style="width: 38px; height: 38px; padding: 0; flex-shrink: 0; border-radius: 10px;">
-                <i class="fa-solid fa-crosshairs"></i>
-            </button>
+            
+            <!-- Pulsador Único Segmentado de 3 Posiciones: [ 🌍 Marcar | 🎛️ Ajustar | 🎯 GPS ] -->
+            <div class="location-tools-group" id="location-tools-group">
+                <button type="button" class="location-tool-btn" id="btn-pick-on-globe" onclick="toggleGlobePickingMode(true)" title="Marcar en el globo terráqueo 3D">
+                    <i class="fa-solid fa-earth-americas"></i>
+                </button>
+                <button type="button" class="location-tool-btn" id="btn-toggle-custom-coords" onclick="toggleCustomCoords()" title="Ajustar coordenadas manuales (Lat/Lon)">
+                    <i class="fa-solid fa-sliders"></i>
+                </button>
+                <button type="button" class="location-tool-btn" id="btn-observer-gps" onclick="detectUserLocation()" title="Detectar mi ubicación actual (GPS)">
+                    <i class="fa-solid fa-crosshairs"></i>
+                </button>
+            </div>
         </div>
         
         <!-- Inputs para Coordenadas Personalizadas -->
@@ -2032,8 +2078,7 @@
             if (customBox) customBox.style.display = 'none';
             const toggleBtn = document.getElementById('btn-toggle-custom-coords');
             if (toggleBtn) {
-                toggleBtn.style.color = '';
-                toggleBtn.style.borderColor = '';
+                toggleBtn.classList.remove('active');
             }
             updateObserverPosition(preset.lat, preset.lon, preset.name, preset.tz);
             closeObserverDropdown();
@@ -2098,8 +2143,7 @@
             customBox.style.display = show ? 'flex' : 'none';
             const toggleBtn = document.getElementById('btn-toggle-custom-coords');
             if (toggleBtn) {
-                toggleBtn.style.color = show ? 'var(--accent-blue)' : '';
-                toggleBtn.style.borderColor = show ? 'var(--accent-blue)' : '';
+                toggleBtn.classList.toggle('active', show);
             }
             if (show) {
                 const latIn = document.getElementById('custom-obs-lat');
