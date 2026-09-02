@@ -455,14 +455,20 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 2px 0;
+            height: 21px;
+            max-height: 21px;
+            min-height: 21px;
+            box-sizing: border-box;
+            padding: 0 4px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.04);
             font-size: 0.76rem;
+            line-height: 20px;
         }
         .stat-lbl {
             color: var(--text-secondary);
             font-size: 0.75rem;
             font-weight: 400;
+            line-height: 20px;
         }
         .stat-val {
             color: #f8fafc;
@@ -470,13 +476,19 @@
             font-size: 0.78rem;
             text-align: right;
             font-family: var(--font-body);
+            line-height: 20px;
         }
         .type-badge-sm {
-            padding: 2px 6px;
+            padding: 0 6px;
             border-radius: 4px;
             font-weight: 400;
             font-size: 0.7rem;
             letter-spacing: 0.4px;
+            line-height: 15px;
+            height: 17px;
+            display: inline-flex;
+            align-items: center;
+            box-sizing: border-box;
         }
 
         .interactive-saros {
@@ -511,48 +523,97 @@
 
         .mataro-badge-header {
             display: flex;
-            justify-content: space-between;
+            justify-content: flex-start;
             align-items: center;
+            height: 24px;
+            box-sizing: border-box;
         }
 
         .mataro-vis-tag {
             font-size: 0.72rem;
             font-weight: 700;
-            padding: 3px 8px;
+            padding: 2px 8px;
+            height: 22px;
+            box-sizing: border-box;
             border-radius: 6px;
-            display: flex;
+            display: inline-flex;
             align-items: center;
-            gap: 4px;
+            gap: 5px;
+            line-height: 1;
         }
 
-        .vis-full { background: rgba(34, 197, 94, 0.22); color: #86efac; border: 1px solid rgba(34, 197, 94, 0.5); }
-        .vis-rise { background: rgba(249, 115, 22, 0.22); color: #fdba74; border: 1px solid rgba(249, 115, 22, 0.5); }
+        .vis-total, .type-T { background: rgba(239, 68, 68, 0.25); color: #ffffff; border: 1px solid #ef4444; }
+        .vis-partial, .type-P { background: rgba(56, 189, 248, 0.25); color: #bae6fd; border: 1px solid #38bdf8; }
+        .vis-full { background: rgba(239, 68, 68, 0.25); color: #ffffff; border: 1px solid #ef4444; }
+        .vis-rise { background: rgba(56, 189, 248, 0.25); color: #bae6fd; border: 1px solid #38bdf8; }
         .vis-set { background: rgba(234, 179, 8, 0.22); color: #fef08a; border: 1px solid rgba(234, 179, 8, 0.5); }
         .vis-none { background: rgba(239, 68, 68, 0.20); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.45); }
 
         .contacts-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 0.74rem;
+            font-size: 0.78rem;
             font-family: var(--font-mono);
+            table-layout: fixed;
+            height: 126px;
+            max-height: 126px;
+            min-height: 126px;
         }
 
         .contacts-table th {
             text-align: left;
-            color: var(--text-dim);
-            padding: 2px 4px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-            font-weight: 600;
+            color: var(--text-secondary);
+            padding: 0 4px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            font-size: 0.75rem;
+            font-weight: 400;
+            height: 21px;
+            max-height: 21px;
+            line-height: 20px;
+            vertical-align: middle;
+            box-sizing: border-box;
+            white-space: nowrap;
         }
 
         .contacts-table tr {
+            height: 21px;
+            max-height: 21px;
+            min-height: 21px;
+            box-sizing: border-box;
             cursor: pointer;
             transition: background 0.15s ease;
+        }
+
+        .contacts-table td {
+            height: 21px;
+            max-height: 21px;
+            min-height: 21px;
+            line-height: 20px;
+            vertical-align: middle;
+            padding: 0 4px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            font-size: 0.78rem;
+            color: #f8fafc;
+            font-weight: 400;
+            box-sizing: border-box;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .contacts-table tr.placeholder-row {
+            cursor: default;
+            user-select: none;
+            pointer-events: none;
         }
 
         .contacts-table tr:hover td {
             background: rgba(56, 189, 248, 0.12);
             color: #fff;
+        }
+
+        .contacts-table tr.placeholder-row:hover td {
+            background: transparent;
         }
 
         .contacts-table tr.active td {
@@ -1346,6 +1407,7 @@
         <!-- Ficha de Datos Astronómicos (NASA GSFC estilo Besselian Explorer) -->
         <div class="eclipse-card" id="eclipse-details">
             <div class="stat-grid">
+                <!-- Columna 1 (6 elementos) -->
                 <div class="stat-row">
                     <span class="stat-lbl">Tipo</span>
                     <span class="stat-val type-badge-sm type-P" id="card-type">PARCIAL</span>
@@ -1355,8 +1417,12 @@
                     <span class="stat-val interactive-saros" id="card-saros" title="Abrir catálogo oficial de la serie Saros (NASA GSFC)">128 <i class="fa-solid fa-arrow-up-right-from-square" style="font-size:0.65rem; opacity:0.8;"></i></span>
                 </div>
                 <div class="stat-row">
-                    <span class="stat-lbl">Magnitud</span>
+                    <span class="stat-lbl">Mag. Umbra</span>
                     <span class="stat-val" id="card-um-mag">0.9299</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-lbl">Mag. Pen.</span>
+                    <span class="stat-val" id="card-pen-mag">1.9421</span>
                 </div>
                 <div class="stat-row">
                     <span class="stat-lbl">Gamma (&gamma;)</span>
@@ -1366,12 +1432,10 @@
                     <span class="stat-lbl">Duración</span>
                     <span class="stat-val" id="card-duration">03h18m</span>
                 </div>
+
+                <!-- Columna 2 (6 elementos) -->
                 <div class="stat-row">
-                    <span class="stat-lbl">Mag. Pen.</span>
-                    <span class="stat-val" id="card-pen-mag">1.9421</span>
-                </div>
-                <div class="stat-row">
-                    <span class="stat-lbl">Duración Tot.</span>
+                    <span class="stat-lbl">Dur. Total</span>
                     <span class="stat-val" id="card-tot-dur">--</span>
                 </div>
                 <div class="stat-row">
@@ -1379,12 +1443,20 @@
                     <span class="stat-val" id="card-time">04:14 UT</span>
                 </div>
                 <div class="stat-row">
-                    <span class="stat-lbl">Lat/Lon</span>
-                    <span class="stat-val" id="card-coords">4.0S 80.0W</span>
+                    <span class="stat-lbl">Latitud</span>
+                    <span class="stat-val" id="card-lat">4° 00' 00" S</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-lbl">Longitud</span>
+                    <span class="stat-val" id="card-lon">80° 00' 00" W</span>
                 </div>
                 <div class="stat-row">
                     <span class="stat-lbl">TD-UT</span>
                     <span class="stat-val" id="card-dt">71.0s</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-lbl">Catálogo</span>
+                    <span class="stat-val" id="card-cat-no">#09542</span>
                 </div>
             </div>
         </div>
@@ -1402,22 +1474,9 @@
             <div class="panel-toggle" onclick="toggleSettingsPanel(false)" title="Minimizar panel"><i class="fa-solid fa-chevron-left"></i></div>
         </div>
 
-        <!-- 1. Modos de Vista -->
+        <!-- 1. Selector de Ubicación del Observador -->
         <div class="section-title" style="margin-top: 4px;">
-            <i class="fa-solid fa-eye"></i> Modo de vista
-        </div>
-        <div class="view-mode-selector">
-            <button class="mode-btn active" id="btn-mode-3d" onclick="switchMainView('3d')" title="Vista orbital 3D en el espacio">
-                <i class="fa-solid fa-cube"></i> Espacio 3D
-            </button>
-            <button class="mode-btn" id="btn-mode-telescopic" onclick="switchMainView('telescopic')" title="Vista telescópica local (Observador)">
-                <i class="fa-solid fa-circle-dot"></i> Telescopio
-            </button>
-        </div>
-
-        <!-- 2. Selector de Ubicación del Observador -->
-        <div class="section-title">
-            <i class="fa-solid fa-location-dot"></i> Ubicación del Observador
+            <i class="fa-solid fa-location-dot"></i> Ubicación
         </div>
         <div style="display: flex; gap: 8px; align-items: center;">
             <div class="custom-combobox-container" id="observer-combobox-container" style="position: relative; flex: 1; min-width: 0;">
@@ -1462,27 +1521,39 @@
         <!-- Indicador de la Ubicación Seleccionada Activa -->
         <div style="margin-top: 6px; margin-bottom: 2px; font-size: 0.74rem; color: var(--accent-blue); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 6px;">
             <i class="fa-solid fa-location-crosshairs" style="font-size: 0.72rem;"></i>
-            <span id="observer-header-subtitle">MATARÓ (41.54°N, 2.44°E)</span>
+            <span id="observer-header-subtitle">41° 32' 58" N  2° 26' 53" E</span>
         </div>
 
-        <!-- 3. Visibilidad y Fases Locales -->
+        <!-- 2. Visibilidad y Fases Locales -->
         <div class="section-title section-title-between">
             <span><i class="fa-solid fa-eye"></i> Visibilidad Local</span>
             <button onclick="exportSelectedEclipseToICal()" style="background: none; border: none; color: var(--accent-blue); font-size: 0.72rem; cursor: pointer; text-decoration: underline;"><i class="fa-solid fa-calendar-plus"></i> iCal</button>
         </div>
         <div class="mataro-card" style="margin-top: 0;">
             <div class="mataro-badge-header">
-                <span style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 600;">Estado:</span>
-                <span class="mataro-vis-tag vis-full" id="mataro-vis-badge"><i class="fa-solid fa-eye"></i> Visible al Orto</span>
+                <span class="mataro-vis-tag vis-full" id="mataro-vis-badge">VISIBLE AL ORTO</span>
             </div>
             <table class="contacts-table" id="mataro-contacts-table">
                 <thead>
-                    <tr><th>Fase</th><th>Hora Local</th><th>Altitud</th><th>Azimut</th></tr>
+                    <tr><th>Fase</th><th id="th-local-time">Hora UTC+2</th><th>Altitud</th><th>Azimut</th></tr>
                 </thead>
                 <tbody id="mataro-contacts-tbody">
                     <!-- Rellenado dinámicamente -->
                 </tbody>
             </table>
+        </div>
+
+        <!-- 3. Modos de Vista -->
+        <div class="section-title">
+            <i class="fa-solid fa-eye"></i> Modo de vista
+        </div>
+        <div class="view-mode-selector">
+            <button class="mode-btn active" id="btn-mode-3d" onclick="switchMainView('3d')" title="Vista orbital 3D en el espacio">
+                <i class="fa-solid fa-cube"></i> Espacio 3D
+            </button>
+            <button class="mode-btn" id="btn-mode-telescopic" onclick="switchMainView('telescopic')" title="Vista telescópica local (Observador)">
+                <i class="fa-solid fa-circle-dot"></i> Telescopio
+            </button>
         </div>
 
         <!-- Capas y Ajustes Visuales -->
@@ -1501,7 +1572,11 @@
             </label>
             <label class="checkbox-row" id="lbl-show-ecliptic">
                 <input type="checkbox" id="chk-show-ecliptic" checked>
-                <span>Plano eclíptico y nodos</span>
+                <span>Plano eclíptico</span>
+            </label>
+            <label class="checkbox-row" id="lbl-show-nodes">
+                <input type="checkbox" id="chk-show-nodes" checked>
+                <span>Nodos de la órbita</span>
             </label>
 
             <!-- Botón Desplegable de Más Opciones -->
@@ -1871,8 +1946,18 @@
                 document.getElementById('card-time').textContent = `${utHours}:${utMins} UT`;
             }
 
-            if (document.getElementById('card-coords')) {
-                document.getElementById('card-coords').textContent = formatLatLonString(ec.zenLat, ec.zenLon, 1);
+            const latElem = document.getElementById('card-lat');
+            const lonElem = document.getElementById('card-lon');
+            if (latElem) {
+                latElem.innerText = (ec.zenLat != null && !isNaN(ec.zenLat)) ? formatCoordDms(ec.zenLat, true) : '--';
+            }
+            if (lonElem) {
+                lonElem.innerText = (ec.zenLon != null && !isNaN(ec.zenLon)) ? formatCoordDms(ec.zenLon, false) : '--';
+            }
+
+            const catElem = document.getElementById('card-cat-no');
+            if (catElem) {
+                catElem.innerText = ec.catNo ? `#${ec.catNo}` : (ec.id ? `#${ec.id}` : '--');
             }
 
             if (document.getElementById('card-dt')) document.getElementById('card-dt').textContent = `${ec.dt || 0}s`;
@@ -2235,12 +2320,7 @@
             // Actualizar etiquetas en la interfaz
             const subtitleEl = document.getElementById('observer-header-subtitle');
             if (subtitleEl) {
-                const coordsStr = formatLatLonString(lat, lon, 2);
-                if (currentObserver.name && currentObserver.name !== coordsStr && currentObserver.name !== 'Personalizado' && !currentObserver.name.startsWith('Lat:')) {
-                    subtitleEl.textContent = `${currentObserver.name.toUpperCase()} · ${coordsStr}`;
-                } else {
-                    subtitleEl.textContent = coordsStr;
-                }
+                subtitleEl.textContent = `${formatCoordDms(lat, true)}  ${formatCoordDms(lon, false)}`;
             }
 
             const obsChkLbl = document.querySelector('#lbl-show-observer span');
@@ -2293,11 +2373,25 @@
             return { alt, az, qRad, qDeg };
         }
 
+        function formatDurationMmSsTenths(sec) {
+            if (sec == null || isNaN(sec) || sec <= 0) return '--';
+            const m = Math.floor(sec / 60);
+            const s = (sec % 60).toFixed(1);
+            return `${String(m).padStart(2, '0')}m ${String(s).padStart(4, '0')}s`;
+        }
+
         function renderMataroCircumstances() {
             const ec = currentEclipse;
             if (!ec) return;
             const tbody = document.getElementById('mataro-contacts-tbody');
+            const thTime = document.getElementById('th-local-time');
             if (!tbody) return;
+
+            if (thTime) {
+                const tzStr = getTzAbbr(new Date(ec.maxMs || Date.now()), currentObserver.tz || "Europe/Madrid");
+                thTime.textContent = 'Hora ' + tzStr;
+            }
+
             const contacts = [
                 { key: 'P1', name: 'Inicio Penumbra', jumpKey: 'p1', ms: ec.p1Ms },
                 { key: 'U1', name: 'Inicio Umbra (Parcial)', jumpKey: 'u1', ms: ec.u1Ms },
@@ -2316,6 +2410,10 @@
                 const isAbove = coords.alt > 0;
                 if (isAbove) visibleCount++;
 
+                // Determinar con precisión si la altitud lunar va subiendo o bajando en este instante
+                const nextCoords = getMoonHorizontalCoords(ec.zenLat, ec.zenLon, c.ms + 60000, ec.maxMs, currentObserver.lat, currentObserver.lon);
+                const isRising = nextCoords.alt >= coords.alt;
+
                 let localTimeStr;
                 try {
                     if (currentObserver.tz) {
@@ -2329,15 +2427,16 @@
                     localTimeStr = new Date(c.ms).toISOString().slice(11, 19);
                 }
 
-                const upCurve = `<svg style="width:10px; height:10px; vertical-align:-0.5px; margin-right:3px; display:inline-block;" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 19 C8 19 13 8 20 5"/><polyline points="14 5 20 5 20 11"/></svg>`;
-                const downCurve = `<svg style="width:10px; height:10px; vertical-align:-0.5px; margin-right:3px; display:inline-block;" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5 C8 5 13 16 20 19"/><polyline points="14 19 20 19 20 13"/></svg>`;
+                const strokeColor = isAbove ? (isRising ? '#4ade80' : '#f59e0b') : 'var(--text-dim)';
+                const arrowUnicode = `<span style="color: ${strokeColor}; font-weight: 700; margin-right: 3px;">${isRising ? '↗' : '↘'}</span>`;
+                const textColor = isAbove ? '#f8fafc' : 'var(--text-dim)';
 
                 rowsHtml += `
                     <tr id="row-contact-${c.key}" onclick="jumpToContact('${c.jumpKey}')" title="Clic para saltar a ${c.key} (${c.name})">
                         <td><strong style="color: var(--accent-blue);">${c.key}</strong></td>
                         <td>${localTimeStr}</td>
-                        <td style="color: ${isAbove ? '#4ade80' : 'var(--text-dim)'}; font-weight: 500;">
-                            ${isAbove ? upCurve : downCurve} ${coords.alt.toFixed(1)}°
+                        <td style="color: ${textColor}; font-weight: 500;">
+                            ${arrowUnicode}${coords.alt.toFixed(1)}°
                         </td>
                         <td>${coords.az.toFixed(0)}°</td>
                     </tr>
@@ -2350,19 +2449,19 @@
             if (badge) {
                 if (visibleCount === contacts.length) {
                     badge.className = 'mataro-vis-tag vis-full';
-                    badge.innerHTML = '<i class="fa-solid fa-eye"></i> Visible Completo';
+                    badge.textContent = 'VISIBLE COMPLETO';
                 } else if (visibleCount > 0) {
                     const firstCoords = getMoonHorizontalCoords(ec.zenLat, ec.zenLon, contacts[0].ms, ec.maxMs, currentObserver.lat, currentObserver.lon);
                     if (firstCoords.alt <= 0) {
                         badge.className = 'mataro-vis-tag vis-rise';
-                        badge.innerHTML = '<i class="fa-solid fa-moon"></i> Visible al Orto';
+                        badge.textContent = 'VISIBLE AL ORTO';
                     } else {
                         badge.className = 'mataro-vis-tag vis-set';
-                        badge.innerHTML = '<i class="fa-solid fa-moon"></i> Visible al Ocaso';
+                        badge.textContent = 'VISIBLE AL OCASO';
                     }
                 } else {
                     badge.className = 'mataro-vis-tag vis-none';
-                    badge.innerHTML = '<i class="fa-solid fa-eye-slash"></i> No Visible';
+                    badge.textContent = 'NO VISIBLE';
                 }
             }
         }
@@ -2780,6 +2879,17 @@
             const lat = Math.asin(Math.max(-1, Math.min(1, v.y / r))) * (180 / Math.PI);
             let lon = Math.atan2(-v.z, v.x) * (180 / Math.PI);
             return { lat, lon };
+        }
+
+        function formatCoordDms(val, isLat) {
+            if (val == null || isNaN(val)) return '--';
+            const dir = isLat ? (val >= 0 ? 'N' : 'S') : (val >= 0 ? 'E' : 'W');
+            const abs = Math.abs(val);
+            const deg = Math.floor(abs);
+            const minFloat = (abs - deg) * 60;
+            const min = Math.floor(minFloat);
+            const sec = Math.round((minFloat - min) * 60);
+            return `${deg}° ${String(min).padStart(2, '0')}' ${String(sec).padStart(2, '0')}" ${dir}`;
         }
 
         function formatLatLonString(lat, lon, precision = 2) {
@@ -3625,8 +3735,13 @@
             moonMesh3D = new THREE.Mesh(moonGeo, moonMat);
             scene3D.add(moonMesh3D);
 
-            // Línea de Órbita Lunar 3D (Trazado con mayor contraste)
-            const orbitMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.45 });
+            // Línea de Órbita Lunar 3D (Azul celeste luminoso idéntico a Solar Eclipse Explorer)
+            const orbitMat = new THREE.LineBasicMaterial({
+                color: 0x38bdf8,
+                transparent: true,
+                opacity: 0.60,
+                depthWrite: false
+            });
             const orbitGeo = new THREE.BufferGeometry();
             moonOrbitLine3D = new THREE.Line(orbitGeo, orbitMat);
             moonOrbitLine3D.frustumCulled = false;
@@ -3648,8 +3763,9 @@
             // Plano Eclíptico 3D de Referencia
             eclipticPlaneGroup3D = createEclipticPlane3D();
             const showEcliptic = document.getElementById('chk-show-ecliptic') ? document.getElementById('chk-show-ecliptic').checked : true;
+            const showNodes = document.getElementById('chk-show-nodes') ? document.getElementById('chk-show-nodes').checked : true;
             eclipticPlaneGroup3D.visible = showEcliptic;
-            nodeLine3D.visible = showEcliptic;
+            nodeLine3D.visible = showNodes;
             scene3D.add(eclipticPlaneGroup3D);
 
             const showCones = document.getElementById('chk-show-cones') ? document.getElementById('chk-show-cones').checked : true;
@@ -3676,9 +3792,13 @@
                 if (renderer3D && scene3D && camera3D) renderer3D.render(scene3D, camera3D);
             });
             document.getElementById('chk-show-ecliptic')?.addEventListener('change', (e) => {
-                const vis = e.target.checked;
-                if (eclipticPlaneGroup3D) eclipticPlaneGroup3D.visible = vis;
-                if (nodeLine3D) nodeLine3D.visible = vis;
+                if (eclipticPlaneGroup3D) eclipticPlaneGroup3D.visible = e.target.checked;
+                scene3DNeedsRender = true;
+                if (renderer3D && scene3D && camera3D) renderer3D.render(scene3D, camera3D);
+            });
+            document.getElementById('chk-show-nodes')?.addEventListener('change', (e) => {
+                if (nodeLine3D) nodeLine3D.visible = e.target.checked;
+                update3DEclipseGeometry();
                 scene3DNeedsRender = true;
                 if (renderer3D && scene3D && camera3D) renderer3D.render(scene3D, camera3D);
             });
@@ -3773,6 +3893,8 @@
             // Actualizar Línea de los Nodos (Eje longitudinal que atraviesa la Tierra y une ambos nodos)
             const NODE_R = 700.0;
             if (nodeLine3D) {
+                const showNodes = document.getElementById('chk-show-nodes') ? document.getElementById('chk-show-nodes').checked : true;
+                nodeLine3D.visible = showNodes;
                 const nodePts = [
                     uNode.clone().multiplyScalar(-NODE_R),
                     uNode.clone().multiplyScalar(NODE_R)
@@ -4393,6 +4515,7 @@
                 { lbl: 'lbl-show-graticule', chk: 'chk-show-graticule' },
                 { lbl: 'lbl-show-cones', chk: 'chk-show-cones' },
                 { lbl: 'lbl-show-ecliptic', chk: 'chk-show-ecliptic' },
+                { lbl: 'lbl-show-nodes', chk: 'chk-show-nodes' },
                 { lbl: 'lbl-show-limits', chk: 'chk-show-limits' }
             ];
             opt3D.forEach(o => {
