@@ -4314,18 +4314,18 @@
 
             // Avisos de estado en el radar (encima del perfil del limbo, en color blanco puro #ffffff)
             let noticeLines = null;
-            if (isTotalNow) {
-                noticeLines = [
-                    "Fotosfera completamente oculta tras el limbo lunar.",
-                    "Corona visible."
-                ];
-            } else if (activeBeads && activeBeads.length > 0) {
+            if (activeBeads && activeBeads.length > 0) {
                 if (isDiamondRing) {
                     noticeLines = ["Anillo de Diamantes"];
                 } else {
                     const fallbackText = activeBeads.length === 1 ? '1 perla activa' : `${activeBeads.length} perlas activas`;
                     noticeLines = [announcementText || fallbackText];
                 }
+            } else if (isTotalNow) {
+                noticeLines = [
+                    "Fotosfera completamente oculta tras el limbo lunar.",
+                    "Corona visible."
+                ];
             }
 
             if (showLimbLabels && noticeLines && noticeLines.length > 0) {
@@ -4941,10 +4941,11 @@
                     if (isDiamondRing) {
                         pillBead.style.display = 'inline-flex';
                         pillBead.textContent = 'Anillo de Diamantes';
-                    } else if (beadAnnouncement) {
+                    } else if (activeBeadsList.length > 0) {
                         pillBead.style.display = 'inline-flex';
-                        pillBead.textContent = beadAnnouncement;
-                    } else if (isTotalNow) {
+                        const fallbackText = activeBeadsList.length === 1 ? '1 perla activa' : `${activeBeadsList.length} perlas activas`;
+                        pillBead.textContent = beadAnnouncement || fallbackText;
+                    } else if (isTotalNow && activeBeadsList.length === 0) {
                         pillBead.style.display = 'inline-flex';
                         pillBead.textContent = 'Fotosfera oculta · Corona visible';
                     } else {
@@ -4954,10 +4955,40 @@
                 if (pillCoords) {
                     const isAbove = p.alt > -0.5;
                     pillCoords.className = isAbove ? 'hud-pill altaz' : 'hud-pill warning';
-                    const magStr = (magNow * 100).toFixed(1);
+
+                    // Cálculo astronómico riguroso de oscurecimiento (fracción de superficie solar cubierta)
+                    let obsFraction = 0;
+                    if (p && p.delta < p.L1) {
+                        const rS = (p.L1 + p.L2) / 2.0;
+                        const rM = (p.L1 - p.L2) / 2.0;
+                        const d = p.delta;
+                        if (d <= rM - rS) {
+                            obsFraction = 1.0;
+                        } else if (d >= rS + rM) {
+                            obsFraction = 0.0;
+                        } else {
+                            const r1sq = rS * rS, r2sq = rM * rM;
+                            const alpha = 2.0 * Math.acos(Math.max(-1.0, Math.min(1.0, (d * d + r1sq - r2sq) / (2.0 * d * rS))));
+                            const beta = 2.0 * Math.acos(Math.max(-1.0, Math.min(1.0, (d * d + r2sq - r1sq) / (2.0 * d * rM))));
+                            const area = 0.5 * (r1sq * (alpha - Math.sin(alpha)) + r2sq * (beta - Math.sin(beta)));
+                            obsFraction = Math.max(0.0, Math.min(1.0, area / (Math.PI * r1sq)));
+                        }
+                    }
+
+                    // Mientras existan perlas de Baily o anillo de diamantes, la ocultación física de la fotosfera no es del 100%
+                    let obsPct = obsFraction * 100;
+                    if ((activeBeadsList.length > 0 || isDiamondRing) && obsPct >= 99.85) {
+                        obsPct = 99.9;
+                    } else if (!isTotalNow && obsPct >= 100.0) {
+                        obsPct = 99.9;
+                    } else if (isTotalNow && activeBeadsList.length === 0) {
+                        obsPct = 100.0;
+                    }
+                    const obsStr = obsPct.toFixed(1);
+
                     pillCoords.textContent = isAbove
-                        ? `Alt: ${p.alt.toFixed(1)}° · Az: ${p.az.toFixed(1)}° · Ocultación: ${magStr}% · Paraláctico q: ${p.qDeg >= 0 ? '+' : ''}${p.qDeg.toFixed(1)}°`
-                        : `Bajo el horizonte (${p.alt.toFixed(1)}°) · Ocultación: ${magStr}%`;
+                        ? `Alt: ${p.alt.toFixed(1)}° · Az: ${p.az.toFixed(1)}° · Ocultación: ${obsStr}% · Paraláctico q: ${p.qDeg >= 0 ? '+' : ''}${p.qDeg.toFixed(1)}°`
+                        : `Bajo el horizonte (${p.alt.toFixed(1)}°) · Ocultación: ${obsStr}%`;
                 }
             }
 
