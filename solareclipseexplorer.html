@@ -1596,7 +1596,7 @@
                 <span style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; color: #94a3b8; font-size: 0.72rem;"><i class="fa-solid fa-chevron-down"></i></span>
                 
                 <!-- Desplegable Filtrable Flotante Estilizado Adaptativo -->
-                <div id="observer-dropdown-menu" class="custom-dropdown-menu" style="display: none; position: absolute; top: calc(100% + 4px); left: 0; min-width: 100%; width: max-content; max-width: calc(100% + 116px); box-sizing: border-box; max-height: 230px; overflow-y: auto; background: #0b1329; border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 10px; box-shadow: 0 12px 30px rgba(0,0,0,0.85); z-index: 1000; padding: 4px; font-family: var(--font-mono);">
+                <div id="observer-dropdown-menu" class="custom-dropdown-menu" style="display: none; position: absolute; top: calc(100% + 4px); left: 0; min-width: 100%; width: max-content; max-width: calc(100% + 116px); box-sizing: border-box; max-height: 230px; overflow-y: auto; background: #0b1329; border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 10px; box-shadow: 0 12px 30px rgba(0,0,0,0.85); z-index: 1000; padding: 4px;">
                     <!-- Poblado dinámicamente -->
                 </div>
             </div>
@@ -2988,10 +2988,9 @@
             matches.forEach((preset, idx) => {
                 const item = document.createElement('div');
                 item.className = 'dropdown-option-item';
-                item.style.padding = '6px 9px';
-                item.style.fontFamily = 'var(--font-mono)';
-                item.style.fontSize = '0.74rem';
-                item.style.letterSpacing = '-0.01em';
+                item.style.padding = '7px 10px';
+                item.style.fontFamily = 'var(--font-body)';
+                item.style.fontSize = '0.82rem';
                 item.style.color = (preset.name === currentObserver.name) ? 'var(--accent-blue)' : '#f8fafc';
                 item.style.fontWeight = (preset.name === currentObserver.name) ? '600' : '400';
                 item.style.cursor = 'pointer';
@@ -3010,7 +3009,7 @@
                     displayHtml = `<strong style="color: var(--accent-blue);">${preset.name.slice(0, matchLen)}</strong>${preset.name.slice(matchLen)}`;
                 }
 
-                item.innerHTML = `<span style="font-family: var(--font-mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${displayHtml}</span><span style="font-family: var(--font-mono); font-size: 0.70rem; color: #64748b; flex-shrink: 0;">${formatLatLonString(preset.lat, preset.lon, 1)}</span>`;
+                item.innerHTML = `<span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${displayHtml}</span><span style="font-family: var(--font-mono); font-size: 0.78rem; color: #94a3b8; flex-shrink: 0; white-space: nowrap;">${formatLatLonString(preset.lat, preset.lon, 1)}</span>`;
 
                 item.onmouseenter = () => { item.style.background = 'rgba(56, 189, 248, 0.18)'; };
                 item.onmouseleave = () => { if (idx !== activeDropdownIndex) item.style.background = 'transparent'; };
