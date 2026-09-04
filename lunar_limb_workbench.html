@@ -1,0 +1,1376 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Banco de Pruebas: Limbo Lunar LOLA LRO (3.600 puntos) &amp; Perlas de Baily</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Datasets astronómicos -->
+    <script src="solar_eclipses_data.js"></script>
+    <script src="lunar_limb_lola_data.js"></script>
+
+    <style>
+        :root {
+            --bg-dark: #030712;
+            --bg-card: #0b1329;
+            --bg-panel: #0f172a;
+            --border-color: rgba(56, 189, 248, 0.25);
+            --border-active: rgba(56, 189, 248, 0.7);
+            --accent-blue: #38bdf8;
+            --accent-cyan: #22d3ee;
+            --accent-yellow: #facc15;
+            --accent-green: #4ade80;
+            --accent-red: #f87171;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --font-main: 'Plus Jakarta Sans', sans-serif;
+            --font-heading: 'Outfit', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: var(--font-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        header {
+            background: linear-gradient(180deg, rgba(15, 23, 42, 0.95), rgba(11, 19, 41, 0.85));
+            border-bottom: 1px solid var(--border-color);
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-title i {
+            font-size: 1.6rem;
+            color: var(--accent-cyan);
+            filter: drop-shadow(0 0 10px rgba(34, 211, 238, 0.5));
+        }
+
+        .header-title h1 {
+            font-family: var(--font-heading);
+            font-size: 1.25rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .header-title span {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            background: rgba(34, 211, 238, 0.15);
+            border: 1px solid rgba(34, 211, 238, 0.35);
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-family: var(--font-mono);
+            color: var(--accent-cyan);
+            font-weight: 600;
+        }
+
+        .main-layout {
+            display: grid;
+            grid-template-columns: 430px 1fr;
+            gap: 16px;
+            padding: 16px;
+            flex: 1;
+        }
+
+        @media (max-width: 1150px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            max-height: calc(100vh - 80px);
+            overflow-y: auto;
+            position: sticky;
+            top: 20px;
+        }
+
+        .panel-title {
+            font-family: var(--font-heading);
+            font-size: 0.92rem;
+            font-weight: 700;
+            color: var(--accent-blue);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            padding-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .control-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+        }
+
+        .control-row label {
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .control-row .val-badge {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--accent-cyan);
+            background: rgba(34, 211, 238, 0.1);
+            padding: 1px 6px;
+            border-radius: 4px;
+            border: 1px solid rgba(34, 211, 238, 0.2);
+        }
+
+        select, input[type="text"], input[type="number"] {
+            background: var(--bg-dark);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 0.82rem;
+            font-family: var(--font-main);
+            outline: none;
+            width: 100%;
+        }
+
+        select:focus, input:focus {
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 8px rgba(34, 211, 238, 0.3);
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            outline: none;
+            appearance: none;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background: var(--accent-cyan);
+            cursor: pointer;
+            box-shadow: 0 0 8px rgba(34, 211, 238, 0.8);
+        }
+
+        .btn-group {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+        }
+
+        .btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-main);
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .btn:hover {
+            background: rgba(56, 189, 248, 0.15);
+            border-color: var(--accent-blue);
+            color: var(--accent-blue);
+        }
+
+        .btn.active {
+            background: rgba(34, 211, 238, 0.2);
+            border-color: var(--accent-cyan);
+            color: #ffffff;
+            box-shadow: 0 0 10px rgba(34, 211, 238, 0.3);
+        }
+
+        /* Área de Visualización Central */
+        .workspace-grid {
+            display: grid;
+            grid-template-rows: auto 1fr auto;
+            gap: 16px;
+        }
+
+        .visualizer-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        /* Caja de telemetría superior réplica exacta de Eclipse 2.0 */
+        .eclipse2-header-box {
+            background: rgba(1, 10, 18, 0.85);
+            border: 1px solid rgba(56, 189, 248, 0.25);
+            border-radius: 8px;
+            padding: 10px 14px;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
+            font-family: var(--font-mono);
+            font-size: 0.78rem;
+        }
+
+        .radar-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 0;
+            background: radial-gradient(circle, #021a29 0%, #010a12 100%);
+            border-radius: 8px;
+            border: 1px solid rgba(56, 189, 248, 0.15);
+        }
+
+        canvas {
+            display: block;
+            image-rendering: auto;
+        }
+
+        /* Tabla de Perfil y Picos */
+        .telemetry-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+        }
+
+        .telemetry-table th {
+            text-align: left;
+            color: var(--text-muted);
+            padding: 4px 8px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            font-weight: 500;
+        }
+
+        .telemetry-table td {
+            padding: 4px 8px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            color: var(--text-main);
+        }
+
+        .tag-peak {
+            color: #4ade80;
+            font-weight: 600;
+        }
+
+        .tag-valley {
+            color: #f87171;
+            font-weight: 600;
+        }
+
+        .tag-bead {
+            color: #fef08a;
+            background: rgba(234, 179, 8, 0.2);
+            padding: 1px 4px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-title">
+            <i class="fa-solid fa-moon"></i>
+            <div>
+                <h1>Banco de Pruebas: Limbo Lunar &amp; Perlas de Baily</h1>
+                <p style="font-size: 0.72rem; color: var(--text-muted);">Calibración topográfica LRO LOLA DEM vs. Eclipse 2.0 (Eduard Masana) &amp; Occult4</p>
+            </div>
+            <span>LOLA 3.600pt (0.1°)</span>
+        </div>
+        <div style="display: flex; gap: 8px;">
+            <button class="btn active" onclick="resetTo2026Screenshot()"><i class="fa-solid fa-image"></i> Calibrar Captura (l:0.4, b:0, c:14)</button>
+            <button class="btn" onclick="resetTo2026Mataro()"><i class="fa-solid fa-location-dot"></i> Mataró 2026</button>
+            <button class="btn" onclick="resetTo2027Luxor()"><i class="fa-solid fa-sun"></i> Luxor 2027</button>
+        </div>
+    </header>
+
+    <div class="main-layout">
+        
+        <!-- Panel Izquierdo: Controles Astronómicos y Selenográficos -->
+        <div class="panel">
+            <div class="panel-title">
+                <span><i class="fa-solid fa-sliders"></i> Parámetros del Limbo</span>
+                <span id="txt-calc-status" style="font-size: 0.70rem; color: var(--accent-green); text-transform: none;">● 3.600 nodos (0.1°)</span>
+            </div>
+
+            <!-- Preajustes Rápidos -->
+            <div class="control-group">
+                <label style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">Escenario Astronómico</label>
+                <select id="sel-preset-scenario" onchange="applyPresetScenario(this.value)">
+                    <option value="screenshot_masana">Captura Eclipse 2.0 (l: 0.4°, b: 0.0°, c: 14.0°, P2': 123.1°, P3': 303.7°)</option>
+                    <option value="2026_mataro">12 Ago 2026 - Mataró (Puesta de Sol / Bajas altitudes)</option>
+                    <option value="2026_ge">12 Ago 2026 - Mayor Eclipse (GE Islandia / Mar)</option>
+                    <option value="2027_luxor">2 Ago 2027 - Luxor, Egipto (Máx. Duración GD)</option>
+                </select>
+            </div>
+
+            <!-- Modo de Orientación del Radar -->
+            <div class="control-group">
+                <div class="control-row">
+                    <label><i class="fa-solid fa-compass"></i> Orientación del Radar</label>
+                </div>
+                <div class="btn-group">
+                    <button class="btn active" id="btn-ori-north" onclick="setOrientation('north')">Norte Arriba [N]</button>
+                    <button class="btn" id="btn-ori-zenith" onclick="setOrientation('zenith')">Cenit Arriba (V)</button>
+                    <button class="btn" id="btn-ori-lunar" onclick="setOrientation('lunar')">Eje Lunar (NL)</button>
+                </div>
+            </div>
+
+            <!-- Sentido de Giro Angular -->
+            <div class="control-group">
+                <div class="control-row">
+                    <label><i class="fa-solid fa-arrows-spin"></i> Sentido Angular del Limbo</label>
+                </div>
+                <div class="btn-group" style="grid-template-columns: 1fr 1fr;">
+                    <button class="btn active" id="btn-dir-ccw" onclick="setAngularDirection('ccw')">Astronómico (Este Izq.)</button>
+                    <button class="btn" id="btn-dir-cw" onclick="setAngularDirection('cw')">Geográfico (Este Der.)</button>
+                </div>
+            </div>
+
+            <!-- Sliders de Libración Selenográfica -->
+            <div class="control-group">
+                <div class="control-row">
+                    <label>Libración en Longitud (l)</label>
+                    <span class="val-badge" id="lbl-val-l">+0.40°</span>
+                </div>
+                <input type="range" id="rng-lib-l" min="-8.5" max="8.5" step="0.05" value="0.4" oninput="updateControls()">
+            </div>
+
+            <div class="control-group">
+                <div class="control-row">
+                    <label>Libración en Latitud (b)</label>
+                    <span class="val-badge" id="lbl-val-b">+0.00°</span>
+                </div>
+                <input type="range" id="rng-lib-b" min="-8.5" max="8.5" step="0.05" value="0.0" oninput="updateControls()">
+            </div>
+
+            <div class="control-group">
+                <div class="control-row">
+                    <label>Ángulo del Eje Lunar (C / P)</label>
+                    <span class="val-badge" id="lbl-val-c">+14.0°</span>
+                </div>
+                <input type="range" id="rng-axis-c" min="-35" max="35" step="0.1" value="14.0" oninput="updateControls()">
+            </div>
+
+            <div class="control-group">
+                <div class="control-row">
+                    <label>Ángulo Paraláctico / Cenital (q)</label>
+                    <span class="val-badge" id="lbl-val-q">332.0°</span>
+                </div>
+                <input type="range" id="rng-zenith-q" min="0" max="360" step="0.5" value="332.0" oninput="updateControls()">
+            </div>
+
+            <div class="control-group">
+                <div class="control-row">
+                    <label>Contacto C2' (P2')</label>
+                    <span class="val-badge" id="lbl-val-p2">123.1°</span>
+                </div>
+                <input type="range" id="rng-p2" min="0" max="360" step="0.1" value="123.1" oninput="updateControls()">
+            </div>
+
+            <div class="control-group">
+                <div class="control-row">
+                    <label>Contacto C3' (P3')</label>
+                    <span class="val-badge" id="lbl-val-p3">303.7°</span>
+                </div>
+                <input type="range" id="rng-p3" min="0" max="360" step="0.1" value="303.7" oninput="updateControls()">
+            </div>
+
+            <div class="control-group">
+                <div class="control-row">
+                    <label>Exageración del Relieve Topográfico</label>
+                    <span class="val-badge" id="lbl-val-exag">2.5x</span>
+                </div>
+                <input type="range" id="rng-exag" min="1.0" max="25.0" step="0.5" value="2.5" oninput="updateControls()">
+            </div>
+
+            <!-- Fórmulas y Convención de Indexación -->
+            <div class="control-group">
+                <label style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">Indexación del Dataset LOLA</label>
+                <select id="sel-index-formula" onchange="updateControls()">
+                    <option value="wa_standard">Ángulo de Watts: WA = PA - C (Estándar Occult / IOTA)</option>
+                    <option value="pa_direct">Ángulo de Posición Directo: WA = PA</option>
+                    <option value="wa_inverted">Ángulo Invertido: WA = PA + C</option>
+                </select>
+            </div>
+
+            <!-- Simulación Dinámica de Perlas de Baily y Anillo de Diamantes -->
+            <div class="control-group" style="background: rgba(250, 204, 21, 0.05); padding: 12px; border-radius: 10px; border: 1px solid rgba(250, 204, 21, 0.3); margin-top: 6px;">
+                <div class="control-row">
+                    <label style="color: var(--accent-yellow); font-weight: 700; font-size: 0.85rem;"><i class="fa-solid fa-sparkles"></i> Perlas de Baily & Diamante</label>
+                    <span class="val-badge" id="lbl-beads-count" style="color: var(--accent-yellow); border-color: rgba(250,204,21,0.5); font-weight: 700; font-size: 0.75rem;">0 activas</span>
+                </div>
+                
+                <div class="control-row" style="margin-top: 8px;">
+                    <label style="font-size: 0.75rem;">Fase de Contacto</label>
+                    <div style="display: flex; gap: 4px;">
+                        <button type="button" class="btn active" id="btn-phase-c2" onclick="setBailyPhase('c2')" style="font-size: 0.72rem; padding: 4px 10px;">C2' (Entrada)</button>
+                        <button type="button" class="btn" id="btn-phase-c3" onclick="setBailyPhase('c3')" style="font-size: 0.72rem; padding: 4px 10px;">C3' (Salida)</button>
+                    </div>
+                </div>
+
+                <div class="control-row" style="margin-top: 8px;">
+                    <label style="font-size: 0.75rem;">Tiempo relativo a contacto (Δt)</label>
+                    <span class="val-badge" id="lbl-baily-time" style="font-size: 0.88rem; font-weight: 700; color: #38bdf8; font-family: var(--font-mono);">-3.0 s</span>
+                </div>
+                <input type="range" id="rng-baily-time" min="-12.0" max="6.0" step="0.1" value="-3.0" oninput="onBailyTimeSlider(this.value)">
+
+                <!-- Barra de reproducción dinámica (Play / Pause / Diamante / Reset) -->
+                <div style="display: flex; gap: 6px; margin-top: 10px; align-items: center;">
+                    <button type="button" id="btn-baily-play" onclick="toggleBailyPlay()" class="btn" style="flex: 1; padding: 7px 12px; font-size: 0.82rem; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 6px; background: linear-gradient(135deg, #0284c7, #0369a1); border: 1px solid #38bdf8; border-radius: 6px; color: white; cursor: pointer;">
+                        <i class="fa-solid fa-play" id="icon-baily-play"></i> <span id="txt-baily-play">Play</span>
+                    </button>
+                    <button type="button" onclick="jumpToDiamondRing()" class="btn" style="padding: 7px 10px; font-size: 0.78rem; font-weight: 700; color: #facc15; border: 1px solid rgba(250,204,21,0.5); border-radius: 6px; background: rgba(250,204,21,0.12); cursor: pointer;" title="Ir al instante exacto del Anillo de Diamantes">
+                        💎 Diamante
+                    </button>
+                    <button type="button" onclick="resetBailySequence()" class="btn" style="padding: 7px 10px; font-size: 0.78rem; border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; background: rgba(255,255,255,0.08); color: #cbd5e1; cursor: pointer;" title="Reiniciar secuencia">
+                        <i class="fa-solid fa-rotate-left"></i>
+                    </button>
+                </div>
+
+                <div class="control-row" style="margin-top: 8px; font-size: 0.72rem;">
+                    <label style="color: var(--text-muted);">Velocidad de reproducción</label>
+                    <select id="sel-baily-speed" onchange="updateBailySpeed()" style="padding: 2px 6px; font-size: 0.72rem; width: 75px; background: #070d18; border: 1px solid rgba(255,255,255,0.15); color: #cbd5e1; border-radius: 4px;">
+                        <option value="0.25">0.25x</option>
+                        <option value="0.5" selected>0.5x</option>
+                        <option value="1.0">1.0x</option>
+                        <option value="2.0">2.0x</option>
+                    </select>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Panel Derecho: Visualizadores (Radar Polar + Perfil Lineal + Tabla) -->
+        <div class="workspace-grid">
+            
+            <!-- Visualizador 1: Radar Polar 360° -->
+            <div class="visualizer-card">
+                <div class="panel-title">
+                    <span><i class="fa-solid fa-circle-dot"></i> 1. Radar Polar del Limbo (Fidelidad 3.600 Puntos a 0.1°)</span>
+                    <span style="font-size: 0.72rem; color: var(--text-muted);">Círculo Blanco Nominal: R = 1737.4 km</span>
+                </div>
+
+                <!-- Réplica de datos superiores de Eclipse 2.0 -->
+                <div class="eclipse2-header-box">
+                    <div>
+                        <div style="color: #38bdf8; font-weight: 600;">C2': 12h 03m 29.4s (-0.7s)</div>
+                        <div style="color: var(--text-muted);">P2': <strong style="color: #38bdf8;" id="hdr-p2">123.1°</strong></div>
+                    </div>
+                    <div>
+                        <div style="color: #38bdf8; font-weight: 600;">C3': 12h 09m 49.9s (-1.1s)</div>
+                        <div style="color: var(--text-muted);">P3': <strong style="color: #38bdf8;" id="hdr-p3">303.7°</strong></div>
+                    </div>
+                    <div>
+                        <div style="color: #fef08a; font-weight: 600;">Dur.: 6m 20.5s (-1.9s)</div>
+                        <div style="color: var(--text-muted);">l: <span id="hdr-l">0.4°</span> | b: <span id="hdr-b">0.0°</span> | c: <span id="hdr-c">14.0°</span></div>
+                    </div>
+                </div>
+
+                <div class="radar-container">
+                    <canvas id="canvas-radar" width="500" height="500" style="width: 500px; height: 500px;"></canvas>
+                </div>
+                <div style="display: flex; justify-content: space-around; font-size: 0.75rem; color: var(--text-muted); padding-top: 4px;">
+                    <span><strong style="color: var(--accent-red);">■ Norte (0°)</strong></span>
+                    <span><strong style="color: var(--accent-yellow);">■ Cenit (q)</strong></span>
+                    <span><strong style="color: var(--accent-green);">■ Eje Lunar (NL/SL)</strong></span>
+                    <span><strong style="color: var(--accent-blue);">■ Contactos (C2'/C3')</strong></span>
+                    <span><strong style="color: #ffffff;">■ Relieve LOLA 3.600pt</strong></span>
+                </div>
+            </div>
+
+            <!-- Visualizador 2: Perfil Cartesiano Desplegado (0° a 360°) -->
+            <div class="visualizer-card">
+                <div class="panel-title">
+                    <span><i class="fa-solid fa-chart-area"></i> 2. Perfil Lineal Desplegado (0° a 360°) vs. Cota en Kilómetros</span>
+                    <span id="txt-hover-info" style="font-family: var(--font-mono); color: var(--accent-cyan); font-size: 0.75rem;">Mueve el ratón para inspeccionar</span>
+                </div>
+                <div style="background: #020b14; border-radius: 8px; border: 1px solid rgba(56, 189, 248, 0.15); padding: 6px;">
+                    <canvas id="canvas-linear" width="820" height="180" style="width: 100%; height: 180px; cursor: crosshair;"></canvas>
+                </div>
+            </div>
+
+            <!-- Visualizador 3: Telemetría de Cumbres, Valles y Perlas de Baily -->
+            <div class="visualizer-card">
+                <div class="panel-title">
+                    <span><i class="fa-solid fa-sparkles" style="color: #facc15;"></i> 3. Desglose Fotométrico en Tiempo Real de Perlas de Baily</span>
+                </div>
+                <div style="max-height: 160px; overflow-y: auto;">
+                    <table class="telemetry-table" id="tbl-telemetry">
+                        <thead>
+                            <tr>
+                                <th>Estado</th>
+                                <th>Perla / Accidente</th>
+                                <th>Ángulo PA</th>
+                                <th>Ángulo Watts</th>
+                                <th>Cota Valle</th>
+                                <th>Apertura Fotométrica</th>
+                                <th>Brillo Relativo</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-telemetry">
+                            <!-- Inyectado dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <script>
+        // =========================================================================
+        // ESTADO GLOBAL DEL BANCO DE PRUEBAS
+        // =========================================================================
+        let currentOrientation = 'north';
+        let currentAngularDir = 'ccw';
+        let hoverPA = null;
+
+        // Variables de Perlas de Baily y Diamante
+        let bailyPhase = 'c2';
+        let bailyTime = -3.0;
+        let bailyPlaying = false;
+        let bailyAnimFrame = null;
+        let lastTimestamp = 0;
+        let bailySpeed = 0.5;
+        let currentActiveBeadsList = [];
+
+        window.addEventListener('DOMContentLoaded', () => {
+            initCanvasEvents();
+            resetTo2026Screenshot();
+        });
+
+        function setOrientation(mode) {
+            currentOrientation = mode;
+            document.getElementById('btn-ori-north').classList.toggle('active', mode === 'north');
+            document.getElementById('btn-ori-zenith').classList.toggle('active', mode === 'zenith');
+            document.getElementById('btn-ori-lunar').classList.toggle('active', mode === 'lunar');
+            updateControls();
+        }
+
+        function setAngularDirection(dir) {
+            currentAngularDir = dir;
+            document.getElementById('btn-dir-ccw').classList.toggle('active', dir === 'ccw');
+            document.getElementById('btn-dir-cw').classList.toggle('active', dir === 'cw');
+            updateControls();
+        }
+
+        function resetTo2026Screenshot() {
+            document.getElementById('sel-preset-scenario').value = 'screenshot_masana';
+            document.getElementById('rng-lib-l').value = 0.40;
+            document.getElementById('rng-lib-b').value = 0.00;
+            document.getElementById('rng-axis-c').value = 14.0;
+            document.getElementById('rng-zenith-q').value = 28.0;
+            document.getElementById('rng-p2').value = 123.1;
+            document.getElementById('rng-p3').value = 303.7;
+            document.getElementById('rng-exag').value = 2.5;
+            document.getElementById('sel-index-formula').value = 'wa_standard';
+            setBailyPhase('c2');
+            bailyTime = -3.0;
+            document.getElementById('rng-baily-time').value = bailyTime;
+            updateBailyTimeLabel();
+            setOrientation('north');
+            setAngularDirection('ccw');
+            updateControls();
+        }
+
+        function resetTo2026Mataro() {
+            document.getElementById('sel-preset-scenario').value = '2026_mataro';
+            document.getElementById('rng-lib-l').value = 0.40;
+            document.getElementById('rng-lib-b').value = 0.05;
+            document.getElementById('rng-axis-c').value = 14.1;
+            document.getElementById('rng-zenith-q').value = 248.5;
+            document.getElementById('rng-p2').value = 123.1;
+            document.getElementById('rng-p3').value = 303.7;
+            document.getElementById('rng-exag').value = 4.5;
+            document.getElementById('sel-index-formula').value = 'wa_standard';
+            updateControls();
+        }
+
+        function resetTo2027Luxor() {
+            document.getElementById('sel-preset-scenario').value = '2027_luxor';
+            document.getElementById('rng-lib-l').value = -4.80;
+            document.getElementById('rng-lib-b').value = +0.65;
+            document.getElementById('rng-axis-c').value = -18.2;
+            document.getElementById('rng-zenith-q').value = 92.0;
+            document.getElementById('rng-p2').value = 75.0;
+            document.getElementById('rng-p3').value = 255.0;
+            document.getElementById('rng-exag').value = 4.5;
+            document.getElementById('sel-index-formula').value = 'wa_standard';
+            updateControls();
+        }
+
+        function applyPresetScenario(val) {
+            if (val === 'screenshot_masana') resetTo2026Screenshot();
+            else if (val === '2026_mataro') resetTo2026Mataro();
+            else if (val === '2027_luxor') resetTo2027Luxor();
+        }
+
+        // =========================================================================
+        // MOTOR DE CÁLCULO TOPOGRÁFICO LOLA DEM A 3.600 PUNTOS
+        // =========================================================================
+        function evaluateLolaLimb(paDeg, libL, libB, axisC) {
+            if (typeof getLolaLimbElevation === 'function') {
+                const h = getLolaLimbElevation(paDeg, libL, libB, axisC);
+                const wa = ((paDeg - axisC) % 360.0 + 360.0) % 360.0;
+                return { hKm: h, waDeg: wa };
+            }
+            return { hKm: 0, waDeg: 0 };
+        }
+
+        
+        // =========================================================================
+        // MOTOR DE TIEMPO Y ANIMACIÓN DE PERLAS DE BAILY
+        // =========================================================================
+        function setBailyPhase(phase) {
+            bailyPhase = phase;
+            document.getElementById('btn-phase-c2').classList.toggle('active', phase === 'c2');
+            document.getElementById('btn-phase-c3').classList.toggle('active', phase === 'c3');
+            
+            const rng = document.getElementById('rng-baily-time');
+            if (phase === 'c2') {
+                rng.min = -12.0; rng.max = 4.0;
+                bailyTime = -4.0;
+            } else {
+                rng.min = -4.0; rng.max = 12.0;
+                bailyTime = -2.0;
+            }
+            rng.value = bailyTime;
+            updateBailyTimeLabel();
+            updateControls();
+        }
+
+        function onBailyTimeSlider(val) {
+            bailyTime = parseFloat(val);
+            updateBailyTimeLabel();
+            updateControls();
+        }
+
+        function updateBailyTimeLabel() {
+            const lbl = document.getElementById('lbl-baily-time');
+            if (lbl) {
+                lbl.textContent = (bailyTime >= 0 ? '+' : '') + bailyTime.toFixed(1) + ' s';
+            }
+        }
+
+        function toggleBailyPlay() {
+            bailyPlaying = !bailyPlaying;
+            const btn = document.getElementById('btn-baily-play');
+            const icon = document.getElementById('icon-baily-play');
+            const txt = document.getElementById('txt-baily-play');
+            if (bailyPlaying) {
+                icon.className = 'fa-solid fa-pause';
+                txt.textContent = 'Pausa';
+                btn.style.background = 'linear-gradient(135deg, #eab308, #ca8a04)';
+                lastTimestamp = performance.now();
+                bailyAnimFrame = requestAnimationFrame(bailyAnimLoop);
+            } else {
+                icon.className = 'fa-solid fa-play';
+                txt.textContent = 'Play';
+                btn.style.background = 'linear-gradient(135deg, #0284c7, #0369a1)';
+                if (bailyAnimFrame) cancelAnimationFrame(bailyAnimFrame);
+            }
+        }
+
+        function updateBailySpeed() {
+            bailySpeed = parseFloat(document.getElementById('sel-baily-speed').value) || 0.5;
+        }
+
+        function resetBailySequence() {
+            if (bailyPhase === 'c2') {
+                bailyTime = -10.0;
+            } else {
+                bailyTime = -2.0;
+            }
+            document.getElementById('rng-baily-time').value = bailyTime;
+            updateBailyTimeLabel();
+            updateControls();
+        }
+
+        function jumpToDiamondRing() {
+            // El Anillo de Diamantes óptimo en C2' ocurre cuando sólo brilla el valle profundo de Drygalski (+0.4s a +0.8s)
+            // antes de extinguirse definitivamente a +1.7s.
+            if (bailyPhase === 'c2') {
+                bailyTime = 0.6;
+            } else {
+                bailyTime = -1.4;
+            }
+            
+            // Pausar la animación si estaba corriendo para que el usuario pueda contemplar el diamante
+            if (bailyPlaying) {
+                toggleBailyPlay();
+            }
+
+            document.getElementById('rng-baily-time').value = bailyTime;
+            updateBailyTimeLabel();
+            updateControls();
+        }
+
+        function bailyAnimLoop(now) {
+            if (!bailyPlaying) return;
+            const dtSec = (now - lastTimestamp) / 1000.0;
+            lastTimestamp = now;
+
+            bailyTime += dtSec * bailySpeed;
+
+            const rng = document.getElementById('rng-baily-time');
+            const maxVal = parseFloat(rng.max);
+            const minVal = parseFloat(rng.min);
+
+            if (bailyTime > maxVal) {
+                bailyTime = minVal;
+            }
+
+            rng.value = bailyTime;
+            updateBailyTimeLabel();
+            updateControls();
+
+            bailyAnimFrame = requestAnimationFrame(bailyAnimLoop);
+        }
+
+        // =========================================================================
+        // MOTOR FOTOMÉTRICO DE PERLAS DE BAILY (BASADO EN TOPOGRAFÍA REAL LOLA)
+        // =========================================================================
+        function computeBailyBeads(tSec, phase, contactPA, libL, libB, axisC) {
+            const mu = 0.45; // arcsec/s velocidad aparente relativa Sol-Luna
+            const arcsecPerKm = 0.552; // escala a distancia media
+            const points = [];
+
+            // Muestreo denso en el arco alrededor del contacto
+            for (let deg = contactPA - 40; deg <= contactPA + 40; deg += 0.2) {
+                const pa = (deg % 360.0 + 360.0) % 360.0;
+                const elev = evaluateLolaLimb(pa, libL, libB, axisC);
+                const hArcsec = elev.hKm * arcsecPerKm;
+                
+                let sepMean = 0;
+                const cosFactor = Math.cos((pa - contactPA) * Math.PI / 180.0);
+
+                if (phase === 'c2') {
+                    // C2: la Luna entra tapando el Sol; a t < 0 el Sol asoma fuera
+                    sepMean = -mu * tSec * cosFactor;
+                } else {
+                    // C3: la Luna sale destapando el Sol; a t > 0 el Sol empieza a asomar
+                    sepMean = mu * tSec * cosFactor;
+                }
+
+                const clearance = sepMean - hArcsec;
+                if (clearance > 0.05) {
+                    points.push({ pa, wa: elev.waDeg, hKm: elev.hKm, clearance });
+                }
+            }
+
+            if (points.length === 0) return [];
+
+            // Agrupación contigua en valles / perlas individuales
+            const clusters = [];
+            let current = [];
+            for (let i = 0; i < points.length; i++) {
+                if (current.length === 0) {
+                    current.push(points[i]);
+                } else {
+                    const prev = current[current.length - 1];
+                    let diff = Math.abs(points[i].pa - prev.pa);
+                    if (diff > 180) diff = 360 - diff;
+                    if (diff <= 2.8) {
+                        current.push(points[i]);
+                    } else {
+                        clusters.push(current);
+                        current = [points[i]];
+                    }
+                }
+            }
+            if (current.length > 0) clusters.push(current);
+
+            return clusters.map((c, idx) => {
+                let maxPt = c[0];
+                c.forEach(p => { if (p.clearance > maxPt.clearance) maxPt = p; });
+                
+                // Asignación de accidente lunar selenográfico según ángulo
+                let featureName = "Valle del Limbo";
+                if (maxPt.pa >= 170 && maxPt.pa <= 210) featureName = "Macizo Montes Leibniz";
+                else if (maxPt.pa >= 115 && maxPt.pa <= 135) featureName = "Cráter Drygalski / Malapert";
+                else if (maxPt.pa >= 135 && maxPt.pa <= 165) featureName = "Valle de Newton / Cabeus";
+                else if (maxPt.pa >= 290 && maxPt.pa <= 320) featureName = "Montes Rook / Mare Orientale";
+                else if (maxPt.pa >= 270 && maxPt.pa <= 290) featureName = "Cordillera Oriental";
+                else if (maxPt.pa >= 320 && maxPt.pa <= 350) featureName = "Borde Cuenca Grimaldi";
+
+                return {
+                    id: idx + 1,
+                    pa: maxPt.pa,
+                    wa: maxPt.wa,
+                    hKm: maxPt.hKm,
+                    clearance: maxPt.clearance,
+                    widthDeg: c.length * 0.2,
+                    featureName: featureName
+                };
+            });
+        }
+
+        function updateControls() {
+            const libL = parseFloat(document.getElementById('rng-lib-l').value);
+            const libB = parseFloat(document.getElementById('rng-lib-b').value);
+            const axisC = parseFloat(document.getElementById('rng-axis-c').value);
+            const zenithQ = parseFloat(document.getElementById('rng-zenith-q').value);
+            const p2 = parseFloat(document.getElementById('rng-p2').value);
+            const p3 = parseFloat(document.getElementById('rng-p3').value);
+            const exag = parseFloat(document.getElementById('rng-exag').value);
+            const formula = document.getElementById('sel-index-formula').value;
+
+            document.getElementById('lbl-val-l').textContent = (libL >= 0 ? '+' : '') + libL.toFixed(2) + '°';
+            document.getElementById('lbl-val-b').textContent = (libB >= 0 ? '+' : '') + libB.toFixed(2) + '°';
+            document.getElementById('lbl-val-c').textContent = (axisC >= 0 ? '+' : '') + axisC.toFixed(1) + '°';
+            document.getElementById('lbl-val-q').textContent = zenithQ.toFixed(1) + '°';
+            document.getElementById('lbl-val-p2').textContent = p2.toFixed(1) + '°';
+            document.getElementById('lbl-val-p3').textContent = p3.toFixed(1) + '°';
+            document.getElementById('lbl-val-exag').textContent = exag.toFixed(1) + 'x';
+
+            // Actualizar cabecera réplica Eclipse 2.0
+            document.getElementById('hdr-p2').textContent = p2.toFixed(1) + '°';
+            document.getElementById('hdr-p3').textContent = p3.toFixed(1) + '°';
+            document.getElementById('hdr-l').textContent = libL.toFixed(1) + '°';
+            document.getElementById('hdr-b').textContent = libB.toFixed(1) + '°';
+            document.getElementById('hdr-c').textContent = axisC.toFixed(1) + '°';
+
+            renderRadar(libL, libB, axisC, zenithQ, p2, p3, formula, exag);
+            renderLinear(libL, libB, axisC, zenithQ, formula);
+            updateTelemetry(libL, libB, axisC, zenithQ, formula);
+        }
+
+        // =========================================================================
+        // 1. RENDERIZADO DEL RADAR POLAR (CANVAS CIRCULAR A 3.600 PUNTOS)
+        // =========================================================================
+        function renderRadar(libL, libB, axisC, zenithQ, p2, p3, formula, exag, separationArcsec) {
+            const canvas = document.getElementById('canvas-radar');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const dpr = window.devicePixelRatio || 1;
+
+            if (canvas.width !== 500 * dpr) {
+                canvas.width = 500 * dpr;
+                canvas.height = 500 * dpr;
+            }
+
+            ctx.save();
+            ctx.scale(dpr, dpr);
+
+            const w = 500, h = 500;
+            const cx = w / 2, cy = h / 2;
+            const baseR = 165; // Radio del círculo medio lunar
+
+            // Fondo espacial azul marino profundo (#021a29 -> #010a12)
+            ctx.fillStyle = '#021520';
+            ctx.fillRect(0, 0, w, h);
+
+            // Ejes en cruz de referencia
+            ctx.strokeStyle = '#0e2d3b';
+            ctx.lineWidth = 1.0;
+            ctx.beginPath();
+            ctx.moveTo(cx, 16); ctx.lineTo(cx, h - 16);
+            ctx.moveTo(16, cy); ctx.lineTo(w - 16, cy);
+            ctx.stroke();
+
+            // Círculo blanco nominal medio de referencia (R = 1737.4 km)
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.75)';
+            ctx.lineWidth = 0.8;
+            ctx.beginPath();
+            ctx.arc(cx, cy, baseR, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Rotación base según modo de orientación
+            let rotBase = 0;
+            if (currentOrientation === 'zenith') rotBase = zenithQ;
+            else if (currentOrientation === 'lunar') rotBase = axisC;
+
+            function paToCanvas(paDeg) {
+                let eff = (paDeg - rotBase + 360.0) % 360.0;
+                if (currentAngularDir === 'cw') {
+                    eff = (360.0 - eff) % 360.0;
+                }
+                const rad = eff * Math.PI / 180.0;
+                // En astronomía: 0° arriba, 90° izquierda (CCW)
+                return {
+                    xNorm: -Math.sin(rad),
+                    yNorm: -Math.cos(rad),
+                    angleRad: rad
+                };
+            }
+
+            // Trazado del limbo lunar LOLA de ALTA RESOLUCIÓN (3.600 puntos exactos)
+            ctx.beginPath();
+            const totalSteps = 3600;
+            for (let i = 0; i <= totalSteps; i++) {
+                const pa = (i * 0.1) % 360.0;
+                const elev = evaluateLolaLimb(pa, libL, libB, axisC, zenithQ, formula);
+                const r = baseR + elev.hKm * exag;
+                const proj = paToCanvas(pa);
+                const px = cx + proj.xNorm * r;
+                const py = cy + proj.yNorm * r;
+                if (i === 0) ctx.moveTo(px, py);
+                else ctx.lineTo(px, py);
+            }
+            ctx.closePath();
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 0.75;
+            ctx.stroke();
+
+            // Relleno interior de la Luna
+            ctx.fillStyle = 'rgba(2, 21, 32, 0.94)';
+            ctx.fill();
+
+            // 1. Vectores radiales de Contacto C2' y C3' (Celeste / Cian, idénticos a la captura)
+            drawContactVector(ctx, cx, cy, paToCanvas(p2), baseR, '#38bdf8', "C2'");
+            drawContactVector(ctx, cx, cy, paToCanvas(p3), baseR, '#38bdf8', "C3'");
+
+            // 2. Marca Norte Celeste (0°) - Rojo
+            const pN = paToCanvas(0);
+            drawMarker(ctx, cx, cy, pN, baseR, '#ef4444', 'Norte');
+
+            // 3. Marca Cenit Local (q) - Amarillo
+            const pZ = paToCanvas(zenithQ);
+            drawMarker(ctx, cx, cy, pZ, baseR, '#facc15', 'Cenit');
+
+            // 4. Eje Lunar NL (C) - Verde
+            const pNL = paToCanvas(axisC);
+            drawMarker(ctx, cx, cy, pNL, baseR, '#4ade80', 'NL');
+
+            // 5. Eje Lunar SL (C + 180°) - Verde
+            const pSL = paToCanvas((axisC + 180.0) % 360.0);
+            drawMarker(ctx, cx, cy, pSL, baseR, '#4ade80', 'SL');
+
+            // 6. Simulación Fotométrica Avanzada de Perlas de Baily & Diamante
+            const contactCenterPA = bailyPhase === 'c2' ? p2 : p3;
+            const activeBeads = computeBailyBeads(bailyTime, bailyPhase, contactCenterPA, libL, libB, axisC);
+            currentActiveBeadsList = activeBeads;
+
+            // El Anillo de Diamantes es una única perla (o una dominante) en la frontera inmediata de totalidad (|t| <= 2.8s)
+            // No confundir con la uña de Sol continua abierta a t <= -6s donde hay un arco de 80° continuo
+            const hasSingleNarrowBead = activeBeads.length === 1 && activeBeads[0].widthDeg <= 14.0;
+            const hasDominantBead = activeBeads.length === 2 && activeBeads[0].widthDeg <= 5.0 && activeBeads[1].widthDeg <= 3.0;
+            const isNearContactEdge = Math.abs(bailyTime) <= 2.6;
+            const isDiamondRing = isNearContactEdge && (hasSingleNarrowBead || hasDominantBead);
+            const isTotality = activeBeads.length === 0;
+
+            // =====================================================================
+            // 7. RENDERIZADO DEL ANILLO DE DIAMANTES Y CORONA SOLAR REALISTA
+            // =====================================================================
+            // Determinar la perla líder más brillante
+            let primaryDiamondBeadId = null;
+            if (activeBeads.length > 0) {
+                let maxClear = -1;
+                activeBeads.forEach(b => {
+                    if (b.clearance > maxClear) {
+                        maxClear = b.clearance;
+                        primaryDiamondBeadId = b.id;
+                    }
+                });
+            }
+
+            // A) EL ARO DEL ANILLO (Corona Solar circular abrazando toda la silueta lunar)
+            if (isDiamondRing || isTotality || (bailyPhase === 'c2' && bailyTime > -2.5) || (bailyPhase === 'c3' && bailyTime < 2.5)) {
+                ctx.save();
+                
+                // 1. Resplandor exterior difuso de la corona
+                const coronaAtmosphere = ctx.createRadialGradient(cx, cy, baseR - 1, cx, cy, baseR + 55);
+                coronaAtmosphere.addColorStop(0, 'rgba(255, 255, 255, 0.45)');
+                coronaAtmosphere.addColorStop(0.15, 'rgba(224, 242, 254, 0.28)');
+                coronaAtmosphere.addColorStop(0.45, 'rgba(56, 189, 248, 0.10)');
+                coronaAtmosphere.addColorStop(1, 'transparent');
+
+                ctx.beginPath();
+                ctx.arc(cx, cy, baseR + 55, 0, Math.PI * 2);
+                ctx.arc(cx, cy, baseR - 1, 0, Math.PI * 2, true);
+                ctx.fillStyle = coronaAtmosphere;
+                ctx.fill();
+
+                // 2. El "Aro" nítido de la sortija (anillo de luz blanca plateada alrededor de la Luna)
+                ctx.strokeStyle = isDiamondRing ? 'rgba(255, 255, 255, 0.90)' : 'rgba(224, 242, 254, 0.65)';
+                ctx.lineWidth = isDiamondRing ? 2.2 : 1.5;
+                ctx.shadowColor = 'rgba(224, 242, 254, 0.9)';
+                ctx.shadowBlur = isDiamondRing ? 12 : 6;
+                ctx.beginPath();
+                ctx.arc(cx, cy, baseR, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.shadowBlur = 0; // reset
+
+                ctx.restore();
+            }
+
+            // B) DIBUJAR CADA PERLA DE BAILY
+            activeBeads.forEach(bead => {
+                const proj = paToCanvas(bead.pa);
+                const r = baseR + bead.hKm * exag;
+                const bx = cx + proj.xNorm * r;
+                const by = cy + proj.yNorm * r;
+
+                const intens = Math.min(1.0, bead.clearance / 1.5);
+                const isThisTheDiamond = isDiamondRing && (bead.id === primaryDiamondBeadId);
+
+                // Tamaño de la perla o del diamante
+                const glowRadius = isThisTheDiamond ? (14 + intens * 18) : (6 + intens * 10);
+
+                ctx.save();
+
+                // Gradiente radial del punto luminoso
+                const beadGrad = ctx.createRadialGradient(bx, by, 0, bx, by, glowRadius);
+                beadGrad.addColorStop(0, '#ffffff');
+                beadGrad.addColorStop(0.2, 'rgba(255, 255, 255, 0.98)');
+                beadGrad.addColorStop(0.5, isThisTheDiamond ? 'rgba(254, 240, 138, 0.90)' : 'rgba(254, 240, 138, 0.75)');
+                beadGrad.addColorStop(0.8, isThisTheDiamond ? 'rgba(249, 115, 22, 0.50)' : 'rgba(249, 115, 22, 0.30)');
+                beadGrad.addColorStop(1, 'transparent');
+
+                ctx.fillStyle = beadGrad;
+                ctx.beginPath();
+                ctx.arc(bx, by, glowRadius, 0, Math.PI * 2);
+                ctx.fill();
+
+                // C) LA GEMA DEL ANILLO DE DIAMANTES (Destello óptico realista, no cruces de alambre)
+                if (isThisTheDiamond) {
+                    // Halo difractivo cónico suave en forma de estrella de 8 puntas
+                    const rayLen = 50 + intens * 30;
+                    
+                    // Rayos cónicos suaves con gradientes desvanecidos
+                    const angles = [0, 45, 90, 135, 180, 225, 270, 315];
+                    angles.forEach((angDeg, rayIdx) => {
+                        const isMain = rayIdx % 2 === 0;
+                        const len = isMain ? rayLen : rayLen * 0.60;
+                        const width = isMain ? 3.5 : 2.0;
+                        const rad = angDeg * Math.PI / 180.0;
+                        
+                        const rx = bx + Math.cos(rad) * len;
+                        const ry = by + Math.sin(rad) * len;
+
+                        const rayGrad = ctx.createLinearGradient(bx, by, rx, ry);
+                        rayGrad.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
+                        rayGrad.addColorStop(0.3, isMain ? 'rgba(254, 240, 138, 0.75)' : 'rgba(255, 255, 255, 0.5)');
+                        rayGrad.addColorStop(0.7, 'rgba(249, 115, 22, 0.25)');
+                        rayGrad.addColorStop(1, 'transparent');
+
+                        ctx.strokeStyle = rayGrad;
+                        ctx.lineWidth = width;
+                        ctx.lineCap = 'round';
+                        ctx.beginPath();
+                        ctx.moveTo(bx, by);
+                        ctx.lineTo(rx, ry);
+                        ctx.stroke();
+                    });
+
+                    // Núcleo blanco cegador de la gema del diamante
+                    ctx.fillStyle = '#ffffff';
+                    ctx.shadowColor = '#ffffff';
+                    ctx.shadowBlur = 18;
+                    ctx.beginPath();
+                    ctx.arc(bx, by, 5 + intens * 3, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+                }
+
+                ctx.restore();
+            });
+
+            // Actualizar Badge de Perlas
+            const lblCount = document.getElementById('lbl-beads-count');
+            if (lblCount) {
+                if (isDiamondRing) {
+                    lblCount.innerHTML = '<span style="color: #fef08a;">💎 ¡Anillo Diamantes!</span>';
+                    lblCount.style.borderColor = '#facc15';
+                } else if (isTotality) {
+                    lblCount.innerHTML = '<span style="color: #38bdf8;">🌑 Totalidad Plena</span>';
+                    lblCount.style.borderColor = '#38bdf8';
+                } else {
+                    lblCount.textContent = activeBeads.length + ' activas';
+                    lblCount.style.borderColor = 'rgba(250, 204, 21, 0.5)';
+                }
+            }
+
+            // Cursor del ratón
+            if (hoverPA != null) {
+                const projH = paToCanvas(hoverPA);
+                const elevH = evaluateLolaLimb(hoverPA, libL, libB, axisC);
+                const rH = baseR + elevH.hKm * exag;
+                const hx = cx + projH.xNorm * rH;
+                const hy = cy + projH.yNorm * rH;
+
+                ctx.strokeStyle = 'rgba(34, 211, 238, 0.85)';
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.arc(hx, hy, 5, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+
+            ctx.restore();
+        }
+
+        function drawMarker(ctx, cx, cy, proj, baseR, color, label) {
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 1.6;
+            ctx.beginPath();
+            ctx.moveTo(cx + proj.xNorm * (baseR - 10), cy + proj.yNorm * (baseR - 10));
+            ctx.lineTo(cx + proj.xNorm * (baseR + 12), cy + proj.yNorm * (baseR + 12));
+            ctx.stroke();
+
+            ctx.fillStyle = color;
+            ctx.font = 'bold 10px "JetBrains Mono", monospace';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(label, cx + proj.xNorm * (baseR - 22), cy + proj.yNorm * (baseR - 22));
+        }
+
+        function drawContactVector(ctx, cx, cy, proj, baseR, color, label) {
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.lineTo(cx + proj.xNorm * (baseR + 15), cy + proj.yNorm * (baseR + 15));
+            ctx.stroke();
+
+            ctx.fillStyle = color;
+            ctx.font = 'bold 11px "JetBrains Mono", monospace';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(label, cx + proj.xNorm * (baseR * 0.55), cy + proj.yNorm * (baseR * 0.55));
+        }
+
+        // =========================================================================
+        // 2. RENDERIZADO DEL PERFIL CARTESIANO LINEAL (0° A 360°)
+        // =========================================================================
+        function renderLinear(libL, libB, axisC, zenithQ, formula) {
+            const canvas = document.getElementById('canvas-linear');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const dpr = window.devicePixelRatio || 1;
+
+            const rect = canvas.getBoundingClientRect();
+            if (canvas.width !== rect.width * dpr) {
+                canvas.width = rect.width * dpr;
+                canvas.height = 180 * dpr;
+            }
+
+            ctx.save();
+            ctx.scale(dpr, dpr);
+
+            const w = rect.width, h = 180;
+            const padL = 45, padR = 15, padT = 15, padB = 25;
+            const plotW = w - padL - padR;
+            const plotH = h - padT - padB;
+
+            ctx.fillStyle = '#020b14';
+            ctx.fillRect(0, 0, w, h);
+
+            const minElev = -4.0, maxElev = 6.0;
+            const elevRange = maxElev - minElev;
+
+            function yFromElev(elevKm) {
+                const norm = (elevKm - minElev) / elevRange;
+                return padT + plotH * (1 - norm);
+            }
+
+            function xFromPA(paDeg) {
+                return padL + (paDeg / 360.0) * plotW;
+            }
+
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+            ctx.lineWidth = 1;
+            [-4, -2, 0, 2, 4, 6].forEach(val => {
+                const y = yFromElev(val);
+                ctx.beginPath();
+                ctx.moveTo(padL, y); ctx.lineTo(w - padR, y);
+                ctx.stroke();
+
+                ctx.fillStyle = val === 0 ? '#ffffff' : varTextMuted();
+                ctx.font = '9px "JetBrains Mono", monospace';
+                ctx.textAlign = 'right';
+                ctx.textBaseline = 'middle';
+                ctx.fillText((val >= 0 ? '+' : '') + val + 'km', padL - 6, y);
+            });
+
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+            ctx.lineWidth = 1.2;
+            ctx.beginPath();
+            ctx.moveTo(padL, yFromElev(0)); ctx.lineTo(w - padR, yFromElev(0));
+            ctx.stroke();
+
+            ctx.beginPath();
+            for (let i = 0; i <= 3600; i++) {
+                const pa = (i * 0.1) % 360.0;
+                const elev = evaluateLolaLimb(pa, libL, libB, axisC, zenithQ, formula);
+                const x = xFromPA(pa);
+                const y = yFromElev(elev.hKm);
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.strokeStyle = '#38bdf8';
+            ctx.lineWidth = 1.2;
+            ctx.stroke();
+
+            ctx.lineTo(w - padR, yFromElev(minElev));
+            ctx.lineTo(padL, yFromElev(minElev));
+            ctx.closePath();
+            const grad = ctx.createLinearGradient(0, padT, 0, h - padB);
+            grad.addColorStop(0, 'rgba(56, 189, 248, 0.25)');
+            grad.addColorStop(1, 'rgba(56, 189, 248, 0.0)');
+            ctx.fillStyle = grad;
+            ctx.fill();
+
+            [0, 90, 180, 270, 360].forEach(pa => {
+                const x = xFromPA(pa);
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+                ctx.beginPath();
+                ctx.moveTo(x, padT); ctx.lineTo(x, h - padB);
+                ctx.stroke();
+
+                ctx.fillStyle = varTextMuted();
+                ctx.font = '10px "JetBrains Mono", monospace';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'top';
+                ctx.fillText(pa + '°', x, h - padB + 6);
+            });
+
+            if (hoverPA != null) {
+                const x = xFromPA(hoverPA);
+                ctx.strokeStyle = 'rgba(34, 211, 238, 0.8)';
+                ctx.lineWidth = 1.2;
+                ctx.setLineDash([4, 4]);
+                ctx.beginPath();
+                ctx.moveTo(x, padT); ctx.lineTo(x, h - padB);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+
+            ctx.restore();
+        }
+
+        function varTextMuted() {
+            return '#64748b';
+        }
+
+        function updateTelemetry(libL, libB, axisC, zenithQ, formula, separationArcsec) {
+            const tbody = document.getElementById('tbody-telemetry');
+            if (!tbody) return;
+
+            const p2 = parseFloat(document.getElementById('rng-p2').value);
+            const p3 = parseFloat(document.getElementById('rng-p3').value);
+
+            const features = [
+                { name: "Montes Leibniz (Pico Máximo SL)", targetPA: 194.0, desc: "Cumbres más altas del limbo (+5.2 km)" },
+                { name: "Cuenca Polo Sur-Aitken", targetPA: 232.0, desc: "Gran depresión lunar (-3.1 km)" },
+                { name: "Montes Rook (Limbo Oeste)", targetPA: 282.0, desc: "Prominencia aislada en Mare Orientale (+3.1 km)" },
+                { name: "Contacto C2' (P2' = " + p2.toFixed(1) + "°)", targetPA: p2, desc: "Zona de Perlas Baily iniciales (-1.4 km)" },
+                { name: "Contacto C3' (P3' = " + p3.toFixed(1) + "°)", targetPA: p3, desc: "Zona de Perlas Baily finales (-1.5 km)" }
+            ];
+
+            let html = '';
+            features.forEach(f => {
+                const elev = evaluateLolaLimb(f.targetPA, libL, libB, axisC, zenithQ, formula);
+                const isPeak = elev.hKm > 0;
+                const arcsec = (elev.hKm / 1737.4) * 960.0;
+
+                let statusHtml = '<span style="color: #64748b;">Inactivo</span>';
+                if (f.name.includes("C2'") || f.name.includes("C3'")) {
+                    if (elev.hKm < -0.3) statusHtml = '<span class="tag-bead"><i class="fa-solid fa-sparkles"></i> Perla Visible (-1.1s)</span>';
+                }
+
+                html += '<tr>' +
+                    '<td><span class="' + (isPeak ? 'tag-peak' : 'tag-valley') + '">' + (isPeak ? '▲ Cumbre' : '▼ Valle') + '</span></td>' +
+                    '<td>' + f.targetPA.toFixed(1) + '°</td>' +
+                    '<td>' + elev.waDeg.toFixed(1) + '°</td>' +
+                    '<td style="font-weight: 600; color: ' + (isPeak ? '#4ade80' : '#f87171') + ';">' + (elev.hKm >= 0 ? '+' : '') + elev.hKm.toFixed(2) + ' km</td>' +
+                    '<td>' + (arcsec >= 0 ? '+' : '') + arcsec.toFixed(2) + '"</td>' +
+                    '<td><strong>' + f.name + '</strong> <small style="color:#64748b;">(' + f.desc + ')</small></td>' +
+                    '<td>' + statusHtml + '</td>' +
+                '</tr>';
+            });
+
+            tbody.innerHTML = html;
+        }
+
+        function initCanvasEvents() {
+            const linearCanvas = document.getElementById('canvas-linear');
+            if (!linearCanvas) return;
+
+            linearCanvas.addEventListener('mousemove', (e) => {
+                const rect = linearCanvas.getBoundingClientRect();
+                const padL = 45, padR = 15;
+                const plotW = rect.width - padL - padR;
+                const mouseX = e.clientX - rect.left;
+
+                if (mouseX >= padL && mouseX <= rect.width - padR) {
+                    const norm = (mouseX - padL) / plotW;
+                    hoverPA = norm * 360.0;
+
+                    const libL = parseFloat(document.getElementById('rng-lib-l').value);
+                    const libB = parseFloat(document.getElementById('rng-lib-b').value);
+                    const axisC = parseFloat(document.getElementById('rng-axis-c').value);
+                    const zenithQ = parseFloat(document.getElementById('rng-zenith-q').value);
+                    const formula = document.getElementById('sel-index-formula').value;
+
+                    const elev = evaluateLolaLimb(hoverPA, libL, libB, axisC, zenithQ, formula);
+                    const txtInfo = document.getElementById('txt-hover-info');
+                    if (txtInfo) {
+                        txtInfo.innerHTML = 'PA: <strong>' + hoverPA.toFixed(1) + '°</strong> | Watts WA: <strong>' + elev.waDeg.toFixed(1) + '°</strong> | Cota: <strong style="color: ' + (elev.hKm >= 0 ? '#4ade80' : '#f87171') + ';">' + (elev.hKm >= 0 ? '+' : '') + elev.hKm.toFixed(2) + ' km</strong>';
+                    }
+                    updateControls();
+                }
+            });
+
+            linearCanvas.addEventListener('mouseleave', () => {
+                hoverPA = null;
+                const txtInfo = document.getElementById('txt-hover-info');
+                if (txtInfo) txtInfo.textContent = 'Mueve el ratón para inspeccionar';
+                updateControls();
+            });
+        }
+    </script>
+</body>
+</html>

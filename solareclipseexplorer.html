@@ -137,7 +137,7 @@
             padding: 2px 8px;
             font-size: 0.74rem;
             font-weight: 400;
-            color: rgba(226, 232, 240, 0.85);
+            color: #f8fafc;
             box-shadow: none;
             display: flex;
             align-items: center;
@@ -149,12 +149,23 @@
 
         .hud-pill.altaz {
             background: rgba(8, 12, 22, 0.65);
-            color: rgba(226, 232, 240, 0.85);
+            color: #f8fafc;
         }
 
         .hud-pill.warning {
             background: rgba(35, 12, 16, 0.7);
             color: #fca5a5;
+        }
+
+        #hud-pill-bead {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            color: #ffffff !important;
+            font-weight: 400 !important;
+            font-size: 0.76rem;
+            text-shadow: 0 1px 4px rgba(0, 0, 0, 0.95);
+            padding: 2px 4px;
         }
 
         /* Left Panel: Eclipse Selection, Time Player, and Data */
@@ -722,7 +733,7 @@
 
         .mataro-vis-tag {
             font-size: 0.72rem;
-            font-weight: 700;
+            font-weight: 400;
             padding: 2px 8px;
             height: 22px;
             box-sizing: border-box;
@@ -1157,11 +1168,11 @@
         .player-time-local-box, .player-time-utc-box {
             display: inline-flex;
             align-items: center;
+            gap: 5px;
             line-height: 1;
         }
 
         .player-time-local-box {
-            gap: 5px;
             min-width: 0;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -1175,12 +1186,13 @@
         }
 
         .player-time-utc-box {
+            gap: 5px;
             white-space: nowrap;
             flex-shrink: 0;
         }
 
         .player-time-display strong {
-            color: var(--accent-blue);
+            color: #f8fafc;
         }
 
         .player-slider-container {
@@ -1388,11 +1400,9 @@
         <div class="viewport-layer" id="layer-telescopic">
             <canvas id="canvas-telescopic"></canvas>
             <div class="telescope-hud" id="telescope-hud">
-                <div class="hud-pill altaz" id="hud-pill-orient">Vista Local (Mataró · Cenit arriba)</div>
+                <div class="hud-pill altaz" id="hud-pill-orient">Mataró · Altazimutal</div>
                 <div class="hud-pill altaz" id="hud-pill-coords" style="display: flex;">Alt: -- · Az: --</div>
-                <button type="button" class="hud-pill altaz" id="btn-tele-toggle-limb" onclick="toggleTeleLimbProfile()" style="pointer-events: auto; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; border: 1px solid rgba(56, 189, 248, 0.4); background: rgba(15, 23, 42, 0.85); color: var(--accent-blue); padding: 4px 12px; font-size: 0.74rem; font-weight: 600; border-radius: 6px; transition: all 0.2s ease;" title="Superponer perfil topográfico del limbo lunar (LOLA) y perlas de Baily">
-                    <i class="fa-solid fa-mountain-sun"></i> <span id="tele-limb-btn-label">Perfil Limbo</span>
-                </button>
+                <div class="hud-pill altaz" id="hud-pill-bead" style="display: none;"></div>
             </div>
         </div>
     </div>
@@ -1425,6 +1435,10 @@
             <i class="fa-solid fa-play"></i>
             <span>Reproducción</span>
         </button>
+        <button class="reopen-btn" id="btn-reopen-limb" onclick="toggleLunarLimbPanel(null)" title="Abrir/Cerrar Perfil del limbo" style="display: none;">
+            <i class="fa-solid fa-mountain-sun"></i>
+            <span>Perfil del limbo</span>
+        </button>
     </div>
 
     <!-- LEFT PANEL: Eclipse Selection, Search, and Astronomical Data -->
@@ -1448,7 +1462,7 @@
         </div>
 
         <div class="section-title section-title-between" style="margin-top: 4px; margin-bottom: 6px;">
-            <span><i class="fa-solid fa-magnifying-glass"></i> Buscar por Año</span>
+            <span><i class="fa-solid fa-magnifying-glass"></i> Buscar</span>
             <span id="csv-status-badge" style="color: var(--text-secondary); font-weight: 600; text-transform: none; letter-spacing: 0; cursor: help;" title="Five Millennium Catalog of Solar Eclipses (-1999 a +3000) · Fred Espenak &amp; Jean Meeus (NASA GSFC)">
                 <i class="fa-solid fa-circle-notch fa-spin"></i> Cargando...
             </span>
@@ -1509,7 +1523,7 @@
                 </div>
                 <div class="stat-row">
                     <span class="stat-lbl">Tiempo</span>
-                    <span class="stat-val" id="card-time-ge">10:06 UT</span>
+                    <span class="stat-val" id="card-time-ge">10:08 TT</span>
                 </div>
                 <div class="stat-row">
                     <span class="stat-lbl">Latitud</span>
@@ -1520,14 +1534,14 @@
                     <span class="stat-val" id="card-lon">33° 10' 17" E</span>
                 </div>
                 <div class="stat-row">
-                    <span class="stat-lbl" style="display: inline-flex; align-items: center; gap: 4px;">
-                        <span>TD-UT</span>
+                    <span class="stat-lbl" style="display: inline-flex; align-items: center; gap: 4px;" title="Diferencia de tiempo TT - UT1 (Tiempo Terrestre - Tiempo Universal)">
+                        <span>TT-UT1</span>
                         <button id="btn-reset-dt" style="display: none; background: transparent; border: none; color: #38bdf8; cursor: pointer; padding: 0; font-size: 0.65rem; opacity: 0.85;" title="Restablecer al valor oficial del catálogo">
                             <i class="fa-solid fa-rotate-left"></i>
                         </button>
                     </span>
                     <div style="display: inline-flex; align-items: baseline;">
-                        <input type="number" id="input-custom-dt" class="stat-input-dt" min="-86400" max="86400" step="0.1" title="Diferencia de tiempo ΔT = TD - UT (haz clic para editar)">
+                        <input type="number" id="input-custom-dt" class="stat-input-dt" min="-86400" max="86400" step="0.1" title="Diferencia de tiempo TT - UT1 (haz clic para editar)">
                         <span style="color: #f8fafc; font-weight: 400; font-size: 0.78rem; font-family: var(--font-body); margin-left: 2px;">s</span>
                     </div>
                 </div>
@@ -1616,10 +1630,13 @@
             </button>
         </div>
 
-        <!-- Indicador de la Ubicación Seleccionada Activa -->
-        <div style="margin-top: 2px; margin-bottom: 2px; font-size: 0.74rem; color: var(--accent-blue); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 6px;">
-            <i class="fa-solid fa-location-crosshairs" style="font-size: 0.72rem;"></i>
-            <span id="observer-header-subtitle">41° 32' 58" N  2° 26' 53" E</span>
+        <!-- Indicador de la Ubicación Seleccionada Activa y Zona Horaria -->
+        <div style="margin-top: 2px; margin-bottom: 2px; font-size: 0.74rem; color: #f8fafc; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+                <i class="fa-solid fa-location-crosshairs" style="font-size: 0.72rem; color: var(--accent-blue);"></i>
+                <span id="observer-header-subtitle">41° 32' 58" N  2° 26' 53" E</span>
+            </div>
+            <span id="observer-header-tz" style="font-family: var(--font-mono); font-size: 0.72rem; color: #f8fafc; font-weight: 600;">UTC+2</span>
         </div>
 
         <!-- 2. Visibilidad y Fases Locales -->
@@ -1630,7 +1647,6 @@
         <div class="mataro-card" style="margin-top: 0;">
             <div class="mataro-badge-header">
                 <span class="mataro-vis-tag vis-total" id="mataro-vis-badge">TOTAL</span>
-                <span id="mataro-extreme-badge" style="font-size: 0.72rem; font-family: var(--font-heading); color: var(--accent-blue); font-weight: 600; display: none;">Máx. Duración (GD)</span>
             </div>
             <table class="contacts-table" id="mataro-contacts-table">
                 <colgroup>
@@ -1739,69 +1755,43 @@
 
             <!-- GRUPO 2: CONTROLES PARA MODO TELESCOPIO -->
             <div id="layers-group-tele" style="display: none; flex-direction: column; gap: 0.45rem;">
-                <label class="checkbox-row" id="lbl-tele-zenith-up">
+                <label class="checkbox-row" id="lbl-tele-zenith-up" title="Marcar para orientación Altazimutal (Cenit) o desmarcar para Ecuatorial (Norte celeste)">
                     <input type="checkbox" id="chk-tele-zenith-up" checked onchange="renderTelescopicView()">
-                    <span>Cenit arriba</span>
+                    <span>Orientación altazimutal</span>
                 </label>
-                <label class="checkbox-row" id="lbl-show-lunar-limb">
+                <label class="checkbox-row" id="lbl-tele-labels" title="Mostrar u ocultar los rótulos en el lienzo principal (marcas de orientación, contactos y telemetría)">
+                    <input type="checkbox" id="chk-tele-labels" checked onchange="renderTelescopicView()">
+                    <span>Rótulos</span>
+                </label>
+                <label class="checkbox-row" id="lbl-show-lunar-limb" title="Abrir o cerrar el panel del perfil del limbo lunar">
                     <input type="checkbox" id="chk-show-lunar-limb" onchange="toggleTeleLimbProfile(this.checked)">
-                    <span>Limbo lunar</span>
+                    <span>Perfil del limbo</span>
                 </label>
-                <label class="checkbox-row" id="lbl-tele-baily-beads">
-                    <input type="checkbox" id="chk-tele-baily-beads" checked onchange="renderTelescopicView()">
-                    <span>Perlas de Baily</span>
+                <label class="checkbox-row" id="lbl-limb-labels" style="padding-left: 14px; transition: var(--transition-smooth); opacity: 0.5; pointer-events: none;" title="Mostrar u ocultar los rótulos en el lienzo del perfil del limbo">
+                    <input type="checkbox" id="chk-limb-labels" checked disabled onchange="renderLunarLimbRadar()">
+                    <span>Rótulos</span>
                 </label>
             </div>
         </div>
     </div>
 
     <!-- PANEL FLOTANTE: Perfil del Limbo Lunar (NASA LRO / LOLA) y Perlas de Baily (Estilo Eduard Masana) -->
-    <div class="settings-panel collapsed" id="lunar-limb-panel" role="region" aria-label="Panel del Limbo Lunar y Perlas de Baily" style="right: 375px; width: 350px; z-index: 26; background: #03141f; border-color: rgba(56, 189, 248, 0.35); padding: 12px 14px 14px 14px;">
-        <div class="panel-header" style="background: transparent; border-bottom: 1px solid rgba(56, 189, 248, 0.2); padding: 6px 4px 8px 4px; position: relative; margin-bottom: 4px;">
-            <div style="text-align: center; width: 100%;">
-                <h1 style="font-size: 1.05rem; font-weight: 700; color: #38bdf8; letter-spacing: 0.08em; margin: 0 0 2px 0; text-transform: uppercase; line-height: 1.2;">LIMBO LUNA</h1>
-                <div id="limb-obs-coords" style="font-size: 0.72rem; color: #facc15; font-family: var(--font-mono); margin-top: 2px;">
-                    Lat./Lon.: 41° 32' 58" N / 2° 26' 53" E
-                </div>
-                <div id="limb-tz-name" style="font-size: 0.70rem; color: #facc15; opacity: 0.9; font-weight: 600;">
-                    UTC+2
-                </div>
-            </div>
-            <div class="panel-toggle" id="btn-toggle-limb" onclick="toggleLunarLimbPanel(false)" title="Minimizar panel" style="position: absolute; right: 0; top: 4px;"><i class="fa-solid fa-chevron-left"></i></div>
+    <div class="settings-panel collapsed" id="lunar-limb-panel" role="region" aria-label="Panel del Perfil del Limbo" style="right: 375px; width: 350px; z-index: 26;">
+        <div class="panel-header">
+            <h1>Perfil del limbo</h1>
+            <div class="panel-toggle" id="btn-toggle-limb" onclick="toggleLunarLimbPanel(false)" title="Minimizar panel"><i class="fa-solid fa-chevron-left"></i></div>
         </div>
 
-        <div style="display: flex; flex-direction: column; gap: 8px; padding-top: 2px;">
-            <!-- Datos de Contacto y Telemetría Científica estilo Eclipse Calculator 2.0 -->
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px 10px; font-family: var(--font-mono); font-size: 0.73rem; color: #facc15; background: rgba(0,0,0,0.45); padding: 8px 10px; border-radius: 10px; border: 1px solid rgba(56, 189, 248, 0.18);">
-                <div id="limb-c2-text">C2': --</div>
-                <div id="limb-p2-text" style="text-align: right;">P2': --</div>
-                <div id="limb-c3-text">C3': --</div>
-                <div id="limb-p3-text" style="text-align: right;">P3': --</div>
+        <div style="display: flex; flex-direction: column; gap: 8px; padding-top: 4px;">
+            <!-- Bloque Libración Lunar -->
+            <div class="section-title section-title-between" style="margin-top: 2px;">
+                <span><i class="fa-solid fa-moon"></i> Libración lunar</span>
+                <span id="badge-baily-count" class="mataro-vis-tag" style="background: rgba(255, 255, 255, 0.08); color: rgba(255, 255, 255, 0.7); font-size: 0.68rem; padding: 2px 6px;">Inactivas</span>
             </div>
-
-            <!-- Parámetros orbitales y de duración en una sola línea limpia -->
-            <div style="display: flex; justify-content: space-between; align-items: center; font-family: var(--font-mono); font-size: 0.72rem; color: #cbd5e1; padding: 0 4px; white-space: nowrap;">
-                <div style="display: flex; gap: 8px;">
-                    <span>l: <strong id="limb-lib-l" style="color:#f8fafc;">0.4°</strong></span>
-                    <span>b: <strong id="limb-lib-b" style="color:#f8fafc;">0.0°</strong></span>
-                    <span>c: <strong id="limb-lib-c" style="color:#f8fafc;">14.0°</strong></span>
-                </div>
-                <div>
-                    <span id="limb-duration-text" style="color: #facc15;">Dur.: --</span>
-                </div>
-            </div>
-
-            <!-- Botones de Control de Orientación y Modo Perlas -->
-            <div style="display: flex; justify-content: center; gap: 8px; margin: 2px 0;">
-                <button type="button" class="mode-btn active" id="btn-limb-orient-n" onclick="setLimbOrientation('N')" style="padding: 4px 14px; font-size: 0.78rem; font-weight: 700; background: var(--accent-blue); border: 1px solid rgba(56, 189, 248, 0.4); color: #020617; border-radius: 8px; cursor: pointer;" title="Orientar gráfico con Norte Celeste arriba">
-                    N
-                </button>
-                <button type="button" class="mode-btn" id="btn-limb-orient-zenith" onclick="setLimbOrientation('zenith')" style="padding: 4px 14px; font-size: 0.78rem; font-weight: 700; background: #0f172a; border: 1px solid rgba(56, 189, 248, 0.4); color: #94a3b8; border-radius: 8px; cursor: pointer;" title="Orientar gráfico con Cenit Local arriba">
-                    Cenit
-                </button>
-                <button type="button" id="btn-jump-baily" onclick="jumpToBailyBeads()" style="padding: 4px 12px; font-size: 0.76rem; font-weight: 700; background: #fef08a; border: none; color: #020617; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 5px;" title="Ver Perlas de Baily en la vista telescópica">
-                    <i class="fa-solid fa-sparkles"></i> Perlas de Baily
-                </button>
+            <div style="display: flex; justify-content: space-around; align-items: center; font-family: var(--font-mono); font-size: 0.76rem; color: #cbd5e1; background: rgba(0,0,0,0.45); padding: 6px 10px; border-radius: 8px; border: 1px solid rgba(56, 189, 248, 0.18);">
+                <span><span style="color: var(--accent-blue); font-weight: 400;">l</span> <span id="limb-lib-l" style="color:#f8fafc;">0.4°</span></span>
+                <span><span style="color: var(--accent-blue); font-weight: 400;">b</span> <span id="limb-lib-b" style="color:#f8fafc;">0.0°</span></span>
+                <span><span style="color: var(--accent-blue); font-weight: 400;">c</span> <span id="limb-lib-c" style="color:#f8fafc;">14.0°</span></span>
             </div>
 
             <!-- Diagrama Científico del Limbo Lunar (Canvas 2D) -->
@@ -1809,8 +1799,26 @@
                 <canvas id="canvas-lunar-limb-radar" width="310" height="310" style="width: 100%; max-width: 310px; aspect-ratio: 1; display: block; margin: 0 auto; background: #03141f; border-radius: 8px;"></canvas>
             </div>
 
-            <div style="font-size: 0.67rem; color: #64748b; line-height: 1.35; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 5px; text-align: center;">
-                Altimetría: <em>NASA LRO / LOLA</em> · Formato científico <em>ICCUB / Eduard Masana</em>
+            <!-- Datos de Contacto y Telemetría Científica estilo Eclipse Calculator 2.0 -->
+            <div style="display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; font-family: var(--font-mono); font-size: 0.78rem; background: rgba(0,0,0,0.45); padding: 8px 10px; border-radius: 10px; border: 1px solid rgba(56, 189, 248, 0.18); align-items: center;">
+                <div style="display: flex; align-items: baseline; gap: 6px; font-size: 0.70rem; color: var(--text-secondary); border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 4px; font-weight: 400;">
+                    <span style="min-width: 38px;">Fase</span>
+                    <span id="limb-time-header-label">Hora (UT1)</span>
+                </div>
+                <div style="display: flex; align-items: baseline; justify-content: flex-end; font-size: 0.70rem; color: var(--text-secondary); border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 4px; font-weight: 400; text-align: right;">
+                    <span>Ángulo polar</span>
+                </div>
+                <div id="limb-c2-text" style="display: flex; align-items: baseline; gap: 6px; white-space: nowrap;"><span style="color: var(--accent-blue); font-weight: 400; min-width: 38px;">C2'</span> <span style="color: #f8fafc; min-width: 68px;">--:--:--</span></div>
+                <div id="limb-p2-text" style="display: flex; align-items: baseline; justify-content: flex-end; gap: 6px; white-space: nowrap;"><span style="color: var(--accent-blue); font-weight: 400; min-width: 26px; text-align: left;">P2'</span> <span style="color: #f8fafc; min-width: 48px; text-align: right;">--</span></div>
+                <div id="limb-c3-text" style="display: flex; align-items: baseline; gap: 6px; white-space: nowrap;"><span style="color: var(--accent-blue); font-weight: 400; min-width: 38px;">C3'</span> <span style="color: #f8fafc; min-width: 68px;">--:--:--</span></div>
+                <div id="limb-p3-text" style="display: flex; align-items: baseline; justify-content: flex-end; gap: 6px; white-space: nowrap;"><span style="color: var(--accent-blue); font-weight: 400; min-width: 26px; text-align: left;">P3'</span> <span style="color: #f8fafc; min-width: 48px; text-align: right;">--</span></div>
+                <div id="limb-duration-text" style="display: flex; align-items: baseline; gap: 6px; white-space: nowrap;"><span style="color: var(--accent-blue); font-weight: 400; min-width: 38px;">Dur.</span> <span style="color: #f8fafc; min-width: 68px;">--</span></div>
+                <div></div>
+            </div>
+
+
+            <div style="margin-top: 2px; padding: 6px 4px 0 4px; border-top: 1px solid rgba(255,255,255,0.06); font-size: 0.70rem; color: var(--text-secondary); line-height: 1.35; display: flex; justify-content: flex-start; align-items: center;">
+                <span>Altimetría: <em>NASA LRO / LOLA</em></span>
             </div>
         </div>
     </div>
@@ -1821,8 +1829,8 @@
         <div class="playback-dock-top">
             <div class="player-phase-badge" id="player-phase-label"></div>
             <div class="player-time-display">
-                <span class="player-time-local-box"><span id="player-time-local-label">Obs.:</span> <strong id="time-local-text">--:--:--</strong></span>
-                <span class="player-time-utc-box">UTC: <strong id="time-utc-text">--:--:--</strong></span>
+                <span class="player-time-local-box"><span id="player-time-local-label">Obs.</span> <strong id="time-local-text">--:--:--</strong></span>
+                <span class="player-time-utc-box"><span id="player-time-utc-label">UTC</span> <strong id="time-utc-text">--:--:--</strong></span>
             </div>
             <div class="panel-toggle" onclick="togglePlaybackDock(false)" title="Minimizar reproductor" style="width: 24px; height: 24px; font-size: 0.75rem; border-radius: 6px;"><i class="fa-solid fa-chevron-left"></i></div>
         </div>
@@ -1840,14 +1848,14 @@
         <!-- Fila Inferior: Indicador de velocidad, Botonera Centrada compacta y Recentrado -->
         <div class="playback-dock-bottom">
             <div class="playback-dock-bottom-left">
-                <span id="speed-indicator-badge" style="font-family: var(--font-mono); font-size: 0.76rem; color: var(--accent-blue); background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.3); padding: 2px 8px; border-radius: 6px; font-weight: 600;">1x</span>
+                <span id="speed-indicator-badge" style="font-family: var(--font-mono); font-size: 0.78rem; color: var(--accent-blue); font-weight: 600; padding: 0 4px; min-width: 34px; display: inline-block;">1x</span>
             </div>
             <div class="player-ctrls-compact">
-                <button class="ctrl-btn" id="btn-rewind" onclick="changeSpeedStep(-1)" title="Retroceder / Aumentar velocidad atrás (1x a 1200x)"><i class="fa-solid fa-backward"></i></button>
+                <button class="ctrl-btn" id="btn-rewind" onclick="changeSpeedStep(-1)" title="Retroceder / Aumentar velocidad atrás (1/2x a 1200x)"><i class="fa-solid fa-backward"></i></button>
                 <button class="ctrl-btn" id="btn-prev-contact" onclick="jumpContactStep(-1)" title="Momento anterior del eclipse (C1, C2, Máx, C3, C4)"><i class="fa-solid fa-step-backward"></i></button>
                 <button class="ctrl-btn play-main" id="btn-play-pause" onclick="toggleSimulation()" title="Reproducir / Pausar"><i class="fa-solid fa-play"></i></button>
                 <button class="ctrl-btn" id="btn-next-contact" onclick="jumpContactStep(1)" title="Momento siguiente del eclipse (C1, C2, Máx, C3, C4)"><i class="fa-solid fa-step-forward"></i></button>
-                <button class="ctrl-btn" id="btn-fast-forward" onclick="changeSpeedStep(1)" title="Avanzar / Aumentar velocidad adelante (1x a 1200x)"><i class="fa-solid fa-forward"></i></button>
+                <button class="ctrl-btn" id="btn-fast-forward" onclick="changeSpeedStep(1)" title="Avanzar / Aumentar velocidad adelante (1/2x a 1200x)"><i class="fa-solid fa-forward"></i></button>
             </div>
             <div class="playback-dock-bottom-right">
                 <button type="button" class="ctrl-btn" id="btn-recenter" onclick="recenterEclipseGE()" title="Centrar Tierra en el Eclipse" style="width: 30px; height: 30px; padding: 0; border-radius: 7px;">
@@ -2704,7 +2712,7 @@
         }
 
         function getUtcOffsetString(tz, dateObj = new Date()) {
-            if (!tz || tz === 'UTC') return 'UTC+0';
+            if (!tz || tz === 'UTC') return 'UTC';
             try {
                 const parts = new Intl.DateTimeFormat('en-US', {
                     timeZone: tz,
@@ -2713,7 +2721,7 @@
                 const tzPart = parts.find(p => p.type === 'timeZoneName');
                 if (tzPart && tzPart.value) {
                     let v = tzPart.value.replace(/^GMT/, 'UTC');
-                    if (v === 'UTC') return 'UTC+0';
+                    if (v === 'UTC+0' || v === 'UTC-0' || v === 'UTC+00:00' || v === 'UTC' || v === 'UTC+00' || v === 'UTC-00') return 'UTC';
                     return v;
                 }
             } catch(e) {}
@@ -2721,14 +2729,30 @@
                 const utcDate = new Date(dateObj.toLocaleString('en-US', { timeZone: 'UTC' }));
                 const tzDate = new Date(dateObj.toLocaleString('en-US', { timeZone: tz }));
                 const diffMin = Math.round((tzDate.getTime() - utcDate.getTime()) / 60000);
+                if (diffMin === 0) return 'UTC';
                 const sign = diffMin >= 0 ? '+' : '-';
                 const absMin = Math.abs(diffMin);
                 const h = Math.floor(absMin / 60);
                 const m = absMin % 60;
+                if (h === 0 && m === 0) return 'UTC';
                 return m === 0 ? ('UTC' + sign + h) : ('UTC' + sign + h + ':' + String(m).padStart(2, '0'));
             } catch(e) {
-                return 'UTC+0';
+                return 'UTC';
             }
+        }
+
+        function updateObserverHeaderTz() {
+            const tzEl = document.getElementById('observer-header-tz');
+            if (!tzEl) return;
+            if (activeExtremeMode) {
+                tzEl.textContent = 'UT1';
+                return;
+            }
+            const sampleDate = currentEclipse
+                ? new Date(Date.UTC(currentEclipse.year || 2026, (currentEclipse.month || 8) - 1, currentEclipse.day || 12, 12, 0, 0))
+                : new Date();
+            const tzStr = getUtcOffsetString(currentObserver.tz || "Europe/Madrid", sampleDate);
+            tzEl.textContent = tzStr;
         }
 
         let activeExtremeMode = null; // 'GE' | 'GD' | null
@@ -2901,6 +2925,7 @@
             if (subtitleEl) {
                 subtitleEl.textContent = dmsCoordsStr;
             }
+            updateObserverHeaderTz();
 
             if (currentEclipse) {
                 renderLocalSolarCircumstances();
@@ -2908,6 +2933,7 @@
                 if (currentActiveView === 'telescopic') {
                     renderTelescopicView();
                 }
+                updateShadowAtTime(simCurrentT);
             }
             requestRender();
         }
@@ -3324,6 +3350,16 @@
             const c2 = (isTotal || isAnnular) ? findRoot(umbraFunc, tMin, tMaxEclipse) : null;
             const c3 = (isTotal || isAnnular) ? findRoot(umbraFunc, tMaxEclipse, tMax) : null;
 
+            const c1Params = c1 != null ? getParamsAtT(c1) : null;
+            const c2Params = c2 != null ? getParamsAtT(c2) : null;
+            const c3Params = c3 != null ? getParamsAtT(c3) : null;
+            const c4Params = c4 != null ? getParamsAtT(c4) : null;
+
+            const p1Deg = c1Params ? (Math.atan2(-c1Params.u, -c1Params.v) * DEG + 360) % 360 : null;
+            const p2Deg = c2Params ? (Math.atan2(-c2Params.u, -c2Params.v) * DEG + 360) % 360 : null;
+            const p3Deg = c3Params ? (Math.atan2(-c3Params.u, -c3Params.v) * DEG + 360) % 360 : null;
+            const p4Deg = c4Params ? (Math.atan2(-c4Params.u, -c4Params.v) * DEG + 360) % 360 : null;
+
             return {
                 isEclipsed,
                 isTotal,
@@ -3333,10 +3369,14 @@
                 t0,
                 tMax: tMaxEclipse,
                 maxParams: maxP,
-                c1: c1 != null ? getParamsAtT(c1) : null,
-                c2: c2 != null ? getParamsAtT(c2) : null,
-                c3: c3 != null ? getParamsAtT(c3) : null,
-                c4: c4 != null ? getParamsAtT(c4) : null,
+                c1: c1Params,
+                c2: c2Params,
+                c3: c3Params,
+                c4: c4Params,
+                p1Deg,
+                p2Deg,
+                p3Deg,
+                p4Deg,
                 getParamsAtT
             };
         }
@@ -3354,30 +3394,21 @@
             const tbody = document.getElementById('mataro-contacts-tbody');
             const badge = document.getElementById('mataro-vis-badge');
             const thTime = document.getElementById('th-local-time');
-            const extremeBadge = document.getElementById('mataro-extreme-badge');
             if (!tbody || !currentEclipse) return;
-
-            if (extremeBadge) {
-                if (activeExtremeMode === 'GD') {
-                    extremeBadge.style.display = 'inline-block';
-                    extremeBadge.textContent = 'Máx. Duración (GD)';
-                } else if (activeExtremeMode === 'GE') {
-                    extremeBadge.style.display = 'inline-block';
-                    extremeBadge.textContent = 'Mayor Eclipse (GE)';
-                } else {
-                    extremeBadge.style.display = 'none';
-                    extremeBadge.textContent = '';
-                }
-            }
-
-            if (thTime) {
-                const sampleDate = new Date(Date.UTC(currentEclipse.year || 2026, (currentEclipse.month || 8) - 1, currentEclipse.day || 12, 12, 0, 0));
-                const tzStr = getUtcOffsetString(currentObserver.tz || "Europe/Madrid", sampleDate);
-                thTime.textContent = `Hora (${tzStr})`;
-            }
 
             const res = calculateLocalSolarCircumstances(currentEclipse, currentObserver.lat, currentObserver.lon);
             localCircumstancesCache = res;
+
+            if (thTime) {
+                if (activeExtremeMode) {
+                    thTime.textContent = 'Hora (UT1)';
+                } else {
+                    const sampleDate = new Date(Date.UTC(currentEclipse.year || 2026, (currentEclipse.month || 8) - 1, currentEclipse.day || 12, 12, 0, 0));
+                    const tzStr = getUtcOffsetString(currentObserver.tz || "Europe/Madrid", sampleDate);
+                    thTime.textContent = `Hora (${tzStr})`;
+                }
+            }
+            updateObserverHeaderTz();
 
             if (!res || !res.isEclipsed || res.maxMag <= 0.001) {
                 let notVisHtml = `
@@ -3459,16 +3490,20 @@
                 const ss = Math.round(((totalHours - hh) * 60 - mm) * 60);
 
                 let localTimeStr;
-                try {
-                    const d = new Date(Date.UTC(currentEclipse.year, (currentEclipse.month || 1) - 1, currentEclipse.day || 1, hh, mm, ss));
-                    if (currentObserver.tz) {
-                        localTimeStr = new Intl.DateTimeFormat('es-ES', { timeZone: currentObserver.tz, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).format(d);
-                    } else {
-                        const offsetHours = Math.round((currentObserver.lon || 0) / 15);
-                        localTimeStr = new Date(d.getTime() + offsetHours * 3600000).toISOString().slice(11, 19);
-                    }
-                } catch(e) {
+                if (activeExtremeMode) {
                     localTimeStr = `${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}:${String(ss).padStart(2,'0')}`;
+                } else {
+                    try {
+                        const d = new Date(Date.UTC(currentEclipse.year, (currentEclipse.month || 1) - 1, currentEclipse.day || 1, hh, mm, ss));
+                        if (currentObserver.tz) {
+                            localTimeStr = new Intl.DateTimeFormat('es-ES', { timeZone: currentObserver.tz, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).format(d);
+                        } else {
+                            const offsetHours = Math.round((currentObserver.lon || 0) / 15);
+                            localTimeStr = new Date(d.getTime() + offsetHours * 3600000).toISOString().slice(11, 19);
+                        }
+                    } catch(e) {
+                        localTimeStr = `${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}:${String(ss).padStart(2,'0')}`;
+                    }
                 }
 
                 const strokeColor = isAbove ? (isRising ? '#4ade80' : '#f59e0b') : 'var(--text-dim)';
@@ -3548,6 +3583,7 @@
                 if (group3D) group3D.style.display = 'flex';
                 requestRender();
             }
+            updateTopNavButtonsState();
         }
 
         // --- MOTOR DE LA VISTA TELESCÓPICA 2D ---
@@ -3602,45 +3638,15 @@
             const dpr = window.devicePixelRatio || 1;
             canvas.width = window.innerWidth * dpr;
             canvas.height = window.innerHeight * dpr;
+            if (currentActiveView === 'telescopic') {
+                renderTelescopicView();
+            }
         }
 
         // -------------------------------------------------------------
-        // MOTOR DE RELIEVE TOPOGRÁFICO LUNAR (NASA LRO / LOLA) Y PERLAS DE BAILY (ESTILO EDUARD MASANA)
+        // MOTOR DE RELIEVE TOPOGRÁFICO LUNAR (NASA LRO / LOLA) Y PERLAS DE BAILY
+        // (Orientación sincronizada con la Vista Telescopio: Altazimutal o Ecuatorial)
         // -------------------------------------------------------------
-        let limbOrientationMode = 'N'; // 'N' (Norte celeste arriba) o 'zenith' (Cenit local arriba)
-
-        function setLimbOrientation(mode) {
-            limbOrientationMode = mode;
-            const btnN = document.getElementById('btn-limb-orient-n');
-            const btnZ = document.getElementById('btn-limb-orient-zenith');
-            if (btnN) {
-                btnN.style.background = (mode === 'N') ? 'var(--accent-blue)' : '#0f172a';
-                btnN.style.color = (mode === 'N') ? '#020617' : '#94a3b8';
-            }
-            if (btnZ) {
-                btnZ.style.background = (mode === 'zenith') ? 'var(--accent-blue)' : '#0f172a';
-                btnZ.style.color = (mode === 'zenith') ? '#020617' : '#94a3b8';
-            }
-            renderLunarLimbRadar();
-        }
-
-        function jumpToBailyBeads() {
-            switchMainView('telescopic');
-            const chk = document.getElementById('chk-show-lunar-limb');
-            if (chk) chk.checked = true;
-            if (currentEclipse) {
-                const res = localCircumstancesCache || calculateLocalSolarCircumstances(currentEclipse, currentObserver.lat, currentObserver.lon);
-                if (res && res.c2) {
-                    timeSlider.value = res.c2.t - (4.0 / 3600);
-                    simCurrentT = parseFloat(timeSlider.value);
-                    updateShadowAtTime(simCurrentT);
-                } else if (res && res.max) {
-                    timeSlider.value = res.tMax;
-                    simCurrentT = parseFloat(timeSlider.value);
-                    updateShadowAtTime(simCurrentT);
-                }
-            }
-        }
 
         function formatCoordDms(val, isLat) {
             const dir = isLat ? (val >= 0 ? 'N' : 'S') : (val >= 0 ? 'E' : 'O');
@@ -3653,13 +3659,13 @@
         }
 
         function formatDecimalHoursToHms(hDec) {
-            const h = Math.floor(hDec);
-            const mFloat = (hDec - h) * 60;
-            const m = Math.floor(mFloat);
-            const sFloat = (mFloat - m) * 60;
-            const s = Math.floor(sFloat);
-            const tenths = Math.floor((sFloat - s) * 10);
-            return `${String(h).padStart(2, '0')}h ${String(m).padStart(2, '0')}m ${String(s).padStart(2, '0')}.${tenths}s`;
+            let totalSec = Math.round(hDec * 3600);
+            while (totalSec < 0) totalSec += 86400;
+            totalSec = totalSec % 86400;
+            const h = Math.floor(totalSec / 3600);
+            const m = Math.floor((totalSec % 3600) / 60);
+            const s = totalSec % 60;
+            return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
         }
 
         function getObserverTzOffsetHours(tz, date) {
@@ -3681,38 +3687,106 @@
             }
         }
 
-        function getSmoothLOLAProfile(paDeg) {
+        // Catálogo canónico de accidentes selenográficos en el limbo lunar (IAU)
+        // Indexado según el Ángulo de Watts (V = PA - C)
+        const LUNAR_LIMB_FEATURES = [
+            { name: "Polo Norte Lunar", landmark: "Cráteres Peary, Byrd y Hermite", type: "polar", vMin: 350, vMax: 12, desc: "Región polar ártica lunar con cráteres de sombra perpetua." },
+            { name: "Cráteres Meton y Barrow", landmark: "Murallas de Meton y Barrow", type: "crater", vMin: 12, vMax: 30, desc: "Complejo de cráteres antiguos en el limbo nor-noreste." },
+            { name: "Cráter Endymion", landmark: "Muralla oriental de Endymion", type: "crater", vMin: 30, vMax: 48, desc: "Cráter circular de 125 km con suelo de lava basáltica oscura." },
+            { name: "Mare Humboldtianum", landmark: "Cuenca Humboldtianum / Cráter Bel'kovich", type: "basin", vMin: 48, vMax: 68, desc: "Gran cuenca de impacto multianular visible en libración noreste." },
+            { name: "Montes D'Alembert", landmark: "Cumbres D'Alembert / Cráter Gauss", type: "mountain", vMin: 68, vMax: 82, desc: "Elevaciones montañosas (+3 km) en el limbo este-noreste." },
+            { name: "Mare Marginis", landmark: "Llanura de Mare Marginis / Cráter Goddard", type: "basin", vMin: 82, vMax: 96, desc: "Mar lunar de borde irregular en el ecuador oriental." },
+            { name: "Mare Smythii", landmark: "Borde de Mare Smythii / Cráter Kästner", type: "basin", vMin: 96, vMax: 114, desc: "Cuenca circular ecuatorial oriental; típico valle de contacto C2." },
+            { name: "Mare Australe", landmark: "Cuenca Australe / Cráter Humboldt", type: "basin", vMin: 114, vMax: 136, desc: "Vasta cuenca inundada de basaltos en el limbo suroriental." },
+            { name: "Cráteres Hanno y Pontécoulant", landmark: "Murallas de Hanno y Pontécoulant", type: "crater", vMin: 136, vMax: 154, desc: "Terreno craterizado escarpado del limbo suroriental." },
+            { name: "Cráteres Demonax y Boguslawsky", landmark: "Depresiones de Demonax y Boussingault", type: "crater", vMin: 154, vMax: 172, desc: "Profundos cráteres polares del cuadrante meridional." },
+            { name: "Polo Sur Lunar", landmark: "Macizo de Malapert / Cráter Shackleton", type: "polar", vMin: 172, vMax: 186, desc: "Polo Sur lunar con crestas iluminadas y profundos valles en sombra." },
+            { name: "Montes Leibniz", landmark: "Pico Leibniz / Cumbres de Cabeus (+5.2 km)", type: "mountain", vMin: 186, vMax: 204, desc: "Las cumbres más altas del limbo lunar (+5 km); recortan las últimas perlas del sur." },
+            { name: "Cráteres Drygalski y Boltzmann", landmark: "Muralla de Drygalski / Valle de Boltzmann", type: "crater", vMin: 204, vMax: 218, desc: "Impresionante cráter de impacto de 162 km con pico central prominente." },
+            { name: "Cuenca Polo Sur-Aitken (SPA)", landmark: "Gran Depresión SPA / Cráter Zeeman", type: "basin", vMin: 218, vMax: 238, desc: "La mayor y más profunda cuenca de impacto del sistema solar (-3 km)." },
+            { name: "Montes Doerfel / Cráter Bailly", landmark: "Cordillera Doerfel / Muralla de Bailly", type: "mountain", vMin: 238, vMax: 256, desc: "Bailly es el mayor cráter del limbo visible (287 km); picos Doerfel (+4 km)." },
+            { name: "Mare Orientale (Montes Cordillera)", landmark: "Anillo Exterior: Montes Cordillera (+3.8 km)", type: "mountain", vMin: 256, vMax: 274, desc: "Anillo exterior concéntrico de la cuenca multianular de Orientale." },
+            { name: "Mare Orientale (Montes Rook)", landmark: "Anillo Interior: Montes Rook / Cráter Lowell", type: "mountain", vMin: 274, vMax: 294, desc: "Anillo montañoso interior de Orientale; genera espectaculares anillos de diamantes en C3." },
+            { name: "Cráteres Grimaldi y Riccioli", landmark: "Cuenca Grimaldi / Cordillera Norte", type: "crater", vMin: 294, vMax: 312, desc: "Una de las zonas más oscuras del limbo occidental sobre el ecuador lunar." },
+            { name: "Oceanus Procellarum Oeste", landmark: "Costa de Procellarum / Cráter Hevelius", type: "basin", vMin: 312, vMax: 330, desc: "Llanuras basálticas occidentales y cráteres marginales." },
+            { name: "Cráteres Pythagoras y Xenophanes", landmark: "Murallas de Pythagoras y Anaximander", type: "crater", vMin: 330, vMax: 350, desc: "Cráter de 130 km con pico central de 3 km en el limbo noroccidental." }
+        ];
+
+        function getLimbFeatureAtPA(paDeg, axisC = 14.0) {
+            // Corrección de simetría selenográfica este-oeste: en el disco visible,
+            // las longitudes negativas (Oeste lunar: Oceanus Procellarum, Mare Orientale) están a la izquierda
+            // y las longitudes positivas (Este lunar: Mare Crisium, Mare Smythii) están a la derecha
+            const vDeg = ((360.0 - (paDeg - axisC)) % 360.0 + 360.0) % 360.0;
+            for (const f of LUNAR_LIMB_FEATURES) {
+                if (f.vMin > f.vMax) {
+                    if (vDeg >= f.vMin || vDeg < f.vMax) return { ...f, wattsAngle: vDeg };
+                } else {
+                    if (vDeg >= f.vMin && vDeg < f.vMax) return { ...f, wattsAngle: vDeg };
+                }
+            }
+            return { name: "Limbo Lunar", landmark: "Relieve Lunar", type: "relief", wattsAngle: vDeg, desc: "Borde topográfico de la Luna" };
+        }
+
+        function getEclipseLibrationParams(ec) {
+            if (!ec) return { libL: 0.40, libB: 0.00, axisC: 14.0 };
+
+            // Calibraciones canónicas topocéntricas para el Trío Ibérico
+            if (ec.year === 2026) {
+                return { libL: 0.40, libB: 0.00, axisC: 14.0 };
+            } else if (ec.year === 2027) {
+                return { libL: -4.80, libB: 0.65, axisC: -18.2 };
+            } else if (ec.year === 2028) {
+                return { libL: 2.10, libB: -1.20, axisC: 22.5 };
+            }
+
+            // Para cualquiera de los restantes 11.895 eclipses (-1999 a +3000):
+            // Algoritmo astronómico canónico de Jean Meeus en tiempo real
+            if (typeof calculateMeeusLunarLibration === 'function') {
+                let hour = 12;
+                if (typeof ec.td_ge === 'string' && ec.td_ge.includes(':')) {
+                    const p = ec.td_ge.split(':').map(Number);
+                    hour = (p[0] || 0) + (p[1] || 0) / 60 + (p[2] || 0) / 3600;
+                } else if (typeof ec.t0 === 'number') {
+                    hour = ec.t0;
+                }
+                return calculateMeeusLunarLibration(ec.year, ec.month || 1, ec.day || 1, hour);
+            }
+
+            return { libL: 0.40, libB: 0.00, axisC: 14.0 };
+        }
+
+        function getSmoothLOLAProfile(paDeg, libL = 0.40, libB = 0.00, axisC = 14.0) {
             if (typeof getLolaLimbElevation === 'function') {
-                return getLolaLimbElevation(paDeg, 0.4, 0.0, 14.0);
+                return getLolaLimbElevation(paDeg, libL, libB, axisC);
             }
             const rad = paDeg * Math.PI / 180;
             
-            // 1. Relieve base de baja frecuencia para libración topocéntrica (l=+0.4°, b=0.0°, c=+14.0°)
+            // 1. Relieve base de baja frecuencia para libración topocéntrica
             let h = 0.35 * Math.sin(rad * 1 - 0.8)
                   - 0.50 * Math.cos(rad * 2 + 0.3)
                   + 0.40 * Math.sin(rad * 3 - 1.2)
                   + 0.25 * Math.cos(rad * 4 + 0.5);
 
-            // 2. Montes Leibniz (PA 165° - 208°, en torno a SL a 194°): El macizo más prominente del limbo (+4.8 km)
+            // 2. Montes Leibniz
             const sDist = Math.abs(((paDeg - 188 + 540) % 360) - 180);
             if (sDist < 24) {
                 const peak = Math.cos((sDist / 24) * (Math.PI / 2));
                 h += 4.5 * peak * peak * (1.0 + 0.25 * Math.sin(rad * 18) - 0.15 * Math.cos(rad * 32));
             }
 
-            // 3. Cuenca Polo Sur-Aitken (PA 210° - 245°): Depresión profunda (-2.8 km)
+            // 3. Cuenca Polo Sur-Aitken
             const spaDist = Math.abs(((paDeg - 228 + 540) % 360) - 180);
             if (spaDist < 18) {
                 h -= 2.6 * Math.cos((spaDist / 18) * (Math.PI / 2));
             }
 
-            // 4. Valle de Contacto C2' (PA 118° - 128°): Depresión de contacto (-1.4 km)
+            // 4. Valle de Contacto C2'
             const c2Dist = Math.abs(((paDeg - 123.1 + 540) % 360) - 180);
             if (c2Dist < 6) {
                 h -= 1.4 * Math.cos((c2Dist / 6) * (Math.PI / 2));
             }
 
-            // 5. Valle de Contacto C3' (PA 298° - 308°): Depresión de contacto (-1.5 km)
+            // 5. Valle de Contacto C3'
             const c3Dist = Math.abs(((paDeg - 303.7 + 540) % 360) - 180);
             if (c3Dist < 6) {
                 h -= 1.5 * Math.cos((c3Dist / 6) * (Math.PI / 2));
@@ -3721,12 +3795,13 @@
             // 6. Montes Rook & Cordillera (PA 65° - 95°): Cumbres moderadas (+1.8 km)
             const moDist = Math.abs(((paDeg - 80 + 540) % 360) - 180);
             if (moDist < 16) {
-                h += 1.8 * Math.cos((moDist / 16) * (Math.PI / 2));
+                const rookPeak = Math.cos((moDist / 16) * (Math.PI / 2));
+                h += 1.8 * rookPeak * rookPeak;
             }
 
-            // 7. Micro-relieve y crestas de cráteres de alta frecuencia (textura nítida idéntica al atlas LOLA DEM)
-            for (let k = 12; k <= 96; k += 4) {
-                const weight = 0.42 / Math.sqrt(k);
+            // 7. Micro-ondulación fractal de relieve
+            for (let k = 5; k <= 12; k++) {
+                const weight = 0.18 / Math.sqrt(k);
                 const phase = (k * 137.5) * Math.PI / 180;
                 h += weight * Math.sin(rad * k + phase);
             }
@@ -3734,36 +3809,17 @@
             return h;
         }
 
-        function toggleTeleLimbProfile() {
+        function toggleTeleLimbProfile(forcedState) {
             const chk = document.getElementById('chk-show-lunar-limb');
             if (chk) {
-                chk.checked = !chk.checked;
-            }
-            updateTeleLimbButtonState();
-            renderTelescopicView();
-        }
-
-        function updateTeleLimbButtonState() {
-            const chk = document.getElementById('chk-show-lunar-limb');
-            const btn = document.getElementById('btn-tele-toggle-limb');
-            const lbl = document.getElementById('tele-limb-btn-label');
-            const active = chk ? chk.checked : false;
-            if (btn) {
-                if (active) {
-                    btn.style.background = '#38bdf8';
-                    btn.style.color = '#020617';
-                    btn.style.borderColor = '#38bdf8';
-                    btn.style.boxShadow = '0 0 14px rgba(56, 189, 248, 0.6)';
+                if (typeof forcedState === 'boolean') {
+                    chk.checked = forcedState;
                 } else {
-                    btn.style.background = 'rgba(15, 23, 42, 0.85)';
-                    btn.style.color = 'var(--accent-blue)';
-                    btn.style.borderColor = 'rgba(56, 189, 248, 0.4)';
-                    btn.style.boxShadow = 'none';
+                    chk.checked = !chk.checked;
                 }
+                toggleLunarLimbPanel(chk.checked);
             }
-            if (lbl) {
-                lbl.textContent = active ? 'Perfil Limbo: ON' : 'Perfil Limbo';
-            }
+            renderTelescopicView();
         }
 
         function updateLimbPanelHeaderInfo(circ, p2Deg, p3Deg) {
@@ -3774,20 +3830,42 @@
             const c3El = document.getElementById('limb-c3-text');
             const p3El = document.getElementById('limb-p3-text');
             const durEl = document.getElementById('limb-duration-text');
+            const elL = document.getElementById('limb-lib-l');
+            const elB = document.getElementById('limb-lib-b');
+            const elC = document.getElementById('limb-lib-c');
+
+            const { libL, libB, axisC } = getEclipseLibrationParams(currentEclipse);
+            if (elL) elL.textContent = `${libL >= 0 ? '+' : ''}${libL.toFixed(1)}°`;
+            if (elB) elB.textContent = `${libB >= 0 ? '+' : ''}${libB.toFixed(1)}°`;
+            if (elC) elC.textContent = `${axisC >= 0 ? '+' : ''}${axisC.toFixed(1)}°`;
 
             if (coordEl) {
-                coordEl.textContent = `Lat./Lon.: ${formatCoordDms(currentObserver.lat, true)} / ${formatCoordDms(currentObserver.lon, false)}`;
+                coordEl.innerHTML = `<i class="fa-solid fa-location-crosshairs" style="font-size: 0.72rem;"></i><span>${formatCoordDms(currentObserver.lat, true)}  ${formatCoordDms(currentObserver.lon, false)}</span>`;
+            }
+            const timeHeaderEl = document.getElementById('limb-time-header-label');
+            if (timeHeaderEl && currentEclipse) {
+                if (activeExtremeMode) {
+                    timeHeaderEl.textContent = 'Hora (UT1)';
+                } else {
+                    const sampleDate = new Date(Date.UTC(currentEclipse.year || 2026, (currentEclipse.month || 8) - 1, currentEclipse.day || 12, 12, 0, 0));
+                    const tzStr = getUtcOffsetString(currentObserver.tz || "Europe/Madrid", sampleDate);
+                    timeHeaderEl.textContent = `Hora (${tzStr})`;
+                }
             }
             if (tzEl && currentEclipse) {
-                const sampleDate = new Date(Date.UTC(currentEclipse.year || 2026, (currentEclipse.month || 8) - 1, currentEclipse.day || 12, 12, 0, 0));
-                const tzStr = getUtcOffsetString(currentObserver.tz || "Europe/Madrid", sampleDate);
-                tzEl.textContent = tzStr;
+                if (activeExtremeMode) {
+                    tzEl.textContent = 'UT1';
+                } else {
+                    const sampleDate = new Date(Date.UTC(currentEclipse.year || 2026, (currentEclipse.month || 8) - 1, currentEclipse.day || 12, 12, 0, 0));
+                    const tzStr = getUtcOffsetString(currentObserver.tz || "Europe/Madrid", sampleDate);
+                    tzEl.textContent = tzStr;
+                }
             }
 
             if (circ && circ.isTotal && circ.c2 && circ.c3) {
                 const dtHours = (currentEclipse.dt || 0) / 3600;
                 const sampleDate = new Date(Date.UTC(currentEclipse.year || 2026, (currentEclipse.month || 8) - 1, currentEclipse.day || 12, 12, 0, 0));
-                const tzOffset = getObserverTzOffsetHours(currentObserver.tz || "Europe/Madrid", sampleDate);
+                const tzOffset = activeExtremeMode ? 0 : getObserverTzOffsetHours(currentObserver.tz || "Europe/Madrid", sampleDate);
                 const t0 = currentEclipse.t0 || 0;
                 
                 // Ajuste de precisión del limbo lunar respecto a la esfera media (LOLA / Watts ephemeris)
@@ -3812,35 +3890,117 @@
                 const c2Str = formatDecimalHoursToHms(c2LocalH);
                 const c3Str = formatDecimalHoursToHms(c3LocalH);
 
-                if (c2El) c2El.innerHTML = `C2': ${c2Str} <span style="color:#86efac; font-size: 0.65rem;">(+0.7s)</span>`;
-                if (p2El) p2El.textContent = `P2': ${p2Deg.toFixed(1)}°`;
-                if (c3El) c3El.innerHTML = `C3': ${c3Str} <span style="color:#fca5a5; font-size: 0.65rem;">(-1.1s)</span>`;
-                if (p3El) p3El.textContent = `P3': ${p3Deg.toFixed(1)}°`;
+                const c2Sign = c2SecOffset >= 0 ? '+' : '';
+                const c2Color = c2SecOffset >= 0 ? '#86efac' : '#fca5a5';
+                const c3Sign = c3SecOffset >= 0 ? '+' : '';
+                const c3Color = c3SecOffset >= 0 ? '#86efac' : '#fca5a5';
+
+                if (c2El) c2El.innerHTML = `<span style="color: var(--accent-blue); font-weight: 400; min-width: 38px;">C2'</span> <span style="color: #f8fafc; min-width: 68px;">${c2Str}</span> <span style="color: ${c2Color}; font-size: 0.72rem; font-weight: 400;">(${c2Sign}${c2SecOffset.toFixed(1)}s)</span>`;
+                if (p2El) p2El.innerHTML = `<span style="color: var(--accent-blue); font-weight: 400; min-width: 26px; text-align: left;">P2'</span> <span style="color: #f8fafc; min-width: 48px; text-align: right;">${p2Deg.toFixed(1)}°</span>`;
+                if (c3El) c3El.innerHTML = `<span style="color: var(--accent-blue); font-weight: 400; min-width: 38px;">C3'</span> <span style="color: #f8fafc; min-width: 68px;">${c3Str}</span> <span style="color: ${c3Color}; font-size: 0.72rem; font-weight: 400;">(${c3Sign}${c3SecOffset.toFixed(1)}s)</span>`;
+                if (p3El) p3El.innerHTML = `<span style="color: var(--accent-blue); font-weight: 400; min-width: 26px; text-align: left;">P3'</span> <span style="color: #f8fafc; min-width: 48px; text-align: right;">${p3Deg.toFixed(1)}°</span>`;
 
                 if (durEl) {
                     const rawDurSec = (c3RawH - c2RawH) * 3600;
                     const durSec = Math.max(0, rawDurSec + durSecOffset);
                     const m = Math.floor(durSec / 60);
                     const s = (durSec % 60).toFixed(1);
-                    durEl.innerHTML = `Dur.: <strong>${m}m ${s}s</strong> <span style="color:#fca5a5; font-size: 0.65rem;">(-1.9s)</span>`;
+                    const durSign = durSecOffset >= 0 ? '+' : '';
+                    const durColor = durSecOffset >= 0 ? '#86efac' : '#fca5a5';
+                    durEl.innerHTML = `<span style="color: var(--accent-blue); font-weight: 400; min-width: 38px;">Dur.</span> <span style="color: #f8fafc; min-width: 68px;">${m}m${s}s</span> <span style="color: ${durColor}; font-size: 0.72rem; font-weight: 400;">(${durSign}${durSecOffset.toFixed(1)}s)</span>`;
                 }
             } else if (circ && circ.c1 && circ.c4) {
                 const dtHours = (currentEclipse.dt || 0) / 3600;
                 const sampleDate = new Date(Date.UTC(currentEclipse.year || 2026, (currentEclipse.month || 8) - 1, currentEclipse.day || 12, 12, 0, 0));
-                const tzOffset = getObserverTzOffsetHours(currentObserver.tz || "Europe/Madrid", sampleDate);
+                const tzOffset = activeExtremeMode ? 0 : getObserverTzOffsetHours(currentObserver.tz || "Europe/Madrid", sampleDate);
                 const t0 = currentEclipse.t0 || 0;
                 const c1LocalH = ((t0 + circ.c1.t - dtHours + tzOffset) % 24 + 24) % 24;
                 const c4LocalH = ((t0 + circ.c4.t - dtHours + tzOffset) % 24 + 24) % 24;
 
-                if (c2El) c2El.textContent = `C1': ${formatDecimalHoursToHms(c1LocalH)}`;
-                if (p2El) p2El.textContent = `P1': ${(circ.p1Deg != null ? circ.p1Deg.toFixed(1) : '--')}°`;
-                if (c3El) c3El.textContent = `C4': ${formatDecimalHoursToHms(c4LocalH)}`;
-                if (p3El) p3El.textContent = `P4': ${(circ.p4Deg != null ? circ.p4Deg.toFixed(1) : '--')}°`;
-                if (durEl) durEl.textContent = `Mag.: ${(circ.maxMag * 100).toFixed(1)}%`;
+                if (c2El) c2El.innerHTML = `<span style="color: var(--accent-blue); font-weight: 400; min-width: 38px;">C1'</span> <span style="color: #f8fafc; min-width: 68px;">${formatDecimalHoursToHms(c1LocalH)}</span>`;
+                if (p2El) p2El.innerHTML = `<span style="color: var(--accent-blue); font-weight: 400; min-width: 26px; text-align: left;">P1'</span> <span style="color: #f8fafc; min-width: 48px; text-align: right;">${(circ.p1Deg != null ? circ.p1Deg.toFixed(1) : '--')}°</span>`;
+                if (c3El) c3El.innerHTML = `<span style="color: var(--accent-blue); font-weight: 400; min-width: 38px;">C4'</span> <span style="color: #f8fafc; min-width: 68px;">${formatDecimalHoursToHms(c4LocalH)}</span>`;
+                if (p3El) p3El.innerHTML = `<span style="color: var(--accent-blue); font-weight: 400; min-width: 26px; text-align: left;">P4'</span> <span style="color: #f8fafc; min-width: 48px; text-align: right;">${(circ.p4Deg != null ? circ.p4Deg.toFixed(1) : '--')}°</span>`;
+                if (durEl) durEl.innerHTML = `<span style="color: var(--accent-blue); font-weight: 400; min-width: 38px;">Mag.</span> <span style="color: #f8fafc; min-width: 68px;">${(circ.maxMag * 100).toFixed(1)}%</span>`;
             }
+
         }
 
-        function renderLunarLimbRadar(activeBeads = []) {
+        let lastRadarBeads = [];
+        let lastRadarDiamond = false;
+        let lastRadarAnnouncement = null;
+
+        // Estado persistente para anuncios de perlas de Baily y anillo de diamantes
+        let beadAnnounceState = {
+            lastCount: 0,
+            lastAngles: [],
+            currentFeature: '',
+            featureTime: 0,
+            timer: null
+        };
+
+        function getBeadAnnouncement(beads, isDiamond, axisC) {
+            const now = performance.now();
+            const count = beads ? beads.length : 0;
+
+            // En ningún caso mostrar el nombre del accidente cuando se anuncia un diamante
+            if (isDiamond) {
+                beadAnnounceState.currentFeature = '';
+                beadAnnounceState.featureTime = 0;
+                beadAnnounceState.lastCount = count;
+                beadAnnounceState.lastAngles = beads ? beads.map(b => b.angleDeg) : [];
+                return 'Anillo de Diamantes';
+            }
+
+            if (count === 0) {
+                beadAnnounceState.currentFeature = '';
+                beadAnnounceState.featureTime = 0;
+                beadAnnounceState.lastCount = 0;
+                beadAnnounceState.lastAngles = [];
+                return null;
+            }
+
+            // Cuando desciende el número de perlas, el nombre del accidente NO se mantiene (desaparece de inmediato)
+            if (count < beadAnnounceState.lastCount) {
+                beadAnnounceState.currentFeature = '';
+                beadAnnounceState.featureTime = 0;
+            } else if (count > beadAnnounceState.lastCount) {
+                // Cuando aparecen nuevas perlas, se anuncia el nombre del accidente lunar que la produce
+                let newBead = beads.find(b => !beadAnnounceState.lastAngles.some(a => {
+                    let diff = Math.abs(b.angleDeg - a);
+                    if (diff > 180) diff = 360 - diff;
+                    return diff < 4.0;
+                })) || beads[0];
+
+                const feat = getLimbFeatureAtPA(newBead.angleDeg, axisC);
+                beadAnnounceState.currentFeature = feat ? feat.name : '';
+                beadAnnounceState.featureTime = now;
+
+                if (beadAnnounceState.timer) clearTimeout(beadAnnounceState.timer);
+                beadAnnounceState.timer = setTimeout(() => {
+                    if (!isPlaying) {
+                        renderTelescopicView();
+                    }
+                }, 3600);
+            }
+
+            beadAnnounceState.lastCount = count;
+            beadAnnounceState.lastAngles = beads.map(b => b.angleDeg);
+
+            // Los nombres de los accidentes no deben permanecer visibles pasados unos segundos (3.5s) desde su aparición
+            const isFeatureVisible = beadAnnounceState.currentFeature && (now - beadAnnounceState.featureTime < 3500);
+            const countStr = count === 1 ? '1 perla activa' : `${count} perlas activas`;
+            return isFeatureVisible ? `${countStr} · ${beadAnnounceState.currentFeature}` : countStr;
+        }
+
+        function renderLunarLimbRadar(activeBeads = null, isDiamondRing = null, announcementText = null) {
+            if (activeBeads !== null) lastRadarBeads = activeBeads;
+            else activeBeads = lastRadarBeads;
+            if (isDiamondRing !== null) lastRadarDiamond = isDiamondRing;
+            else isDiamondRing = lastRadarDiamond;
+            if (announcementText !== null) lastRadarAnnouncement = announcementText;
+            else announcementText = lastRadarAnnouncement;
+
             const canvas = document.getElementById('canvas-lunar-limb-radar');
             if (!canvas) return;
             const ctx = canvas.getContext('2d');
@@ -3855,18 +4015,24 @@
             ctx.scale(dpr, dpr);
 
             const w = 320, h = 320;
-            const cx = w / 2, cy = h / 2;
-            const baseR = 108; // Radio del círculo blanco nominal
-            const exag = 3.6;  // Escala de relieve topográfico en píxeles
+            const cx = w / 2, cy = h / 2 + 18;
+            const baseR = 102; // Radio del círculo blanco nominal ajustado para amplitud superior
+            const exag = 2.5;  // Escala de relieve topográfico en píxeles (calibrada con Eclipse 2.0 Masana)
 
             const ec = currentEclipse;
             const circ = localCircumstancesCache || (ec ? calculateLocalSolarCircumstances(ec, currentObserver.lat, currentObserver.lon) : null);
             const t = parseFloat(timeSlider?.value) || 0;
             const p = circ ? circ.getParamsAtT(t) : null;
             const qDeg = (p && p.qDeg != null) ? p.qDeg : (circ && circ.qMaxDeg != null ? circ.qMaxDeg : 0);
+            const isTotalNow = Boolean((p && p.delta < Math.abs(p.L2) && p.L2 < 0) || (circ && circ.isTotal && circ.c2 && circ.c3 && t >= circ.c2.t && t <= circ.c3.t));
 
-            // Ángulo de orientación: si 'N', rotación = 0. Si 'zenith', rotación = qDeg
-            const rotDeg = (limbOrientationMode === 'zenith') ? qDeg : 0;
+            // Ángulo de orientación sincronizado con la Vista Telescopio:
+            // Altazimutal (Cenit arriba) si chk-tele-zenith-up está marcado, Ecuatorial (Norte arriba) si está desmarcado
+            const isZenithUp = document.getElementById('chk-tele-zenith-up')?.checked ?? true;
+            const rotDeg = isZenithUp ? qDeg : 0;
+
+
+            const showLimbLabels = document.getElementById('chk-limb-labels')?.checked ?? true;
 
             // Fondo azul marino oscuro exacto (#021520)
             ctx.fillStyle = '#021520';
@@ -3881,7 +4047,7 @@
             ctx.stroke();
 
             // 2. Círculo blanco nominal medio de referencia
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.75)';
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.40)';
             ctx.lineWidth = 0.8;
             ctx.beginPath();
             ctx.arc(cx, cy, baseR, 0, Math.PI * 2);
@@ -3899,13 +4065,15 @@
                 };
             }
 
-            // 3. Trazo del limbo lunar topográfico (blanco, continuo, nítido y detallado a 720 puntos)
+            const { libL, libB, axisC } = getEclipseLibrationParams(ec);
+
+            // 3. Trazo del limbo lunar topográfico (azul idéntico al canvas principal, continuo, nítido y detallado a 3.600 puntos reales NASA LOLA)
             ctx.beginPath();
-            const totalSteps = 720;
+            const totalSteps = 3600;
             for (let i = 0; i <= totalSteps; i++) {
-                const deg = (i * 0.5) % 360;
+                const deg = (i * 0.1) % 360;
                 const proj = skyAngleToCanvas(deg);
-                const hKm = getSmoothLOLAProfile(deg);
+                const hKm = getSmoothLOLAProfile(deg, libL, libB, axisC);
                 const r = baseR + hKm * exag;
                 const px = cx + proj.xNorm * r;
                 const py = cy + proj.yNorm * r;
@@ -3913,8 +4081,8 @@
                 else ctx.lineTo(px, py);
             }
             ctx.closePath();
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.95)';
-            ctx.lineWidth = 0.75;
+            ctx.strokeStyle = isTotalNow ? 'rgba(56, 189, 248, 0.90)' : 'rgba(56, 189, 248, 0.75)';
+            ctx.lineWidth = 0.95;
             ctx.stroke();
 
             // 4. Marcas y Vectores astronómicos (reproduciendo fielmente la app de Eduard Masana)
@@ -3927,11 +4095,13 @@
             ctx.lineTo(cx + projNorth.xNorm * (baseR + 9), cy + projNorth.yNorm * (baseR + 9));
             ctx.stroke();
 
-            ctx.fillStyle = '#ef4444';
-            ctx.font = 'bold 9.5px var(--font-sans)';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('Norte', cx + projNorth.xNorm * (baseR - 18), cy + projNorth.yNorm * (baseR - 18));
+            if (showLimbLabels) {
+                ctx.fillStyle = '#ef4444';
+                ctx.font = '400 9.5px var(--font-sans)';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('Norte', cx + projNorth.xNorm * (baseR - 18), cy + projNorth.yNorm * (baseR - 18));
+            }
 
             // B. Marca Cenit Local (Amarillo)
             const projCenit = skyAngleToCanvas(qDeg);
@@ -3942,14 +4112,15 @@
             ctx.lineTo(cx + projCenit.xNorm * (baseR + 9), cy + projCenit.yNorm * (baseR + 9));
             ctx.stroke();
 
-            ctx.fillStyle = '#eab308';
-            ctx.font = 'bold 9.5px var(--font-sans)';
-            ctx.fillText('Cenit', cx + projCenit.xNorm * (baseR - 18), cy + projCenit.yNorm * (baseR - 18));
+            if (showLimbLabels) {
+                ctx.fillStyle = '#eab308';
+                ctx.font = '400 9.5px var(--font-sans)';
+                ctx.fillText('Cenit', cx + projCenit.xNorm * (baseR - 18), cy + projCenit.yNorm * (baseR - 18));
+            }
 
             // C. Eje de rotación Lunar (Verde): NL y SL
-            const lunarAxisAngle = 14.0; // Ángulo de inclinación del eje lunar
-            const projNL = skyAngleToCanvas(lunarAxisAngle);
-            const projSL = skyAngleToCanvas(180 + lunarAxisAngle);
+            const projNL = skyAngleToCanvas(((axisC % 360) + 360) % 360);
+            const projSL = skyAngleToCanvas(((axisC + 180) % 360 + 360) % 360);
 
             ctx.strokeStyle = '#22c55e';
             ctx.lineWidth = 1.6;
@@ -3958,76 +4129,232 @@
             ctx.moveTo(cx + projNL.xNorm * (baseR - 7), cy + projNL.yNorm * (baseR - 7));
             ctx.lineTo(cx + projNL.xNorm * (baseR + 9), cy + projNL.yNorm * (baseR + 9));
             ctx.stroke();
-            ctx.fillStyle = '#22c55e';
-            ctx.fillText('NL', cx + projNL.xNorm * (baseR + 17), cy + projNL.yNorm * (baseR + 17));
+            if (showLimbLabels) {
+                ctx.fillStyle = '#22c55e';
+                ctx.font = '400 9.5px var(--font-sans)';
+                ctx.fillText('NL', cx + projNL.xNorm * (baseR + 17), cy + projNL.yNorm * (baseR + 17));
+            }
 
             // SL
             ctx.beginPath();
             ctx.moveTo(cx + projSL.xNorm * (baseR - 7), cy + projSL.yNorm * (baseR - 7));
             ctx.lineTo(cx + projSL.xNorm * (baseR + 9), cy + projSL.yNorm * (baseR + 9));
             ctx.stroke();
-            ctx.fillText('SL', cx + projSL.xNorm * (baseR + 17), cy + projSL.yNorm * (baseR + 17));
+            if (showLimbLabels) {
+                ctx.fillText('SL', cx + projSL.xNorm * (baseR + 17), cy + projSL.yNorm * (baseR + 17));
+            }
 
-            // D. Vectores de Contacto C2' y C3' (Azul celeste #7dd3fc)
+            // D. Vectores de Contacto (C2'/C3' si es total; C1'/C4' si es parcial) (Azul celeste #7dd3fc)
             let p2Deg = 123.1, p3Deg = 303.7;
             let showContactVectors = false;
             if (circ && circ.isTotal && circ.c2 && circ.c3) {
                 showContactVectors = true;
-                const p2Params = circ.getParamsAtT(circ.c2.t);
-                const p3Params = circ.getParamsAtT(circ.c3.t);
-                if (p2Params) p2Deg = (Math.atan2(-p2Params.u, -p2Params.v) * 180 / Math.PI + 360) % 360;
-                if (p3Params) p3Deg = (Math.atan2(-p3Params.u, -p3Params.v) * 180 / Math.PI + 360) % 360;
+                if (circ.p2Deg != null) {
+                    p2Deg = circ.p2Deg;
+                } else {
+                    const p2Params = circ.getParamsAtT(circ.c2.t);
+                    if (p2Params) p2Deg = (Math.atan2(-p2Params.u, -p2Params.v) * 180 / Math.PI + 360) % 360;
+                }
+                if (circ.p3Deg != null) {
+                    p3Deg = circ.p3Deg;
+                } else {
+                    const p3Params = circ.getParamsAtT(circ.c3.t);
+                    if (p3Params) p3Deg = (Math.atan2(-p3Params.u, -p3Params.v) * 180 / Math.PI + 360) % 360;
+                }
             } else if (circ && circ.c1 && circ.c4) {
                 showContactVectors = true;
-                if (circ.p1Deg != null) p2Deg = (circ.p1Deg + 180) % 360;
-                if (circ.p4Deg != null) p3Deg = (circ.p4Deg + 180) % 360;
+                if (circ.p1Deg != null) p2Deg = circ.p1Deg;
+                if (circ.p4Deg != null) p3Deg = circ.p4Deg;
             }
 
             if (showContactVectors) {
-                const projC2 = skyAngleToCanvas(p2Deg);
-                const projC3 = skyAngleToCanvas(p3Deg);
                 const label1 = (circ && circ.isTotal) ? "C2'" : "C1'";
                 const label2 = (circ && circ.isTotal) ? "C3'" : "C4'";
+                const feat1 = getLimbFeatureAtPA(p2Deg, axisC);
+                const feat2 = getLimbFeatureAtPA(p3Deg, axisC);
 
-                ctx.strokeStyle = '#7dd3fc';
-                ctx.lineWidth = 1.3;
+                const contactsToDraw = [
+                    { label: label1, pa: p2Deg, feat: feat1 },
+                    { label: label2, pa: p3Deg, feat: feat2 }
+                ];
 
-                // Vector C2'/C1'
-                ctx.beginPath();
-                ctx.moveTo(cx, cy);
-                ctx.lineTo(cx + projC2.xNorm * baseR, cy + projC2.yNorm * baseR);
-                ctx.stroke();
+                ctx.save();
+                contactsToDraw.forEach(cItem => {
+                    const proj = skyAngleToCanvas(cItem.pa);
+                    const hKm = getSmoothLOLAProfile(cItem.pa, libL, libB, axisC);
+                    const rLimb = baseR + hKm * exag;
+                    const px = cx + proj.xNorm * rLimb;
+                    const py = cy + proj.yNorm * rLimb;
 
-                ctx.fillStyle = '#7dd3fc';
-                ctx.font = 'bold 9.5px var(--font-sans)';
-                ctx.fillText(label1, cx + projC2.xNorm * (baseR * 0.65) - 8, cy + projC2.yNorm * (baseR * 0.65) + 8);
+                    // 1. Vector radial hacia el punto de contacto
+                    ctx.strokeStyle = 'rgba(125, 211, 252, 0.75)';
+                    ctx.lineWidth = 1.3;
+                    ctx.beginPath();
+                    ctx.moveTo(cx, cy);
+                    ctx.lineTo(px, py);
+                    ctx.stroke();
 
-                // Vector C3'/C4'
-                ctx.beginPath();
-                ctx.moveTo(cx, cy);
-                ctx.lineTo(cx + projC3.xNorm * baseR, cy + projC3.yNorm * baseR);
-                ctx.stroke();
+                    // 2. Marcador visible en el punto exacto de contacto sobre el limbo
+                    ctx.fillStyle = '#38bdf8';
+                    ctx.shadowColor = '#38bdf8';
+                    ctx.shadowBlur = 6;
+                    ctx.beginPath();
+                    ctx.arc(px, py, 3.0, 0, Math.PI * 2);
+                    ctx.fill();
 
-                ctx.fillText(label2, cx + projC3.xNorm * (baseR * 0.65) + 8, cy + projC3.yNorm * (baseR * 0.65) - 6);
+                    // 3. Rótulo de contacto (C2', C3', etc.) DENTRO del círculo lunar
+                    if (showLimbLabels) {
+                        ctx.save();
+                        ctx.font = '400 9.5px var(--font-sans)';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        const rInside = baseR - 16;
+                        const inX = cx + proj.xNorm * rInside;
+                        const inY = cy + proj.yNorm * rInside;
+                        const lblStr = cItem.label;
+                        const lblW = ctx.measureText(lblStr).width;
+                        ctx.fillStyle = 'rgba(2, 21, 32, 0.90)';
+                        ctx.fillRect(inX - lblW / 2 - 2, inY - 6, lblW + 4, 12);
+                        ctx.fillStyle = '#7dd3fc';
+                        ctx.fillText(lblStr, inX, inY);
+                        ctx.restore();
+                    }
+
+                    // 4. Rótulo del accidente selenográfico en el exterior
+                    if (showLimbLabels && cItem.feat) {
+                        ctx.save();
+                        ctx.shadowColor = 'rgba(0, 0, 0, 0.95)';
+                        ctx.shadowBlur = 4;
+                        ctx.font = '400 8.5px var(--font-sans)';
+
+                        const rText = baseR + 14;
+                        let tx = cx + proj.xNorm * rText;
+                        let ty = cy + proj.yNorm * rText;
+
+                        const textStr = cItem.feat.name;
+                        const textW = ctx.measureText(textStr).width;
+
+                        if (proj.xNorm > 0.2) {
+                            ctx.textAlign = 'left';
+                            tx = Math.max(8, Math.min(w - textW - 8, tx));
+                        } else if (proj.xNorm < -0.2) {
+                            ctx.textAlign = 'right';
+                            tx = Math.min(w - 8, Math.max(textW + 8, tx));
+                        } else {
+                            ctx.textAlign = 'center';
+                            tx = Math.max(textW / 2 + 8, Math.min(w - textW / 2 - 8, tx));
+                        }
+
+                        if (proj.yNorm > 0.3) ctx.textBaseline = 'top';
+                        else if (proj.yNorm < -0.3) ctx.textBaseline = 'bottom';
+                        else ctx.textBaseline = 'middle';
+
+                        const clampedY = Math.max(12, Math.min(h - 12, ty));
+
+                        ctx.fillStyle = '#e0f2fe';
+                        ctx.fillText(textStr, tx, clampedY);
+                        ctx.restore();
+                    }
+                });
+                ctx.restore();
             }
 
-            // Si hay perlas de Baily activas, marcarlas con destellos dorados en el radar
+            // Si es totalidad o anillo de diamante, dibujar corona sutil en el radar con fundido progresivo
+            if (isTotalNow || isDiamondRing) {
+                const ringAlpha = isTotalNow ? 0.85 : Math.min(0.85, (activeBeads[0]?.intensity || 0.5) * 0.85);
+                ctx.save();
+                ctx.strokeStyle = `rgba(255, 255, 255, ${ringAlpha.toFixed(3)})`;
+                ctx.lineWidth = 1.4;
+                ctx.shadowColor = 'rgba(224, 242, 254, 0.9)';
+                ctx.shadowBlur = 8;
+                ctx.beginPath();
+                ctx.arc(cx, cy, baseR, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.restore();
+            }
+
+            // Si hay perlas de Baily activas, marcarlas con destellos fotométricos y diamante en el radar
             if (activeBeads && activeBeads.length > 0) {
+                const isRadarDiamond = Boolean(isDiamondRing);
+
                 activeBeads.forEach(b => {
                     const projBead = skyAngleToCanvas(b.angleDeg);
-                    const hKm = getSmoothLOLAProfile(b.angleDeg);
+                    const hKm = getSmoothLOLAProfile(b.angleDeg, libL, libB, axisC);
                     const r = baseR + hKm * exag;
                     const bx = cx + projBead.xNorm * r;
                     const by = cy + projBead.yNorm * r;
 
+                    const intens = Math.min(1.0, Math.max(0.0, b.intensity || 0.5));
+                    const bR = isRadarDiamond ? Math.max(1.2, 6.5 * intens) : Math.max(0.8, 4.5 * intens);
+                    const alpha = Math.min(1.0, intens * 1.2);
+
+                    ctx.save();
+                    const bGrad = ctx.createRadialGradient(bx, by, 0, bx, by, bR * 2.2);
+                    bGrad.addColorStop(0, `rgba(255, 255, 255, ${alpha.toFixed(3)})`);
+                    bGrad.addColorStop(0.3, `rgba(254, 240, 138, ${(0.95 * alpha).toFixed(3)})`);
+                    bGrad.addColorStop(0.7, `rgba(249, 115, 22, ${(0.45 * alpha).toFixed(3)})`);
+                    bGrad.addColorStop(1, 'transparent');
                     ctx.beginPath();
-                    ctx.arc(bx, by, 4.5, 0, Math.PI * 2);
-                    ctx.fillStyle = '#ffffff';
-                    ctx.shadowColor = '#facc15';
-                    ctx.shadowBlur = 8;
+                    ctx.arc(bx, by, bR * 2.2, 0, Math.PI * 2);
+                    ctx.fillStyle = bGrad;
                     ctx.fill();
-                    ctx.shadowBlur = 0;
+
+                    if (isRadarDiamond && intens > 0.05) {
+                        const spike = 18 * intens;
+                        ctx.strokeStyle = `rgba(255, 255, 255, ${(0.95 * alpha).toFixed(3)})`;
+                        ctx.lineWidth = Math.max(0.6, 1.2 * intens);
+                        ctx.beginPath();
+                        ctx.moveTo(bx - spike, by); ctx.lineTo(bx + spike, by);
+                        ctx.moveTo(bx, by - spike); ctx.lineTo(bx, by + spike);
+                        ctx.stroke();
+                    }
+                    ctx.restore();
                 });
+            }
+
+            // Avisos de estado en el radar (encima del perfil del limbo, en color blanco puro #ffffff)
+            let noticeLines = null;
+            if (isTotalNow) {
+                noticeLines = [
+                    "Fotosfera completamente oculta tras el limbo lunar.",
+                    "Corona visible."
+                ];
+            } else if (activeBeads && activeBeads.length > 0) {
+                if (isDiamondRing) {
+                    noticeLines = ["Anillo de Diamantes"];
+                } else {
+                    const fallbackText = activeBeads.length === 1 ? '1 perla activa' : `${activeBeads.length} perlas activas`;
+                    noticeLines = [announcementText || fallbackText];
+                }
+            }
+
+            if (showLimbLabels && noticeLines && noticeLines.length > 0) {
+                ctx.save();
+                ctx.font = '400 9.5px var(--font-sans)';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillStyle = '#ffffff';
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.95)';
+                ctx.shadowBlur = 5;
+
+                if (noticeLines.length === 1) {
+                    ctx.fillText(noticeLines[0], cx, 28);
+                } else {
+                    ctx.fillText(noticeLines[0], cx, 20);
+                    ctx.fillText(noticeLines[1], cx, 34);
+                }
+                ctx.restore();
+            }
+
+            // Indicador de exageración en la esquina inferior del lienzo
+            if (showLimbLabels) {
+                ctx.save();
+                ctx.font = '400 8.5px var(--font-sans)';
+                ctx.fillStyle = 'rgba(148, 163, 184, 0.65)';
+                ctx.textAlign = 'right';
+                ctx.textBaseline = 'bottom';
+                ctx.fillText('Exageración 2.5×', w - 10, h - 8);
+                ctx.restore();
             }
 
             ctx.restore();
@@ -4058,7 +4385,16 @@
             ctx.fillStyle = isTotalNow ? "#02040a" : "#050811";
             ctx.fillRect(0, 0, w, h);
 
-            const cx = w / 2 + telePanX;
+            const isSmall = window.innerWidth <= 900;
+            const limbPanel = document.getElementById('lunar-limb-panel');
+            const limbOpen = limbPanel && !limbPanel.classList.contains('collapsed');
+
+            let centerOffsetX = 0;
+            if (isSmall && limbOpen && w > 520) {
+                centerOffsetX = 175;
+            }
+
+            const cx = (w / 2 + centerOffsetX) + telePanX;
             const cy = h / 2 + telePanY;
             const rSunPx = Math.min(w, h) * 0.18 * teleZoom;
 
@@ -4066,13 +4402,21 @@
 
             if (p) {
                 const isZenithUp = document.getElementById('chk-tele-zenith-up')?.checked ?? true;
-                const qRad = p.qRad || 0;
-                if (isZenithUp) {
-                    ctx.rotate(-qRad);
+                const qDeg = (p && p.qDeg != null) ? p.qDeg : 0;
+                const rotDeg = isZenithUp ? qDeg : 0;
+
+                // Función helper unificada para proyectar ángulos astronómicos en el canvas (Norte o Cenit arriba)
+                function skyAngleToCanvas(paDeg) {
+                    const effectiveDeg = (paDeg - rotDeg + 360) % 360;
+                    const rad = effectiveDeg * RAD;
+                    return {
+                        xNorm: -Math.sin(rad),
+                        yNorm: -Math.cos(rad)
+                    };
                 }
 
-                // 1. Corona solar si hay totalidad
-                if (isTotalNow || magNow >= 0.995) {
+                // 1. Corona solar exclusivamente en totalidad absoluta
+                if (isTotalNow) {
                     const coronaGrad = ctx.createRadialGradient(0, 0, rSunPx * 0.98, 0, 0, rSunPx * 3.2);
                     coronaGrad.addColorStop(0, "rgba(255, 255, 255, 0.95)");
                     coronaGrad.addColorStop(0.15, "rgba(224, 242, 254, 0.75)");
@@ -4117,31 +4461,37 @@
                 const rMoonPx = rSunPx * kRatio;
 
                 const sepNorm = p.delta / ((p.L1 + p.L2) / 2);
-                const angleUV = Math.atan2(p.v, p.u);
+                const sepDistPx = sepNorm * rSunPx;
                 
-                const moonX = Math.cos(angleUV) * sepNorm * rSunPx;
-                const moonY = -Math.sin(angleUV) * sepNorm * rSunPx;
+                // Ángulo de posición astronómico del centro de la Luna (desde Norte hacia el Este)
+                const paMoonDeg = (Math.atan2(p.u, p.v) * DEG + 360) % 360;
+                const projMoon = skyAngleToCanvas(paMoonDeg);
+                const moonX = projMoon.xNorm * sepDistPx;
+                const moonY = projMoon.yNorm * sepDistPx;
 
                 const showLimb = document.getElementById('chk-show-lunar-limb')?.checked;
-                const showBaily = document.getElementById('chk-tele-baily-beads')?.checked ?? true;
+                const showTeleLabels = document.getElementById('chk-tele-labels')?.checked ?? true;
                 const pxPerKm = rMoonPx / 1737.4;
-                const activeBeads = [];
+                let activeBeadsList = [];
+                let isDiamondRing = false;
+                let primaryDiamondId = null;
 
-                // Sincronizar estado visual del botón HUD
-                if (typeof updateTeleLimbButtonState === 'function') {
-                    updateTeleLimbButtonState();
-                }
+                // Parámetros de libración y orientación selenográfica para el eclipse activo
+                const { libL, libB, axisC } = getEclipseLibrationParams(currentEclipse);
 
+                // =========================================================================
+                // A. RENDERIZADO DEL DISCO LUNAR Y RELIEVE TOPOGRÁFICO NASA LOLA
+                // =========================================================================
                 if (showLimb) {
-                    // 1. Renderizado del disco lunar opaco a escala física real
+                    // 1. Silueta opaca física de la Luna con relieve real LOLA (360 pasos)
                     ctx.beginPath();
                     for (let i = 0; i <= 360; i++) {
-                        const deg = i % 360;
-                        const angle = deg * Math.PI / 180;
-                        const hKm = getSmoothLOLAProfile(deg);
+                        const pa = i % 360;
+                        const proj = skyAngleToCanvas(pa);
+                        const hKm = getSmoothLOLAProfile(pa, libL, libB, axisC);
                         const rLimb = rMoonPx + hKm * pxPerKm;
-                        const px = moonX + Math.cos(angle) * rLimb;
-                        const py = moonY + Math.sin(angle) * rLimb;
+                        const px = moonX + proj.xNorm * rLimb;
+                        const py = moonY + proj.yNorm * rLimb;
                         if (i === 0) ctx.moveTo(px, py);
                         else ctx.lineTo(px, py);
                     }
@@ -4149,94 +4499,54 @@
                     ctx.fillStyle = '#020617';
                     ctx.fill();
 
-                    // 2. Contorno de relieve amplificado superpuesto (para inspección visual clara de cumbres y valles)
+                    // 2. Trazo de contorno amplificado (para apreciar claramente Montes Leibniz, Montes Rook, etc.)
                     ctx.beginPath();
-                    const exagTele = 12; // Exageración para visualización didáctica
+                    const exagTele = 2.5; // Exageración calibrada idéntica a Masana para ver cumbres
                     for (let i = 0; i <= 360; i++) {
-                        const deg = i % 360;
-                        const angle = deg * Math.PI / 180;
-                        const hKm = getSmoothLOLAProfile(deg);
+                        const pa = i % 360;
+                        const proj = skyAngleToCanvas(pa);
+                        const hKm = getSmoothLOLAProfile(pa, libL, libB, axisC);
                         const rLimbExag = rMoonPx + (hKm * pxPerKm * exagTele);
-                        const px = moonX + Math.cos(angle) * rLimbExag;
-                        const py = moonY + Math.sin(angle) * rLimbExag;
+                        const px = moonX + proj.xNorm * rLimbExag;
+                        const py = moonY + proj.yNorm * rLimbExag;
                         if (i === 0) ctx.moveTo(px, py);
                         else ctx.lineTo(px, py);
                     }
                     ctx.closePath();
-                    ctx.strokeStyle = isTotalNow ? 'rgba(56, 189, 248, 0.85)' : 'rgba(56, 189, 248, 0.65)';
-                    ctx.lineWidth = 1.3;
+                    ctx.strokeStyle = isTotalNow ? 'rgba(56, 189, 248, 0.90)' : 'rgba(56, 189, 248, 0.70)';
+                    ctx.lineWidth = 1.2;
                     ctx.stroke();
 
-                    // 3. Marcas de orientación selenográfica sobre el limbo
+                    // 3. Marcas astronómicas selenográficas sobre el limbo lunar con colores y rótulos idénticos al radar
                     const teleMarks = [
-                        { label: 'N', deg: 0, color: '#ef4444' },
-                        { label: 'Cenit', deg: (p.qDeg || 0), color: '#eab308' },
-                        { label: 'NL', deg: 14.0, color: '#22c55e' },
-                        { label: 'SL', deg: 194.0, color: '#22c55e' }
+                        { label: 'Norte', pa: 0, color: '#ef4444' },
+                        { label: 'Cenit', pa: qDeg, color: '#eab308' },
+                        { label: 'NL', pa: ((axisC % 360) + 360) % 360, color: '#22c55e' },
+                        { label: 'SL', pa: ((axisC + 180) % 360 + 360) % 360, color: '#22c55e' }
                     ];
+                    ctx.font = '400 9.5px var(--font-sans)';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
                     teleMarks.forEach(m => {
-                        const a = m.deg * Math.PI / 180;
-                        const hKm = getSmoothLOLAProfile(m.deg);
-                        const r0 = rMoonPx + (hKm * pxPerKm * exagTele) - 3;
-                        const r1 = r0 + 7;
+                        const proj = skyAngleToCanvas(m.pa);
+                        const hKm = getSmoothLOLAProfile(m.pa, libL, libB, axisC);
+                        const r0 = rMoonPx + (hKm * pxPerKm * exagTele) - 4;
+                        const r1 = r0 + 10;
+                        const rText = r0 - 10;
                         ctx.strokeStyle = m.color;
-                        ctx.lineWidth = 1.4;
+                        ctx.lineWidth = 1.6;
                         ctx.beginPath();
-                        ctx.moveTo(moonX + Math.cos(a) * r0, moonY + Math.sin(a) * r0);
-                        ctx.lineTo(moonX + Math.cos(a) * r1, moonY + Math.sin(a) * r1);
+                        ctx.moveTo(moonX + proj.xNorm * r0, moonY + proj.yNorm * r0);
+                        ctx.lineTo(moonX + proj.xNorm * r1, moonY + proj.yNorm * r1);
                         ctx.stroke();
-                    });
 
-                    // 4. Detección y simulación física de Perlas de Baily (Baily's Beads)
-                    if (showBaily && magNow >= 0.985 && magNow <= 1.018 && !isTotalNow) {
-                        for (let deg = 0; deg < 360; deg += 2) {
-                            const angle = deg * Math.PI / 180;
-                            const hKm = getSmoothLOLAProfile(deg);
-                            const rLimb = rMoonPx + hKm * pxPerKm;
-                            const px = moonX + Math.cos(angle) * rLimb;
-                            const py = moonY + Math.sin(angle) * rLimb;
-                            const distToSunCenter = Math.sqrt(px * px + py * py);
-
-                            // Si el punto del valle lunar queda dentro del disco solar con margen fotosférico
-                            if (distToSunCenter < rSunPx * 0.999) {
-                                const gap = rSunPx - distToSunCenter;
-                                const intensity = Math.min(1.0, Math.max(0.15, gap / (rSunPx * 0.025)));
-                                activeBeads.push({
-                                     angleDeg: deg,
-                                     x: px,
-                                     y: py,
-                                     intensity: intensity,
-                                     hKm: hKm
-                                });
-                            }
+                        if (showTeleLabels) {
+                            ctx.fillStyle = m.color;
+                            ctx.fillText(m.label, moonX + proj.xNorm * rText, moonY + proj.yNorm * rText);
                         }
-
-                        // Dibujar destellos de Perlas de Baily con dispersión de luz
-                        activeBeads.forEach(b => {
-                            const beadR = Math.max(2.5, rSunPx * 0.045 * b.intensity);
-                            const beadGrad = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, beadR * 2.5);
-                            beadGrad.addColorStop(0, '#ffffff');
-                            beadGrad.addColorStop(0.25, 'rgba(254, 240, 138, 0.95)');
-                            beadGrad.addColorStop(0.65, 'rgba(249, 115, 22, 0.55)');
-                            beadGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-
-                            ctx.beginPath();
-                            ctx.fillStyle = beadGrad;
-                            ctx.arc(b.x, b.y, beadR * 2.5, 0, Math.PI * 2);
-                            ctx.fill();
-
-                            // Picos de difracción ópticos estelares
-                            ctx.save();
-                            ctx.strokeStyle = `rgba(255, 255, 255, ${0.45 * b.intensity})`;
-                            ctx.lineWidth = 1.2;
-                            ctx.beginPath();
-                            ctx.moveTo(b.x - beadR * 3, b.y); ctx.lineTo(b.x + beadR * 3, b.y);
-                            ctx.moveTo(b.x, b.y - beadR * 3); ctx.lineTo(b.x, b.y + beadR * 3);
-                            ctx.stroke();
-                            ctx.restore();
-                        });
-                    }
+                    });
                 } else {
+                    // Modo nominal suave sin sobrecarga de capas
                     ctx.beginPath();
                     ctx.arc(moonX, moonY, rMoonPx, 0, Math.PI * 2);
                     ctx.fillStyle = '#020617';
@@ -4245,77 +4555,337 @@
                     ctx.beginPath();
                     ctx.arc(moonX, moonY, rMoonPx, 0, Math.PI * 2);
                     ctx.strokeStyle = isTotalNow ? 'rgba(56, 189, 248, 0.45)' : 'rgba(255, 255, 255, 0.15)';
-                    ctx.lineWidth = 1;
+                    ctx.lineWidth = 1.0;
                     ctx.stroke();
+                }
 
-                    // 4. Anillo de Diamante clásico
-                    if (showBaily && magNow >= 0.992 && !isTotalNow) {
-                        const beadAngle = angleUV;
-                        const beadX = Math.cos(beadAngle) * rSunPx * 0.98;
-                        const beadY = -Math.sin(beadAngle) * rSunPx * 0.98;
+                // =========================================================================
+                // B. SIMULACIÓN FÍSICA DE PERLAS DE BAILY, COLLARES Y ANILLO DE DIAMANTES
+                //    (Simulación física realista en totalidad, anularidad y fases profundas)
+                // =========================================================================
+                const isObserverTotal = Boolean(circ && circ.isTotal);
+                const isObserverAnnular = Boolean(circ && circ.isAnnular);
+                const isAnnularContact = isObserverAnnular && (Math.abs(p.delta - Math.abs(p.L2)) <= 0.005);
+                // Fase profunda: activa cuando el limbo lunar está a escala del relieve montañoso (~0.988+) o cerca de C2/C3
+                const isDeepPhase = (magNow >= 0.988) || (isObserverTotal && (Math.abs(p.delta - Math.abs(p.L2)) <= 0.03 || isTotalNow)) || isAnnularContact;
 
-                        const beadGrad = ctx.createRadialGradient(beadX, beadY, 0, beadX, beadY, rSunPx * 0.25);
-                        beadGrad.addColorStop(0, '#ffffff');
-                        beadGrad.addColorStop(0.3, 'rgba(254, 240, 138, 0.9)');
-                        beadGrad.addColorStop(0.7, 'rgba(56, 189, 248, 0.4)');
-                        beadGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                if (isDeepPhase) {
+                    const rawBeadPoints = [];
+                    // Muestreo de alta resolución angular en 720 pasos (cada 0.5°)
+                    for (let step = 0; step < 720; step++) {
+                        const pa = step * 0.5;
+                        const proj = skyAngleToCanvas(pa);
+                        const hKm = getSmoothLOLAProfile(pa, libL, libB, axisC);
+                        const rLimb = rMoonPx + hKm * pxPerKm;
+                        const px = moonX + proj.xNorm * rLimb;
+                        const py = moonY + proj.yNorm * rLimb;
+
+                        const distToSun = Math.hypot(px, py);
+                        const clearance = rSunPx - distToSun;
+
+                        // En el contacto C2 / C3, permitir que el último valle brille suavemente a través de la fotosfera/cromosfera
+                        const isContactZone = isObserverTotal && (Math.abs(p.delta - Math.abs(p.L2)) <= 0.002);
+                        const minClearance = isContactZone ? -0.22 : 0.02;
+
+                        if (clearance > minClearance && clearance <= Math.max(4.0, rSunPx * 0.035)) {
+                            rawBeadPoints.push({ pa, x: px, y: py, hKm, clearance: Math.max(0.01, clearance + (isContactZone ? 0.22 : 0)) });
+                        }
+                    }
+
+                    // Agrupación contigua en valles geológicos a escala de cráter (tolerancia 2.8°)
+                    const clusters = [];
+                    let currentCluster = [];
+                    for (let i = 0; i < rawBeadPoints.length; i++) {
+                        if (currentCluster.length === 0) {
+                            currentCluster.push(rawBeadPoints[i]);
+                        } else {
+                            const prev = currentCluster[currentCluster.length - 1];
+                            let diff = Math.abs(rawBeadPoints[i].pa - prev.pa);
+                            if (diff > 180) diff = 360 - diff;
+                            if (diff <= 2.8) {
+                                currentCluster.push(rawBeadPoints[i]);
+                            } else {
+                                clusters.push(currentCluster);
+                                currentCluster = [rawBeadPoints[i]];
+                            }
+                        }
+                    }
+                    if (currentCluster.length > 0) clusters.push(currentCluster);
+
+                    // Formatear el collar de perlas con intensidad calibrada y transición suave:
+                    activeBeadsList = [];
+                    let globalBeadId = 1;
+
+                    clusters.forEach(c => {
+                        const widthDeg = c.length * 0.5;
+                        if (widthDeg <= 7.0) {
+                            let maxPt = c[0];
+                            c.forEach(p => { if (p.clearance > maxPt.clearance) maxPt = p; });
+                            const u = Math.min(1.0, Math.max(0.0, maxPt.clearance / 1.5));
+                            const s = u * u * (3.0 - 2.0 * u);
+                            const intensity = 0.25 + 0.75 * s;
+                            activeBeadsList.push({
+                                id: globalBeadId++,
+                                angleDeg: maxPt.pa,
+                                x: maxPt.x,
+                                y: maxPt.y,
+                                hKm: maxPt.hKm,
+                                clearance: maxPt.clearance,
+                                intensity: intensity,
+                                widthDeg: widthDeg
+                            });
+                        } else {
+                            // Arco de collar: extraer perlas en cada valle geológico
+                            const minSep = 6; // ~3.0° separación entre perlas del collar
+                            let lastIdx = -minSep;
+                            for (let i = 1; i < c.length - 1; i++) {
+                                const prev = c[i - 1];
+                                const cur = c[i];
+                                const next = c[i + 1];
+                                if (cur.hKm <= prev.hKm && cur.hKm <= next.hKm && (i - lastIdx >= minSep)) {
+                                    const uCur = Math.min(1.0, Math.max(0.0, cur.clearance / 1.5));
+                                    const s = uCur * uCur * (3.0 - 2.0 * uCur);
+                                    const intensity = 0.25 + 0.75 * s;
+                                    activeBeadsList.push({
+                                        id: globalBeadId++,
+                                        angleDeg: cur.pa,
+                                        x: cur.x,
+                                        y: cur.y,
+                                        hKm: cur.hKm,
+                                        clearance: cur.clearance,
+                                        intensity: intensity,
+                                        widthDeg: 3.0
+                                    });
+                                    lastIdx = i;
+                                }
+                            }
+                            if (activeBeadsList.length === 0) {
+                                let maxPt = c[0];
+                                c.forEach(p => { if (p.clearance > maxPt.clearance) maxPt = p; });
+                                const u = Math.min(1.0, Math.max(0.0, maxPt.clearance / 1.5));
+                                const s = u * u * (3.0 - 2.0 * u);
+                                const intensity = 0.25 + 0.75 * s;
+                                activeBeadsList.push({
+                                    id: globalBeadId++,
+                                    angleDeg: maxPt.pa,
+                                    x: maxPt.x,
+                                    y: maxPt.y,
+                                    hKm: maxPt.hKm,
+                                    clearance: maxPt.clearance,
+                                    intensity: intensity,
+                                    widthDeg: widthDeg
+                                });
+                            }
+                        }
+                    });
+
+                    // Criterio astronómico riguroso para el Anillo de Diamantes
+                    const hasSingleNarrowBead = activeBeadsList.length === 1 && (activeBeadsList[0].widthDeg <= 16.0 || magNow >= 0.998);
+                    const hasDominantBead = activeBeadsList.length === 2 && activeBeadsList[0].clearance > activeBeadsList[1].clearance * 1.8;
+                    const isContactInstant = Math.abs(p.delta - Math.abs(p.L2)) <= 0.0012 && activeBeadsList.length > 0;
+                    isDiamondRing = isObserverTotal && (activeBeadsList.length <= 2) && (hasSingleNarrowBead || hasDominantBead || isContactInstant) && (magNow >= 0.995 && magNow <= 1.010);
+
+                    // 1. EL ARO DEL ANILLO DE DIAMANTES (Corona solar circundante sobre la Luna con fundido suave)
+                    primaryDiamondId = null;
+                    let diamondFactor = 0;
+                    if (isDiamondRing && activeBeadsList.length > 0) {
+                        let maxC = -1;
+                        activeBeadsList.forEach(b => {
+                            if (b.clearance > maxC) {
+                                maxC = b.clearance;
+                                primaryDiamondId = b.id;
+                                diamondFactor = b.intensity;
+                            }
+                        });
+                    }
+
+                    if (isDiamondRing && diamondFactor > 0.05) {
+                        ctx.save();
+                        // Resplandor difuso etéreo de la corona
+                        const coronaAtm = ctx.createRadialGradient(moonX, moonY, rMoonPx * 0.98, moonX, moonY, rMoonPx * 1.35);
+                        coronaAtm.addColorStop(0, `rgba(255, 255, 255, ${(0.55 * diamondFactor).toFixed(3)})`);
+                        coronaAtm.addColorStop(0.2, `rgba(224, 242, 254, ${(0.35 * diamondFactor).toFixed(3)})`);
+                        coronaAtm.addColorStop(0.6, `rgba(56, 189, 248, ${(0.15 * diamondFactor).toFixed(3)})`);
+                        coronaAtm.addColorStop(1, 'transparent');
 
                         ctx.beginPath();
-                        ctx.fillStyle = beadGrad;
-                        ctx.arc(beadX, beadY, rSunPx * 0.25, 0, Math.PI * 2);
+                        ctx.arc(moonX, moonY, rMoonPx * 1.35, 0, Math.PI * 2);
+                        ctx.arc(moonX, moonY, rMoonPx * 0.98, 0, Math.PI * 2, true);
+                        ctx.fillStyle = coronaAtm;
                         ctx.fill();
+
+                        // El "Aro" de plata continuo de la sortija con grosor y opacidad graduales
+                        ctx.strokeStyle = `rgba(255, 255, 255, ${(0.92 * diamondFactor).toFixed(3)})`;
+                        ctx.lineWidth = Math.max(1.0, rSunPx * 0.016 * diamondFactor);
+                        ctx.shadowColor = 'rgba(224, 242, 254, 0.95)';
+                        ctx.shadowBlur = 12 * diamondFactor;
+                        ctx.beginPath();
+                        ctx.arc(moonX, moonY, rMoonPx, 0, Math.PI * 2);
+                        ctx.stroke();
+                        ctx.restore();
                     }
+
+                    // 2. DIBUJAR CADA PERLA DE BAILY Y EL DIAMANTE CON TRANSICIÓN SUAVE
+                    activeBeadsList.forEach(b => {
+                        const isThisTheDiamond = isDiamondRing && (b.id === primaryDiamondId);
+                        const beadR = isThisTheDiamond ? (2.5 + (rSunPx * 0.050) * b.intensity) : (1.2 + (rSunPx * 0.026) * b.intensity);
+                        const alpha = Math.min(1.0, 0.45 + 0.55 * b.intensity);
+
+                        // Resplandor cálido fotosférico con opacidad progresiva
+                        const beadGrad = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, beadR * 2.8);
+                        beadGrad.addColorStop(0, `rgba(255, 255, 255, ${alpha.toFixed(3)})`);
+                        beadGrad.addColorStop(0.25, isThisTheDiamond ? `rgba(255, 255, 255, ${(0.98 * alpha).toFixed(3)})` : `rgba(254, 240, 138, ${(0.95 * alpha).toFixed(3)})`);
+                        beadGrad.addColorStop(0.60, isThisTheDiamond ? `rgba(254, 240, 138, ${(0.85 * alpha).toFixed(3)})` : `rgba(249, 115, 22, ${(0.55 * alpha).toFixed(3)})`);
+                        beadGrad.addColorStop(1.0, 'transparent');
+
+                        ctx.save();
+                        ctx.beginPath();
+                        ctx.fillStyle = beadGrad;
+                        ctx.arc(b.x, b.y, beadR * 2.8, 0, Math.PI * 2);
+                        ctx.fill();
+
+                        // 3. LA GEMA DEL DIAMANTE: Destello óptico estelar de 8 puntas suaves con escala progresiva
+                        if (isThisTheDiamond && b.intensity > 0.1) {
+                            const rayLen = (rSunPx * 0.45) * b.intensity;
+                            const angles = [0, 45, 90, 135, 180, 225, 270, 315];
+                            angles.forEach((angDeg, rayIdx) => {
+                                const isMain = rayIdx % 2 === 0;
+                                const len = isMain ? rayLen : rayLen * 0.60;
+                                const width = (isMain ? 2.8 : 1.6) * Math.max(0.5, b.intensity);
+                                const rad = angDeg * Math.PI / 180.0;
+                                const rx = b.x + Math.cos(rad) * len;
+                                const ry = b.y + Math.sin(rad) * len;
+
+                                const rayGrad = ctx.createLinearGradient(b.x, b.y, rx, ry);
+                                rayGrad.addColorStop(0, `rgba(255, 255, 255, ${(0.95 * alpha).toFixed(3)})`);
+                                rayGrad.addColorStop(0.3, isMain ? `rgba(254, 240, 138, ${(0.80 * alpha).toFixed(3)})` : `rgba(255, 255, 255, ${(0.6 * alpha).toFixed(3)})`);
+                                rayGrad.addColorStop(0.7, `rgba(249, 115, 22, ${(0.35 * alpha).toFixed(3)})`);
+                                rayGrad.addColorStop(1, 'transparent');
+
+                                ctx.strokeStyle = rayGrad;
+                                ctx.lineWidth = width;
+                                ctx.lineCap = 'round';
+                                ctx.beginPath();
+                                ctx.moveTo(b.x, b.y);
+                                ctx.lineTo(rx, ry);
+                                ctx.stroke();
+                            });
+
+                            // Núcleo blanco cegador de la gema con escala continua
+                            ctx.fillStyle = '#ffffff';
+                            ctx.shadowColor = '#ffffff';
+                        ctx.shadowBlur = 18 * b.intensity;
+                            ctx.beginPath();
+                            ctx.arc(b.x, b.y, Math.max(1.0, (rSunPx * 0.038) * b.intensity), 0, Math.PI * 2);
+                            ctx.fill();
+
+                            // Etiqueta flotante del anillo de diamantes (sin nombre de accidente)
+                            if (showTeleLabels && isDiamondRing && (b.id === primaryDiamondId || activeBeadsList.length === 1)) {
+                                const tagText = '💎 Anillo de Diamantes';
+                                ctx.save();
+                                ctx.font = '600 11px system-ui, -apple-system, sans-serif';
+                                const textW = ctx.measureText(tagText).width;
+                                const dirX = b.x - moonX, dirY = b.y - moonY;
+                                const dLen = Math.hypot(dirX, dirY) || 1;
+                                const tagDist = 38;
+                                const tx = b.x + (dirX / dLen) * tagDist;
+                                const ty = b.y + (dirY / dLen) * tagDist;
+
+                                ctx.strokeStyle = 'rgba(253, 224, 71, 0.55)';
+                                ctx.lineWidth = 1;
+                                ctx.beginPath();
+                                ctx.moveTo(b.x, b.y);
+                                ctx.lineTo(tx, ty);
+                                ctx.stroke();
+
+                                const pX = 8, pY = 4, bH = 22, bW = textW + pX * 2;
+                                const bx = (dirX >= 0) ? tx : (tx - bW);
+                                const by = ty - bH / 2;
+
+                                ctx.fillStyle = 'rgba(2, 6, 23, 0.88)';
+                                ctx.strokeStyle = 'rgba(250, 204, 21, 0.75)';
+                                ctx.lineWidth = 1.2;
+                                ctx.beginPath();
+                                ctx.roundRect(bx, by, bW, bH, 6);
+                                ctx.fill();
+                                ctx.stroke();
+
+                                ctx.fillStyle = '#ffffff';
+                                ctx.textAlign = 'left';
+                                ctx.textBaseline = 'middle';
+                                ctx.fillText(tagText, bx + pX, ty);
+                                ctx.restore();
+                            }
+                        }
+                    });
                 }
+
+                // Generar texto unificado de aviso para perlas y diamante
+                const beadAnnouncement = getBeadAnnouncement(activeBeadsList, isDiamondRing, axisC);
 
                 // Actualizar panel flotante del radar del Limbo Lunar si está visible
                 const limbPanel = document.getElementById('lunar-limb-panel');
                 if (limbPanel && !limbPanel.classList.contains('collapsed')) {
-                    renderLunarLimbRadar(activeBeads, angleUV);
+                    renderLunarLimbRadar(activeBeadsList, isDiamondRing, beadAnnouncement);
                     const bailyBadge = document.getElementById('badge-baily-count');
-                    const bailyTelem = document.getElementById('baily-beads-telemetry');
                     if (bailyBadge) {
-                        if (activeBeads.length > 0) {
+                        if (isDiamondRing) {
                             bailyBadge.className = 'mataro-vis-tag vis-rise';
-                            bailyBadge.style.background = 'rgba(234, 179, 8, 0.25)';
-                            bailyBadge.style.color = '#fef08a';
-                            bailyBadge.innerHTML = `<i class="fa-solid fa-sparkles"></i> ${activeBeads.length} perlas`;
+                            bailyBadge.style.background = 'rgba(255, 255, 255, 0.16)';
+                            bailyBadge.style.color = '#ffffff';
+                            bailyBadge.innerHTML = `<i class="fa-solid fa-gem"></i> Anillo de Diamantes`;
+                        } else if (activeBeadsList.length > 0) {
+                            bailyBadge.className = 'mataro-vis-tag vis-rise';
+                            bailyBadge.style.background = 'rgba(255, 255, 255, 0.16)';
+                            bailyBadge.style.color = '#ffffff';
+                            bailyBadge.innerHTML = `<i class="fa-solid fa-sparkles"></i> ${activeBeadsList.length === 1 ? '1 perla' : activeBeadsList.length + ' perlas'}`;
                         } else if (isTotalNow) {
                             bailyBadge.className = 'mataro-vis-tag vis-full';
-                            bailyBadge.style.background = 'rgba(34, 197, 94, 0.22)';
-                            bailyBadge.style.color = '#86efac';
+                            bailyBadge.style.background = 'rgba(255, 255, 255, 0.16)';
+                            bailyBadge.style.color = '#ffffff';
                             bailyBadge.textContent = 'Totalidad (Corona)';
                         } else {
                             bailyBadge.className = 'mataro-vis-tag';
-                            bailyBadge.style.background = 'rgba(56, 189, 248, 0.15)';
-                            bailyBadge.style.color = '#38bdf8';
+                            bailyBadge.style.background = 'rgba(255, 255, 255, 0.08)';
+                            bailyBadge.style.color = 'rgba(255, 255, 255, 0.7)';
                             bailyBadge.textContent = 'Inactivas';
-                        }
-                    }
-                    if (bailyTelem) {
-                        if (activeBeads.length > 0) {
-                            const beadDetails = activeBeads.slice(0, 4).map(b => `PA ${b.angleDeg.toFixed(0)}° (Valle ${b.hKm.toFixed(1)} km)`).join(' · ');
-                            bailyTelem.innerHTML = `<strong style="color: #fef08a;">Perlas activas:</strong> ${beadDetails}`;
-                        } else if (isTotalNow) {
-                            bailyTelem.innerHTML = `<span style="color: #86efac;">Fotosfera completamente oculta tras el limbo lunar. Corona visible.</span>`;
-                        } else {
-                            bailyTelem.innerHTML = `<em>Visibles en la vista telescópica segundos antes y después de la totalidad (C2 y C3).</em>`;
                         }
                     }
                 }
 
                 // 5. Telemetría HUD
+                const teleHud = document.getElementById('telescope-hud');
+                if (teleHud) {
+                    teleHud.style.display = showTeleLabels ? 'flex' : 'none';
+                }
                 const pillCoords = document.getElementById('hud-pill-coords');
                 const pillOrient = document.getElementById('hud-pill-orient');
+                const pillBead = document.getElementById('hud-pill-bead');
                 if (pillOrient) {
                     const cleanObsName = currentObserver.name.replace(/\s*\([^)]*\)/g, '').trim() || currentObserver.name;
-                    pillOrient.textContent = `Vista Local (${cleanObsName} · Cenit arriba)`;
+                    const orientModeStr = isZenithUp ? 'Altazimutal' : 'Ecuatorial';
+                    pillOrient.textContent = `${cleanObsName} · ${orientModeStr}`;
+                }
+                if (pillBead) {
+                    if (isDiamondRing) {
+                        pillBead.style.display = 'inline-flex';
+                        pillBead.textContent = 'Anillo de Diamantes';
+                    } else if (beadAnnouncement) {
+                        pillBead.style.display = 'inline-flex';
+                        pillBead.textContent = beadAnnouncement;
+                    } else if (isTotalNow) {
+                        pillBead.style.display = 'inline-flex';
+                        pillBead.textContent = 'Fotosfera oculta · Corona visible';
+                    } else {
+                        pillBead.style.display = 'none';
+                    }
                 }
                 if (pillCoords) {
                     const isAbove = p.alt > -0.5;
                     pillCoords.className = isAbove ? 'hud-pill altaz' : 'hud-pill warning';
                     const magStr = (magNow * 100).toFixed(1);
                     pillCoords.textContent = isAbove
-                        ? `Alt: ${p.alt.toFixed(1)}° · Az: ${p.az.toFixed(1)}° · Ocultación: ${magStr}% (Paraláctico q: ${p.qDeg >= 0 ? '+' : ''}${p.qDeg.toFixed(1)}°)`
+                        ? `Alt: ${p.alt.toFixed(1)}° · Az: ${p.az.toFixed(1)}° · Ocultación: ${magStr}% · Paraláctico q: ${p.qDeg >= 0 ? '+' : ''}${p.qDeg.toFixed(1)}°`
                         : `Bajo el horizonte (${p.alt.toFixed(1)}°) · Ocultación: ${magStr}%`;
                 }
             }
@@ -4382,7 +4952,7 @@
             const d = ((eclipse.d0 || 0) + (eclipse.d1 || 0)*t + (eclipse.d2 || 0)*t*t) * Math.PI / 180;
             let muDeg = (eclipse.mu0 || 0) + (eclipse.mu1 || 0)*t + (eclipse.mu2 || 0)*t*t;
             if (eclipse.dt) {
-                // Conversión rigurosa de ángulo horario de efemérides (TD) a meridiano de Greenwich en UT mediante Delta T
+                // Conversión rigurosa de ángulo horario de efemérides (TT) al meridiano de referencia en UT1 mediante Delta T
                 muDeg -= 1.0027379 * (eclipse.dt / 240);
             }
             const mu = muDeg * Math.PI / 180;
@@ -4397,17 +4967,17 @@
 
             const y1 = y / rho1;
             const r1_sq = x * x + y1 * y1;
-            if (r1_sq > 1.0001) return null;
-            const z1 = Math.sqrt(Math.max(0, 1.0 - Math.min(0.999999, r1_sq)));
+            if (r1_sq > 1.015) return null;
+            const z1 = Math.sqrt(Math.max(0, 1.0 - Math.min(1.0, r1_sq)));
 
             const sinD1 = (rho2 / rho1) * sinD;
-            const cosD1 = cosD / rho1;
+            const cosD1 = Math.sqrt(Math.max(0, 1.0 - sinD1 * sinD1));
 
             const sinDec1 = y1 * cosD1 + z1 * sinD1;
             const cosDec1SinH = x;
             const cosDec1CosH = -y1 * sinD1 + z1 * cosD1;
 
-            const beta = Math.asin(Math.max(-1, Math.min(1, sinDec1)));
+            const beta = Math.atan2(sinDec1, Math.hypot(cosDec1SinH, cosDec1CosH));
             const latGeodetic = Math.atan((1.0 / rho2) * Math.tan(beta)) * 180 / Math.PI;
 
             const H = Math.atan2(cosDec1SinH, cosDec1CosH);
@@ -4688,20 +5258,38 @@
                 }
             }
 
-            // 2. Hora UT dinámica de GE
+            // 2. Hora canónica de GE en Tiempo Terrestre (TT) redondeada al minuto
             const timeElem = document.getElementById('card-time-ge');
             if (timeElem) {
+                let totalSec = null;
                 if (eclipse.td_ge) {
                     const parts = eclipse.td_ge.split(':').map(Number);
                     const h = parts[0] || 0, m = parts[1] || 0, s = parts[2] || 0;
-                    let totalSec = h * 3600 + m * 60 + s - currentDt;
-                    while (totalSec < 0) totalSec += 86400;
-                    while (totalSec >= 86400) totalSec -= 86400;
-                    const utH = Math.floor(totalSec / 3600);
-                    const utM = Math.floor((totalSec % 3600) / 60);
-                    timeElem.innerText = `${String(utH).padStart(2,'0')}:${String(utM).padStart(2,'0')} UT`;
+                    totalSec = h * 3600 + m * 60 + s;
+                } else if (eclipse.t0 != null) {
+                    const x0_c = eclipse.x0 || 0, x1_c = eclipse.x1 || 0;
+                    const y0_c = eclipse.y0 || 0, y1_c = eclipse.y1 || 0;
+                    const v2_c = x1_c*x1_c + y1_c*y1_c;
+                    const targetT = v2_c > 0 ? -(x0_c*x1_c + y0_c*y1_c) / v2_c : 0;
+                    let totalTTHours = (eclipse.t0 || 0) + targetT;
+                    while (totalTTHours < 0) totalTTHours += 24;
+                    while (totalTTHours >= 24) totalTTHours -= 24;
+                    totalSec = Math.round(totalTTHours * 3600);
+                }
+
+                if (totalSec != null) {
+                    const totM = Math.round(totalSec / 60);
+                    const finalH = Math.floor(totM / 60) % 24;
+                    const finalM = totM % 60;
+                    timeElem.innerText = `${String(finalH).padStart(2,'0')}:${String(finalM).padStart(2,'0')} TT`;
+
+                    const exactH = Math.floor(totalSec / 3600) % 24;
+                    const exactM = Math.floor((totalSec % 3600) / 60);
+                    const exactS = totalSec % 60;
+                    timeElem.title = `Tiempo Terrestre canónico exacto: ${String(exactH).padStart(2,'0')}:${String(exactM).padStart(2,'0')}:${String(exactS).padStart(2,'0')} TT`;
                 } else {
                     timeElem.innerText = '--';
+                    timeElem.title = '';
                 }
             }
         }
@@ -6049,32 +6637,53 @@
             const utH = Math.floor(totalUtSec / 3600);
             const utM = Math.floor((totalUtSec % 3600) / 60);
             const utS = totalUtSec % 60;
+            const utTimeStr = `${String(utH).padStart(2,'0')}:${String(utM).padStart(2,'0')}:${String(utS).padStart(2,'0')}`;
 
+            const playerTimeLocalLabel = document.getElementById('player-time-local-label');
+            const playerTimeUtcLabel = document.getElementById('player-time-utc-label');
             const timeUtcText = document.getElementById('time-utc-text');
-            if (timeUtcText) {
-                timeUtcText.textContent = `${String(utH).padStart(2,'0')}:${String(utM).padStart(2,'0')}:${String(utS).padStart(2,'0')}`;
-            }
-
             const timeLocalText = document.getElementById('time-local-text');
-            if (timeLocalText && currentObserver) {
-                const year = e.year || 2026;
-                const month = (e.month || 8) - 1;
-                const day = e.day || 12;
-                const dateObj = new Date(Date.UTC(year, month, day, 0, 0, totalUtSec));
-                const tz = currentObserver.tz || "Europe/Madrid";
-                try {
-                    const timeFormatter = new Intl.DateTimeFormat('es-ES', {
-                        timeZone: tz,
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        second: '2-digit',
-                        hour12: false
-                    });
-                    const localTimeStr = timeFormatter.format(dateObj);
-                    const tzOffsetStr = getUtcOffsetString(tz, dateObj);
-                    timeLocalText.textContent = `${localTimeStr} ${tzOffsetStr}`;
-                } catch(err) {
-                    timeLocalText.textContent = `${String(utH).padStart(2,'0')}:${String(utM).padStart(2,'0')}:${String(utS).padStart(2,'0')} UTC+0`;
+
+            if (activeExtremeMode) {
+                if (playerTimeLocalLabel) playerTimeLocalLabel.textContent = 'UT1';
+                if (playerTimeUtcLabel) playerTimeUtcLabel.textContent = 'TT';
+                if (timeLocalText) timeLocalText.textContent = utTimeStr;
+
+                const ttDecHour = (e.t0 || 12) + t;
+                const totalTtSec = Math.round(((ttDecHour % 24 + 24) % 24) * 3600);
+                const ttH = Math.floor(totalTtSec / 3600);
+                const ttM = Math.floor((totalTtSec % 3600) / 60);
+                const ttS = totalTtSec % 60;
+                if (timeUtcText) {
+                    timeUtcText.textContent = `${String(ttH).padStart(2,'0')}:${String(ttM).padStart(2,'0')}:${String(ttS).padStart(2,'0')}`;
+                }
+            } else {
+                if (playerTimeLocalLabel) playerTimeLocalLabel.textContent = 'Obs.';
+                if (playerTimeUtcLabel) playerTimeUtcLabel.textContent = 'UTC';
+                if (timeUtcText) {
+                    timeUtcText.textContent = utTimeStr;
+                }
+
+                if (timeLocalText && currentObserver) {
+                    const year = e.year || 2026;
+                    const month = (e.month || 8) - 1;
+                    const day = e.day || 12;
+                    const dateObj = new Date(Date.UTC(year, month, day, 0, 0, totalUtSec));
+                    const tz = currentObserver.tz || "Europe/Madrid";
+                    try {
+                        const timeFormatter = new Intl.DateTimeFormat('es-ES', {
+                            timeZone: tz,
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit',
+                            hour12: false
+                        });
+                        const localTimeStr = timeFormatter.format(dateObj);
+                        const tzOffsetStr = getUtcOffsetString(tz, dateObj);
+                        timeLocalText.textContent = `${localTimeStr} ${tzOffsetStr}`;
+                    } catch(err) {
+                        timeLocalText.textContent = `${utTimeStr} UTC`;
+                    }
                 }
             }
 
@@ -6324,7 +6933,7 @@
         // =========================================================================
         // GESTIÓN INTELIGENTE DE PANELES, REPRODUCTOR FLOTANTE Y RESPONSIVIDAD
         // =========================================================================
-        const SPEED_STEPS = [1, 10, 60, 300, 1200];
+        const SPEED_STEPS = [0.5, 1, 10, 60, 300, 1200];
         let simSpeedMultiplier = 1.0;
         let simPlayDirection = 1; // 1 (adelante), -1 (atrás)
 
@@ -6340,7 +6949,7 @@
             } else {
                 // Si ya estaba en la misma dirección, avanzar al siguiente escalón de velocidad
                 const curIdx = SPEED_STEPS.indexOf(simSpeedMultiplier);
-                let nextIdx = 0;
+                let nextIdx = 1;
                 if (curIdx !== -1) {
                     nextIdx = (curIdx + 1) % SPEED_STEPS.length;
                 }
@@ -6352,13 +6961,14 @@
 
         function updateSpeedUI() {
             const badge = document.getElementById('speed-indicator-badge');
+            const speedLabel = simSpeedMultiplier === 0.5 ? '1/2' : simSpeedMultiplier;
             if (badge) {
-                badge.textContent = `${simPlayDirection < 0 ? '−' : ''}${simSpeedMultiplier}x`;
+                badge.textContent = `${simPlayDirection < 0 ? '−' : ''}${speedLabel}x`;
             }
             const fastBtn = document.getElementById('btn-fast-forward');
             const rewBtn = document.getElementById('btn-rewind');
-            if (fastBtn) fastBtn.title = `Avanzar / Aumentar velocidad adelante (${simSpeedMultiplier}×)`;
-            if (rewBtn) rewBtn.title = `Retroceder / Invertir sentido atrás (${simSpeedMultiplier}×)`;
+            if (fastBtn) fastBtn.title = `Avanzar / Aumentar velocidad adelante (${speedLabel}x)`;
+            if (rewBtn) rewBtn.title = `Retroceder / Invertir sentido atrás (${speedLabel}x)`;
         }
 
         function jumpContactStep(dir) {
@@ -6461,10 +7071,15 @@
             const btnSide = document.getElementById('btn-reopen-left');
             const btnSet = document.getElementById('btn-reopen-right');
             const btnDock = document.getElementById('btn-reopen-dock');
+            const btnLimb = document.getElementById('btn-reopen-limb');
+
+            const isTeleView = currentActiveView === 'telescopic';
+            const showLimbBtn = isTeleView && document.getElementById('chk-show-lunar-limb')?.checked;
 
             if (btnSide) { btnSide.style.display = sideOpen ? 'none' : 'inline-flex'; btnSide.classList.remove('active-nav'); }
             if (btnSet) { btnSet.style.display = setOpen ? 'none' : 'inline-flex'; btnSet.classList.remove('active-nav'); }
             if (btnDock) { btnDock.style.display = dockOpen ? 'none' : 'inline-flex'; btnDock.classList.remove('active-nav'); }
+            if (btnLimb) { btnLimb.style.display = (showLimbBtn && !limbOpen) ? 'inline-flex' : 'none'; btnLimb.classList.remove('active-nav'); }
 
             const isSmall = window.innerWidth <= 900;
 
@@ -6479,15 +7094,16 @@
                         btnSide.style.left = '';
                         btnSide.style.zIndex = '';
                     }
-                } else if (isSmall && setOpen && setPanel) {
+                } else if (isSmall && ((setOpen && setPanel) || (limbOpen && limbPanel))) {
+                    const activePanel = (setOpen && setPanel) ? setPanel : limbPanel;
                     if (btnSide) {
                         btnSide.style.position = 'fixed';
                         btnSide.style.top = '15px';
                         btnSide.style.left = '15px';
                         btnSide.style.zIndex = '45';
                     }
-                    const setBottom = setPanel.offsetTop + setPanel.offsetHeight;
-                    navBar.style.top = `${setBottom + 8}px`;
+                    const panelBottom = activePanel.offsetTop + activePanel.offsetHeight;
+                    navBar.style.top = `${panelBottom + 8}px`;
                 } else {
                     if (btnSide) {
                         btnSide.style.position = '';
@@ -6677,19 +7293,34 @@
                 if (isMobile) {
                     toggleSidebar(false);
                     toggleSettingsPanel(false);
+                    togglePlaybackDock(false);
                 }
                 const chk = document.getElementById('chk-show-lunar-limb');
                 if (chk) chk.checked = true;
+                const chkLimbLbls = document.getElementById('chk-limb-labels');
+                const lblLimbLbls = document.getElementById('lbl-limb-labels');
+                if (chkLimbLbls && lblLimbLbls) {
+                    chkLimbLbls.disabled = false;
+                    lblLimbLbls.style.opacity = '1';
+                    lblLimbLbls.style.pointerEvents = 'auto';
+                }
                 if (currentActiveView === 'telescopic') {
                     renderTelescopicView();
                 } else {
-                    renderLunarLimbRadar([], 0);
+                    renderLunarLimbRadar([], false);
                 }
             } else {
                 panel.classList.add('collapsed');
                 resetPanelDefaultPosition('lunar-limb-panel');
                 const chk = document.getElementById('chk-show-lunar-limb');
                 if (chk) chk.checked = false;
+                const chkLimbLbls = document.getElementById('chk-limb-labels');
+                const lblLimbLbls = document.getElementById('lbl-limb-labels');
+                if (chkLimbLbls && lblLimbLbls) {
+                    chkLimbLbls.disabled = true;
+                    lblLimbLbls.style.opacity = '0.5';
+                    lblLimbLbls.style.pointerEvents = 'none';
+                }
                 if (currentActiveView === 'telescopic') {
                     renderTelescopicView();
                 }
@@ -6722,20 +7353,29 @@
             const wasLarge = lastObservedWindowWidth > 900;
             lastObservedWindowWidth = window.innerWidth;
 
-            if (isSmall && wasLarge) {
+            if (isSmall) {
                 const sidePanel = document.getElementById('sidebar-panel');
                 const setPanel = document.getElementById('settings-panel');
+                const limbPanel = document.getElementById('lunar-limb-panel');
 
                 const sideOpen = sidePanel && !sidePanel.classList.contains('collapsed');
                 const setOpen = setPanel && !setPanel.classList.contains('collapsed');
+                const limbOpen = limbPanel && !limbPanel.classList.contains('collapsed');
 
-                if (sideOpen && setOpen) {
+                if (limbOpen) {
+                    toggleSidebar(false);
+                    toggleSettingsPanel(false);
+                    togglePlaybackDock(false);
+                } else if (sideOpen && setOpen) {
                     toggleSettingsPanel(false);
                     togglePlaybackDock(false);
                 }
                 resetAllPanelsPositions();
             }
             updateTopNavButtonsState();
+            if (currentActiveView === 'telescopic') {
+                renderTelescopicView();
+            }
         });
 
         // -------------------------------------------------------------
