@@ -1851,11 +1851,11 @@
                 <span id="speed-indicator-badge" style="font-family: var(--font-mono); font-size: 0.78rem; color: var(--accent-blue); font-weight: 600; padding: 0 4px; min-width: 34px; display: inline-block;">1x</span>
             </div>
             <div class="player-ctrls-compact">
-                <button class="ctrl-btn" id="btn-rewind" onclick="changeSpeedStep(-1)" title="Retroceder / Aumentar velocidad atrás (1/2x a 1200x)"><i class="fa-solid fa-backward"></i></button>
+                <button class="ctrl-btn" id="btn-rewind" onclick="changeSpeedStep(-1)" title="Reducir velocidad (1/2x a 1200x)"><i class="fa-solid fa-backward"></i></button>
                 <button class="ctrl-btn" id="btn-prev-contact" onclick="jumpContactStep(-1)" title="Momento anterior del eclipse (C1, C2, Máx, C3, C4)"><i class="fa-solid fa-step-backward"></i></button>
                 <button class="ctrl-btn play-main" id="btn-play-pause" onclick="toggleSimulation()" title="Reproducir / Pausar"><i class="fa-solid fa-play"></i></button>
                 <button class="ctrl-btn" id="btn-next-contact" onclick="jumpContactStep(1)" title="Momento siguiente del eclipse (C1, C2, Máx, C3, C4)"><i class="fa-solid fa-step-forward"></i></button>
-                <button class="ctrl-btn" id="btn-fast-forward" onclick="changeSpeedStep(1)" title="Avanzar / Aumentar velocidad adelante (1/2x a 1200x)"><i class="fa-solid fa-forward"></i></button>
+                <button class="ctrl-btn" id="btn-fast-forward" onclick="changeSpeedStep(1)" title="Aumentar velocidad (1/2x a 1200x)"><i class="fa-solid fa-forward"></i></button>
             </div>
             <div class="playback-dock-bottom-right">
                 <button type="button" class="ctrl-btn" id="btn-recenter" onclick="recenterEclipseGE()" title="Centrar Tierra en el Eclipse" style="width: 30px; height: 30px; padding: 0; border-radius: 7px;">
@@ -7044,26 +7044,21 @@
         // =========================================================================
         const SPEED_STEPS = [0.5, 1, 10, 60, 300, 1200];
         let simSpeedMultiplier = 1.0;
-        let simPlayDirection = 1; // 1 (adelante), -1 (atrás)
+        let simPlayDirection = 1; // Reproducción siempre hacia adelante
 
         function changeSpeedStep(dir) {
-            // dir: 1 (adelante / fast-forward) o -1 (atrás / rewind)
-            if (!isPlaying) {
-                // Si estaba pausado, arrancar en la dirección solicitada
-                simPlayDirection = dir;
-                startSimulation();
-            } else if (simPlayDirection !== dir) {
-                // Si estaba reproduciendo en el sentido opuesto, invertir sentido
-                simPlayDirection = dir;
+            // dir: 1 (aumentar velocidad) o -1 (reducir velocidad)
+            const curIdx = SPEED_STEPS.indexOf(simSpeedMultiplier);
+            let nextIdx = 1; // Valor por defecto: 1x
+            if (curIdx !== -1) {
+                nextIdx = curIdx + dir;
             } else {
-                // Si ya estaba en la misma dirección, avanzar al siguiente escalón de velocidad
-                const curIdx = SPEED_STEPS.indexOf(simSpeedMultiplier);
-                let nextIdx = 1;
-                if (curIdx !== -1) {
-                    nextIdx = (curIdx + 1) % SPEED_STEPS.length;
-                }
-                simSpeedMultiplier = SPEED_STEPS[nextIdx];
+                nextIdx = dir > 0 ? 1 : 0;
             }
+            // Limitar entre el mínimo (0.5x) y el máximo (1200x)
+            nextIdx = Math.max(0, Math.min(SPEED_STEPS.length - 1, nextIdx));
+            simSpeedMultiplier = SPEED_STEPS[nextIdx];
+            simPlayDirection = 1; // Reproducción siempre hacia adelante
 
             updateSpeedUI();
         }
@@ -7072,12 +7067,18 @@
             const badge = document.getElementById('speed-indicator-badge');
             const speedLabel = simSpeedMultiplier === 0.5 ? '1/2' : simSpeedMultiplier;
             if (badge) {
-                badge.textContent = `${simPlayDirection < 0 ? '−' : ''}${speedLabel}x`;
+                badge.textContent = `${speedLabel}x`;
             }
             const fastBtn = document.getElementById('btn-fast-forward');
             const rewBtn = document.getElementById('btn-rewind');
-            if (fastBtn) fastBtn.title = `Avanzar / Aumentar velocidad adelante (${speedLabel}x)`;
-            if (rewBtn) rewBtn.title = `Retroceder / Invertir sentido atrás (${speedLabel}x)`;
+            if (fastBtn) {
+                fastBtn.title = `Aumentar velocidad (${speedLabel}x)`;
+                fastBtn.style.opacity = (simSpeedMultiplier === SPEED_STEPS[SPEED_STEPS.length - 1]) ? '0.4' : '1';
+            }
+            if (rewBtn) {
+                rewBtn.title = `Reducir velocidad (${speedLabel}x)`;
+                rewBtn.style.opacity = (simSpeedMultiplier === SPEED_STEPS[0]) ? '0.4' : '1';
+            }
         }
 
         function jumpContactStep(dir) {
