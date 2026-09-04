@@ -4371,9 +4371,12 @@
             const dpr = window.devicePixelRatio || 1;
             const w = canvas.width / dpr, h = canvas.height / dpr;
 
+            // Garantizar reinicio riguroso de la matriz de transformación a la identidad en cada frame
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
             ctx.save();
             ctx.scale(dpr, dpr);
-            ctx.clearRect(0, 0, w, h);
 
             const t = parseFloat(timeSlider?.value) || 0;
             const circ = localCircumstancesCache || calculateLocalSolarCircumstances(currentEclipse, currentObserver.lat, currentObserver.lon);
@@ -4798,6 +4801,7 @@
 
                     // 2. DIBUJAR CADA PERLA DE BAILY Y EL DIAMANTE CON TRANSICIÓN SUAVE
                     activeBeadsList.forEach(b => {
+                        ctx.save();
                         const isThisTheDiamond = isDiamondRing && (b.id === primaryDiamondId);
                         const beadR = isThisTheDiamond ? (2.5 + (rSunPx * 0.050) * b.intensity) : (1.2 + (rSunPx * 0.026) * b.intensity);
                         const alpha = Math.min(1.0, 0.45 + 0.55 * b.intensity);
@@ -4809,7 +4813,6 @@
                         beadGrad.addColorStop(0.60, isThisTheDiamond ? `rgba(254, 240, 138, ${(0.85 * alpha).toFixed(3)})` : `rgba(249, 115, 22, ${(0.55 * alpha).toFixed(3)})`);
                         beadGrad.addColorStop(1.0, 'transparent');
 
-                        ctx.save();
                         ctx.beginPath();
                         ctx.fillStyle = beadGrad;
                         ctx.arc(b.x, b.y, beadR * 2.8, 0, Math.PI * 2);
@@ -4845,7 +4848,7 @@
                             // Núcleo blanco cegador de la gema con escala continua
                             ctx.fillStyle = '#ffffff';
                             ctx.shadowColor = '#ffffff';
-                        ctx.shadowBlur = 18 * b.intensity;
+                            ctx.shadowBlur = 18 * b.intensity;
                             ctx.beginPath();
                             ctx.arc(b.x, b.y, Math.max(1.0, (rSunPx * 0.038) * b.intensity), 0, Math.PI * 2);
                             ctx.fill();
@@ -4888,6 +4891,7 @@
                                 ctx.restore();
                             }
                         }
+                        ctx.restore();
                     });
                 }
 
