@@ -4415,7 +4415,78 @@
                     };
                 }
 
-                // 1. Corona solar exclusivamente en totalidad absoluta
+                // 1. Retícula de orientación celeste y coordenadas locales (Cenit / Horizonte o Norte / Sur)
+                const showTeleLabels = document.getElementById('chk-tele-labels')?.checked ?? true;
+                const rReticle = Math.max(rSunPx * 1.55, 120);
+
+                if (showTeleLabels) {
+                    ctx.save();
+                    // Retícula de referencia telescópica
+                    ctx.strokeStyle = 'rgba(56, 189, 248, 0.16)';
+                    ctx.lineWidth = 0.8;
+                    ctx.beginPath();
+                    ctx.moveTo(0, -rReticle * 1.12); ctx.lineTo(0, rReticle * 1.12);
+                    ctx.moveTo(-rReticle * 1.12, 0); ctx.lineTo(rReticle * 1.12, 0);
+                    ctx.stroke();
+
+                    ctx.beginPath();
+                    ctx.arc(0, 0, rReticle, 0, Math.PI * 2);
+                    ctx.strokeStyle = 'rgba(56, 189, 248, 0.12)';
+                    ctx.stroke();
+
+                    ctx.font = '400 10.5px var(--font-sans)';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+
+                    if (isZenithUp) {
+                        // Modo Altazimutal: Cenit arriba (12h), Horizonte abajo (6h)
+                        ctx.fillStyle = '#eab308';
+                        ctx.fillText('▲ Cenit', 0, -rReticle - 12);
+
+                        ctx.fillStyle = 'rgba(248, 250, 252, 0.55)';
+                        ctx.fillText('▼ Horizonte', 0, rReticle + 12);
+
+                        // Vector guía hacia el Norte Celeste
+                        const projN = skyAngleToCanvas(0);
+                        ctx.beginPath();
+                        ctx.strokeStyle = 'rgba(239, 68, 68, 0.75)';
+                        ctx.lineWidth = 1.2;
+                        ctx.setLineDash([3, 3]);
+                        ctx.moveTo(0, 0);
+                        ctx.lineTo(projN.xNorm * rReticle, projN.yNorm * rReticle);
+                        ctx.stroke();
+                        ctx.setLineDash([]);
+
+                        ctx.fillStyle = '#ef4444';
+                        ctx.fillText('Norte', projN.xNorm * (rReticle + 15), projN.yNorm * (rReticle + 15));
+                    } else {
+                        // Modo Ecuatorial: Norte celeste arriba (12h), Sur abajo (6h), Este izquierda, Oeste derecha
+                        ctx.fillStyle = '#ef4444';
+                        ctx.fillText('▲ Norte', 0, -rReticle - 12);
+
+                        ctx.fillStyle = 'rgba(248, 250, 252, 0.55)';
+                        ctx.fillText('▼ Sur', 0, rReticle + 12);
+                        ctx.fillText('◄ Este', -rReticle - 18, 0);
+                        ctx.fillText('Oeste ►', rReticle + 18, 0);
+
+                        // Vector guía hacia el Cenit Local
+                        const projZ = skyAngleToCanvas(qDeg);
+                        ctx.beginPath();
+                        ctx.strokeStyle = 'rgba(234, 179, 8, 0.75)';
+                        ctx.lineWidth = 1.2;
+                        ctx.setLineDash([3, 3]);
+                        ctx.moveTo(0, 0);
+                        ctx.lineTo(projZ.xNorm * rReticle, projZ.yNorm * rReticle);
+                        ctx.stroke();
+                        ctx.setLineDash([]);
+
+                        ctx.fillStyle = '#eab308';
+                        ctx.fillText('Cenit', projZ.xNorm * (rReticle + 15), projZ.yNorm * (rReticle + 15));
+                    }
+                    ctx.restore();
+                }
+
+                // 2. Corona solar exclusivamente en totalidad absoluta (rotada sincronizada con la orientación)
                 if (isTotalNow) {
                     const coronaGrad = ctx.createRadialGradient(0, 0, rSunPx * 0.98, 0, 0, rSunPx * 3.2);
                     coronaGrad.addColorStop(0, "rgba(255, 255, 255, 0.95)");
@@ -4431,19 +4502,20 @@
 
                     ctx.save();
                     for (let a = 0; a < 36; a++) {
-                        const angle = (a * 10) * Math.PI / 180;
+                        const pa = a * 10;
+                        const proj = skyAngleToCanvas(pa);
                         const rayLen = rSunPx * (1.6 + 0.9 * Math.sin(a * 4.7 + 1.2));
                         ctx.beginPath();
                         ctx.strokeStyle = "rgba(255, 255, 255, 0.08)";
                         ctx.lineWidth = 2.5;
-                        ctx.moveTo(Math.cos(angle) * rSunPx, Math.sin(angle) * rSunPx);
-                        ctx.lineTo(Math.cos(angle) * rayLen, Math.sin(angle) * rayLen);
+                        ctx.moveTo(proj.xNorm * rSunPx, proj.yNorm * rSunPx);
+                        ctx.lineTo(proj.xNorm * rayLen, proj.yNorm * rayLen);
                         ctx.stroke();
                     }
                     ctx.restore();
                 }
 
-                // 2. Disco Solar con Limb Darkening Realista
+                // 3. Disco Solar con Limb Darkening Realista
                 const sunGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, rSunPx);
                 sunGrad.addColorStop(0, '#fffbf0');
                 sunGrad.addColorStop(0.65, '#fef08a');
@@ -4456,7 +4528,7 @@
                 ctx.arc(0, 0, rSunPx, 0, Math.PI * 2);
                 ctx.fill();
 
-                // 3. Posición topocéntrica relativa de la Luna respecto al Sol
+                // 4. Posición topocéntrica relativa de la Luna respecto al Sol
                 const kRatio = (p.L1 - p.L2) / (p.L1 + p.L2);
                 const rMoonPx = rSunPx * kRatio;
 
@@ -4464,13 +4536,12 @@
                 const sepDistPx = sepNorm * rSunPx;
                 
                 // Ángulo de posición astronómico del centro de la Luna (desde Norte hacia el Este)
-                const paMoonDeg = (Math.atan2(p.u, p.v) * DEG + 360) % 360;
+                const paMoonDeg = (Math.atan2(-p.u, -p.v) * DEG + 360) % 360;
                 const projMoon = skyAngleToCanvas(paMoonDeg);
                 const moonX = projMoon.xNorm * sepDistPx;
                 const moonY = projMoon.yNorm * sepDistPx;
 
                 const showLimb = document.getElementById('chk-show-lunar-limb')?.checked;
-                const showTeleLabels = document.getElementById('chk-tele-labels')?.checked ?? true;
                 const pxPerKm = rMoonPx / 1737.4;
                 let activeBeadsList = [];
                 let isDiamondRing = false;
@@ -4752,7 +4823,7 @@
                                 const isMain = rayIdx % 2 === 0;
                                 const len = isMain ? rayLen : rayLen * 0.60;
                                 const width = (isMain ? 2.8 : 1.6) * Math.max(0.5, b.intensity);
-                                const rad = angDeg * Math.PI / 180.0;
+                                const rad = (angDeg - rotDeg) * Math.PI / 180.0;
                                 const rx = b.x + Math.cos(rad) * len;
                                 const ry = b.y + Math.sin(rad) * len;
 
