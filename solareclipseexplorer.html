@@ -1592,11 +1592,11 @@
         </div>
         <div style="display: flex; gap: 8px; align-items: center;">
             <div class="custom-combobox-container" id="observer-combobox-container" style="position: relative; flex: 1; min-width: 0;">
-                <input type="text" class="search-select custom-combobox-input" id="observer-location-input" placeholder="Buscar o elegir ciudad..." value="Mataró (Cosmos Mataró, ES)" style="width: 100%; height: 36px; box-sizing: border-box; padding: 0 32px 0 12px; font-size: 0.84rem; font-weight: 400; background-color: #0f172a; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 10px; color: #f8fafc; cursor: text; outline: none; text-overflow: ellipsis;" autocomplete="off" onfocus="openObserverDropdown(); this.select();" oninput="filterObserverDropdown(this.value, true)" onkeydown="onObserverInputKeyDown(event)">
+                <input type="text" class="search-select custom-combobox-input" id="observer-location-input" placeholder="Buscar o elegir ciudad..." value="Mataró (Cosmos Mataró, ES)" style="width: 100%; height: 36px; box-sizing: border-box; padding: 0 32px 0 12px; font-family: var(--font-mono); font-size: 0.80rem; font-weight: 400; background-color: #0f172a; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 10px; color: #f8fafc; cursor: text; outline: none; text-overflow: ellipsis;" autocomplete="off" onfocus="openObserverDropdown(); this.select();" oninput="filterObserverDropdown(this.value, true)" onkeydown="onObserverInputKeyDown(event)">
                 <span style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; color: #94a3b8; font-size: 0.72rem;"><i class="fa-solid fa-chevron-down"></i></span>
                 
                 <!-- Desplegable Filtrable Flotante Estilizado Adaptativo -->
-                <div id="observer-dropdown-menu" class="custom-dropdown-menu" style="display: none; position: absolute; top: calc(100% + 4px); left: 0; min-width: 100%; width: max-content; max-width: calc(100% + 116px); box-sizing: border-box; max-height: 230px; overflow-y: auto; background: #0b1329; border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 10px; box-shadow: 0 12px 30px rgba(0,0,0,0.85); z-index: 1000; padding: 4px;">
+                <div id="observer-dropdown-menu" class="custom-dropdown-menu" style="display: none; position: absolute; top: calc(100% + 4px); left: 0; min-width: 100%; width: max-content; max-width: calc(100% + 116px); box-sizing: border-box; max-height: 230px; overflow-y: auto; background: #0b1329; border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 10px; box-shadow: 0 12px 30px rgba(0,0,0,0.85); z-index: 1000; padding: 4px; font-family: var(--font-mono);">
                     <!-- Poblado dinámicamente -->
                 </div>
             </div>
@@ -1618,12 +1618,12 @@
         <!-- Inputs para Coordenadas Personalizadas -->
         <div id="observer-custom-coords" style="display: none; gap: 6px; align-items: center;">
             <div style="flex: 1; display: flex; align-items: center; background: rgba(0,0,0,0.3); border: 1px solid rgba(56,189,248,0.25); border-radius: 6px; padding: 0 6px;">
-                <span style="font-size: 0.68rem; color: var(--text-secondary); margin-right: 4px;">Lat:</span>
-                <input type="number" id="custom-obs-lat" step="0.01" value="41.54" style="width: 100%; background: transparent; border: none; color: #fff; font-size: 0.75rem; padding: 4px 0;" oninput="onCustomCoordsChange()" onchange="onCustomCoordsChange()">
+                <span style="font-size: 0.68rem; color: var(--text-secondary); margin-right: 4px; font-family: var(--font-mono);">Lat:</span>
+                <input type="number" id="custom-obs-lat" step="0.01" value="41.54" style="width: 100%; background: transparent; border: none; color: #fff; font-family: var(--font-mono); font-size: 0.75rem; padding: 4px 0;" oninput="onCustomCoordsChange()" onchange="onCustomCoordsChange()">
             </div>
             <div style="flex: 1; display: flex; align-items: center; background: rgba(0,0,0,0.3); border: 1px solid rgba(56,189,248,0.25); border-radius: 6px; padding: 0 6px;">
-                <span style="font-size: 0.68rem; color: var(--text-secondary); margin-right: 4px;">Lon:</span>
-                <input type="number" id="custom-obs-lon" step="0.01" value="2.44" style="width: 100%; background: transparent; border: none; color: #fff; font-size: 0.75rem; padding: 4px 0;" oninput="onCustomCoordsChange()" onchange="onCustomCoordsChange()">
+                <span style="font-size: 0.68rem; color: var(--text-secondary); margin-right: 4px; font-family: var(--font-mono);">Lon:</span>
+                <input type="number" id="custom-obs-lon" step="0.01" value="2.44" style="width: 100%; background: transparent; border: none; color: #fff; font-family: var(--font-mono); font-size: 0.75rem; padding: 4px 0;" oninput="onCustomCoordsChange()" onchange="onCustomCoordsChange()">
             </div>
             <button class="ctrl-btn" onclick="toggleGlobePickingMode(true)" title="Marcar en el globo 3D" style="height: 28px; padding: 0 8px; font-size: 0.72rem; gap: 4px; border-radius: 6px; flex-shrink: 0;">
                 <i class="fa-solid fa-earth-americas"></i>
@@ -1631,10 +1631,10 @@
         </div>
 
         <!-- Indicador de la Ubicación Seleccionada Activa y Zona Horaria -->
-        <div style="margin-top: 2px; margin-bottom: 2px; font-size: 0.74rem; color: #f8fafc; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; display: flex; justify-content: space-between; align-items: center;">
+        <div style="margin-top: 2px; margin-bottom: 2px; font-size: 0.74rem; color: #f8fafc; font-family: var(--font-mono); display: flex; justify-content: space-between; align-items: center;">
             <div style="display: flex; align-items: center; gap: 6px;">
                 <i class="fa-solid fa-location-crosshairs" style="font-size: 0.72rem; color: var(--accent-blue);"></i>
-                <span id="observer-header-subtitle">41° 32' 58" N  2° 26' 53" E</span>
+                <span id="observer-header-subtitle" style="font-family: var(--font-mono); font-size: 0.75rem; color: #f8fafc; font-weight: 400; letter-spacing: 0;">41° 32' 58" N  2° 26' 53" E</span>
             </div>
             <span id="observer-header-tz" style="font-family: var(--font-mono); font-size: 0.72rem; color: #f8fafc; font-weight: 600;">UTC+2</span>
         </div>
@@ -2989,8 +2989,8 @@
                 const item = document.createElement('div');
                 item.className = 'dropdown-option-item';
                 item.style.padding = '7px 10px';
-                item.style.fontFamily = 'var(--font-body)';
-                item.style.fontSize = '0.82rem';
+                item.style.fontFamily = 'var(--font-mono)';
+                item.style.fontSize = '0.78rem';
                 item.style.color = (preset.name === currentObserver.name) ? 'var(--accent-blue)' : '#f8fafc';
                 item.style.fontWeight = (preset.name === currentObserver.name) ? '600' : '400';
                 item.style.cursor = 'pointer';
@@ -3006,10 +3006,10 @@
                 const cleanName = preset.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
                 if (cleanQuery && cleanName.startsWith(cleanQuery)) {
                     const matchLen = cleanQuery.length;
-                    displayHtml = `<strong style="color: var(--accent-blue);">${preset.name.slice(0, matchLen)}</strong>${preset.name.slice(matchLen)}`;
+                    displayHtml = `<strong style="color: var(--accent-blue); font-family: var(--font-mono);">${preset.name.slice(0, matchLen)}</strong>${preset.name.slice(matchLen)}`;
                 }
 
-                item.innerHTML = `<span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${displayHtml}</span><span style="font-family: var(--font-mono); font-size: 0.78rem; color: #94a3b8; flex-shrink: 0; white-space: nowrap;">${formatLatLonString(preset.lat, preset.lon, 1)}</span>`;
+                item.innerHTML = `<span style="font-family: var(--font-mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${displayHtml}</span><span style="font-family: var(--font-mono); font-size: 0.78rem; color: #94a3b8; flex-shrink: 0; white-space: nowrap;">${formatLatLonString(preset.lat, preset.lon, 1)}</span>`;
 
                 item.onmouseenter = () => { item.style.background = 'rgba(56, 189, 248, 0.18)'; };
                 item.onmouseleave = () => { if (idx !== activeDropdownIndex) item.style.background = 'transparent'; };
