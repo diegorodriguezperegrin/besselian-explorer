@@ -4640,8 +4640,8 @@
                 const isObserverTotal = Boolean(circ && circ.isTotal);
                 const isObserverAnnular = Boolean(circ && circ.isAnnular);
                 const isAnnularContact = isObserverAnnular && (Math.abs(p.delta - Math.abs(p.L2)) <= 0.005);
-                // Fase profunda: activa cuando el limbo lunar está a escala del relieve montañoso (~0.988+) o cerca de C2/C3
-                const isDeepPhase = (magNow >= 0.988) || (isObserverTotal && (Math.abs(p.delta - Math.abs(p.L2)) <= 0.03 || isTotalNow)) || isAnnularContact;
+                // Perlas de Baily y Anillo de Diamantes: activos exclusivamente en eclipses totales o anulares (contactos C2/C3)
+                const isDeepPhase = (isObserverTotal && (Math.abs(p.delta - Math.abs(p.L2)) <= 0.03 || isTotalNow)) || isAnnularContact;
 
                 if (isDeepPhase) {
                     const rawBeadPoints = [];
