@@ -4539,7 +4539,7 @@
                 const sepDistPx = sepNorm * rSunPx;
                 
                 // Ángulo de posición astronómico del centro de la Luna (desde Norte hacia el Este)
-                const paMoonDeg = (Math.atan2(-p.u, -p.v) * DEG + 360) % 360;
+                const paMoonDeg = (Math.atan2(p.u, p.v) * DEG + 360) % 360;
                 const projMoon = skyAngleToCanvas(paMoonDeg);
                 const moonX = projMoon.xNorm * sepDistPx;
                 const moonY = projMoon.yNorm * sepDistPx;
