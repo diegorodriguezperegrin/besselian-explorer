@@ -44,16 +44,13 @@
             --border-color-active: rgba(56, 189, 248, 0.5);
             --text-primary: #f8fafc;
             --text-secondary: #94a3b8;
-            --text-dim: #64748b;
-            --solar-yellow: #fef08a;
+            --text-dim: #94a3b8;
             --solar-orange: #f97316;
             --solar-red: #ef4444;
             --accent-blue: #38bdf8;
             --accent-green: #34d399;
-            --accent-purple: #c084fc;
             --font-heading: 'Outfit', sans-serif;
             --font-body: 'Plus Jakarta Sans', sans-serif;
-            --font-sans: 'Plus Jakarta Sans', sans-serif;
             --font-mono: 'JetBrains Mono', monospace;
             --transition-smooth: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         }
@@ -198,6 +195,12 @@
             scrollbar-width: thin;
             scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
             transition: opacity 0.2s ease, transform 0.2s ease;
+        }
+
+        #lunar-limb-panel {
+            right: 375px;
+            width: 350px;
+            z-index: 26;
         }
 
         /* Left Panel: Eclipse Selection, Time Player, and Data */
@@ -558,7 +561,7 @@
             transform: translateY(-1px);
         }
         .stepper-btn:disabled {
-            opacity: 0.28;
+            opacity: 0.45;
             cursor: not-allowed;
             border-color: transparent;
             background: rgba(255, 255, 255, 0.02);
@@ -764,9 +767,7 @@
         .vis-annular, .type-A { background: rgba(245, 158, 11, 0.25); color: #fcd34d; border: 1px solid #f59e0b; }
         .vis-hybrid, .type-H { background: rgba(168, 85, 247, 0.25); color: #e9d5ff; border: 1px solid #a855f7; }
         .vis-partial, .type-P { background: rgba(56, 189, 248, 0.25); color: #bae6fd; border: 1px solid #38bdf8; }
-        .vis-full { background: rgba(239, 68, 68, 0.25); color: #ffffff; border: 1px solid #ef4444; }
-        .vis-rise { background: rgba(56, 189, 248, 0.25); color: #bae6fd; border: 1px solid #38bdf8; }
-        .vis-set { background: rgba(234, 179, 8, 0.22); color: #fef08a; border: 1px solid rgba(234, 179, 8, 0.5); }
+
         .vis-none { background: rgba(239, 68, 68, 0.20); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.45); }
 
         .contacts-table {
@@ -875,36 +876,7 @@
             box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
         }
 
-        .btn {
-            background: linear-gradient(135deg, #0284c7, #0369a1);
-            color: #fff;
-            border: none;
-            padding: 10px 16px;
-            border-radius: 10px;
-            font-weight: 600;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            transition: transform 0.15s, opacity 0.2s, background 0.2s;
-        }
-        .btn:hover {
-            opacity: 0.95;
-            transform: translateY(-1px);
-        }
-        .btn-primary-solar {
-            background: linear-gradient(135deg, #f97316, #ea580c);
-            box-shadow: 0 0 15px rgba(249, 115, 22, 0.4);
-        }
-        .btn-secondary {
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid var(--border-color);
-            color: var(--text-primary);
-        }
-        .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.15);
-        }
+
 
         /* Presets Rápidos (Idénticos a Besselian Explorer) */
         .quick-presets {
@@ -941,10 +913,7 @@
             gap: 2px;
         }
 
-        .type-T { background: rgba(239, 68, 68, 0.25); color: #fca5a5; border: 1px solid #ef4444; }
-        .type-A { background: rgba(245, 158, 11, 0.25); color: #fcd34d; border: 1px solid #f59e0b; }
-        .type-H { background: rgba(168, 85, 247, 0.25); color: #e9d5ff; border: 1px solid #a855f7; }
-        .type-P { background: rgba(56, 189, 248, 0.25); color: #bae6fd; border: 1px solid #38bdf8; }
+
 
         .stat-grid {
             display: grid;
@@ -1306,6 +1275,13 @@
             color: var(--accent-blue);
         }
 
+        .ctrl-btn.active {
+            background: rgba(56, 189, 248, 0.22);
+            border-color: var(--accent-blue);
+            color: var(--accent-blue);
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.35);
+        }
+
         .ctrl-btn.play-main {
             width: 34px;
             height: 34px;
@@ -1405,6 +1381,14 @@
             }
             .playback-dock-bottom {
                 gap: 4px;
+            }
+        }
+    
+        /* Mobile Touch Targets */
+        @media (max-width: 900px) {
+            .panel-toggle, .location-tool-btn, .ctrl-btn {
+                min-width: 44px;
+                min-height: 44px;
             }
         }
     </style>
@@ -1519,7 +1503,7 @@
                 </div>
                 <div class="stat-row">
                     <span class="stat-lbl">Saros</span>
-                    <span class="stat-val interactive-saros" id="card-saros" title="Clic para explorar todos los eclipses de esta serie de Saros">136 <small style="color:var(--text-secondary); font-size:0.7rem;">(38/71)</small> <i class="fa-solid fa-arrow-up-right-from-square" style="font-size:0.65rem; opacity:0.8;"></i></span>
+                    <span class="stat-val interactive-saros" id="card-saros" role="button" tabindex="0" title="Clic para explorar todos los eclipses de esta serie de Saros">136 <small style="color:var(--text-secondary); font-size:0.7rem;">(38/71)</small> <i class="fa-solid fa-arrow-up-right-from-square" style="font-size:0.65rem; opacity:0.8;"></i></span>
                 </div>
                 <div class="stat-row">
                     <span class="stat-lbl">Magnitud</span>
@@ -1625,13 +1609,13 @@
             
             <!-- Pulsador Único Segmentado de 3 Posiciones: [ 🌍 Marcar | 🎛️ Ajustar | 🎯 GPS ] -->
             <div class="location-tools-group" id="location-tools-group">
-                <button type="button" class="location-tool-btn" id="btn-pick-on-globe" onclick="toggleGlobePickingMode(true)" title="Marcar en el globo terráqueo 3D">
+                <button type="button" class="location-tool-btn" id="btn-pick-on-globe" onclick="toggleGlobePickingMode(true)" title="Marcar en el globo terráqueo 3D" aria-label="Seleccionar ubicación en el globo">
                     <i class="fa-solid fa-earth-americas"></i>
                 </button>
-                <button type="button" class="location-tool-btn" id="btn-toggle-custom-coords" onclick="toggleCustomCoords()" title="Introducir coordenadas">
+                <button type="button" class="location-tool-btn" id="btn-toggle-custom-coords" onclick="toggleCustomCoords()" title="Introducir coordenadas" aria-label="Introducir coordenadas personalizadas">
                     <i class="fa-solid fa-sliders"></i>
                 </button>
-                <button type="button" class="location-tool-btn" id="btn-observer-gps" onclick="detectUserLocation()" title="Detectar mi ubicación actual (GPS)">
+                <button type="button" class="location-tool-btn" id="btn-observer-gps" onclick="detectUserLocation()" title="Detectar mi ubicación actual (GPS)" aria-label="Usar GPS del dispositivo">
                     <i class="fa-solid fa-crosshairs"></i>
                 </button>
             </div>
@@ -1653,7 +1637,7 @@
         </div>
 
         <!-- Indicador de la Ubicación Seleccionada Activa y Zona Horaria -->
-        <div style="margin-top: 2px; margin-bottom: 2px; font-size: 0.74rem; color: #f8fafc; font-family: var(--font-mono); display: flex; justify-content: space-between; align-items: center;">
+        <div style="margin-top: 2px; margin-bottom: 2px; font-size: 0.74rem; color: #f8fafc; font-family: var(--font-mono); display: flex; justify-content: space-between; align-items: center; padding: 0 16px;">
             <div style="display: flex; align-items: center; gap: 6px;">
                 <i class="fa-solid fa-location-crosshairs" style="font-size: 0.72rem; color: var(--accent-blue);"></i>
                 <span id="observer-header-subtitle" style="font-family: var(--font-mono); font-size: 0.75rem; color: #f8fafc; font-weight: 400; letter-spacing: 0;">41° 32' 58" N  2° 26' 53" E</span>
@@ -1824,7 +1808,7 @@
     </div>
 
     <!-- PANEL FLOTANTE: Perfil del Limbo Lunar (NASA LRO / LOLA) y Perlas de Baily (Estilo Eduard Masana) -->
-    <div class="settings-panel collapsed" id="lunar-limb-panel" role="region" aria-label="Panel del Perfil del Limbo" style="right: 375px; width: 350px; z-index: 26;">
+    <div class="settings-panel collapsed" id="lunar-limb-panel" role="region" aria-label="Panel del Perfil del Limbo">
         <div class="panel-header">
             <h2>Perfil del limbo</h2>
             <div class="panel-toggle" id="btn-toggle-limb" onclick="toggleLunarLimbPanel(false)" role="button" tabindex="0" title="Minimizar panel" aria-label="Minimizar panel del perfil del limbo"><i class="fa-solid fa-chevron-left" aria-hidden="true"></i></div>
@@ -1905,7 +1889,7 @@
                 <button class="ctrl-btn" id="btn-fast-forward" onclick="changeSpeedStep(1)" title="Aumentar velocidad (1/2x a 1200x)" aria-label="Aumentar velocidad"><i class="fa-solid fa-forward" aria-hidden="true"></i></button>
             </div>
             <div class="playback-dock-bottom-right">
-                <button type="button" class="ctrl-btn" id="btn-recenter" onclick="handleRecenterClick()" title="Centrar Tierra en el eclipse" style="width: 30px; height: 30px; padding: 0; border-radius: 7px;" aria-label="Recentrar cámara en el eclipse">
+                <button type="button" class="ctrl-btn" id="btn-recenter" onclick="handleRecenterClick()" title="Centrar eclipse" style="width: 30px; height: 30px; padding: 0; border-radius: 7px;" aria-label="Centrar eclipse">
                     <i class="fa-solid fa-crosshairs" aria-hidden="true"></i>
                 </button>
             </div>
@@ -1914,6 +1898,15 @@
 
     <script>
         const RAD = Math.PI / 180, DEG = 180 / Math.PI;
+
+        const _domCache = new Map();
+        function getDOM(id) {
+            if (typeof document === 'undefined' || !document.getElementById) return null;
+            if (!_domCache.has(id)) {
+                _domCache.set(id, document.getElementById(id));
+            }
+            return _domCache.get(id);
+        }
 
         const OBSERVER_PRESETS = [
             { name: "Mataró (Cosmos Mataró, ES)", lat: 41.54, lon: 2.44, tz: "Europe/Madrid" },
@@ -1979,7 +1972,7 @@
         // -------------------------------------------------------------
         // 1. CONFIGURACIÓN THREE.JS
         // -------------------------------------------------------------
-        const container = document.getElementById('webgl-container');
+        const container = getDOM('webgl-container');
         const scene = new THREE.Scene();
 
         const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1.0, 5000000);
@@ -1991,8 +1984,12 @@
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         container.appendChild(renderer.domElement);
 
-        let focusedBody = null; // 'moon' | 'earth' | null
+        let focusedBody = null; // 'moon' | 'node' | 'earth' | 'sun' | null
+        let lastNodePos3D = null;
         let cameraTransition = null;
+        let isPlaybackCentered = false;
+        let playbackCenteredPref = true;
+        let lastShadowEclipseCat = null;
 
         function transitionCamera(targetLookAt, targetCamPos, durationMs = 700) {
             const startTarget = controls ? controls.target.clone() : new THREE.Vector3(0, 0, 0);
@@ -2052,7 +2049,6 @@
 
             controls.addEventListener('start', () => {
                 cameraTransition = null;
-                focusedBody = null;
             });
             controls.addEventListener('change', () => {
                 needsRender = true;
@@ -2097,13 +2093,16 @@
             }
         });
 
-        // Navegación por doble clic / doble tap
-        renderer.domElement.addEventListener('dblclick', (e) => {
-            const raycaster = new THREE.Raycaster();
+        function handle3DSpaceClick(clientX, clientY, isDoubleClick) {
+            if (!camera || !controls || currentActiveView !== '3d') return;
+
+            const rect = renderer.domElement.getBoundingClientRect();
             const mouse = new THREE.Vector2(
-                (e.clientX / window.innerWidth) * 2 - 1,
-                -(e.clientY / window.innerHeight) * 2 + 1
+                ((clientX - rect.left) / rect.width) * 2 - 1,
+                -((clientY - rect.top) / rect.height) * 2 + 1
             );
+
+            const raycaster = new THREE.Raycaster();
             raycaster.setFromCamera(mouse, camera);
 
             const rayOrigin = raycaster.ray.origin;
@@ -2111,19 +2110,33 @@
 
             // 1. Distancia del rayo a la Luna
             let distToMoonRay = Infinity;
+            let projMoon = 0;
             if (moonMesh3D && moonMesh3D.visible) {
                 const vMoon = moonMesh3D.position.clone().sub(rayOrigin);
-                const projMoon = vMoon.dot(rayDir);
+                projMoon = vMoon.dot(rayDir);
                 if (projMoon > 0) {
                     const closestMoon = rayOrigin.clone().addScaledVector(rayDir, projMoon);
                     distToMoonRay = closestMoon.distanceTo(moonMesh3D.position);
                 }
             }
 
+            // 1b. Distancia del rayo al Nodo orbital
+            let distToNodeRay = Infinity;
+            let projNode = 0;
+            if (lastNodePos3D) {
+                const vNode = lastNodePos3D.clone().sub(rayOrigin);
+                projNode = vNode.dot(rayDir);
+                if (projNode > 0) {
+                    const closestNode = rayOrigin.clone().addScaledVector(rayDir, projNode);
+                    distToNodeRay = closestNode.distanceTo(lastNodePos3D);
+                }
+            }
+
             // 2. Distancia del rayo a la Tierra (0,0,0)
             let distToEarthRay = Infinity;
+            let projEarth = 0;
             const vEarth = new THREE.Vector3(0, 0, 0).sub(rayOrigin);
-            const projEarth = vEarth.dot(rayDir);
+            projEarth = vEarth.dot(rayDir);
             if (projEarth > 0) {
                 const closestEarth = rayOrigin.clone().addScaledVector(rayDir, projEarth);
                 distToEarthRay = closestEarth.distanceTo(new THREE.Vector3(0, 0, 0));
@@ -2141,14 +2154,19 @@
             }
 
             const moonTolerance = Math.max(MOON_RADIUS * 6.0, 120.0);
+            const nodeTolerance = Math.max(MOON_RADIUS * 6.0, 120.0);
             const earthTolerance = Math.max(EARTH_RADIUS * 2.0, 60.0);
             const sunTolerance = Math.max(SUN_RADIUS * 3.0, 20000.0);
 
-            // Test de oclusión por profundidad: si la Luna está detrás de la Tierra respecto a la cámara
+            // Test de oclusión por profundidad: si la Luna o el Nodo están detrás de la Tierra respecto a la cámara
             const isMoonOccludedByEarth = (distToEarthRay < EARTH_RADIUS * 1.05 && distToMoonRay < moonTolerance && projMoon > projEarth);
+            const isNodeOccludedByEarth = (distToEarthRay < EARTH_RADIUS * 1.05 && distToNodeRay < nodeTolerance && projNode > projEarth);
 
-            if (distToMoonRay < moonTolerance && !isMoonOccludedByEarth && distToMoonRay <= distToEarthRay && distToMoonRay <= distToSunRay && moonMesh3D) {
-                // Doble clic sobre la Luna -> Enfoque detallado
+            const hitMoon = (distToMoonRay < moonTolerance && !isMoonOccludedByEarth && distToMoonRay <= distToEarthRay && distToMoonRay <= distToSunRay && moonMesh3D);
+            const hitNode = (distToNodeRay < nodeTolerance && !isNodeOccludedByEarth && distToNodeRay <= distToEarthRay && distToNodeRay <= distToSunRay && lastNodePos3D);
+
+            if (hitMoon) {
+                // Clic sobre la Luna -> Aproximación a la Luna y centro de rotación en torno a la Luna
                 focusedBody = 'moon';
                 const moonPos = moonMesh3D.position.clone();
                 let viewDir = camera.position.clone().sub(moonPos);
@@ -2156,31 +2174,47 @@
                 viewDir.normalize();
                 const targetCamPos = moonPos.clone().addScaledVector(viewDir, MOON_RADIUS * 3.8);
                 transitionCamera(moonPos, targetCamPos, 700);
-            } else if (distToSunRay < sunTolerance && distToSunRay < distToEarthRay && distToSunRay < distToMoonRay) {
-                // Doble clic sobre el Sol -> Enfoque sobre el Sol
-                focusedBody = 'sun';
-                const sunPos = sunGroup3D.position.clone();
-                let viewDir = camera.position.clone().sub(sunPos);
-                if (viewDir.lengthSq() < 0.001) viewDir = new THREE.Vector3(0, 5000, 25000);
+            } else if (hitNode) {
+                // Clic sobre el Nodo orbital -> Enfoque sobre el Nodo
+                focusedBody = 'node';
+                const nodePos = lastNodePos3D.clone();
+                let viewDir = camera.position.clone().sub(nodePos);
+                if (viewDir.lengthSq() < 0.001) viewDir = new THREE.Vector3(0, 20, 60);
                 viewDir.normalize();
-                const targetCamPos = sunPos.clone().addScaledVector(viewDir, SUN_RADIUS * 4.0);
-                transitionCamera(sunPos, targetCamPos, 800);
-            } else if (distToEarthRay < earthTolerance) {
-                // Doble clic sobre la Tierra -> Enfoque sobre la Tierra
-                focusedBody = 'earth';
-                const earthPos = new THREE.Vector3(0, 0, 0);
-                let viewDir = camera.position.clone().sub(earthPos);
-                if (viewDir.lengthSq() < 0.001) viewDir = new THREE.Vector3(0, 50, 180);
-                viewDir.normalize();
-                const targetCamPos = earthPos.clone().addScaledVector(viewDir, EARTH_RADIUS * 4.0);
-                transitionCamera(earthPos, targetCamPos, 700);
-            } else {
-                // Doble clic en espacio vacío -> Vista global del sistema
-                focusedBody = null;
-                const globalTarget = new THREE.Vector3(0, 0, MOON_DIST * 0.4);
-                const globalCamPos = new THREE.Vector3(0, MOON_DIST * 0.7, MOON_DIST * 1.5);
-                transitionCamera(globalTarget, globalCamPos, 750);
+                const targetCamPos = nodePos.clone().addScaledVector(viewDir, MOON_RADIUS * 4.5);
+                transitionCamera(nodePos, targetCamPos, 700);
+            } else if (isDoubleClick) {
+                if (distToSunRay < sunTolerance && distToSunRay < distToEarthRay && distToSunRay < distToMoonRay) {
+                    // Doble clic sobre el Sol -> Enfoque sobre el Sol
+                    focusedBody = 'sun';
+                    const sunPos = sunGroup3D.position.clone();
+                    let viewDir = camera.position.clone().sub(sunPos);
+                    if (viewDir.lengthSq() < 0.001) viewDir = new THREE.Vector3(0, 5000, 25000);
+                    viewDir.normalize();
+                    const targetCamPos = sunPos.clone().addScaledVector(viewDir, SUN_RADIUS * 4.0);
+                    transitionCamera(sunPos, targetCamPos, 800);
+                } else if (distToEarthRay < earthTolerance) {
+                    // Doble clic sobre la Tierra -> Enfoque sobre la Tierra
+                    focusedBody = 'earth';
+                    const earthPos = new THREE.Vector3(0, 0, 0);
+                    let viewDir = camera.position.clone().sub(earthPos);
+                    if (viewDir.lengthSq() < 0.001) viewDir = new THREE.Vector3(0, 50, 180);
+                    viewDir.normalize();
+                    const targetCamPos = earthPos.clone().addScaledVector(viewDir, EARTH_RADIUS * 4.0);
+                    transitionCamera(earthPos, targetCamPos, 700);
+                } else {
+                    // Doble clic en espacio vacío -> Vista global del sistema
+                    focusedBody = null;
+                    const globalTarget = new THREE.Vector3(0, 0, MOON_DIST * 0.4);
+                    const globalCamPos = new THREE.Vector3(0, MOON_DIST * 0.7, MOON_DIST * 1.5);
+                    transitionCamera(globalTarget, globalCamPos, 750);
+                }
             }
+        }
+
+        // Navegación por doble clic / doble tap
+        renderer.domElement.addEventListener('dblclick', (e) => {
+            handle3DSpaceClick(e.clientX, e.clientY, true);
         });
 
         // Iluminación Física Realista del Terminador (Día vs Noche)
@@ -2433,13 +2467,13 @@
         const nodeLine3D = new THREE.Line(new THREE.BufferGeometry(), nodeLineMat);
         nodeLine3D.frustumCulled = false;
         nodeLine3D.renderOrder = 8;
-        nodeLine3D.visible = document.getElementById('chk-show-nodes')?.checked ?? true;
+        nodeLine3D.visible = getDOM('chk-show-nodes')?.checked ?? true;
         scene.add(nodeLine3D);
 
         // Grupo 3D de Rótulos y Marcadores de Nodos y Límites de Eclipse
         const nodesGroup3D = new THREE.Group();
         nodesGroup3D.renderOrder = 10;
-        nodesGroup3D.visible = document.getElementById('chk-show-limits')?.checked ?? true;
+        nodesGroup3D.visible = getDOM('chk-show-limits')?.checked ?? true;
         scene.add(nodesGroup3D);
 
         function createNodeSprite(text, colorHex = '#38bdf8', fontSize = 28) {
@@ -2495,7 +2529,7 @@
                 nodesGroup3D.add(line);
 
                 const sprite = createNodeSprite(def.defaultText, def.colorHex);
-                const showLimitLabels = (document.getElementById('chk-show-limits')?.checked ?? true) && (document.getElementById('chk-show-limits-labels')?.checked ?? false);
+                const showLimitLabels = (getDOM('chk-show-limits')?.checked ?? true) && (getDOM('chk-show-limits-labels')?.checked ?? false);
                 sprite.visible = showLimitLabels;
                 nodesGroup3D.add(sprite);
 
@@ -2642,7 +2676,7 @@
         }
 
         const subsolarMarkerGroup = createSubsolarMarker();
-        earthGroup.add(subsolarMarkerGroup);
+        scene.add(subsolarMarkerGroup);
 
         // Marcador 3D del Punto Sublunar (🌕 Cenit Lunar / Centro de Sombra)
         function createSublunarMarker() {
@@ -2672,7 +2706,7 @@
         }
 
         const sublunarMarkerGroup = createSublunarMarker();
-        earthGroup.add(sublunarMarkerGroup);
+        scene.add(sublunarMarkerGroup);
 
         // -------------------------------------------------------------
         // SHADER GPU DE SOMBRA SOBRE LA CARA DIURNA
@@ -2762,7 +2796,7 @@
         const shadowOverlayGeometry = new THREE.SphereGeometry(EARTH_RADIUS * 1.0012, 96, 96);
         const shadowOverlayMesh = new THREE.Mesh(shadowOverlayGeometry, shadowShaderMaterial);
         shadowOverlayMesh.renderOrder = 20;
-        earthGroup.add(shadowOverlayMesh);
+        scene.add(shadowOverlayMesh);
 
         // Resiliencia ante pérdida transitoria de contexto WebGL en móviles / cambio de pestaña
         renderer.domElement.addEventListener('webglcontextlost', (e) => {
@@ -2774,7 +2808,7 @@
             console.log('[WebGL] Contexto GPU restaurado.');
             if (currentEclipse) {
                 drawShadowPath(currentEclipse);
-                updateShadowAtTime(parseFloat(document.getElementById('time-slider')?.value) || 0);
+                updateShadowAtTime(parseFloat(getDOM('time-slider')?.value) || 0);
             }
         }, false);
 
@@ -2796,15 +2830,32 @@
             return dtSec ? 1.0027379 * (dtSec / 240.0) : 0;
         }
 
+        // Cálculo astronómico riguroso del Día Juliano (Jean Meeus, "Astronomical Algorithms", cap. 7)
+        // Soporta todo el rango de -1999 a 3000 sin el error de Date.UTC para años de 2 dígitos (0..99)
+        function getJulianDay(year, month, day, hour = 0) {
+            let Y = year;
+            let M = month;
+            if (M <= 2) {
+                Y -= 1;
+                M += 12;
+            }
+            const D = day + hour / 24.0;
+            const isGregorian = (year > 1582) || (year === 1582 && month > 10) || (year === 1582 && month === 10 && day >= 15);
+            let B = 0;
+            if (isGregorian) {
+                const A = Math.floor(Y / 100);
+                B = 2 - A + Math.floor(A / 4);
+            }
+            return Math.floor(365.25 * (Y + 4716)) + Math.floor(30.6001 * (M + 1)) + D + B - 1524.5;
+        }
+
         // Algoritmos astronómicos de Meeus para longitud del Sol, oblicuidad de la Eclíptica y Nodos Lunares
         function getEclipseMeeusAngles(eclipse, t = 0) {
             if (!eclipse) return { epsRad: 0.409, epsDeg: 23.44, sunLonDeg: 0, omegaDeg: 0, isDescending: false, eclipseNodeLonDeg: 0, deltaNodeDeg: 0 };
             const RAD = Math.PI / 180;
             const ttHour = (eclipse.t0 || 12) + (t || 0);
             const utHour = ttHour - (eclipse.dt || 0) / 3600;
-            const baseMidnightUtc = Date.UTC(eclipse.year || 2026, (eclipse.month || 8) - 1, eclipse.day || 12, 0, 0, 0);
-            const currentUtcMs = baseMidnightUtc + utHour * 3600000;
-            const jd = (currentUtcMs / 86400000) + 2440587.5;
+            const jd = getJulianDay(eclipse.year || 2026, eclipse.month || 8, eclipse.day || 12, utHour);
             const T = (jd - 2451545.0) / 36525;
 
             // 1. Oblicuidad de la Eclíptica (Meeus cap. 22)
@@ -2914,7 +2965,7 @@
         }
 
         function updateObserverHeaderTz() {
-            const tzEl = document.getElementById('observer-header-tz');
+            const tzEl = getDOM('observer-header-tz');
             if (!tzEl) return;
             if (activeExtremeMode) {
                 tzEl.textContent = 'UT1';
@@ -2932,8 +2983,8 @@
 
         function clearObserverExtremeMode() {
             activeExtremeMode = null;
-            document.getElementById('btn-obs-ge')?.classList.remove('active');
-            document.getElementById('btn-obs-gd')?.classList.remove('active');
+            getDOM('btn-obs-ge')?.classList.remove('active');
+            getDOM('btn-obs-gd')?.classList.remove('active');
         }
 
         function calculateGreatestEclipseCoords(eclipse) {
@@ -3048,8 +3099,8 @@
             }
 
             activeExtremeMode = type;
-            const btnGE = document.getElementById('btn-obs-ge');
-            const btnGD = document.getElementById('btn-obs-gd');
+            const btnGE = getDOM('btn-obs-ge');
+            const btnGD = getDOM('btn-obs-gd');
             if (btnGE) btnGE.classList.toggle('active', type === 'GE');
             if (btnGD) btnGD.classList.toggle('active', type === 'GD');
 
@@ -3089,7 +3140,7 @@
             updateObserverPosition(targetLat, targetLon, targetName, tz);
 
             if (targetT !== null && !isNaN(targetT)) {
-                const slider = document.getElementById('time-slider');
+                const slider = getDOM('time-slider');
                 const tClamped = parseFloat(targetT.toFixed(2));
                 if (slider) {
                     slider.value = tClamped;
@@ -3111,17 +3162,17 @@
                 observerMarkerGroup3D.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), latLngToVector3(lat, lon, 1.0).normalize());
             }
 
-            const latIn = document.getElementById('custom-obs-lat');
-            const lonIn = document.getElementById('custom-obs-lon');
+            const latIn = getDOM('custom-obs-lat');
+            const lonIn = getDOM('custom-obs-lon');
             if (latIn && document.activeElement !== latIn) latIn.value = lat;
             if (lonIn && document.activeElement !== lonIn) lonIn.value = lon;
 
-            const locInput = document.getElementById('observer-location-input');
+            const locInput = getDOM('observer-location-input');
             if (locInput && document.activeElement !== locInput) {
                 locInput.value = currentObserver.name;
             }
 
-            const subtitleEl = document.getElementById('observer-header-subtitle');
+            const subtitleEl = getDOM('observer-header-subtitle');
             if (subtitleEl) {
                 subtitleEl.textContent = dmsCoordsStr;
             }
@@ -3142,20 +3193,20 @@
         let activeDropdownIndex = -1;
 
         function openObserverDropdown() {
-            const menu = document.getElementById('observer-dropdown-menu');
+            const menu = getDOM('observer-dropdown-menu');
             if (!menu) return;
-            const input = document.getElementById('observer-location-input');
+            const input = getDOM('observer-location-input');
             filterObserverDropdown(input ? input.value : '', true);
         }
 
         function closeObserverDropdown() {
-            const menu = document.getElementById('observer-dropdown-menu');
+            const menu = getDOM('observer-dropdown-menu');
             if (menu) menu.style.display = 'none';
             activeDropdownIndex = -1;
         }
 
         function filterObserverDropdown(query = '', showMenu = true) {
-            const menu = document.getElementById('observer-dropdown-menu');
+            const menu = getDOM('observer-dropdown-menu');
             if (!menu) return;
             menu.innerHTML = '';
             menu.style.display = showMenu ? 'block' : 'none';
@@ -3231,7 +3282,7 @@
         }
 
         function onObserverInputKeyDown(e) {
-            const menu = document.getElementById('observer-dropdown-menu');
+            const menu = getDOM('observer-dropdown-menu');
             if (!menu || menu.style.display === 'none') {
                 if (e.key === 'ArrowDown') {
                     openObserverDropdown();
@@ -3275,7 +3326,7 @@
         }
 
         document.addEventListener('click', (e) => {
-            const container = document.getElementById('observer-combobox-container');
+            const container = getDOM('observer-combobox-container');
             if (container && !container.contains(e.target)) {
                 closeObserverDropdown();
             }
@@ -3283,8 +3334,8 @@
 
         // --- HERRAMIENTAS DE UBICACIÓN (COORDENADAS PERSONALIZADAS Y GPS) ---
         function toggleCustomCoords() {
-            const panel = document.getElementById('observer-custom-coords');
-            const btn = document.getElementById('btn-toggle-custom-coords');
+            const panel = getDOM('observer-custom-coords');
+            const btn = getDOM('btn-toggle-custom-coords');
             if (!panel) return;
             const isHidden = panel.style.display === 'none' || panel.style.display === '';
             panel.style.display = isHidden ? 'flex' : 'none';
@@ -3298,8 +3349,8 @@
 
         function onCustomCoordsChange() {
             gpsRequestId++;
-            let latVal = parseFloat(document.getElementById('custom-obs-lat')?.value);
-            let lonVal = parseFloat(document.getElementById('custom-obs-lon')?.value);
+            let latVal = parseFloat(getDOM('custom-obs-lat')?.value);
+            let lonVal = parseFloat(getDOM('custom-obs-lon')?.value);
             if (isNaN(latVal)) latVal = 0;
             if (isNaN(lonVal)) lonVal = 0;
             latVal = Math.max(-90, Math.min(90, latVal));
@@ -3312,7 +3363,7 @@
         }
 
         function detectUserLocation() {
-            const btn = document.getElementById('btn-observer-gps');
+            const btn = getDOM('btn-observer-gps');
             if (btn) btn.classList.add('active');
 
             if (!navigator.geolocation) {
@@ -3357,8 +3408,8 @@
 
         function startGlobePickingMode() {
             isGlobePickingMode = true;
-            const banner = document.getElementById('globe-picking-banner');
-            const btnPick = document.getElementById('btn-pick-on-globe');
+            const banner = getDOM('globe-picking-banner');
+            const btnPick = getDOM('btn-pick-on-globe');
             if (banner) banner.style.display = 'flex';
             if (btnPick) btnPick.classList.add('active');
 
@@ -3366,7 +3417,7 @@
                 switchMainView('3d');
             }
 
-            const textEl = document.getElementById('globe-picking-coords-text');
+            const textEl = getDOM('globe-picking-coords-text');
             if (textEl) textEl.textContent = formatLatLonString(currentObserver.lat, currentObserver.lon, 2);
             pickedLatLon = { lat: currentObserver.lat, lon: currentObserver.lon };
         }
@@ -3388,7 +3439,7 @@
                 pickedLatLon = coords;
 
                 const coordsStr = formatLatLonString(coords.lat, coords.lon, 2);
-                const textEl = document.getElementById('globe-picking-coords-text');
+                const textEl = getDOM('globe-picking-coords-text');
                 if (textEl) textEl.textContent = coordsStr;
 
                 clearObserverExtremeMode();
@@ -3412,13 +3463,27 @@
 
         function endGlobePickingUI() {
             isGlobePickingMode = false;
-            const banner = document.getElementById('globe-picking-banner');
-            const btnPick = document.getElementById('btn-pick-on-globe');
+            const banner = getDOM('globe-picking-banner');
+            const btnPick = getDOM('btn-pick-on-globe');
             if (banner) banner.style.display = 'none';
             if (btnPick) btnPick.classList.remove('active');
         }
 
         // --- MOTOR MATEMÁTICO BESSELIANO PARA CIRCUNSTANCIAS LOCALES ---
+        
+        function calculatePhysicalObscuration(d, rS, rM) {
+            if (d >= rS + rM) return 0.0;
+            if (d <= rM - rS) return 1.0;
+            if (d <= rS - rM) return (rM * rM) / (rS * rS);
+            const r1sq = rS * rS, r2sq = rM * rM;
+            const cosAlpha = Math.max(-1.0, Math.min(1.0, (d * d + r1sq - r2sq) / (2.0 * d * rS)));
+            const cosBeta = Math.max(-1.0, Math.min(1.0, (d * d + r2sq - r1sq) / (2.0 * d * rM)));
+            const alpha = 2.0 * Math.acos(cosAlpha);
+            const beta = 2.0 * Math.acos(cosBeta);
+            const area = 0.5 * (r1sq * (alpha - Math.sin(alpha)) + r2sq * (beta - Math.sin(beta)));
+            return Math.max(0.0, Math.min(1.0, area / (Math.PI * r1sq)));
+        }
+
         function calculateLocalSolarCircumstances(eclipse, latDeg, lonDeg) {
             if (!eclipse) return null;
             const phi = latDeg * RAD;
@@ -3637,9 +3702,9 @@
         let activeContactRowId = null;
 
         function renderLocalSolarCircumstances() {
-            const tbody = document.getElementById('mataro-contacts-tbody');
-            const badge = document.getElementById('mataro-vis-badge');
-            const thTime = document.getElementById('th-local-time');
+            const tbody = getDOM('mataro-contacts-tbody');
+            const badge = getDOM('mataro-vis-badge');
+            const thTime = getDOM('th-local-time');
             if (!tbody || !currentEclipse) return;
             activeContactRowId = null;
 
@@ -3751,12 +3816,15 @@
                     }
 
                     try {
-                        const localDayStr = new Intl.DateTimeFormat('en-US', { timeZone: tz, day: 'numeric', month: 'numeric' }).format(contactDate);
-                        const [mPart, dPart] = localDayStr.split('/').map(Number);
+                        const localDayStr = new Intl.DateTimeFormat('en-US', { timeZone: tz, year: 'numeric', month: 'numeric', day: 'numeric' }).format(contactDate);
+                        const [mPart, dPart, yPart] = localDayStr.split('/').map(Number);
                         const baseDay = currentEclipse.day || 1;
                         const baseMonth = currentEclipse.month || 1;
-                        if (dPart !== baseDay || mPart !== baseMonth) {
-                            const diffDays = Math.round((contactDate.getTime() - (baseMidnightUtc + 12 * 3600000)) / 86400000);
+                        const baseYear = currentEclipse.year || 2026;
+                        if (dPart !== baseDay || mPart !== baseMonth || yPart !== baseYear) {
+                            const localDateUtc = Date.UTC(yPart, mPart - 1, dPart);
+                            const baseDateUtc = Date.UTC(baseYear, baseMonth - 1, baseDay);
+                            const diffDays = Math.round((localDateUtc - baseDateUtc) / 86400000);
                             if (diffDays !== 0) {
                                 localTimeStr += ` (${diffDays > 0 ? '+' : ''}${diffDays}d)`;
                             }
@@ -3816,12 +3884,12 @@
         // --- SELECTOR DE MODO DE VISTA (ESPACIO 3D vs TELESCOPIO) ---
         function switchMainView(mode) {
             currentActiveView = mode;
-            const btn3D = document.getElementById('btn-mode-3d');
-            const btnTele = document.getElementById('btn-mode-telescopic');
-            const layer3D = document.getElementById('layer-3d');
-            const layerTele = document.getElementById('layer-telescopic');
-            const group3D = document.getElementById('layers-group-3d');
-            const groupTele = document.getElementById('layers-group-tele');
+            const btn3D = getDOM('btn-mode-3d');
+            const btnTele = getDOM('btn-mode-telescopic');
+            const layer3D = getDOM('layer-3d');
+            const layerTele = getDOM('layer-telescopic');
+            const group3D = getDOM('layers-group-3d');
+            const groupTele = getDOM('layers-group-tele');
 
             if (mode === 'telescopic') {
                 btn3D?.classList.remove('active');
@@ -3830,7 +3898,7 @@
                 if (layerTele) layerTele.classList.add('active');
                 if (group3D) group3D.style.display = 'none';
                 if (groupTele) groupTele.style.display = 'flex';
-                if (document.getElementById('chk-show-lunar-limb')?.checked) {
+                if (getDOM('chk-show-lunar-limb')?.checked) {
                     toggleMoreTele(true);
                 }
                 resizeTelescopicCanvas();
@@ -3865,9 +3933,13 @@
             });
         }
 
+        let isTelescopicCanvasInitialized = false;
         function initTelescopicCanvas() {
-            const canvas = document.getElementById('canvas-telescopic');
+            const canvas = getDOM('canvas-telescopic');
             if (!canvas) return;
+            
+            if (isTelescopicCanvasInitialized) return;
+            isTelescopicCanvasInitialized = true;
 
             resizeTelescopicCanvas();
 
@@ -3904,7 +3976,7 @@
         }
 
         function resizeTelescopicCanvas() {
-            const canvas = document.getElementById('canvas-telescopic');
+            const canvas = getDOM('canvas-telescopic');
             if (!canvas) return;
             const dpr = window.devicePixelRatio || 1;
             canvas.width = window.innerWidth * dpr;
@@ -4025,62 +4097,94 @@
             return { libL: 0.40, libB: 0.00, axisC: 14.0 };
         }
 
+        const _cachedGradients = new Map();
+        function getCachedGradient(ctx, type, args, colorStops) {
+            const key = type + '_' + args.map(a => Math.round(a * 10) / 10).join('_');
+            if (!_cachedGradients.has(key)) {
+                if (_cachedGradients.size > 100) _cachedGradients.clear();
+                const g = type === 'radial' ? ctx.createRadialGradient(...args) : ctx.createLinearGradient(...args);
+                colorStops.forEach(stop => g.addColorStop(stop[0], stop[1]));
+                _cachedGradients.set(key, g);
+            }
+            return _cachedGradients.get(key);
+        }
+
+        let _lolaProfileCache = null;
+        let _lolaProfileCacheKey = "";
+
         function getSmoothLOLAProfile(paDeg, libL = 0.40, libB = 0.00, axisC = 14.0) {
-            if (typeof getLolaLimbElevation === 'function') {
-                return getLolaLimbElevation(paDeg, libL, libB, axisC);
+            const rLibL = Math.round(libL / 0.005) * 0.005;
+            const rLibB = Math.round(libB / 0.005) * 0.005;
+            const rAxisC = Math.round(axisC / 0.01) * 0.01;
+            const key = `${rLibL.toFixed(3)}_${rLibB.toFixed(3)}_${rAxisC.toFixed(2)}`;
+
+            if (_lolaProfileCacheKey !== key) {
+                _lolaProfileCache = new Float32Array(3600);
+                _lolaProfileCacheKey = key;
+                
+                const computeRaw = (pa) => {
+                    if (typeof getLolaLimbElevation === 'function') {
+                        return getLolaLimbElevation(pa, libL, libB, axisC);
+                    }
+                    const rad = pa * Math.PI / 180;
+                    
+                    let h = 0.35 * Math.sin(rad * 1 - 0.8)
+                          - 0.50 * Math.cos(rad * 2 + 0.3)
+                          + 0.40 * Math.sin(rad * 3 - 1.2)
+                          + 0.25 * Math.cos(rad * 4 + 0.5);
+
+                    const sDist = Math.abs(((pa - 188 + 540) % 360) - 180);
+                    if (sDist < 24) {
+                        const peak = Math.cos((sDist / 24) * (Math.PI / 2));
+                        h += 4.5 * peak * peak * (1.0 + 0.25 * Math.sin(rad * 18) - 0.15 * Math.cos(rad * 32));
+                    }
+
+                    const spaDist = Math.abs(((pa - 228 + 540) % 360) - 180);
+                    if (spaDist < 18) {
+                        h -= 2.6 * Math.cos((spaDist / 18) * (Math.PI / 2));
+                    }
+
+                    const c2Dist = Math.abs(((pa - 123.1 + 540) % 360) - 180);
+                    if (c2Dist < 6) {
+                        h -= 1.4 * Math.cos((c2Dist / 6) * (Math.PI / 2));
+                    }
+
+                    const c3Dist = Math.abs(((pa - 303.7 + 540) % 360) - 180);
+                    if (c3Dist < 6) {
+                        h -= 1.5 * Math.cos((c3Dist / 6) * (Math.PI / 2));
+                    }
+
+                    const moDist = Math.abs(((pa - 80 + 540) % 360) - 180);
+                    if (moDist < 16) {
+                        const rookPeak = Math.cos((moDist / 16) * (Math.PI / 2));
+                        h += 1.8 * rookPeak * rookPeak;
+                    }
+
+                    for (let k = 5; k <= 12; k++) {
+                        const weight = 0.18 / Math.sqrt(k);
+                        const phase = (k * 137.5) * Math.PI / 180;
+                        h += weight * Math.sin(rad * k + phase);
+                    }
+
+                    return h;
+                };
+
+                for (let i = 0; i < 3600; i++) {
+                    _lolaProfileCache[i] = computeRaw(i / 10);
+                }
             }
-            const rad = paDeg * Math.PI / 180;
+
+            const p = (paDeg % 360 + 360) % 360;
+            const idxFloat = p * 10;
+            const idx0 = Math.floor(idxFloat) % 3600;
+            const idx1 = (idx0 + 1) % 3600;
+            const frac = idxFloat - Math.floor(idxFloat);
             
-            // 1. Relieve base de baja frecuencia para libración topocéntrica
-            let h = 0.35 * Math.sin(rad * 1 - 0.8)
-                  - 0.50 * Math.cos(rad * 2 + 0.3)
-                  + 0.40 * Math.sin(rad * 3 - 1.2)
-                  + 0.25 * Math.cos(rad * 4 + 0.5);
-
-            // 2. Montes Leibniz
-            const sDist = Math.abs(((paDeg - 188 + 540) % 360) - 180);
-            if (sDist < 24) {
-                const peak = Math.cos((sDist / 24) * (Math.PI / 2));
-                h += 4.5 * peak * peak * (1.0 + 0.25 * Math.sin(rad * 18) - 0.15 * Math.cos(rad * 32));
-            }
-
-            // 3. Cuenca Polo Sur-Aitken
-            const spaDist = Math.abs(((paDeg - 228 + 540) % 360) - 180);
-            if (spaDist < 18) {
-                h -= 2.6 * Math.cos((spaDist / 18) * (Math.PI / 2));
-            }
-
-            // 4. Valle de Contacto C2'
-            const c2Dist = Math.abs(((paDeg - 123.1 + 540) % 360) - 180);
-            if (c2Dist < 6) {
-                h -= 1.4 * Math.cos((c2Dist / 6) * (Math.PI / 2));
-            }
-
-            // 5. Valle de Contacto C3'
-            const c3Dist = Math.abs(((paDeg - 303.7 + 540) % 360) - 180);
-            if (c3Dist < 6) {
-                h -= 1.5 * Math.cos((c3Dist / 6) * (Math.PI / 2));
-            }
-
-            // 6. Montes Rook & Cordillera (PA 65° - 95°): Cumbres moderadas (+1.8 km)
-            const moDist = Math.abs(((paDeg - 80 + 540) % 360) - 180);
-            if (moDist < 16) {
-                const rookPeak = Math.cos((moDist / 16) * (Math.PI / 2));
-                h += 1.8 * rookPeak * rookPeak;
-            }
-
-            // 7. Micro-ondulación fractal de relieve
-            for (let k = 5; k <= 12; k++) {
-                const weight = 0.18 / Math.sqrt(k);
-                const phase = (k * 137.5) * Math.PI / 180;
-                h += weight * Math.sin(rad * k + phase);
-            }
-
-            return h;
+            return _lolaProfileCache[idx0] * (1 - frac) + _lolaProfileCache[idx1] * frac;
         }
 
         function toggleTeleLimbProfile(forcedState) {
-            const chk = document.getElementById('chk-show-lunar-limb');
+            const chk = getDOM('chk-show-lunar-limb');
             if (chk) {
                 if (typeof forcedState === 'boolean') {
                     chk.checked = forcedState;
@@ -4093,16 +4197,16 @@
         }
 
         function updateLimbPanelHeaderInfo(circ, p2Deg, p3Deg) {
-            const coordEl = document.getElementById('limb-obs-coords');
-            const tzEl = document.getElementById('limb-tz-name');
-            const c2El = document.getElementById('limb-c2-text');
-            const p2El = document.getElementById('limb-p2-text');
-            const c3El = document.getElementById('limb-c3-text');
-            const p3El = document.getElementById('limb-p3-text');
-            const durEl = document.getElementById('limb-duration-text');
-            const elL = document.getElementById('limb-lib-l');
-            const elB = document.getElementById('limb-lib-b');
-            const elC = document.getElementById('limb-lib-c');
+            const coordEl = getDOM('limb-obs-coords');
+            const tzEl = getDOM('limb-tz-name');
+            const c2El = getDOM('limb-c2-text');
+            const p2El = getDOM('limb-p2-text');
+            const c3El = getDOM('limb-c3-text');
+            const p3El = getDOM('limb-p3-text');
+            const durEl = getDOM('limb-duration-text');
+            const elL = getDOM('limb-lib-l');
+            const elB = getDOM('limb-lib-b');
+            const elC = getDOM('limb-lib-c');
 
             const { libL, libB, axisC } = getEclipseLibrationParams(currentEclipse);
             if (elL) elL.textContent = `${libL >= 0 ? '+' : ''}${libL.toFixed(1)}°`;
@@ -4112,7 +4216,7 @@
             if (coordEl) {
                 coordEl.innerHTML = `<i class="fa-solid fa-location-crosshairs" style="font-size: 0.72rem;"></i><span>${formatCoordDms(currentObserver.lat, true)}  ${formatCoordDms(currentObserver.lon, false)}</span>`;
             }
-            const timeHeaderEl = document.getElementById('limb-time-header-label');
+            const timeHeaderEl = getDOM('limb-time-header-label');
             if (timeHeaderEl && currentEclipse) {
                 if (activeExtremeMode) {
                     timeHeaderEl.textContent = 'Hora (UT1)';
@@ -4271,7 +4375,7 @@
             if (announcementText !== null) lastRadarAnnouncement = announcementText;
             else announcementText = lastRadarAnnouncement;
 
-            const canvas = document.getElementById('canvas-lunar-limb-radar');
+            const canvas = getDOM('canvas-lunar-limb-radar');
             if (!canvas) return;
             const ctx = canvas.getContext('2d');
             const dpr = window.devicePixelRatio || 1;
@@ -4298,11 +4402,11 @@
 
             // Ángulo de orientación sincronizado con la Vista Telescopio:
             // Altazimutal (Cenit arriba) si chk-tele-zenith-up está marcado, Ecuatorial (Norte arriba) si está desmarcado
-            const isZenithUp = document.getElementById('chk-tele-zenith-up')?.checked ?? true;
+            const isZenithUp = getDOM('chk-tele-zenith-up')?.checked ?? true;
             const rotDeg = isZenithUp ? qDeg : 0;
 
 
-            const showLimbLabels = document.getElementById('chk-limb-labels')?.checked ?? true;
+            const showLimbLabels = getDOM('chk-limb-labels')?.checked ?? true;
 
             // Fondo azul marino oscuro exacto (#021520)
             ctx.fillStyle = '#021520';
@@ -4559,11 +4663,12 @@
                     const alpha = Math.min(1.0, intens * 1.2);
 
                     ctx.save();
-                    const bGrad = ctx.createRadialGradient(bx, by, 0, bx, by, bR * 2.2);
-                    bGrad.addColorStop(0, `rgba(255, 255, 255, ${alpha.toFixed(3)})`);
-                    bGrad.addColorStop(0.3, `rgba(254, 240, 138, ${(0.95 * alpha).toFixed(3)})`);
-                    bGrad.addColorStop(0.7, `rgba(249, 115, 22, ${(0.45 * alpha).toFixed(3)})`);
-                    bGrad.addColorStop(1, 'transparent');
+                    const bGrad = getCachedGradient(ctx, 'radial', [bx, by, 0, bx, by, bR * 2.2], [
+                        [0, `rgba(255, 255, 255, ${alpha.toFixed(3)})`],
+                        [0.3, `rgba(254, 240, 138, ${(0.95 * alpha).toFixed(3)})`],
+                        [0.7, `rgba(249, 115, 22, ${(0.45 * alpha).toFixed(3)})`],
+                        [1, 'transparent']
+                    ]);
                     ctx.beginPath();
                     ctx.arc(bx, by, bR * 2.2, 0, Math.PI * 2);
                     ctx.fillStyle = bGrad;
@@ -4600,7 +4705,7 @@
         }
 
         function renderTelescopicView() {
-            const canvas = document.getElementById('canvas-telescopic');
+            const canvas = getDOM('canvas-telescopic');
             if (!canvas || currentActiveView !== 'telescopic' || !currentEclipse) return;
 
             const ctx = canvas.getContext('2d');
@@ -4625,7 +4730,7 @@
             ctx.fillRect(0, 0, w, h);
 
             const isSmall = window.innerWidth <= 900;
-            const limbPanel = document.getElementById('lunar-limb-panel');
+            const limbPanel = getDOM('lunar-limb-panel');
             const limbOpen = limbPanel && !limbPanel.classList.contains('collapsed');
 
             let centerOffsetX = 0;
@@ -4640,7 +4745,7 @@
             ctx.translate(cx, cy);
 
             if (p) {
-                const isZenithUp = document.getElementById('chk-tele-zenith-up')?.checked ?? true;
+                const isZenithUp = getDOM('chk-tele-zenith-up')?.checked ?? true;
                 const qDeg = (p && p.qDeg != null) ? p.qDeg : 0;
                 const rotDeg = isZenithUp ? qDeg : 0;
 
@@ -4655,7 +4760,7 @@
                 }
 
                 // 1. Retícula de orientación celeste y coordenadas locales (Cenit / Horizonte o Norte / Sur)
-                const showTeleLabels = document.getElementById('chk-tele-labels')?.checked ?? true;
+                const showTeleLabels = getDOM('chk-tele-labels')?.checked ?? true;
                 const rReticle = Math.max(rSunPx * 1.55, 120);
 
                 if (showTeleLabels) {
@@ -4727,12 +4832,13 @@
 
                 // 2. Corona solar exclusivamente en totalidad absoluta (rotada sincronizada con la orientación)
                 if (isTotalNow) {
-                    const coronaGrad = ctx.createRadialGradient(0, 0, rSunPx * 0.98, 0, 0, rSunPx * 3.2);
-                    coronaGrad.addColorStop(0, "rgba(255, 255, 255, 0.95)");
-                    coronaGrad.addColorStop(0.15, "rgba(224, 242, 254, 0.75)");
-                    coronaGrad.addColorStop(0.35, "rgba(56, 189, 248, 0.35)");
-                    coronaGrad.addColorStop(0.70, "rgba(14, 165, 233, 0.12)");
-                    coronaGrad.addColorStop(1.0, "rgba(2, 6, 23, 0)");
+                    const coronaGrad = getCachedGradient(ctx, 'radial', [0, 0, rSunPx * 0.98, 0, 0, rSunPx * 3.2], [
+                        [0, "rgba(255, 255, 255, 0.95)"],
+                        [0.15, "rgba(224, 242, 254, 0.75)"],
+                        [0.35, "rgba(56, 189, 248, 0.35)"],
+                        [0.70, "rgba(14, 165, 233, 0.12)"],
+                        [1.0, "rgba(2, 6, 23, 0)"]
+                    ]);
 
                     ctx.beginPath();
                     ctx.fillStyle = coronaGrad;
@@ -4755,12 +4861,13 @@
                 }
 
                 // 3. Disco Solar con Limb Darkening Realista
-                const sunGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, rSunPx);
-                sunGrad.addColorStop(0, '#fffbf0');
-                sunGrad.addColorStop(0.65, '#fef08a');
-                sunGrad.addColorStop(0.88, '#f59e0b');
-                sunGrad.addColorStop(0.97, '#ea580c');
-                sunGrad.addColorStop(1.0, '#b45309');
+                const sunGrad = getCachedGradient(ctx, 'radial', [0, 0, 0, 0, 0, rSunPx], [
+                    [0, '#fffbf0'],
+                    [0.65, '#fef08a'],
+                    [0.88, '#f59e0b'],
+                    [0.97, '#ea580c'],
+                    [1.0, '#b45309']
+                ]);
 
                 ctx.beginPath();
                 ctx.fillStyle = sunGrad;
@@ -4780,7 +4887,7 @@
                 const moonX = projMoon.xNorm * sepDistPx;
                 const moonY = projMoon.yNorm * sepDistPx;
 
-                const showLimb = document.getElementById('chk-show-lunar-limb')?.checked;
+                const showLimb = getDOM('chk-show-lunar-limb')?.checked;
                 const pxPerKm = rMoonPx / 1737.4;
                 let activeBeadsList = [];
                 let isDiamondRing = false;
@@ -4986,11 +5093,12 @@
                     if (isDiamondRing && diamondFactor > 0.05) {
                         ctx.save();
                         // Resplandor difuso etéreo de la corona
-                        const coronaAtm = ctx.createRadialGradient(moonX, moonY, rMoonPx * 0.98, moonX, moonY, rMoonPx * 1.35);
-                        coronaAtm.addColorStop(0, `rgba(255, 255, 255, ${(0.55 * diamondFactor).toFixed(3)})`);
-                        coronaAtm.addColorStop(0.2, `rgba(224, 242, 254, ${(0.35 * diamondFactor).toFixed(3)})`);
-                        coronaAtm.addColorStop(0.6, `rgba(56, 189, 248, ${(0.15 * diamondFactor).toFixed(3)})`);
-                        coronaAtm.addColorStop(1, 'transparent');
+                        const coronaAtm = getCachedGradient(ctx, 'radial', [moonX, moonY, rMoonPx * 0.98, moonX, moonY, rMoonPx * 1.35], [
+                            [0, `rgba(255, 255, 255, ${(0.55 * diamondFactor).toFixed(3)})`],
+                            [0.2, `rgba(224, 242, 254, ${(0.35 * diamondFactor).toFixed(3)})`],
+                            [0.6, `rgba(56, 189, 248, ${(0.15 * diamondFactor).toFixed(3)})`],
+                            [1, 'transparent']
+                        ]);
 
                         ctx.beginPath();
                         ctx.arc(moonX, moonY, rMoonPx * 1.35, 0, Math.PI * 2);
@@ -5017,11 +5125,12 @@
                         const alpha = Math.min(1.0, 0.45 + 0.55 * b.intensity);
 
                         // Resplandor cálido fotosférico con opacidad progresiva
-                        const beadGrad = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, beadR * 2.8);
-                        beadGrad.addColorStop(0, `rgba(255, 255, 255, ${alpha.toFixed(3)})`);
-                        beadGrad.addColorStop(0.25, isThisTheDiamond ? `rgba(255, 255, 255, ${(0.98 * alpha).toFixed(3)})` : `rgba(254, 240, 138, ${(0.95 * alpha).toFixed(3)})`);
-                        beadGrad.addColorStop(0.60, isThisTheDiamond ? `rgba(254, 240, 138, ${(0.85 * alpha).toFixed(3)})` : `rgba(249, 115, 22, ${(0.55 * alpha).toFixed(3)})`);
-                        beadGrad.addColorStop(1.0, 'transparent');
+                        const beadGrad = getCachedGradient(ctx, 'radial', [b.x, b.y, 0, b.x, b.y, beadR * 2.8], [
+                            [0, `rgba(255, 255, 255, ${alpha.toFixed(3)})`],
+                            [0.25, isThisTheDiamond ? `rgba(255, 255, 255, ${(0.98 * alpha).toFixed(3)})` : `rgba(254, 240, 138, ${(0.95 * alpha).toFixed(3)})`],
+                            [0.60, isThisTheDiamond ? `rgba(254, 240, 138, ${(0.85 * alpha).toFixed(3)})` : `rgba(249, 115, 22, ${(0.55 * alpha).toFixed(3)})`],
+                            [1.0, 'transparent']
+                        ]);
 
                         ctx.beginPath();
                         ctx.fillStyle = beadGrad;
@@ -5040,11 +5149,12 @@
                                 const rx = b.x + Math.cos(rad) * len;
                                 const ry = b.y + Math.sin(rad) * len;
 
-                                const rayGrad = ctx.createLinearGradient(b.x, b.y, rx, ry);
-                                rayGrad.addColorStop(0, `rgba(255, 255, 255, ${(0.95 * alpha).toFixed(3)})`);
-                                rayGrad.addColorStop(0.3, isMain ? `rgba(254, 240, 138, ${(0.80 * alpha).toFixed(3)})` : `rgba(255, 255, 255, ${(0.6 * alpha).toFixed(3)})`);
-                                rayGrad.addColorStop(0.7, `rgba(249, 115, 22, ${(0.35 * alpha).toFixed(3)})`);
-                                rayGrad.addColorStop(1, 'transparent');
+                                const rayGrad = getCachedGradient(ctx, 'linear', [b.x, b.y, rx, ry], [
+                                    [0, `rgba(255, 255, 255, ${(0.95 * alpha).toFixed(3)})`],
+                                    [0.3, isMain ? `rgba(254, 240, 138, ${(0.80 * alpha).toFixed(3)})` : `rgba(255, 255, 255, ${(0.6 * alpha).toFixed(3)})`],
+                                    [0.7, `rgba(249, 115, 22, ${(0.35 * alpha).toFixed(3)})`],
+                                    [1, 'transparent']
+                                ]);
 
                                 ctx.strokeStyle = rayGrad;
                                 ctx.lineWidth = width;
@@ -5098,7 +5208,7 @@
                 // =========================================================================
                 // C. LÍNEA DE HORIZONTE Y ATENUACIÓN SUB-HORIZONTE (h = 0°)
                 // =========================================================================
-                const showHorizon = document.getElementById('chk-tele-horizon')?.checked ?? true;
+                const showHorizon = getDOM('chk-tele-horizon')?.checked ?? true;
                 if (showHorizon && p && p.alt != null) {
                     const pxPerDeg = rSunPx / 0.2666; // Escala angular telescópica: semidiámetro solar medio (16' = 0.2666°)
                     const distPx = p.alt * pxPerDeg; // Distancia desde el centro solar (0,0) hasta el horizonte a lo largo de la vertical
@@ -5186,19 +5296,19 @@
                 const beadAnnouncement = getBeadAnnouncement(activeBeadsList, isDiamondRing, axisC);
 
                 // Actualizar panel flotante del radar del Limbo Lunar si está visible
-                const limbPanel = document.getElementById('lunar-limb-panel');
+                const limbPanel = getDOM('lunar-limb-panel');
                 if (limbPanel && !limbPanel.classList.contains('collapsed')) {
                     renderLunarLimbRadar(activeBeadsList, isDiamondRing, beadAnnouncement);
                 }
 
                 // 5. Telemetría HUD
-                const teleHud = document.getElementById('telescope-hud');
+                const teleHud = getDOM('telescope-hud');
                 if (teleHud) {
                     teleHud.style.display = showTeleLabels ? 'flex' : 'none';
                 }
-                const pillCoords = document.getElementById('hud-pill-coords');
-                const pillOrient = document.getElementById('hud-pill-orient');
-                const pillBead = document.getElementById('hud-pill-bead');
+                const pillCoords = getDOM('hud-pill-coords');
+                const pillOrient = getDOM('hud-pill-orient');
+                const pillBead = getDOM('hud-pill-bead');
                 if (pillOrient) {
                     const cleanObsName = currentObserver.name.replace(/\s*\([^)]*\)/g, '').trim() || currentObserver.name;
                     const orientModeStr = isZenithUp ? 'Altazimutal' : 'Ecuatorial';
@@ -5378,7 +5488,7 @@
         let isPlaying = false;
 
         function updateCatalogBadge() {
-            const badge = document.getElementById('csv-status-badge');
+            const badge = getDOM('csv-status-badge');
             if (badge) {
                 badge.innerHTML = `<i class="fa-solid fa-check-circle"></i> ${eclipseData.length.toLocaleString()} eclipses (-1999 a 3000)`;
                 badge.style.color = 'var(--accent-green)';
@@ -5388,16 +5498,16 @@
         }
         updateCatalogBadge();
 
-        const yearInput = document.getElementById('year-input');
-        const eclipseSelect = document.getElementById('eclipse-select');
+        const yearInput = getDOM('year-input');
+        const eclipseSelect = getDOM('eclipse-select');
         const MONTH_NAMES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
         let searchMode = 'year'; // 'year' | 'saros'
 
         function setSearchMode(mode) {
             searchMode = mode;
-            const btnYear = document.getElementById('btn-mode-year');
-            const btnSaros = document.getElementById('btn-mode-saros');
-            const input = document.getElementById('year-input');
+            const btnYear = getDOM('btn-mode-year');
+            const btnSaros = getDOM('btn-mode-saros');
+            const input = getDOM('year-input');
 
             if (mode === 'saros') {
                 btnYear?.classList.remove('active');
@@ -5484,7 +5594,7 @@
         }
 
         function updateSarosStepper() {
-            const container = document.getElementById('saros-stepper-container');
+            const container = getDOM('saros-stepper-container');
             if (!container) return;
             if (!currentEclipse || !currentEclipse.saros) {
                 container.style.display = 'none';
@@ -5496,11 +5606,11 @@
             const members = eclipseData.filter(e => e.saros === sarosNum).sort((a, b) => (a.nSeq || a.year) - (b.nSeq || b.year));
             const idx = members.findIndex(e => e.cat_no === currentEclipse.cat_no);
 
-            const btnPrevEx = document.getElementById('btn-prev-exeligmos');
-            const btnPrevSaros = document.getElementById('btn-prev-saros');
-            const btnNextSaros = document.getElementById('btn-next-saros');
-            const btnNextEx = document.getElementById('btn-next-exeligmos');
-            const seqInfo = document.getElementById('stepper-seq-info');
+            const btnPrevEx = getDOM('btn-prev-exeligmos');
+            const btnPrevSaros = getDOM('btn-prev-saros');
+            const btnNextSaros = getDOM('btn-next-saros');
+            const btnNextEx = getDOM('btn-next-exeligmos');
+            const seqInfo = getDOM('stepper-seq-info');
 
             const curSeq = currentEclipse.nSeq || (idx >= 0 ? idx + 1 : '?');
             const totSeq = currentEclipse.nSer || members.length || '?';
@@ -5563,10 +5673,10 @@
             }, 180);
         });
 
-        document.getElementById('btn-mode-year')?.addEventListener('click', () => setSearchMode('year'));
-        document.getElementById('btn-mode-saros')?.addEventListener('click', () => setSearchMode('saros'));
+        getDOM('btn-mode-year')?.addEventListener('click', () => setSearchMode('year'));
+        getDOM('btn-mode-saros')?.addEventListener('click', () => setSearchMode('saros'));
 
-        document.getElementById('card-saros')?.addEventListener('click', () => {
+        getDOM('card-saros')?.addEventListener('click', () => {
             if (currentEclipse && currentEclipse.saros) {
                 // 1. Abrir la página oficial de la serie Saros en NASA GSFC en una pestaña nueva
                 const sarosPadded = String(currentEclipse.saros).padStart(3, '0');
@@ -5574,17 +5684,17 @@
 
                 // 2. Activar simultáneamente el modo de exploración por Saros en la aplicación
                 setSearchMode('saros');
-                const input = document.getElementById('year-input');
+                const input = getDOM('year-input');
                 if (input) input.value = currentEclipse.saros;
                 filterEclipsesBySaros(currentEclipse.saros);
                 if (eclipseSelect) eclipseSelect.value = currentEclipse.cat_no;
             }
         });
 
-        document.getElementById('btn-prev-exeligmos')?.addEventListener('click', () => jumpSaros(-3));
-        document.getElementById('btn-prev-saros')?.addEventListener('click', () => jumpSaros(-1));
-        document.getElementById('btn-next-saros')?.addEventListener('click', () => jumpSaros(1));
-        document.getElementById('btn-next-exeligmos')?.addEventListener('click', () => jumpSaros(3));
+        getDOM('btn-prev-exeligmos')?.addEventListener('click', () => jumpSaros(-3));
+        getDOM('btn-prev-saros')?.addEventListener('click', () => jumpSaros(-1));
+        getDOM('btn-next-saros')?.addEventListener('click', () => jumpSaros(1));
+        getDOM('btn-next-exeligmos')?.addEventListener('click', () => jumpSaros(3));
 
         eclipseSelect?.addEventListener('change', (e) => {
             const catNo = parseFloat(e.target.value);
@@ -5619,7 +5729,7 @@
             const currentDt = eclipse.dt != null ? eclipse.dt : catDt;
 
             // 1. Longitud dinámica de GE
-            const lonElem = document.getElementById('card-lon');
+            const lonElem = getDOM('card-lon');
             if (lonElem) {
                 let baseLng = eclipse.lng_dd_ge != null ? eclipse.lng_dd_ge : eclipse.lng_ge;
                 if (typeof baseLng === 'string') baseLng = parseCoordinateStr(baseLng);
@@ -5634,7 +5744,7 @@
             }
 
             // 2. Hora canónica de GE en Tiempo Terrestre (TT) redondeada al minuto
-            const timeElem = document.getElementById('card-time-ge');
+            const timeElem = getDOM('card-time-ge');
             if (timeElem) {
                 let totalSec = null;
                 if (eclipse.td_ge) {
@@ -5670,15 +5780,15 @@
         }
 
         function updateDtInputWidth(val) {
-            const dtInput = document.getElementById('input-custom-dt');
+            const dtInput = getDOM('input-custom-dt');
             if (!dtInput) return;
             const str = (val != null && val !== '') ? String(val) : (dtInput.value || '76.0');
             const chLen = Math.max(5.0, str.length * 0.95);
             dtInput.style.width = chLen.toFixed(1) + 'ch';
         }
 
-        const dtInputEl = document.getElementById('input-custom-dt');
-        const dtResetBtnEl = document.getElementById('btn-reset-dt');
+        const dtInputEl = getDOM('input-custom-dt');
+        const dtResetBtnEl = getDOM('btn-reset-dt');
         if (dtInputEl) {
             dtInputEl.addEventListener('input', () => {
                 updateDtInputWidth(dtInputEl.value);
@@ -5806,20 +5916,20 @@
 
             updateObserverHeaderTz();
 
-            const titleElem = document.getElementById('card-eclipse-title');
+            const titleElem = getDOM('card-eclipse-title');
             if (titleElem) {
-                titleElem.innerText = `${eclipse.year} ${MONTH_NAMES_ES[eclipse.month - 1]} ${eclipse.day}`;
+                titleElem.innerText = `${eclipse.year} ${MONTH_NAMES[(eclipse.month || 1) - 1] || ''} ${eclipse.day}`;
             }
 
             const typeMap = { 'T': 'TOTAL', 'A': 'ANULAR', 'H': 'HÍBRIDO', 'P': 'PARCIAL' };
             const typeClassMap = { 'T': 'type-T', 'A': 'type-A', 'H': 'type-H', 'P': 'type-P' };
-            const typeElem = document.getElementById('card-type');
+            const typeElem = getDOM('card-type');
             if (typeElem) {
                 typeElem.innerText = typeMap[eclipse.eclipse_type] || eclipse.eclipse_type;
                 typeElem.className = `stat-val type-badge-sm ${typeClassMap[eclipse.eclipse_type] || ''}`;
             }
 
-            const sarosElem = document.getElementById('card-saros');
+            const sarosElem = getDOM('card-saros');
             if (sarosElem) {
                 const totalInSeries = eclipse.nSer || 71;
                 const seqNum = eclipse.nSeq || (eclipse.saros_member || 1);
@@ -5827,25 +5937,25 @@
                 sarosElem.title = `Abrir catálogo oficial de la serie Saros ${eclipse.saros} (NASA GSFC)`;
             }
 
-            const gammaElem = document.getElementById('card-gamma');
+            const gammaElem = getDOM('card-gamma');
             if (gammaElem) gammaElem.innerText = eclipse.gamma != null ? Number(eclipse.gamma).toFixed(4) : '--';
 
-            const magElem = document.getElementById('card-magnitude');
+            const magElem = getDOM('card-magnitude');
             if (magElem) magElem.innerText = eclipse.magnitude != null ? Number(eclipse.magnitude).toFixed(4) : '--';
 
-            const durElem = document.getElementById('card-duration');
+            const durElem = getDOM('card-duration');
             if (durElem) {
                  // Assumes formatDurationMmSsTenths exists or fallback
                 durElem.innerText = eclipse.central_duration || (eclipse.duration_secs ? (Math.round(eclipse.duration_secs) + 's') : '--');
             }
 
-            const widthElem = document.getElementById('card-width');
+            const widthElem = getDOM('card-width');
             if (widthElem) widthElem.innerText = (eclipse.path_width != null && eclipse.path_width > 0) ? `${Math.round(eclipse.path_width)} km` : '--';
 
-            const altElem = document.getElementById('card-sun-alt');
+            const altElem = getDOM('card-sun-alt');
             if (altElem) altElem.innerText = eclipse.sun_alt != null ? `${Number(eclipse.sun_alt).toFixed(1)}°` : '--';
 
-            const latElem = document.getElementById('card-lat');
+            const latElem = getDOM('card-lat');
             if (latElem) {
                 let lat = eclipse.lat_dd_ge != null ? eclipse.lat_dd_ge : eclipse.lat_ge;
                 if (typeof lat === 'string') lat = parseCoordinateStr(lat);
@@ -5854,8 +5964,8 @@
 
             updateEclipseCardDynamicValues(eclipse);
 
-            const dtInput = document.getElementById('input-custom-dt');
-            const dtResetBtn = document.getElementById('btn-reset-dt');
+            const dtInput = getDOM('input-custom-dt');
+            const dtResetBtn = getDOM('btn-reset-dt');
             if (dtInput) {
                 dtInput.value = (eclipse.dt != null) ? Number(eclipse.dt).toFixed(1) : '';
                 updateDtInputWidth(dtInput.value);
@@ -5864,12 +5974,12 @@
                 dtResetBtn.style.display = (eclipse.catalog_dt != null && Math.abs(eclipse.dt - eclipse.catalog_dt) > 0.01) ? 'inline-block' : 'none';
             }
 
-            const catElem = document.getElementById('card-cat-no');
+            const catElem = getDOM('card-cat-no');
             if (catElem) catElem.innerText = eclipse.cat_no ? `#${eclipse.cat_no}` : '--';
 
             const { tClosest, deltaT } = getEclipseTimeBounds(eclipse);
 
-            const slider = document.getElementById('time-slider');
+            const slider = getDOM('time-slider');
             const minT = parseFloat((tClosest - deltaT - 0.1).toFixed(2));
             const maxT = parseFloat((tClosest + deltaT + 0.1).toFixed(2));
             slider.min = minT;
@@ -5880,7 +5990,7 @@
             simCurrentT = tInit;
             slider.value = tInit;
 
-            const dockBadge = document.getElementById('dock-type-badge');
+            const dockBadge = getDOM('dock-type-badge');
             if (dockBadge) {
                 dockBadge.className = `type-badge-sm type-${eclipse.eclipse_type}`;
                 dockBadge.innerText = eclipse.eclipse_type === 'T' ? 'TOTAL' : eclipse.eclipse_type === 'A' ? 'ANULAR' : eclipse.eclipse_type === 'H' ? 'HÍBRIDO' : 'PARCIAL';
@@ -5996,7 +6106,7 @@
                 dispose3DObject(graticuleGroup);
                 graticuleGroup = null;
             }
-            const showGraticule = document.getElementById('chk-show-graticule')?.checked;
+            const showGraticule = getDOM('chk-show-graticule')?.checked;
             if (showGraticule) {
                 graticuleGroup = createGraticule();
                 if (graticuleGroup) earthGroup.add(graticuleGroup);
@@ -6699,7 +6809,7 @@
             const data = precomputeEclipseGeometry(eclipse);
 
             // 1. Trayectoria / Línea Central (Naranja #f97316)
-            const showCenterLine = document.getElementById('chk-show-center-line')?.checked !== false;
+            const showCenterLine = getDOM('chk-show-center-line')?.checked !== false;
             if (data.centerCoords && data.centerCoords.length > 1 && showCenterLine) {
                 pathLine = createSegmentedLine(data.centerCoords, 0xf97316, EARTH_RADIUS * 1.0028, 3);
                 if (pathLine) earthGroup.add(pathLine);
@@ -6708,7 +6818,7 @@
             // 2. Límites Extremos Norte y Sur de Totalidad / Anularidad (Rojo #ef4444)
             const typeCode = (eclipse.eclipse_type || '').toUpperCase();
             const isCentral = !typeCode.startsWith('P');
-            const showTotalityBand = document.getElementById('chk-show-totality')?.checked;
+            const showTotalityBand = getDOM('chk-show-totality')?.checked;
 
             if (isCentral && showTotalityBand !== false) {
                 if (data.totNorthCoords && data.totNorthCoords.length > 1) {
@@ -6723,8 +6833,8 @@
             }
 
             // 3. ISOMAGNITUDES Opcionales y Figura del 8 (Terminadores Amanecer/Atardecer)
-            const showIsomagnitudes = document.getElementById('chk-show-isomagnitudes')?.checked;
-            const showLabels = showIsomagnitudes && (document.getElementById('chk-show-labels')?.checked ?? true);
+            const showIsomagnitudes = getDOM('chk-show-isomagnitudes')?.checked;
+            const showLabels = showIsomagnitudes && (getDOM('chk-show-labels')?.checked ?? true);
 
             if (showIsomagnitudes) {
                 isomagnitudesGroup = new THREE.Group();
@@ -6812,6 +6922,9 @@
         let _elTimeLocalText = null;
         let _elPhaseLabel = null;
         let _elCurrentSlider = null;
+        let _lastUmbRadBottom = -1;
+        let _lastPenRadBottom = -1;
+        let _lastConeHeight = -1;
 
         function updateShadowAtTime(t) {
             if (!currentEclipse) return;
@@ -6820,7 +6933,6 @@
             const x = (e.x0 || 0) + (e.x1 || 0)*t + (e.x2 || 0)*t*t + (e.x3 || 0)*t*t*t;
             const y = (e.y0 || 0) + (e.y1 || 0)*t + (e.y2 || 0)*t*t + (e.y3 || 0)*t*t*t;
             
-            const dDeg = (e.d0 || 0) + (e.d1 || 0)*t;
             let muDeg = (e.mu0 || 0) + (e.mu1 || 0)*t;
             if (e.dt) {
                 // Orientación astronómica exacta del Sol y el punto subsolar en UT mediante Delta T
@@ -6830,38 +6942,63 @@
             const l1 = (e.l10 || 0.54) + (e.l11 || 0)*t; 
             const l2 = Math.abs((e.l20 || 0.01) + (e.l21 || 0)*t);
 
-            // Vectores ortonormales exactos del Plano Fundamental Besseliano (w, u, v)
-            const wLocal = latLngToVector3(dDeg, -muDeg, 1.0).normalize();
-            const muRad = -muDeg * Math.PI / 180;
-            const uLocal = new THREE.Vector3(-Math.sin(muRad), 0, -Math.cos(muRad)).normalize();
-            const vLocal = new THREE.Vector3().crossVectors(wLocal, uLocal).normalize();
+            // Marco Inercial Canónico del Eclipse (fijado en el instante de referencia t0 = 0)
+            const d0Deg = e.d0 || 0;
+            let mu0Deg = e.mu0 || 0;
+            if (e.dt) {
+                mu0Deg -= getEarthRotationAngleDeg(e.dt);
+            }
 
-            // Posicionar Luz Solar Físicamente en la Cara Diurna (d, -mu)
-            const sunVecWorld = latLngToVector3(dDeg, -muDeg, 400);
+            // Vectores ortonormales canónicos fijos del Plano Fundamental Besseliano (wCanon, uCanon, vCanon)
+            const wCanon = latLngToVector3(d0Deg, -mu0Deg, 1.0).normalize();
+            const mu0Rad = -mu0Deg * Math.PI / 180;
+            const uCanon = new THREE.Vector3(-Math.sin(mu0Rad), 0, -Math.cos(mu0Rad)).normalize();
+            const vCanon = new THREE.Vector3().crossVectors(wCanon, uCanon).normalize();
+
+            // Rotación física de la Tierra en torno a su eje polar Y (15°/hora en tiempo real)
+            const deltaMuRad = (muDeg - mu0Deg) * (Math.PI / 180);
+            const prevRotY = earthGroup.rotation.y;
+            earthGroup.rotation.y = deltaMuRad;
+
+            // En PLAY con Centrado activo: la cámara corota con la Tierra de forma que la superficie permanece quieta
+            if (isPlaying && isPlaybackCentered && focusedBody !== 'moon' && !cameraTransition && lastShadowEclipseCat === e.cat_no) {
+                const diffRotY = deltaMuRad - prevRotY;
+                if (Math.abs(diffRotY) < Math.PI) {
+                    camera.position.applyAxisAngle(new THREE.Vector3(0, 1, 0), diffRotY);
+                    if (controls && controls.target && controls.target.lengthSq() > 0.001) {
+                        controls.target.applyAxisAngle(new THREE.Vector3(0, 1, 0), diffRotY);
+                    }
+                    if (controls) controls.update();
+                }
+            }
+            lastShadowEclipseCat = e.cat_no;
+
+            // Posicionar Luz Solar fija en el espacio en dirección wCanon
+            const sunVecWorld = wCanon.clone().multiplyScalar(400);
             sunLight.position.copy(sunVecWorld);
 
-            // 1. Actualizar Marcador 3D del Punto Subsolar (☀️ Sol en el Cenit: vector w)
+            // 1. Actualizar Marcador 3D del Punto Subsolar (☀️ Sol en el Cenit: vector wCanon fijo en espacio)
             if (subsolarMarkerGroup) {
-                const showSubsolar = document.getElementById('chk-show-subsolar')?.checked ?? true;
+                const showSubsolar = getDOM('chk-show-subsolar')?.checked ?? true;
                 subsolarMarkerGroup.visible = showSubsolar;
                 if (showSubsolar) {
-                    const pos = wLocal.clone().multiplyScalar(EARTH_RADIUS * 1.0026);
+                    const pos = wCanon.clone().multiplyScalar(EARTH_RADIUS * 1.0026);
                     subsolarMarkerGroup.position.copy(pos);
-                    subsolarMarkerGroup.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), wLocal);
+                    subsolarMarkerGroup.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), wCanon);
                 }
             }
 
-            // 2. Actualizar Marcador 3D del Punto Sublunar Real (🌕 Luna en el Cenit: vector r_Luna = x*u + y*v + 60.27*w)
+            // 2. Actualizar Marcador 3D del Punto Sublunar Real (🌕 Luna en el Cenit en el espacio canónico)
             if (sublunarMarkerGroup) {
-                const showSublunar = document.getElementById('chk-show-sublunar')?.checked ?? false;
+                const showSublunar = getDOM('chk-show-sublunar')?.checked ?? false;
                 sublunarMarkerGroup.visible = showSublunar;
                 if (showSublunar) {
                     // Distancia media Tierra-Luna en radios terrestres
                     const MOON_DIST_RADII = 60.27;
                     const moonVecGeocentric = new THREE.Vector3()
-                        .addScaledVector(uLocal, x)
-                        .addScaledVector(vLocal, y)
-                        .addScaledVector(wLocal, MOON_DIST_RADII)
+                        .addScaledVector(uCanon, x)
+                        .addScaledVector(vCanon, y)
+                        .addScaledVector(wCanon, MOON_DIST_RADII)
                         .normalize();
 
                     const pos = moonVecGeocentric.clone().multiplyScalar(EARTH_RADIUS * 1.0026);
@@ -6870,33 +7007,33 @@
                 }
             }
 
-            // 3. Posicionar Sol 3D con Corona Radiante
+            // 3. Posicionar Sol 3D fijo con Corona Radiante en la dirección canónica wCanon
             if (sunGroup3D) {
-                const sunPos = wLocal.clone().multiplyScalar(SUN_DIST);
+                const sunPos = wCanon.clone().multiplyScalar(SUN_DIST);
                 sunGroup3D.position.copy(sunPos);
                 sunGroup3D.lookAt(0, 0, 0);
             }
 
-            // 3b. Orientar Plano Eclíptico Físico 3D y Nodos Reales
-            const showEcliptic = document.getElementById('chk-show-ecliptic')?.checked ?? true;
-            const showNodes = document.getElementById('chk-show-nodes')?.checked ?? true;
-            const showLimits = document.getElementById('chk-show-limits')?.checked ?? true;
+            // 3b. Orientar Plano Eclíptico Físico 3D y Nodos Reales en el Marco Canónico Fijo
+            const showEcliptic = getDOM('chk-show-ecliptic')?.checked ?? true;
+            const showNodes = getDOM('chk-show-nodes')?.checked ?? true;
+            const showLimits = getDOM('chk-show-limits')?.checked ?? true;
             if (eclipticPlaneGroup3D) eclipticPlaneGroup3D.visible = showEcliptic;
             if (nodeLine3D) nodeLine3D.visible = showNodes;
             if (nodesGroup3D) nodesGroup3D.visible = showLimits;
 
-            // Algoritmos astronómicos de Meeus: calcular longitud del Sol, oblicuidad de la eclíptica y nodo del eclipse
-            const meeus = getEclipseMeeusAngles(currentEclipse, t);
+            // Algoritmos astronómicos de Meeus: calcular ángulos en t=0 canónico para orientación inercial fija
+            const meeus = getEclipseMeeusAngles(currentEclipse, 0);
             const epsRad = meeus.epsRad;
             const epsDeg = meeus.epsDeg;
             const deltaNodeDeg = meeus.deltaNodeDeg;
             const isDescending = meeus.isDescending;
 
-            // Orientación física exacta del Polo Norte Eclíptico en el sistema de coordenadas ecuatorial (Three.js):
+            // Orientación física exacta del Polo Norte Eclíptico en el marco inercial canónico:
             const alphaSunRad = Math.atan2(Math.cos(epsRad) * Math.sin(meeus.sunLonDeg * Math.PI / 180), Math.cos(meeus.sunLonDeg * Math.PI / 180));
             const alphaSunDeg = ((alphaSunRad * 180 / Math.PI) % 360 + 360) % 360;
 
-            const muAries = muDeg + alphaSunDeg;
+            const muAries = mu0Deg + alphaSunDeg;
             const muEclPole = (muAries - 270) % 360;
             const latEclPole = 90 - epsDeg;
 
@@ -6907,15 +7044,15 @@
                 eclipticPlaneGroup3D.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), normEcliptic);
             }
 
-            // 4. Posicionar Luna 3D y Órbita Lunar 3D en el Espacio
+            // 4. Posicionar Luna 3D en el Espacio Inercial a su velocidad orbital real (~1 km/s)
             const xVal = x * EARTH_RADIUS;
             const yVal = y * EARTH_RADIUS;
             const zVal = Math.sqrt(Math.max(0, MOON_DIST * MOON_DIST - xVal * xVal - yVal * yVal));
 
             const moonPos = new THREE.Vector3()
-                .addScaledVector(uLocal, xVal)
-                .addScaledVector(vLocal, yVal)
-                .addScaledVector(wLocal, zVal);
+                .addScaledVector(uCanon, xVal)
+                .addScaledVector(vCanon, yVal)
+                .addScaledVector(wCanon, zVal);
 
             if (moonMesh3D) {
                 moonMesh3D.position.copy(moonPos);
@@ -6924,18 +7061,18 @@
             }
 
             // 4b. Vector unitario tangente a la Eclíptica hacia el Este (crecimiento de longitud eclíptica)
-            const uLambda = new THREE.Vector3().crossVectors(normEcliptic, wLocal).normalize();
+            const uLambda = new THREE.Vector3().crossVectors(normEcliptic, wCanon).normalize();
 
             // Vector unitario de la Línea de Nodos (uNode) en el plano de la Eclíptica:
-            // deltaNodeDeg es la diferencia (Sol - Nodo). El ángulo desde el Sol al Nodo es -deltaNodeDeg.
             const angleSunToNodeRad = -deltaNodeDeg * Math.PI / 180;
             let uNode = new THREE.Vector3()
-                .addScaledVector(wLocal, Math.cos(angleSunToNodeRad))
+                .addScaledVector(wCanon, Math.cos(angleSunToNodeRad))
                 .addScaledVector(uLambda, Math.sin(angleSunToNodeRad))
                 .normalize();
 
             // Asegurar ortogonalidad matemática estricta con la normal de la Eclíptica
             uNode.sub(normEcliptic.clone().multiplyScalar(uNode.dot(normEcliptic))).normalize();
+            lastNodePos3D = uNode.clone().multiplyScalar(MOON_DIST);
 
             // Plano orbital lunar inclinado i = 5.145° respecto a la Eclíptica alrededor de la Línea de Nodos (uNode):
             const incRad = 5.145 * Math.PI / 180;
@@ -6949,9 +7086,9 @@
             // Vector unitario tangente orbital en el sentido de traslación lunar (Oeste a Este)
             const uTangent = new THREE.Vector3().crossVectors(normOrbit, uNode).normalize();
 
-            // Actualizar Órbita Lunar 3D atravesando físicamente el plano eclíptico en el nodo uNode
+            // Actualizar Órbita Lunar 3D inercial fija atravesando físicamente el plano eclíptico en el nodo uNode
             if (moonOrbitLine3D) {
-                const showOrbit = document.getElementById('chk-show-moon-orbit')?.checked ?? true;
+                const showOrbit = getDOM('chk-show-moon-orbit')?.checked ?? true;
                 moonOrbitLine3D.visible = showOrbit;
                 if (showOrbit) {
                     const pts = [];
@@ -6968,7 +7105,7 @@
                 }
             }
 
-            // 4c. Línea de los Nodos 3D (Eje transversal que pasa por el centro de la Tierra y ambos nodos)
+            // 4c. Línea de los Nodos 3D inercial fija
             if (nodeLine3D) {
                 nodeLine3D.visible = showNodes;
                 if (showNodes) {
@@ -6982,7 +7119,7 @@
                 }
             }
 
-            // 4d. Marcas de Límites de Eclipse y Rótulos Nodales en la Órbita Lunar (Nodo, Total/Anular y Parcial)
+            // 4d. Marcas de Límites de Eclipse y Rótulos Nodales en la Órbita Lunar
             if (nodesGroup3D) {
                 nodesGroup3D.visible = showLimits;
                 if (showLimits) {
@@ -6995,13 +7132,15 @@
                         const nodeSpriteObj = markers.sprites.find(s => s.def.id === 'node');
                         if (nodeSpriteObj) {
                             const newSprite = createNodeSprite(currentNodeText, '#38bdf8');
-                            if (nodeSpriteObj.sprite.material.map) nodeSpriteObj.sprite.material.map.dispose();
-                            nodeSpriteObj.sprite.material.map = newSprite.material.map;
-                            nodeSpriteObj.sprite.material.needsUpdate = true;
+                            if (nodeSpriteObj.sprite && nodeSpriteObj.sprite.material) {
+                                if (nodeSpriteObj.sprite.material.map) nodeSpriteObj.sprite.material.map.dispose();
+                                nodeSpriteObj.sprite.material.map = newSprite.material.map;
+                                nodeSpriteObj.sprite.material.needsUpdate = true;
+                            }
                         }
                     }
 
-                    const showLimitLabels = showLimits && (document.getElementById('chk-show-limits-labels')?.checked ?? false);
+                    const showLimitLabels = showLimits && (getDOM('chk-show-limits-labels')?.checked ?? false);
 
                     markers.ticks.forEach((item, idx) => {
                         const angleRad = item.def.deg * Math.PI / 180;
@@ -7019,16 +7158,14 @@
 
                         // Posicionar rótulo flotante legible y sincronizar visibilidad
                         const spriteObj = markers.sprites[idx];
+                        spriteObj.sprite.position.copy(pos).addScaledVector(normOrbit, item.def.tickLen + 35.0);
                         spriteObj.sprite.visible = showLimitLabels;
-                        if (showLimitLabels) {
-                            spriteObj.sprite.position.copy(pos).addScaledVector(normOrbit, item.def.tickLen + 35.0);
-                        }
                     });
                 }
             }
 
             // 5. Conos Volumétricos de Umbra y Penumbra 3D
-            const showSpaceCones = document.getElementById('chk-show-space-cones')?.checked ?? true;
+            const showSpaceCones = getDOM('chk-show-space-cones')?.checked ?? true;
             if (umbraConeMesh3D && penumbraConeMesh3D) {
                 umbraConeMesh3D.visible = showSpaceCones;
                 penumbraConeMesh3D.visible = showSpaceCones;
@@ -7038,26 +7175,40 @@
                     const r2 = x * x + y * y;
                     const zeta = r2 < 1.0 ? Math.sqrt(1.0 - r2) : 0.0;
                     const surfacePos = new THREE.Vector3()
-                        .addScaledVector(uLocal, x * EARTH_RADIUS)
-                        .addScaledVector(vLocal, y * EARTH_RADIUS)
-                        .addScaledVector(wLocal, zeta * EARTH_RADIUS);
+                        .addScaledVector(uCanon, x * EARTH_RADIUS)
+                        .addScaledVector(vCanon, y * EARTH_RADIUS)
+                        .addScaledVector(wCanon, zeta * EARTH_RADIUS);
                     
                     const coneHeight = Math.max(10.0, MOON_DIST - (zeta * EARTH_RADIUS));
                     const midPos = moonPos.clone().add(surfacePos).multiplyScalar(0.5);
-                    const coneDir = wLocal.clone();
+                    const coneDir = wCanon.clone();
                     const coneQuat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), coneDir);
 
                     // 1. Cono de Umbra (Totalidad): converge desde la Luna hasta la mancha negra exacta en la superficie (l2)
                     const umbRadBottom = Math.max(0.25, Math.abs(l2) * EARTH_RADIUS);
-                    umbraConeMesh3D.geometry.dispose();
-                    umbraConeMesh3D.geometry = new THREE.CylinderGeometry(MOON_RADIUS, umbRadBottom, coneHeight, 32, 1, true);
+                    // 2. Cono de Penumbra: haz exterior de semisombra hacia l1
+                    const penRadBottom = Math.max(1.0, l1 * EARTH_RADIUS);
+
+                    const needsGeometryUpdate = (
+                        Math.abs(umbRadBottom - _lastUmbRadBottom) > 0.1 ||
+                        Math.abs(penRadBottom - _lastPenRadBottom) > 0.1 ||
+                        Math.abs(coneHeight - _lastConeHeight) > 0.1
+                    );
+
+                    if (needsGeometryUpdate) {
+                        umbraConeMesh3D.geometry.dispose();
+                        umbraConeMesh3D.geometry = new THREE.CylinderGeometry(MOON_RADIUS, umbRadBottom, coneHeight, 32, 1, true);
+                        penumbraConeMesh3D.geometry.dispose();
+                        penumbraConeMesh3D.geometry = new THREE.CylinderGeometry(MOON_RADIUS, penRadBottom, coneHeight, 32, 1, true);
+
+                        _lastUmbRadBottom = umbRadBottom;
+                        _lastPenRadBottom = penRadBottom;
+                        _lastConeHeight = coneHeight;
+                    }
+
                     umbraConeMesh3D.position.copy(midPos);
                     umbraConeMesh3D.quaternion.copy(coneQuat);
 
-                    // 2. Cono de Penumbra: haz exterior de semisombra hacia l1
-                    const penRadBottom = Math.max(1.0, l1 * EARTH_RADIUS);
-                    penumbraConeMesh3D.geometry.dispose();
-                    penumbraConeMesh3D.geometry = new THREE.CylinderGeometry(MOON_RADIUS, penRadBottom, coneHeight, 32, 1, true);
                     penumbraConeMesh3D.position.copy(midPos);
                     penumbraConeMesh3D.quaternion.copy(coneQuat);
                 }
@@ -7065,10 +7216,10 @@
 
             // 6. Órbita Lunar sincronizada arriba
 
-            // Enviar uniforms exactos al Shader GPU
-            shadowShaderMaterial.uniforms.uSunDir.value.copy(wLocal);
-            shadowShaderMaterial.uniforms.uVx.value.copy(uLocal);
-            shadowShaderMaterial.uniforms.uVy.value.copy(vLocal);
+            // Enviar uniforms exactos al Shader GPU en el marco canónico
+            shadowShaderMaterial.uniforms.uSunDir.value.copy(wCanon);
+            shadowShaderMaterial.uniforms.uVx.value.copy(uCanon);
+            shadowShaderMaterial.uniforms.uVy.value.copy(vCanon);
             shadowShaderMaterial.uniforms.uShadowCenter.value.set(x, y);
             shadowShaderMaterial.uniforms.uL1.value = l1;
             shadowShaderMaterial.uniforms.uL2.value = l2;
@@ -7088,10 +7239,10 @@
             const utS = utDateObj.getUTCSeconds();
             const utTimeStr = `${String(utH).padStart(2,'0')}:${String(utM).padStart(2,'0')}:${String(utS).padStart(2,'0')}`;
 
-            if (!_elPlayerTimeLocalLabel) _elPlayerTimeLocalLabel = document.getElementById('player-time-local-label');
-            if (!_elPlayerTimeUtcLabel) _elPlayerTimeUtcLabel = document.getElementById('player-time-utc-label');
-            if (!_elTimeUtcText) _elTimeUtcText = document.getElementById('time-utc-text');
-            if (!_elTimeLocalText) _elTimeLocalText = document.getElementById('time-local-text');
+            if (!_elPlayerTimeLocalLabel) _elPlayerTimeLocalLabel = getDOM('player-time-local-label');
+            if (!_elPlayerTimeUtcLabel) _elPlayerTimeUtcLabel = getDOM('player-time-utc-label');
+            if (!_elTimeUtcText) _elTimeUtcText = getDOM('time-utc-text');
+            if (!_elTimeLocalText) _elTimeLocalText = getDOM('time-local-text');
 
             if (activeExtremeMode) {
                 if (_elPlayerTimeLocalLabel) _elPlayerTimeLocalLabel.textContent = 'UT1';
@@ -7126,7 +7277,7 @@
             }
 
             // Actualizar etiqueta de fase dinámica en la cabecera del reproductor
-            if (!_elPhaseLabel) _elPhaseLabel = document.getElementById('player-phase-label');
+            if (!_elPhaseLabel) _elPhaseLabel = getDOM('player-phase-label');
             if (_elPhaseLabel) {
                 const circ = localCircumstancesCache || (currentObserver && calculateLocalSolarCircumstances(e, currentObserver.lat, currentObserver.lon));
 
@@ -7188,22 +7339,22 @@
                 const targetRowId = closestKey ? `row-contact-${closestKey}` : null;
                 if (targetRowId !== activeContactRowId) {
                     if (activeContactRowId) {
-                        const prevRow = document.getElementById(activeContactRowId);
+                        const prevRow = getDOM(activeContactRowId);
                         if (prevRow) prevRow.classList.remove('active');
                     }
                     if (targetRowId) {
-                        const newRow = document.getElementById(targetRowId);
+                        const newRow = getDOM(targetRowId);
                         if (newRow) newRow.classList.add('active');
                     }
                     activeContactRowId = targetRowId;
                 }
             } else if (activeContactRowId) {
-                const prevRow = document.getElementById(activeContactRowId);
+                const prevRow = getDOM(activeContactRowId);
                 if (prevRow) prevRow.classList.remove('active');
                 activeContactRowId = null;
             }
 
-            if (!_elCurrentSlider) _elCurrentSlider = document.getElementById('time-slider');
+            if (!_elCurrentSlider) _elCurrentSlider = getDOM('time-slider');
             if (_elCurrentSlider && !isSliderInteracting && document.activeElement !== _elCurrentSlider) {
                 _elCurrentSlider.value = t;
             }
@@ -7219,7 +7370,9 @@
             focusedBody = 'earth';
             const center = controls ? controls.target : new THREE.Vector3(0, 0, 0);
             const currentDist = camera.position.distanceTo(center) || 210;
-            const targetPos = latLngToVector3(lat, lng, currentDist);
+            const targetPosLocal = latLngToVector3(lat, lng, currentDist);
+            const rotY = (earthGroup && earthGroup.rotation) ? earthGroup.rotation.y : 0;
+            const targetPos = targetPosLocal.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), rotY);
             transitionCamera(new THREE.Vector3(0, 0, 0), targetPos, 700);
         }
 
@@ -7234,7 +7387,25 @@
         function handleRecenterClick() {
             if (currentActiveView === 'telescopic') {
                 jumpToKeyMomentTele();
+                return;
+            }
+            if (isPlaying) {
+                if (isPlaybackCentered) {
+                    // Desactivar: la cámara pasa a quedar orientada fija en el espacio, viendo la Tierra rotar
+                    isPlaybackCentered = false;
+                    playbackCenteredPref = false;
+                } else {
+                    // Activar: vuelve a dejar la superficie de la Tierra quieta
+                    isPlaybackCentered = true;
+                    playbackCenteredPref = true;
+                    if (focusedBody === 'moon') {
+                        focusedBody = 'earth';
+                        recenterEclipseGE();
+                    }
+                }
+                updateRecenterBtnState();
             } else {
+                // Cuando el reproductor esté en PAUSE, tiene la misma funcionalidad de ahora
                 recenterEclipseGE();
             }
         }
@@ -7280,9 +7451,10 @@
         window.jumpToSpecificTime = jumpToSpecificTime;
 
         function updateRecenterBtnState() {
-            const btn = document.getElementById('btn-recenter');
+            const btn = getDOM('btn-recenter');
             if (!btn) return;
             if (currentActiveView === 'telescopic') {
+                btn.classList.remove('active');
                 const circ = localCircumstancesCache || (currentEclipse && currentObserver ? calculateLocalSolarCircumstances(currentEclipse, currentObserver.lat, currentObserver.lon) : null);
                 if (circ && (circ.isTotal || circ.isAnnular) && circ.c2 && circ.c2.t != null) {
                     btn.title = circ.isTotal ? 'Ir a C2 − 30 s (Perlas de Baily a 1x)' : 'Ir a C2 − 30 s (Anillo a 1x)';
@@ -7290,20 +7462,39 @@
                     btn.title = 'Ir a Máx − 30 s (a 1x)';
                 }
             } else {
-                btn.title = 'Centrar Tierra en el eclipse';
+                if (isPlaying) {
+                    if (isPlaybackCentered) {
+                        btn.title = 'Liberar rotación';
+                        btn.setAttribute('aria-label', 'Liberar rotación');
+                        btn.classList.add('active');
+                    } else {
+                        btn.title = 'Detener rotación';
+                        btn.setAttribute('aria-label', 'Detener rotación');
+                        btn.classList.remove('active');
+                    }
+                } else {
+                    btn.title = 'Centrar eclipse';
+                    btn.setAttribute('aria-label', 'Centrar eclipse');
+                    btn.classList.remove('active');
+                }
             }
         }
 
-        document.getElementById('chk-show-observer')?.addEventListener('change', (e) => {
+        getDOM('chk-show-observer')?.addEventListener('change', (e) => {
             if (observerMarkerGroup3D) observerMarkerGroup3D.visible = e.target.checked;
             requestRender();
         });
 
         let globePickPointerDownPos = null;
+        let spacePointerDownPos = null;
+        let spacePointerDownTime = 0;
 
         renderer.domElement.addEventListener('pointerdown', (e) => {
             if (isGlobePickingMode) {
                 globePickPointerDownPos = { x: e.clientX, y: e.clientY };
+            } else if (e.button === 0 || e.pointerType === 'touch') {
+                spacePointerDownPos = { x: e.clientX, y: e.clientY };
+                spacePointerDownTime = performance.now();
             }
         });
 
@@ -7314,6 +7505,13 @@
                 if (dist < 6) {
                     handleGlobePickingClick(e.clientX, e.clientY);
                 }
+            } else if (spacePointerDownPos && (e.button === 0 || e.pointerType === 'touch')) {
+                const dist = Math.hypot(e.clientX - spacePointerDownPos.x, e.clientY - spacePointerDownPos.y);
+                const elapsed = performance.now() - spacePointerDownTime;
+                spacePointerDownPos = null;
+                if (dist < 6 && elapsed < 400) {
+                    handle3DSpaceClick(e.clientX, e.clientY, false);
+                }
             }
         });
 
@@ -7323,26 +7521,26 @@
             }
         });
 
-        document.getElementById('chk-show-space-cones')?.addEventListener('change', (e) => {
+        getDOM('chk-show-space-cones')?.addEventListener('change', (e) => {
             const vis = e.target.checked;
             if (umbraConeMesh3D) umbraConeMesh3D.visible = vis;
             if (penumbraConeMesh3D) penumbraConeMesh3D.visible = vis;
             requestRender();
         });
 
-        document.getElementById('chk-show-moon-orbit')?.addEventListener('change', (e) => {
+        getDOM('chk-show-moon-orbit')?.addEventListener('change', (e) => {
             if (moonOrbitLine3D) moonOrbitLine3D.visible = e.target.checked;
             requestRender();
         });
-        document.getElementById('chk-show-ecliptic')?.addEventListener('change', (e) => {
+        getDOM('chk-show-ecliptic')?.addEventListener('change', (e) => {
             if (eclipticPlaneGroup3D) eclipticPlaneGroup3D.visible = e.target.checked;
             requestRender();
         });
 
         function updateLimitLabelsCheckboxState() {
-            const chkLimits = document.getElementById('chk-show-limits');
-            const chkLimitLabels = document.getElementById('chk-show-limits-labels');
-            const lblLimitLabels = document.getElementById('lbl-show-limits-labels');
+            const chkLimits = getDOM('chk-show-limits');
+            const chkLimitLabels = getDOM('chk-show-limits-labels');
+            const lblLimitLabels = getDOM('lbl-show-limits-labels');
             if (!chkLimits || !chkLimitLabels) return;
             const isLimitsActive = chkLimits.checked;
             chkLimitLabels.disabled = !isLimitsActive;
@@ -7351,38 +7549,40 @@
             }
         }
 
-        document.getElementById('chk-show-nodes')?.addEventListener('change', (e) => {
+        getDOM('chk-show-nodes')?.addEventListener('change', (e) => {
             const vis = e.target.checked;
             if (nodeLine3D) nodeLine3D.visible = vis;
             requestRender();
         });
 
-        document.getElementById('chk-show-limits')?.addEventListener('change', (e) => {
+        getDOM('chk-show-limits')?.addEventListener('change', (e) => {
             const vis = e.target.checked;
             if (nodesGroup3D) nodesGroup3D.visible = vis;
             updateLimitLabelsCheckboxState();
             if (orbitalLimitMarkers && vis) {
-                const showLabels = document.getElementById('chk-show-limits-labels')?.checked ?? false;
+                const showLabels = getDOM('chk-show-limits-labels')?.checked ?? false;
                 orbitalLimitMarkers.sprites.forEach(s => {
                     s.sprite.visible = showLabels;
                 });
             }
+            updateShadowAtTime(parseFloat(getDOM('time-slider')?.value) || 0);
             requestRender();
         });
 
-        document.getElementById('chk-show-limits-labels')?.addEventListener('change', (e) => {
+        getDOM('chk-show-limits-labels')?.addEventListener('change', (e) => {
             const showLabels = e.target.checked;
             if (orbitalLimitMarkers) {
                 orbitalLimitMarkers.sprites.forEach(s => {
                     s.sprite.visible = showLabels;
                 });
             }
+            updateShadowAtTime(parseFloat(getDOM('time-slider')?.value) || 0);
             requestRender();
         });
 
         function toggleMoreLayers(forceState = null) {
-            const btn = document.getElementById('btn-toggle-more-layers');
-            const container = document.getElementById('more-layers-container');
+            const btn = getDOM('btn-toggle-more-layers');
+            const container = getDOM('more-layers-container');
             if (!container || !btn) return;
             const isCurrentlyOpen = container.classList.contains('expanded');
             const newState = (forceState !== null) ? forceState : !isCurrentlyOpen;
@@ -7395,8 +7595,8 @@
         }
 
         function toggleMoreTele(forceState = null) {
-            const btn = document.getElementById('btn-toggle-more-tele');
-            const container = document.getElementById('more-tele-container');
+            const btn = getDOM('btn-toggle-more-tele');
+            const container = getDOM('more-tele-container');
             if (!container || !btn) return;
             const isCurrentlyOpen = container.classList.contains('expanded');
             const newState = (forceState !== null) ? forceState : !isCurrentlyOpen;
@@ -7408,7 +7608,7 @@
             }
         }
 
-        document.getElementById('chk-show-shadow')?.addEventListener('change', (e) => {
+        getDOM('chk-show-shadow')?.addEventListener('change', (e) => {
             if (shadowShaderMaterial) {
                 shadowShaderMaterial.uniforms.uShowPenumbra.value = e.target.checked ? 1.0 : 0.0;
                 shadowShaderMaterial.uniformsNeedUpdate = true;
@@ -7416,19 +7616,19 @@
             requestRender();
         });
 
-        document.getElementById('chk-show-center-line')?.addEventListener('change', () => {
+        getDOM('chk-show-center-line')?.addEventListener('change', () => {
             if (currentEclipse) drawShadowPath(currentEclipse);
             requestRender();
         });
 
-        document.getElementById('chk-show-totality')?.addEventListener('change', () => {
+        getDOM('chk-show-totality')?.addEventListener('change', () => {
             if (currentEclipse) drawShadowPath(currentEclipse);
             requestRender();
         });
 
-        const chkIsomagnitudes = document.getElementById('chk-show-isomagnitudes');
-        const chkLabels = document.getElementById('chk-show-labels');
-        const lblLabels = document.getElementById('lbl-show-labels');
+        const chkIsomagnitudes = getDOM('chk-show-isomagnitudes');
+        const chkLabels = getDOM('chk-show-labels');
+        const lblLabels = getDOM('lbl-show-labels');
 
         function updateLabelsCheckboxState() {
             if (!chkIsomagnitudes || !chkLabels) return;
@@ -7453,17 +7653,17 @@
             requestRender();
         });
 
-        document.getElementById('chk-show-subsolar')?.addEventListener('change', (e) => {
+        getDOM('chk-show-subsolar')?.addEventListener('change', (e) => {
             if (subsolarMarkerGroup) subsolarMarkerGroup.visible = e.target.checked;
             requestRender();
         });
 
-        document.getElementById('chk-show-sublunar')?.addEventListener('change', (e) => {
+        getDOM('chk-show-sublunar')?.addEventListener('change', (e) => {
             if (sublunarMarkerGroup) sublunarMarkerGroup.visible = e.target.checked;
             requestRender();
         });
 
-        document.getElementById('chk-show-graticule')?.addEventListener('change', () => {
+        getDOM('chk-show-graticule')?.addEventListener('change', () => {
             updateGraticule();
             requestRender();
         });
@@ -7473,7 +7673,7 @@
         updateLimitLabelsCheckboxState();
 
         function updateLightingMode() {
-            const isDaylightOnly = document.getElementById('chk-daylight-mode')?.checked ?? false;
+            const isDaylightOnly = getDOM('chk-daylight-mode')?.checked ?? false;
             if (isDaylightOnly) {
                 // Luz global blanca uniforme (sin sombra de noche)
                 ambientLight.color.setHex(0xffffff);
@@ -7488,9 +7688,9 @@
             requestRender();
         }
 
-        document.getElementById('chk-daylight-mode')?.addEventListener('change', updateLightingMode);
+        getDOM('chk-daylight-mode')?.addEventListener('change', updateLightingMode);
 
-        document.getElementById('chk-show-lunar-limb')?.addEventListener('change', (e) => {
+        getDOM('chk-show-lunar-limb')?.addEventListener('change', (e) => {
             toggleLunarLimbPanel(e.target.checked);
         });
 
@@ -7520,13 +7720,13 @@
         }
 
         function updateSpeedUI() {
-            const badge = document.getElementById('speed-indicator-badge');
+            const badge = getDOM('speed-indicator-badge');
             const speedLabel = simSpeedMultiplier === 0.5 ? '1/2' : simSpeedMultiplier;
             if (badge) {
                 badge.textContent = `${speedLabel}x`;
             }
-            const fastBtn = document.getElementById('btn-fast-forward');
-            const rewBtn = document.getElementById('btn-rewind');
+            const fastBtn = getDOM('btn-fast-forward');
+            const rewBtn = getDOM('btn-rewind');
             if (fastBtn) {
                 fastBtn.title = `Aumentar velocidad (${speedLabel}x)`;
                 fastBtn.style.opacity = (simSpeedMultiplier === SPEED_STEPS[SPEED_STEPS.length - 1]) ? '0.4' : '1';
@@ -7586,11 +7786,11 @@
             const span = maxT - minT;
             if (span <= 0) return;
 
-            const mC1 = document.getElementById('marker-c1');
-            const mC2 = document.getElementById('marker-c2');
-            const mMax = document.getElementById('marker-max');
-            const mC3 = document.getElementById('marker-c3');
-            const mC4 = document.getElementById('marker-c4');
+            const mC1 = getDOM('marker-c1');
+            const mC2 = getDOM('marker-c2');
+            const mMax = getDOM('marker-max');
+            const mC3 = getDOM('marker-c3');
+            const mC4 = getDOM('marker-c4');
 
             const setMarker = (el, tVal, title) => {
                 if (!el) return;
@@ -7624,24 +7824,24 @@
         }
 
         function updateTopNavButtonsState() {
-            const sidePanel = document.getElementById('sidebar-panel');
-            const setPanel = document.getElementById('settings-panel');
-            const limbPanel = document.getElementById('lunar-limb-panel');
-            const dockPanel = document.getElementById('playback-dock');
-            const navBar = document.getElementById('top-nav-bar');
+            const sidePanel = getDOM('sidebar-panel');
+            const setPanel = getDOM('settings-panel');
+            const limbPanel = getDOM('lunar-limb-panel');
+            const dockPanel = getDOM('playback-dock');
+            const navBar = getDOM('top-nav-bar');
 
             const sideOpen = sidePanel && !sidePanel.classList.contains('collapsed');
             const setOpen = setPanel && !setPanel.classList.contains('collapsed');
             const limbOpen = limbPanel && !limbPanel.classList.contains('collapsed');
             const dockOpen = dockPanel && !dockPanel.classList.contains('collapsed');
 
-            const btnSide = document.getElementById('btn-reopen-left');
-            const btnSet = document.getElementById('btn-reopen-right');
-            const btnDock = document.getElementById('btn-reopen-dock');
-            const btnLimb = document.getElementById('btn-reopen-limb');
+            const btnSide = getDOM('btn-reopen-left');
+            const btnSet = getDOM('btn-reopen-right');
+            const btnDock = getDOM('btn-reopen-dock');
+            const btnLimb = getDOM('btn-reopen-limb');
 
             const isTeleView = currentActiveView === 'telescopic';
-            const showLimbBtn = isTeleView && document.getElementById('chk-show-lunar-limb')?.checked;
+            const showLimbBtn = isTeleView && getDOM('chk-show-lunar-limb')?.checked;
 
             if (btnSide) { btnSide.style.display = sideOpen ? 'none' : 'inline-flex'; btnSide.classList.remove('active-nav'); }
             if (btnSet) { btnSet.style.display = setOpen ? 'none' : 'inline-flex'; btnSet.classList.remove('active-nav'); }
@@ -7695,7 +7895,7 @@
         }
 
         function resetPanelDefaultPosition(panelId) {
-            const panel = document.getElementById(panelId);
+            const panel = getDOM(panelId);
             if (!panel) return;
             panel.style.left = '';
             panel.style.top = '';
@@ -7712,9 +7912,9 @@
 
         function initDraggablePanels() {
             const panels = [
-                document.getElementById('sidebar-panel'),
-                document.getElementById('settings-panel'),
-                document.getElementById('lunar-limb-panel')
+                getDOM('sidebar-panel'),
+                getDOM('settings-panel'),
+                getDOM('lunar-limb-panel')
             ].filter(Boolean);
 
             panels.forEach(panel => {
@@ -7857,7 +8057,7 @@
         }
 
         function toggleSidebar(show = null, fromHistory = false) {
-            const panel = document.getElementById('sidebar-panel');
+            const panel = getDOM('sidebar-panel');
             if (!panel) return;
             const isCurrentlyOpen = !panel.classList.contains('collapsed');
             const targetState = (show !== null) ? show : !isCurrentlyOpen;
@@ -7882,7 +8082,7 @@
         }
 
         function toggleSettingsPanel(show = null, fromHistory = false) {
-            const panel = document.getElementById('settings-panel');
+            const panel = getDOM('settings-panel');
             if (!panel) return;
             const isCurrentlyOpen = !panel.classList.contains('collapsed');
             const targetState = (show !== null) ? show : !isCurrentlyOpen;
@@ -7907,7 +8107,7 @@
         }
 
         function toggleLunarLimbPanel(show = null, fromHistory = false) {
-            const panel = document.getElementById('lunar-limb-panel');
+            const panel = getDOM('lunar-limb-panel');
             if (!panel) return;
             const isCurrentlyOpen = !panel.classList.contains('collapsed');
             const targetState = (show !== null) ? show : !isCurrentlyOpen;
@@ -7921,19 +8121,19 @@
                 panel.classList.remove('collapsed');
                 bringPanelToFront(panel);
 
-                const chk = document.getElementById('chk-show-lunar-limb');
+                const chk = getDOM('chk-show-lunar-limb');
                 if (chk) chk.checked = true;
                 toggleMoreTele(true);
-                const chkLimbLbls = document.getElementById('chk-limb-labels');
-                const lblLimbLbls = document.getElementById('lbl-limb-labels');
+                const chkLimbLbls = getDOM('chk-limb-labels');
+                const lblLimbLbls = getDOM('lbl-limb-labels');
                 if (chkLimbLbls && lblLimbLbls) {
                     chkLimbLbls.disabled = false;
                     lblLimbLbls.classList.remove('disabled');
                     lblLimbLbls.style.opacity = '1';
                     lblLimbLbls.style.pointerEvents = 'auto';
                 }
-                const chkActLog = document.getElementById('chk-show-activity-log');
-                const lblActLog = document.getElementById('lbl-show-activity-log');
+                const chkActLog = getDOM('chk-show-activity-log');
+                const lblActLog = getDOM('lbl-show-activity-log');
                 if (chkActLog && lblActLog) {
                     chkActLog.disabled = false;
                     lblActLog.classList.remove('disabled');
@@ -7949,18 +8149,18 @@
                 const wasActive = isCurrentlyOpen;
                 panel.classList.add('collapsed');
                 resetPanelDefaultPosition('lunar-limb-panel');
-                const chk = document.getElementById('chk-show-lunar-limb');
+                const chk = getDOM('chk-show-lunar-limb');
                 if (chk) chk.checked = false;
-                const chkLimbLbls = document.getElementById('chk-limb-labels');
-                const lblLimbLbls = document.getElementById('lbl-limb-labels');
+                const chkLimbLbls = getDOM('chk-limb-labels');
+                const lblLimbLbls = getDOM('lbl-limb-labels');
                 if (chkLimbLbls && lblLimbLbls) {
                     chkLimbLbls.disabled = true;
                     lblLimbLbls.classList.add('disabled');
                     lblLimbLbls.style.opacity = '0.5';
                     lblLimbLbls.style.pointerEvents = 'none';
                 }
-                const chkActLog = document.getElementById('chk-show-activity-log');
-                const lblActLog = document.getElementById('lbl-show-activity-log');
+                const chkActLog = getDOM('chk-show-activity-log');
+                const lblActLog = getDOM('lbl-show-activity-log');
                 if (chkActLog && lblActLog) {
                     chkActLog.disabled = true;
                     lblActLog.classList.add('disabled');
@@ -7982,7 +8182,7 @@
         }
 
         function togglePlaybackDock(show = null) {
-            const panel = document.getElementById('playback-dock');
+            const panel = getDOM('playback-dock');
             if (!panel) return;
             const isCurrentlyOpen = !panel.classList.contains('collapsed');
             const targetState = (show !== null) ? show : !isCurrentlyOpen;
@@ -8656,7 +8856,12 @@
         let activityLogWindowRef = null;
 
         function toggleActivityLog(show = null) {
-            const chk = document.getElementById('chk-show-activity-log');
+            if (activityLogWindowRef && activityLogWindowRef.closed) {
+                activityLogWindowRef = null;
+                const c = getDOM('chk-show-activity-log');
+                if (c && show === null) c.checked = false;
+            }
+            const chk = getDOM('chk-show-activity-log');
             const targetState = (show !== null) ? show : (chk ? chk.checked : false);
             if (chk) chk.checked = targetState;
 
@@ -8674,7 +8879,7 @@
         }
 
         function openActivityLogWindow(contactKey = null) {
-            const chk = document.getElementById('chk-show-activity-log');
+            const chk = getDOM('chk-show-activity-log');
             if (!currentEclipse) {
                 if (chk) chk.checked = false;
                 return;
@@ -8693,6 +8898,14 @@
 
             try {
                 activityLogWindowRef = window.open('', 'RegistroActividadCosmos', 'width=1040,height=780,scrollbars=yes,resizable=yes');
+                const checkClosedTimer = setInterval(() => {
+                    if (activityLogWindowRef && activityLogWindowRef.closed) {
+                        activityLogWindowRef = null;
+                        const c = getDOM('chk-show-activity-log');
+                        if (c) c.checked = false;
+                        clearInterval(checkClosedTimer);
+                    }
+                }, 500);
             } catch(e) {
                 activityLogWindowRef = null;
             }
@@ -8706,8 +8919,9 @@
                     if (activityLogWindowRef.focus) activityLogWindowRef.focus();
                     try {
                         const onPopupBeforeUnload = () => {
-                            const c = document.getElementById('chk-show-activity-log');
+                            const c = getDOM('chk-show-activity-log');
                             if (c) c.checked = false;
+                            activityLogWindowRef = null;
                         };
                         activityLogWindowRef.removeEventListener('beforeunload', onPopupBeforeUnload);
                         activityLogWindowRef.addEventListener('beforeunload', onPopupBeforeUnload, { once: true });
@@ -8725,7 +8939,7 @@
         }
 
         function showInAppActivityLogModal(fullHtml) {
-            let modal = document.getElementById('activity-log-inapp-modal');
+            let modal = getDOM('activity-log-inapp-modal');
             if (!modal) {
                 modal = document.createElement('div');
                 modal.id = 'activity-log-inapp-modal';
@@ -8742,7 +8956,7 @@
                 </div>
             `;
             modal.style.display = 'flex';
-            const iframe = document.getElementById('activity-log-iframe');
+            const iframe = getDOM('activity-log-iframe');
             if (iframe) {
                 try {
                     if (iframe.contentDocument) {
@@ -8761,9 +8975,9 @@
         }
 
         function closeInAppActivityLogModal() {
-            const modal = document.getElementById('activity-log-inapp-modal');
+            const modal = getDOM('activity-log-inapp-modal');
             if (modal) modal.style.display = 'none';
-            const chk = document.getElementById('chk-show-activity-log');
+            const chk = getDOM('chk-show-activity-log');
             if (chk) chk.checked = false;
         }
 
@@ -8783,9 +8997,9 @@
             const isSmall = window.innerWidth <= 900;
 
             if (isSmall) {
-                const sidePanel = document.getElementById('sidebar-panel');
-                const setPanel = document.getElementById('settings-panel');
-                const limbPanel = document.getElementById('lunar-limb-panel');
+                const sidePanel = getDOM('sidebar-panel');
+                const setPanel = getDOM('settings-panel');
+                const limbPanel = getDOM('lunar-limb-panel');
 
                 const sideOpen = sidePanel && !sidePanel.classList.contains('collapsed');
                 const setOpen = setPanel && !setPanel.classList.contains('collapsed');
@@ -8842,8 +9056,8 @@
         // -------------------------------------------------------------
         // 5. REPRODUCTOR TEMPORAL Y EJECUCIÓN DE LA SIMULACIÓN
         // -------------------------------------------------------------
-        const playBtn = document.getElementById('btn-play-pause') || document.getElementById('play-btn');
-        const timeSlider = document.getElementById('time-slider');
+        const playBtn = getDOM('btn-play-pause') || getDOM('play-btn');
+        const timeSlider = getDOM('time-slider');
         const clock = new THREE.Clock();
 
         if (timeSlider) {
@@ -8866,9 +9080,15 @@
         function startSimulation() {
             if (isPlaying) return;
             isPlaying = true;
-            const playButton = document.getElementById('btn-play-pause') || document.getElementById('play-btn');
+            const playButton = getDOM('btn-play-pause') || getDOM('play-btn');
             if (playButton) playButton.innerHTML = '<i class="fa-solid fa-pause"></i>';
             clock.getDelta();
+
+            // Al reanudar la reproducción, retornar al estado en el que se encontrara mientras estaba en reproducción
+            if (currentActiveView !== 'telescopic') {
+                isPlaybackCentered = (playbackCenteredPref !== false);
+            }
+            updateRecenterBtnState();
 
             const minT = parseFloat(timeSlider.min) || (currentEclipse?.tmin != null ? currentEclipse.tmin : -2.5);
             const maxT = parseFloat(timeSlider.max) || (currentEclipse?.tmax != null ? currentEclipse.tmax : 2.5);
@@ -8886,9 +9106,14 @@
 
         function toggleSimulation() {
             if (isPlaying) {
+                // Guardar el estado en el que se encontraba durante la reproducción
+                playbackCenteredPref = isPlaybackCentered;
                 isPlaying = false;
-                const playButton = document.getElementById('btn-play-pause') || document.getElementById('play-btn');
+                const playButton = getDOM('btn-play-pause') || getDOM('play-btn');
                 if (playButton) playButton.innerHTML = '<i class="fa-solid fa-play"></i>';
+                // En PAUSE: el botón de centrado queda desactivado
+                isPlaybackCentered = false;
+                updateRecenterBtnState();
             } else {
                 startSimulation();
             }
@@ -9004,14 +9229,6 @@
                     camera.position.copy(cameraTransition.endCamPos);
                     cameraTransition = null;
                 }
-                timeOrSceneChanged = true;
-            } else if (isPlaying && focusedBody === 'moon' && moonMesh3D && controls) {
-                // Si la cámara está enfocando a la Luna y la simulación avanza, seguir suavemente el movimiento de la Luna
-                const prevTarget = controls.target.clone();
-                const curMoonPos = moonMesh3D.position.clone();
-                const deltaPos = curMoonPos.clone().sub(prevTarget);
-                controls.target.copy(curMoonPos);
-                camera.position.add(deltaPos);
                 timeOrSceneChanged = true;
             }
 

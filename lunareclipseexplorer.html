@@ -50,6 +50,18 @@
             --font-body: 'Plus Jakarta Sans', sans-serif;
             --font-mono: 'JetBrains Mono', monospace;
             --transition-smooth: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            --z-canvas: 1;
+            --z-overlay: 2;
+            --z-tools: 10;
+            --z-hud: 15;
+            --z-card: 22;
+            --z-dock: 25;
+            --z-panel: 30;
+            --z-reopen: 35;
+            --z-nav: 40;
+            --z-modal: 50;
+            --z-banner: 100;
+            --z-dropdown: 1000;
         }
 
         * {
@@ -78,7 +90,7 @@
             position: absolute;
             top: 0;
             left: 0;
-            z-index: 1;
+            z-index: var(--z-canvas);
         }
 
         .viewport-layer {
@@ -113,7 +125,7 @@
             width: 350px;
             max-height: calc(100vh - 110px);
             max-height: calc(100dvh - 110px);
-            z-index: 25;
+            z-index: var(--z-dock);
             background: var(--bg-panel);
             backdrop-filter: blur(16px);
             border: 1px solid var(--border-color);
@@ -137,7 +149,7 @@
             width: 350px;
             max-height: calc(100vh - 30px);
             max-height: calc(100dvh - 30px);
-            z-index: 25;
+            z-index: var(--z-dock);
             background: var(--bg-panel);
             backdrop-filter: blur(16px);
             border: 1px solid var(--border-color);
@@ -187,7 +199,7 @@
             border-bottom: 1px solid var(--border-color);
             border-top-left-radius: 16px;
             border-top-right-radius: 16px;
-            z-index: 30;
+            z-index: var(--z-panel);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -211,7 +223,7 @@
             cursor: grabbing !important;
         }
 
-        .panel-header h1 {
+        .panel-header h1, .panel-header h2 {
             font-family: var(--font-heading);
             font-size: 1.15rem;
             font-weight: 700;
@@ -255,7 +267,7 @@
             position: absolute;
             top: 15px;
             left: 15px;
-            z-index: 40;
+            z-index: var(--z-nav);
             display: flex;
             flex-direction: column;
             align-items: flex-start;
@@ -716,7 +728,7 @@
             transform: translateX(-50%);
             width: min(calc(100vw - 32px), 460px);
             max-width: 460px;
-            z-index: 22;
+            z-index: var(--z-card);
             background: var(--bg-panel);
             backdrop-filter: blur(16px);
             border: 1px solid var(--border-color);
@@ -871,7 +883,7 @@
             outline: none;
             cursor: pointer;
             position: relative;
-            z-index: 2;
+            z-index: var(--z-overlay);
         }
 
         .player-slider::-webkit-slider-thumb {
@@ -907,7 +919,7 @@
             width: 2px;
             height: 16px;
             background: rgba(255, 255, 255, 0.45);
-            z-index: 1;
+            z-index: var(--z-canvas);
             transform: translateX(-50%);
             pointer-events: none;
         }
@@ -1085,7 +1097,7 @@
             flex-direction: column;
             align-items: center;
             gap: 3px;
-            z-index: 15;
+            z-index: var(--z-hud);
             pointer-events: none;
             transition: var(--transition-smooth);
             max-width: calc(100vw - 720px);
@@ -1134,7 +1146,7 @@
             padding: 6px 16px;
             font-size: 0.78rem;
             color: var(--text-secondary);
-            z-index: 10;
+            z-index: var(--z-tools);
             pointer-events: none;
             display: flex;
             align-items: center;
@@ -1168,7 +1180,7 @@
                 top: 15px !important;
                 max-height: calc(100vh - 110px) !important;
                 max-height: calc(100dvh - 110px) !important;
-                z-index: 50 !important;
+                z-index: var(--z-modal) !important;
             }
             .settings-panel {
                 width: min(calc(100vw - 30px), 350px) !important;
@@ -1178,7 +1190,7 @@
                 top: 61px !important;
                 max-height: calc(100vh - 80px) !important;
                 max-height: calc(100dvh - 80px) !important;
-                z-index: 50 !important;
+                z-index: var(--z-modal) !important;
             }
             .sidebar-panel.collapsed, .settings-panel.collapsed {
                 transform: translateX(calc(-100% - 30px)) !important;
@@ -1233,7 +1245,7 @@
             position: absolute;
             top: 20px;
             right: 385px;
-            z-index: 35;
+            z-index: var(--z-reopen);
             display: none !important;
             align-items: center;
             gap: 8px;
@@ -1258,11 +1270,11 @@
 
         @keyframes blinkLiveBadge {
             0%, 49.9% {
-                border-color: rgba(239, 68, 68, 0.85);
-                box-shadow: 0 0 16px 2px rgba(239, 68, 68, 0.45);
+                border-color: color-mix(in srgb, var(--accent-blood) 85%, transparent);
+                box-shadow: 0 0 16px 2px color-mix(in srgb, var(--accent-blood) 45%, transparent);
             }
             50%, 100% {
-                border-color: rgba(239, 68, 68, 0.2);
+                border-color: color-mix(in srgb, var(--accent-blood) 20%, transparent);
                 box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
             }
         }
@@ -1314,7 +1326,7 @@
 <body>
 
     <!-- Capa de Viewports (3D Espacial y 2D Telescópico) -->
-    <div id="viewports-container">
+    <main id="viewports-container">
         <!-- 1. Vista Espacial 3D (Three.js) -->
         <div class="viewport-layer active" id="layer-3d">
             <div id="webgl-container"></div>
@@ -1328,7 +1340,7 @@
                 <div class="hud-pill altaz" id="hud-pill-coords" style="display: flex;">Alt: -- · Az: --</div>
             </div>
         </div>
-    </div>
+    </main>
 
     <!-- Indicador Flotante "EN VIVO" con LED y texto rojo de parpadeo nítido -->
     <div id="live-indicator-badge" class="live-indicator-badge">
@@ -1337,37 +1349,37 @@
     </div>
 
     <!-- Banner Flotante para Modo Selección en el Globo 3D -->
-    <div id="globe-picking-banner" style="display: none; position: absolute; top: 18px; left: 50%; transform: translateX(-50%); z-index: 100; align-items: center; gap: 12px; background: rgba(11, 19, 41, 0.95); border: 1px solid var(--accent-blue); padding: 7px 14px; border-radius: 16px; box-shadow: 0 10px 32px rgba(0,0,0,0.85); backdrop-filter: blur(16px); pointer-events: auto; max-width: calc(100vw - 30px); box-sizing: border-box;">
+    <div id="globe-picking-banner" style="display: none; position: absolute; top: 18px; left: 50%; transform: translateX(-50%); z-index: var(--z-banner); align-items: center; gap: 12px; background: rgba(11, 19, 41, 0.95); border: 1px solid var(--accent-blue); padding: 7px 14px; border-radius: 16px; box-shadow: 0 10px 32px rgba(0,0,0,0.85); backdrop-filter: blur(16px); pointer-events: auto; max-width: calc(100vw - 30px); box-sizing: border-box;">
         <div style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: #f8fafc; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
             <i class="fa-solid fa-location-dot" style="color: var(--accent-blue); font-size: 0.95rem; flex-shrink: 0;"></i>
             <span>Toca en la Tierra: <strong id="globe-picking-coords-text" style="color: var(--accent-blue);">--</strong></span>
         </div>
         <button class="primary-btn" onclick="confirmGlobePicking()" style="height: 32px; padding: 0 13px; font-size: 0.76rem; border-radius: 10px; background: var(--accent-blue); color: #020617; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; border: none; flex-shrink: 0;">
-            <i class="fa-solid fa-check"></i> Listo
+            <i class="fa-solid fa-check" aria-hidden="true"></i> Listo
         </button>
         <button class="ctrl-btn" onclick="cancelGlobePicking()" style="height: 32px; width: 32px; padding: 0; font-size: 0.80rem; border-radius: 10px; flex-shrink: 0;" title="Cancelar (Escape)">
-            <i class="fa-solid fa-xmark"></i>
+            <i class="fa-solid fa-xmark" aria-hidden="true"></i>
         </button>
     </div>
 
     <!-- Barra Flotante de Paneles Minimizados (Apilados a la izquierda) -->
-    <div class="top-nav-bar" id="top-nav-bar">
+    <nav class="top-nav-bar" id="top-nav-bar">
         <button class="reopen-btn" id="btn-reopen-left" onclick="toggleSidebar(null)" title="Abrir/Cerrar panel de Eclipses">
-            <i class="fa-solid fa-moon"></i>
+            <i class="fa-solid fa-moon" aria-hidden="true"></i>
             <span>Eclipses</span>
         </button>
         <button class="reopen-btn" id="btn-reopen-right" onclick="toggleSettingsPanel(null)" title="Abrir/Cerrar panel de Visualización">
-            <i class="fa-solid fa-sliders"></i>
+            <i class="fa-solid fa-sliders" aria-hidden="true"></i>
             <span>Visualización</span>
         </button>
         <button class="reopen-btn" id="btn-reopen-dock" onclick="togglePlaybackDock(null)" title="Abrir/Cerrar Reproductor">
-            <i class="fa-solid fa-circle-play"></i>
+            <i class="fa-solid fa-circle-play" aria-hidden="true"></i>
             <span>Reproducción</span>
         </button>
-    </div>
+    </nav>
 
     <!-- PANEL IZQUIERDO: Selección y Datos Astronómicos (NASA GSFC) -->
-    <aside class="sidebar-panel" id="sidebar-panel">
+    <aside class="sidebar-panel" id="sidebar-panel" role="region" aria-label="Panel de Eclipses">
         <div class="panel-header">
             <div>
                 <h1>Lunar Eclipse Explorer</h1>
@@ -1468,9 +1480,9 @@
     </aside>
 
     <!-- PANEL DERECHO: Visualización, Observador y Capas (Estilo Besselian Explorer) -->
-    <aside class="settings-panel" id="settings-panel">
+    <aside class="settings-panel" id="settings-panel" role="region" aria-label="Panel de Configuración">
         <div class="panel-header">
-            <h1>Visualización</h1>
+            <h2>Visualización</h2>
             <div class="panel-toggle" onclick="toggleSettingsPanel(false)" title="Minimizar panel"><i class="fa-solid fa-chevron-left"></i></div>
         </div>
 
@@ -1484,7 +1496,7 @@
                 <span style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; color: #94a3b8; font-size: 0.72rem;"><i class="fa-solid fa-chevron-down"></i></span>
                 
                 <!-- Desplegable Filtrable Flotante Estilizado -->
-                <div id="observer-dropdown-menu" class="custom-dropdown-menu" style="display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; max-height: 230px; overflow-y: auto; background: #0b1329; border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 10px; box-shadow: 0 12px 30px rgba(0,0,0,0.8); z-index: 1000; padding: 4px;">
+                <div id="observer-dropdown-menu" class="custom-dropdown-menu" style="display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; max-height: 230px; overflow-y: auto; background: #0b1329; border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 10px; box-shadow: 0 12px 30px rgba(0,0,0,0.8); z-index: var(--z-dropdown); padding: 4px;">
                     <!-- Poblado dinámicamente con filtrado sucesivo -->
                 </div>
             </div>
@@ -1492,13 +1504,13 @@
             <!-- Pulsador Único Segmentado de 3 Posiciones: [ 🌍 Marcar | 🎛️ Ajustar | 🎯 GPS ] -->
             <div class="location-tools-group" id="location-tools-group">
                 <button type="button" class="location-tool-btn" id="btn-pick-on-globe" onclick="toggleGlobePickingMode(true)" title="Marcar en el globo terráqueo 3D">
-                    <i class="fa-solid fa-earth-americas"></i>
+                    <i class="fa-solid fa-earth-americas" aria-hidden="true"></i>
                 </button>
                 <button type="button" class="location-tool-btn" id="btn-toggle-custom-coords" onclick="toggleCustomCoords()" title="Introducir coordenadas">
-                    <i class="fa-solid fa-sliders"></i>
+                    <i class="fa-solid fa-sliders" aria-hidden="true"></i>
                 </button>
                 <button type="button" class="location-tool-btn" id="btn-observer-gps" onclick="detectUserLocation()" title="Detectar mi ubicación actual (GPS)">
-                    <i class="fa-solid fa-crosshairs"></i>
+                    <i class="fa-solid fa-crosshairs" aria-hidden="true"></i>
                 </button>
             </div>
         </div>
@@ -1514,12 +1526,12 @@
                 <input type="number" id="custom-obs-lon" step="0.01" value="2.44" style="width: 100%; background: transparent; border: none; color: #fff; font-size: 0.75rem; padding: 4px 0;" oninput="onCustomCoordsChange()" onchange="onCustomCoordsChange()">
             </div>
             <button class="ctrl-btn" onclick="toggleGlobePickingMode(true)" title="Marcar en el globo 3D" style="height: 28px; padding: 0 8px; font-size: 0.72rem; gap: 4px; border-radius: 6px; flex-shrink: 0;">
-                <i class="fa-solid fa-earth-americas"></i>
+                <i class="fa-solid fa-earth-americas" aria-hidden="true"></i>
             </button>
         </div>
 
         <!-- Indicador de la Ubicación Seleccionada Activa -->
-        <div style="margin-top: 6px; margin-bottom: 2px; font-size: 0.74rem; color: var(--accent-blue); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 6px;">
+        <div style="margin-top: 6px; margin-bottom: 2px; font-size: 0.74rem; color: var(--accent-blue); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 6px; padding: 0 16px;">
             <i class="fa-solid fa-location-crosshairs" style="font-size: 0.72rem;"></i>
             <span id="observer-header-subtitle">41° 32' 58" N  2° 26' 53" E</span>
         </div>
@@ -1527,7 +1539,7 @@
         <!-- 2. Visibilidad y Fases Locales -->
         <div class="section-title section-title-between">
             <span><i class="fa-solid fa-eye"></i> Visibilidad Local</span>
-            <button onclick="exportSelectedEclipseToICal()" style="background: none; border: none; color: var(--accent-blue); font-size: 0.72rem; cursor: pointer; text-decoration: underline;"><i class="fa-solid fa-calendar-plus"></i> iCal</button>
+            <button onclick="exportSelectedEclipseToICal()" style="background: none; border: none; color: var(--accent-blue); font-size: 0.72rem; cursor: pointer; text-decoration: underline;"><i class="fa-solid fa-calendar-plus" aria-hidden="true"></i> iCal</button>
         </div>
         <div class="mataro-card" style="margin-top: 0;">
             <div class="mataro-badge-header">
@@ -1549,10 +1561,10 @@
         </div>
         <div class="view-mode-selector">
             <button class="mode-btn active" id="btn-mode-3d" onclick="switchMainView('3d')" title="Vista orbital 3D en el espacio">
-                <i class="fa-solid fa-cube"></i> Espacio 3D
+                <i class="fa-solid fa-cube" aria-hidden="true"></i> Espacio 3D
             </button>
             <button class="mode-btn" id="btn-mode-telescopic" onclick="switchMainView('telescopic')" title="Vista telescópica local (Observador)">
-                <i class="fa-solid fa-circle-dot"></i> Telescopio
+                <i class="fa-solid fa-circle-dot" aria-hidden="true"></i> Telescopio
             </button>
         </div>
 
@@ -1560,67 +1572,74 @@
         <div class="section-title">
             <i class="fa-solid fa-layer-group"></i> Capas y opciones
         </div>
-        <div class="panel-section">
-            <!-- 3 Opciones Principales Siempre Visibles -->
-            <label class="checkbox-row" id="lbl-show-cones">
-                <input type="checkbox" id="chk-show-cones" checked onchange="toggle3DCones(this.checked)">
-                <span>Conos de sombra</span>
-            </label>
-            <label class="checkbox-row" id="lbl-show-observer">
-                <input type="checkbox" id="chk-show-observer" checked>
-                <span>Observador</span>
-            </label>
-            <label class="checkbox-row" id="lbl-show-ecliptic">
-                <input type="checkbox" id="chk-show-ecliptic" checked>
-                <span>Plano eclíptico</span>
-            </label>
-            <label class="checkbox-row" id="lbl-show-nodes">
-                <input type="checkbox" id="chk-show-nodes" checked>
-                <span>Nodos de la órbita</span>
-            </label>
+        <div class="panel-section" style="display: flex; flex-direction: column; gap: 0.45rem;">
+            <!-- GRUPO 1: CONTROLES PARA MODO ESPACIO 3D -->
+            <div id="layers-group-3d" style="display: flex; flex-direction: column; gap: 0.45rem;">
+                <!-- 3 Opciones Principales Siempre Visibles -->
+                <label class="checkbox-row" id="lbl-show-cones">
+                    <input type="checkbox" id="chk-show-cones" checked onchange="toggle3DCones(this.checked)">
+                    <span>Conos de sombra</span>
+                </label>
+                <label class="checkbox-row" id="lbl-show-observer">
+                    <input type="checkbox" id="chk-show-observer" checked>
+                    <span>Observador</span>
+                </label>
+                <label class="checkbox-row" id="lbl-show-ecliptic">
+                    <input type="checkbox" id="chk-show-ecliptic" checked>
+                    <span>Plano eclíptico</span>
+                </label>
+                <label class="checkbox-row" id="lbl-show-nodes">
+                    <input type="checkbox" id="chk-show-nodes" checked>
+                    <span>Nodos de la órbita</span>
+                </label>
 
-            <!-- Botón Desplegable de Más Opciones -->
-            <button type="button" class="more-layers-btn" id="btn-toggle-more-layers" onclick="toggleMoreLayers()" title="Mostrar más capas y opciones astronómicas">
-                <span>Más...</span>
-                <i class="fa-solid fa-chevron-down"></i>
-            </button>
+                <!-- Botón Desplegable de Más Opciones -->
+                <button type="button" class="more-layers-btn" id="btn-toggle-more-layers" onclick="toggleMoreLayers()" title="Mostrar más capas y opciones astronómicas">
+                    <span>Más...</span>
+                    <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+                </button>
 
-            <!-- Contenedor Desplegable de Opciones Secundarias -->
-            <div class="more-layers-container" id="more-layers-container">
-                <label class="checkbox-row" id="lbl-show-subsolar">
-                    <input type="checkbox" id="chk-show-subsolar" checked>
-                    <span>Punto subsolar (Sol en el cenit)</span>
-                </label>
-                <label class="checkbox-row" id="lbl-show-sublunar">
-                    <input type="checkbox" id="chk-show-sublunar" checked>
-                    <span>Punto sublunar (Luna en el cenit)</span>
-                </label>
-                <label class="checkbox-row" id="lbl-show-graticule">
-                    <input type="checkbox" id="chk-show-graticule">
-                    <span>Red geográfica (Lat/Lon)</span>
-                </label>
-                <label class="checkbox-row" id="lbl-show-limits">
-                    <input type="checkbox" id="chk-show-limits" checked>
-                    <span>Límites de eclipse</span>
-                </label>
-                <label class="checkbox-row" id="lbl-show-limits-labels" style="padding-left: 24px;">
-                    <input type="checkbox" id="chk-show-limits-labels">
-                    <span>Rótulos de los límites</span>
-                </label>
-                <label class="checkbox-row disabled" id="lbl-show-tele-hud">
-                    <input type="checkbox" id="chk-show-tele-hud" checked disabled onchange="toggleTelescopeHUD(this.checked); if (this.checked && currentEclipse) updateTelescopeHUD(getMoonHorizontalCoords(currentEclipse.zenLat, currentEclipse.zenLon, simCurrentTimeMs, currentEclipse.maxMs));">
+                <!-- Contenedor Desplegable de Opciones Secundarias -->
+                <div class="more-layers-container" id="more-layers-container">
+                    <label class="checkbox-row" id="lbl-show-subsolar">
+                        <input type="checkbox" id="chk-show-subsolar" checked>
+                        <span>Punto subsolar (Sol en el cenit)</span>
+                    </label>
+                    <label class="checkbox-row" id="lbl-show-sublunar">
+                        <input type="checkbox" id="chk-show-sublunar" checked>
+                        <span>Punto sublunar (Luna en el cenit)</span>
+                    </label>
+                    <label class="checkbox-row" id="lbl-show-graticule">
+                        <input type="checkbox" id="chk-show-graticule">
+                        <span>Red geográfica (Lat/Lon)</span>
+                    </label>
+                    <label class="checkbox-row" id="lbl-show-limits">
+                        <input type="checkbox" id="chk-show-limits" checked>
+                        <span>Límites de eclipse</span>
+                    </label>
+                    <label class="checkbox-row" id="lbl-show-limits-labels" style="padding-left: 24px;">
+                        <input type="checkbox" id="chk-show-limits-labels">
+                        <span>Rótulos de los límites</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- GRUPO 2: CONTROLES PARA MODO TELESCOPIO -->
+            <div id="layers-group-tele" style="display: none; flex-direction: column; gap: 0.45rem;">
+                <label class="checkbox-row" id="lbl-show-tele-hud">
+                    <input type="checkbox" id="chk-show-tele-hud" checked onchange="toggleTelescopeHUD(this.checked); if (this.checked && currentEclipse) updateTelescopeHUD(getMoonHorizontalCoords(currentEclipse.zenLat, currentEclipse.zenLon, simCurrentTimeMs, currentEclipse.maxMs));">
                     <span>Rótulos de información superior (HUD)</span>
                 </label>
-                <label class="checkbox-row disabled" id="lbl-show-equatorial">
-                    <input type="checkbox" id="chk-show-equatorial" disabled onchange="renderTelescopicView(); if (currentEclipse) updateTelescopeHUD(getMoonHorizontalCoords(currentEclipse.zenLat, currentEclipse.zenLon, simCurrentTimeMs, currentEclipse.maxMs));">
+                <label class="checkbox-row" id="lbl-show-equatorial">
+                    <input type="checkbox" id="chk-show-equatorial" onchange="renderTelescopicView(); if (currentEclipse) updateTelescopeHUD(getMoonHorizontalCoords(currentEclipse.zenLat, currentEclipse.zenLon, simCurrentTimeMs, currentEclipse.maxMs));">
                     <span>Orientación ecuatorial (Norte arriba)</span>
                 </label>
-                <label class="checkbox-row disabled" id="lbl-show-features">
-                    <input type="checkbox" id="chk-show-features" checked disabled onchange="renderTelescopicView()">
+                <label class="checkbox-row" id="lbl-show-features">
+                    <input type="checkbox" id="chk-show-features" checked onchange="renderTelescopicView()">
                     <span>Rótulos de accidentes lunares</span>
                 </label>
-                <label class="checkbox-row disabled" id="lbl-show-axes">
-                    <input type="checkbox" id="chk-show-axes" checked disabled onchange="renderTelescopicView()">
+                <label class="checkbox-row" id="lbl-show-axes">
+                    <input type="checkbox" id="chk-show-axes" checked onchange="renderTelescopicView()">
                     <span id="lbl-show-axes-text">Ejes de referencia</span>
                 </label>
             </div>
@@ -1657,11 +1676,11 @@
         <div class="playback-dock-bottom">
             <div class="playback-dock-bottom-left"></div>
             <div class="player-ctrls-compact">
-                <button class="ctrl-btn" id="btn-rewind" onclick="changeSpeedStep(-1)" title="Retroceder / Aumentar velocidad atrás (1x a 1200x)"><i class="fa-solid fa-backward"></i></button>
-                <button class="ctrl-btn" id="btn-prev-contact" onclick="jumpContactStep(-1)" title="Momento anterior del eclipse (P1, U1, Máx, U4, P4)"><i class="fa-solid fa-step-backward"></i></button>
-                <button class="ctrl-btn play-main" id="btn-play-pause" onclick="togglePlayPause()" title="Reproducir / Pausar"><i class="fa-solid fa-play"></i></button>
-                <button class="ctrl-btn" id="btn-next-contact" onclick="jumpContactStep(1)" title="Momento siguiente del eclipse (P1, U1, Máx, U4, P4)"><i class="fa-solid fa-step-forward"></i></button>
-                <button class="ctrl-btn" id="btn-fast-forward" onclick="changeSpeedStep(1)" title="Avanzar / Aumentar velocidad adelante (1x a 1200x)"><i class="fa-solid fa-forward"></i></button>
+                <button class="ctrl-btn" id="btn-rewind" onclick="changeSpeedStep(-1)" title="Retroceder / Aumentar velocidad atrás (1x a 1200x)"><i class="fa-solid fa-backward" aria-hidden="true"></i></button>
+                <button class="ctrl-btn" id="btn-prev-contact" onclick="jumpContactStep(-1)" title="Momento anterior del eclipse (P1, U1, Máx, U4, P4)"><i class="fa-solid fa-step-backward" aria-hidden="true"></i></button>
+                <button class="ctrl-btn play-main" id="btn-play-pause" onclick="togglePlayPause()" title="Reproducir / Pausar"><i class="fa-solid fa-play" aria-hidden="true"></i></button>
+                <button class="ctrl-btn" id="btn-next-contact" onclick="jumpContactStep(1)" title="Momento siguiente del eclipse (P1, U1, Máx, U4, P4)"><i class="fa-solid fa-step-forward" aria-hidden="true"></i></button>
+                <button class="ctrl-btn" id="btn-fast-forward" onclick="changeSpeedStep(1)" title="Avanzar / Aumentar velocidad adelante (1x a 1200x)"><i class="fa-solid fa-forward" aria-hidden="true"></i></button>
             </div>
             <div class="playback-dock-bottom-right">
                 <label class="checkbox-row" style="margin: 0; font-size: 0.74rem; white-space: nowrap; gap: 5px;">
@@ -1740,6 +1759,7 @@
         let simSpeedMultiplier = 1;
         let lastFrameTimestamp = null;
         let currentActiveView = '3d'; // '3d', 'telescopic'
+        let scene3DActive = true;
 
         // Textura Fotográfica de la Luna (Vista Telescópica 2D)
         const moonImg = new Image();
@@ -4185,7 +4205,11 @@
                 console.error("Frame render error:", err);
             }
 
-            requestAnimationFrame(mainAnimationLoop);
+            if (scene3DActive || isPlaying || isLiveMode) {
+                requestAnimationFrame(mainAnimationLoop);
+            } else {
+                window._rAFStopped = true;
+            }
         }
 
         function updateTimeUI() {
@@ -4338,6 +4362,11 @@
             simCurrentTimeMs = simStartTimeMs + frac * (simEndTimeMs - simStartTimeMs);
             updateTimeUI();
             if (currentActiveView === 'telescopic') renderTelescopicView();
+            if (window._rAFStopped) {
+                window._rAFStopped = false;
+                lastFrameTimestamp = null;
+                requestAnimationFrame(mainAnimationLoop);
+            }
         }
 
         function togglePlayPause() {
@@ -4360,6 +4389,11 @@
             const playBtn = document.getElementById('btn-play-pause');
             if (playBtn) {
                 playBtn.innerHTML = (isPlaying || isLiveMode) ? '<i class="fa-solid fa-pause"></i>' : '<i class="fa-solid fa-play"></i>';
+            }
+            if ((isPlaying || isLiveMode) && window._rAFStopped) {
+                window._rAFStopped = false;
+                lastFrameTimestamp = null;
+                requestAnimationFrame(mainAnimationLoop);
             }
         }
 
@@ -4507,46 +4541,11 @@
         function updateLayerCheckboxesState(view) {
             const is3D = (view === '3d');
             
-            // Opciones del Espacio 3D (Subsolar, Sublunar, Observador, Red geográfica, Conos, Plano eclíptico)
-            const opt3D = [
-                { lbl: 'lbl-show-subsolar', chk: 'chk-show-subsolar' },
-                { lbl: 'lbl-show-sublunar', chk: 'chk-show-sublunar' },
-                { lbl: 'lbl-show-observer', chk: 'chk-show-observer' },
-                { lbl: 'lbl-show-graticule', chk: 'chk-show-graticule' },
-                { lbl: 'lbl-show-cones', chk: 'chk-show-cones' },
-                { lbl: 'lbl-show-ecliptic', chk: 'chk-show-ecliptic' },
-                { lbl: 'lbl-show-nodes', chk: 'chk-show-nodes' },
-                { lbl: 'lbl-show-limits', chk: 'chk-show-limits' }
-            ];
-            opt3D.forEach(o => {
-                const l = document.getElementById(o.lbl);
-                const c = document.getElementById(o.chk);
-                if (l) l.classList.toggle('disabled', !is3D);
-                if (c) c.disabled = !is3D;
-            });
-
-            const chkLimits = document.getElementById('chk-show-limits');
-            const chkLimitLabels = document.getElementById('chk-show-limits-labels');
-            const lblLimitLabels = document.getElementById('lbl-show-limits-labels');
-            if (chkLimits && chkLimitLabels && lblLimitLabels) {
-                const enableSub = is3D && chkLimits.checked;
-                chkLimitLabels.disabled = !enableSub;
-                lblLimitLabels.classList.toggle('disabled', !enableSub);
-            }
-
-            // Opciones de la Vista Telescópica 2D (HUD superior, Orientación ecuatorial, Rótulos lunares, Ejes de referencia)
-            const optTele = [
-                { lbl: 'lbl-show-tele-hud', chk: 'chk-show-tele-hud' },
-                { lbl: 'lbl-show-equatorial', chk: 'chk-show-equatorial' },
-                { lbl: 'lbl-show-features', chk: 'chk-show-features' },
-                { lbl: 'lbl-show-axes', chk: 'chk-show-axes' }
-            ];
-            optTele.forEach(o => {
-                const l = document.getElementById(o.lbl);
-                const c = document.getElementById(o.chk);
-                if (l) l.classList.toggle('disabled', is3D);
-                if (c) c.disabled = is3D;
-            });
+            const group3D = document.getElementById('layers-group-3d');
+            const groupTele = document.getElementById('layers-group-tele');
+            
+            if (group3D) group3D.style.display = is3D ? 'flex' : 'none';
+            if (groupTele) groupTele.style.display = is3D ? 'none' : 'flex';
         }
 
         function switchMainView(view) {
@@ -4566,13 +4565,20 @@
             updateLayerCheckboxesState(view);
 
             if (view === 'telescopic') {
+                scene3DActive = false;
                 resizeTelescopicCanvas();
                 renderTelescopicView();
             } else if (view === '3d') {
+                const wasInactive = !scene3DActive;
+                scene3DActive = true;
                 onWindowResize3D();
                 update3DEclipseGeometry();
                 if (controls3D) controls3D.update();
                 if (renderer3D && scene3D && camera3D) renderer3D.render(scene3D, camera3D);
+                if (wasInactive) {
+                    lastFrameTimestamp = null;
+                    requestAnimationFrame(mainAnimationLoop);
+                }
             }
         }
 
