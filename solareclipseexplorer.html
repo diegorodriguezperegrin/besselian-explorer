@@ -53,6 +53,7 @@
             --accent-purple: #c084fc;
             --font-heading: 'Outfit', sans-serif;
             --font-body: 'Plus Jakarta Sans', sans-serif;
+            --font-sans: 'Plus Jakarta Sans', sans-serif;
             --font-mono: 'JetBrains Mono', monospace;
             --transition-smooth: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         }
@@ -173,12 +174,11 @@
             padding: 2px 4px;
         }
 
-        /* Left Panel: Eclipse Selection, Time Player, and Data */
-        .sidebar-panel {
+        /* Common styles for Side and Settings floating panels */
+        .sidebar-panel,
+        .settings-panel {
             position: absolute;
             top: 15px;
-            left: 15px;
-            width: 350px;
             max-height: calc(100vh - 30px);
             max-height: calc(100dvh - 30px);
             z-index: 25;
@@ -186,10 +186,8 @@
             backdrop-filter: blur(16px);
             border: 1px solid var(--border-color);
             border-radius: 16px;
-            padding: 14px 16px;
             display: flex;
             flex-direction: column;
-            gap: 9px;
             box-shadow: 0 12px 36px rgba(0, 0, 0, 0.65);
             overflow-y: auto;
             overflow-x: hidden;
@@ -198,29 +196,20 @@
             transition: opacity 0.2s ease, transform 0.2s ease;
         }
 
+        /* Left Panel: Eclipse Selection, Time Player, and Data */
+        .sidebar-panel {
+            left: 15px;
+            width: 350px;
+            padding: 14px 16px;
+            gap: 9px;
+        }
+
         /* Right Panel: Visualization Layers and Legend */
         .settings-panel {
-            position: absolute;
-            top: 15px;
             right: 15px;
             width: 360px;
-            max-height: calc(100vh - 30px);
-            max-height: calc(100dvh - 30px);
-            z-index: 25;
-            background: var(--bg-panel);
-            backdrop-filter: blur(16px);
-            border: 1px solid var(--border-color);
-            border-radius: 16px;
             padding: 16px 18px;
-            display: flex;
-            flex-direction: column;
             gap: 12px;
-            box-shadow: 0 12px 36px rgba(0, 0, 0, 0.65);
-            overflow-y: auto;
-            overflow-x: hidden;
-            scrollbar-width: thin;
-            scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
-            transition: opacity 0.2s ease, transform 0.2s ease;
         }
 
         .sidebar-panel::-webkit-scrollbar,
@@ -270,7 +259,8 @@
             cursor: grabbing !important;
         }
 
-        .panel-header h1 {
+        .panel-header h1,
+        .panel-header h2 {
             font-family: var(--font-heading);
             font-size: 1.15rem;
             font-weight: 700;
@@ -1415,7 +1405,7 @@
 <body>
 
     <!-- Capa de Viewports (3D Espacial y 2D Telescópico) -->
-    <div id="viewports-container">
+    <main id="viewports-container" aria-label="Visualizador del Eclipse">
         <!-- 1. Vista Espacial 3D (Three.js) -->
         <div class="viewport-layer active" id="layer-3d">
             <div id="webgl-container"></div>
@@ -1430,41 +1420,41 @@
                 <div class="hud-pill altaz" id="hud-pill-bead" style="display: none;"></div>
             </div>
         </div>
-    </div>
+    </main>
 
     <!-- Banner Flotante para Modo Selección en el Globo 3D -->
     <div id="globe-picking-banner" style="display: none; position: absolute; top: 18px; left: 50%; transform: translateX(-50%); z-index: 100; align-items: center; gap: 12px; background: rgba(11, 19, 41, 0.95); border: 1px solid var(--accent-blue); padding: 7px 14px; border-radius: 16px; box-shadow: 0 10px 32px rgba(0,0,0,0.85); backdrop-filter: blur(16px); pointer-events: auto; max-width: calc(100vw - 30px); box-sizing: border-box;">
         <div style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: #f8fafc; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-            <i class="fa-solid fa-location-dot" style="color: var(--accent-blue); font-size: 0.95rem; flex-shrink: 0;"></i>
+            <i class="fa-solid fa-location-dot" style="color: var(--accent-blue); font-size: 0.95rem; flex-shrink: 0;" aria-hidden="true"></i>
             <span>Toca en la Tierra: <strong id="globe-picking-coords-text" style="color: var(--accent-blue);">--</strong></span>
         </div>
-        <button class="primary-btn" onclick="confirmGlobePicking()" style="height: 32px; padding: 0 13px; font-size: 0.76rem; border-radius: 10px; background: var(--accent-blue); color: #020617; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; border: none; flex-shrink: 0;">
-            <i class="fa-solid fa-check"></i> Listo
+        <button class="primary-btn" onclick="confirmGlobePicking()" style="height: 32px; padding: 0 13px; font-size: 0.76rem; border-radius: 10px; background: var(--accent-blue); color: #020617; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; border: none; flex-shrink: 0;" aria-label="Confirmar ubicación seleccionada">
+            <i class="fa-solid fa-check" aria-hidden="true"></i> Listo
         </button>
-        <button class="ctrl-btn" onclick="cancelGlobePicking()" style="height: 32px; width: 32px; padding: 0; font-size: 0.80rem; border-radius: 10px; flex-shrink: 0;" title="Cancelar (Escape)">
-            <i class="fa-solid fa-xmark"></i>
+        <button class="ctrl-btn" onclick="cancelGlobePicking()" style="height: 32px; width: 32px; padding: 0; font-size: 0.80rem; border-radius: 10px; flex-shrink: 0;" title="Cancelar (Escape)" aria-label="Cancelar selección de ubicación">
+            <i class="fa-solid fa-xmark" aria-hidden="true"></i>
         </button>
     </div>
 
     <!-- Barra Flotante de Paneles Minimizados (Apilados a la izquierda) -->
-    <div class="top-nav-bar" id="top-nav-bar">
-        <button class="reopen-btn" id="btn-reopen-left" onclick="toggleSidebar(null)" title="Abrir/Cerrar panel de Eclipses">
-            <i class="fa-solid fa-moon"></i>
+    <nav class="top-nav-bar" id="top-nav-bar" aria-label="Controles de navegación de paneles">
+        <button class="reopen-btn" id="btn-reopen-left" onclick="toggleSidebar(null)" title="Abrir/Cerrar panel de Eclipses" aria-label="Abrir o cerrar panel de Eclipses">
+            <i class="fa-solid fa-moon" aria-hidden="true"></i>
             <span>Eclipses</span>
         </button>
-        <button class="reopen-btn" id="btn-reopen-right" onclick="toggleSettingsPanel(null)" title="Abrir/Cerrar panel de Visualización">
-            <i class="fa-solid fa-sliders"></i>
+        <button class="reopen-btn" id="btn-reopen-right" onclick="toggleSettingsPanel(null)" title="Abrir/Cerrar panel de Visualización" aria-label="Abrir o cerrar panel de Visualización">
+            <i class="fa-solid fa-sliders" aria-hidden="true"></i>
             <span>Visualización</span>
         </button>
-        <button class="reopen-btn" id="btn-reopen-dock" onclick="togglePlaybackDock(null)" title="Abrir/Cerrar Reproductor">
-            <i class="fa-solid fa-play"></i>
+        <button class="reopen-btn" id="btn-reopen-dock" onclick="togglePlaybackDock(null)" title="Abrir/Cerrar Reproductor" aria-label="Abrir o cerrar reproductor temporal">
+            <i class="fa-solid fa-play" aria-hidden="true"></i>
             <span>Reproducción</span>
         </button>
-        <button class="reopen-btn" id="btn-reopen-limb" onclick="toggleLunarLimbPanel(null)" title="Abrir/Cerrar Perfil del limbo" style="display: none;">
-            <i class="fa-solid fa-mountain-sun"></i>
+        <button class="reopen-btn" id="btn-reopen-limb" onclick="toggleLunarLimbPanel(null)" title="Abrir/Cerrar Perfil del limbo" style="display: none;" aria-label="Abrir o cerrar perfil del limbo lunar">
+            <i class="fa-solid fa-mountain-sun" aria-hidden="true"></i>
             <span>Perfil del limbo</span>
         </button>
-    </div>
+    </nav>
 
     <!-- LEFT PANEL: Eclipse Selection, Search, and Astronomical Data -->
     <div class="sidebar-panel" id="sidebar-panel" role="region" aria-label="Panel de selección de eclipse y datos">
@@ -1473,11 +1463,11 @@
                 <h1>Solar Eclipse Explorer</h1>
                 <p>COSMOS MATARÓ</p>
             </div>
-            <div class="panel-toggle" id="btn-toggle-left" onclick="toggleSidebar(false)" title="Minimizar panel"><i class="fa-solid fa-chevron-left"></i></div>
+            <div class="panel-toggle" id="btn-toggle-left" onclick="toggleSidebar(false)" role="button" tabindex="0" title="Minimizar panel" aria-label="Minimizar panel de eclipses"><i class="fa-solid fa-chevron-left" aria-hidden="true"></i></div>
         </div>
 
         <div class="section-title">
-            <i class="fa-solid fa-star"></i> Eclipses Destacados (Trío Ibérico)
+            <i class="fa-solid fa-star" aria-hidden="true"></i> Eclipses Destacados (Trío Ibérico)
         </div>
 
         <div class="quick-presets">
@@ -1487,24 +1477,24 @@
         </div>
 
         <div class="section-title section-title-between" style="margin-top: 4px; margin-bottom: 6px;">
-            <span><i class="fa-solid fa-magnifying-glass"></i> Buscar</span>
+            <span><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i> Buscar</span>
             <span id="csv-status-badge" style="color: var(--text-secondary); font-weight: 600; text-transform: none; letter-spacing: 0; cursor: help;" title="Five Millennium Catalog of Solar Eclipses (-1999 a +3000) · Fred Espenak &amp; Jean Meeus (NASA GSFC)">
-                <i class="fa-solid fa-circle-notch fa-spin"></i> Cargando...
+                <i class="fa-solid fa-circle-notch fa-spin" aria-hidden="true"></i> Cargando...
             </span>
         </div>
 
         <div class="search-mode-tabs">
-            <button class="search-mode-btn active" id="btn-mode-year" title="Explorar catálogo por Año">
-                <i class="fa-solid fa-calendar-days"></i> Por Año
+            <button class="search-mode-btn active" id="btn-mode-year" title="Explorar catálogo por Año" aria-label="Explorar por Año">
+                <i class="fa-solid fa-calendar-days" aria-hidden="true"></i> Por Año
             </button>
-            <button class="search-mode-btn" id="btn-mode-saros" title="Explorar serie por Ciclo de Saros (18 años 11 días)">
-                <i class="fa-solid fa-arrows-rotate"></i> Por Saros
+            <button class="search-mode-btn" id="btn-mode-saros" title="Explorar serie por Ciclo de Saros (18 años 11 días)" aria-label="Explorar por Saros">
+                <i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i> Por Saros
             </button>
         </div>
 
         <div class="search-row" style="display: flex; gap: 8px; align-items: center; margin-bottom: 6px;">
             <div style="width: 85px; flex-shrink: 0;">
-                <input type="number" class="search-input" id="year-input" placeholder="Año" value="2027" style="width: 100%; height: 36px; box-sizing: border-box; padding: 0 6px; font-size: 0.88rem; font-weight: 400; text-align: center; background: #0f172a; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 10px;">
+                <input type="number" class="search-input" id="year-input" placeholder="Año" value="2027" min="1800" max="2200" aria-label="Año del eclipse" style="width: 100%; height: 36px; box-sizing: border-box; padding: 0 6px; font-size: 0.88rem; font-weight: 400; text-align: center; background: #0f172a; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 10px;">
             </div>
             <div style="flex: 1; min-width: 0;">
                 <select class="search-select" id="eclipse-select" style="width: 100%; height: 36px; box-sizing: border-box; padding: 0 30px 0 12px; font-size: 0.84rem; font-weight: 400; background-color: #0f172a; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 10px; color: #f8fafc;">
@@ -1561,12 +1551,12 @@
                 <div class="stat-row">
                     <span class="stat-lbl" style="display: inline-flex; align-items: center; gap: 4px;" title="Diferencia de tiempo TT - UT1 (Tiempo Terrestre - Tiempo Universal)">
                         <span>TT-UT1</span>
-                        <button id="btn-reset-dt" style="display: none; background: transparent; border: none; color: #38bdf8; cursor: pointer; padding: 0; font-size: 0.65rem; opacity: 0.85;" title="Restablecer al valor oficial del catálogo">
-                            <i class="fa-solid fa-rotate-left"></i>
+                        <button id="btn-reset-dt" style="display: none; background: transparent; border: none; color: #38bdf8; cursor: pointer; padding: 0; font-size: 0.65rem; opacity: 0.85;" title="Restablecer al valor oficial del catálogo" aria-label="Restablecer Delta T al valor del catálogo">
+                            <i class="fa-solid fa-rotate-left" aria-hidden="true"></i>
                         </button>
                     </span>
                     <div style="display: inline-flex; align-items: baseline;">
-                        <input type="number" id="input-custom-dt" class="stat-input-dt" min="-86400" max="86400" step="0.1" title="Diferencia de tiempo TT - UT1 (haz clic para editar)">
+                        <input type="number" id="input-custom-dt" class="stat-input-dt" min="-86400" max="86400" step="0.1" title="Diferencia de tiempo TT - UT1 (haz clic para editar)" aria-label="Diferencia de tiempo Delta T en segundos">
                         <span style="color: #f8fafc; font-weight: 400; font-size: 0.78rem; font-family: var(--font-body); margin-left: 2px;">s</span>
                     </div>
                 </div>
@@ -1578,18 +1568,18 @@
 
             <!-- Orbital Stepper: Navegación de 1 Saros (18a 11d) y Exeligmos (3 Saros = 54a 1m) -->
             <div class="saros-stepper-row" id="saros-stepper-container">
-                <button class="stepper-btn exeligmos" id="btn-prev-exeligmos" title="Salto Exeligmos: -3 Saros (-54 años, 1 mes)">
-                    <i class="fa-solid fa-angles-left"></i> -54a
+                <button class="stepper-btn exeligmos" id="btn-prev-exeligmos" title="Salto Exeligmos: -3 Saros (-54 años, 1 mes)" aria-label="Salto anterior de Exeligmos (54 años)">
+                    <i class="fa-solid fa-angles-left" aria-hidden="true"></i> -54a
                 </button>
-                <button class="stepper-btn" id="btn-prev-saros" title="Salto Saros anterior: -1 Saros (-18 años, 11 días)">
-                    <i class="fa-solid fa-angle-left"></i> -18a
+                <button class="stepper-btn" id="btn-prev-saros" title="Salto Saros anterior: -1 Saros (-18 años, 11 días)" aria-label="Salto anterior de Saros (18 años)">
+                    <i class="fa-solid fa-angle-left" aria-hidden="true"></i> -18a
                 </button>
                 <span style="font-size:0.72rem; color:var(--text-secondary); font-weight:400;" id="stepper-seq-info" title="Número de secuencia / Total de eclipses de la serie">38 / 71</span>
-                <button class="stepper-btn" id="btn-next-saros" title="Salto Saros siguiente: +1 Saros (+18 años, 11 días)">
-                    +18a <i class="fa-solid fa-angle-right"></i>
+                <button class="stepper-btn" id="btn-next-saros" title="Salto Saros siguiente: +1 Saros (+18 años, 11 días)" aria-label="Salto siguiente de Saros (18 años)">
+                    +18a <i class="fa-solid fa-angle-right" aria-hidden="true"></i>
                 </button>
-                <button class="stepper-btn exeligmos" id="btn-next-exeligmos" title="Salto Exeligmos: +3 Saros (+54 años, 1 mes)">
-                    +54a <i class="fa-solid fa-angles-right"></i>
+                <button class="stepper-btn exeligmos" id="btn-next-exeligmos" title="Salto Exeligmos: +3 Saros (+54 años, 1 mes)" aria-label="Salto siguiente de Exeligmos (54 años)">
+                    +54a <i class="fa-solid fa-angles-right" aria-hidden="true"></i>
                 </button>
             </div>
         </div>
@@ -1603,13 +1593,13 @@
     <!-- RIGHT PANEL: Visualization Layers and Legend -->
     <div class="settings-panel" id="settings-panel" role="region" aria-label="Panel de capas y opciones 3D">
         <div class="panel-header">
-            <h1>Visualización</h1>
-            <div class="panel-toggle" id="btn-toggle-right" onclick="toggleSettingsPanel(false)" title="Minimizar panel"><i class="fa-solid fa-chevron-left"></i></div>
+            <h2>Visualización</h2>
+            <div class="panel-toggle" id="btn-toggle-right" onclick="toggleSettingsPanel(false)" role="button" tabindex="0" title="Minimizar panel" aria-label="Minimizar panel de visualización"><i class="fa-solid fa-chevron-left" aria-hidden="true"></i></div>
         </div>
 
         <!-- 1. Selector de Ubicación del Observador -->
         <div class="section-title" style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
-            <span><i class="fa-solid fa-location-dot"></i> Ubicación</span>
+            <span><i class="fa-solid fa-location-dot" aria-hidden="true"></i> Ubicación</span>
             <div class="view-mode-selector" style="margin-bottom: 0; padding: 1px; gap: 2px;">
                 <button type="button" class="mode-btn" id="btn-obs-ge" onclick="switchObserverExtreme('GE')" style="padding: 2px 8px; font-size: 0.70rem; height: 20px;" title="Mayor Eclipse (GE): Mínima distancia del eje de sombra al centro de la Tierra">GE</button>
                 <button type="button" class="mode-btn" id="btn-obs-gd" onclick="switchObserverExtreme('GD')" style="padding: 2px 8px; font-size: 0.70rem; height: 20px;" title="Máxima Duración (GD): Punto de mayor duración de la fase central">GD</button>
@@ -1644,11 +1634,11 @@
         <div id="observer-custom-coords" style="display: none; gap: 6px; align-items: center;">
             <div style="flex: 1; display: flex; align-items: center; background: rgba(0,0,0,0.3); border: 1px solid rgba(56,189,248,0.25); border-radius: 6px; padding: 0 6px;">
                 <span style="font-size: 0.68rem; color: var(--text-secondary); margin-right: 4px; font-family: var(--font-mono);">Lat:</span>
-                <input type="number" id="custom-obs-lat" step="0.01" value="41.54" style="width: 100%; background: transparent; border: none; color: #fff; font-family: var(--font-mono); font-size: 0.75rem; padding: 4px 0;" oninput="onCustomCoordsChange()" onchange="onCustomCoordsChange()">
+                <input type="number" id="custom-obs-lat" min="-90" max="90" step="0.01" value="41.54" aria-label="Latitud del observador" style="width: 100%; background: transparent; border: none; color: #fff; font-family: var(--font-mono); font-size: 0.75rem; padding: 4px 0;" oninput="onCustomCoordsChange()">
             </div>
             <div style="flex: 1; display: flex; align-items: center; background: rgba(0,0,0,0.3); border: 1px solid rgba(56,189,248,0.25); border-radius: 6px; padding: 0 6px;">
                 <span style="font-size: 0.68rem; color: var(--text-secondary); margin-right: 4px; font-family: var(--font-mono);">Lon:</span>
-                <input type="number" id="custom-obs-lon" step="0.01" value="2.44" style="width: 100%; background: transparent; border: none; color: #fff; font-family: var(--font-mono); font-size: 0.75rem; padding: 4px 0;" oninput="onCustomCoordsChange()" onchange="onCustomCoordsChange()">
+                <input type="number" id="custom-obs-lon" min="-180" max="180" step="0.01" value="2.44" aria-label="Longitud del observador" style="width: 100%; background: transparent; border: none; color: #fff; font-family: var(--font-mono); font-size: 0.75rem; padding: 4px 0;" oninput="onCustomCoordsChange()">
             </div>
             <button class="ctrl-btn" onclick="toggleGlobePickingMode(true)" title="Marcar en el globo 3D" style="height: 28px; padding: 0 8px; font-size: 0.72rem; gap: 4px; border-radius: 6px; flex-shrink: 0;">
                 <i class="fa-solid fa-earth-americas"></i>
@@ -1769,7 +1759,7 @@
                     </label>
                     <label class="checkbox-row" id="lbl-show-isomagnitudes">
                         <input type="checkbox" id="chk-show-isomagnitudes" checked>
-                        <span>Líneas de ocultacion y tiempo</span>
+                        <span>Líneas de ocultación y tiempo</span>
                     </label>
                     <label class="checkbox-row" id="lbl-show-labels" style="padding-left: 14px; transition: var(--transition-smooth);">
                         <input type="checkbox" id="chk-show-labels" checked>
@@ -1793,7 +1783,7 @@
                     <span>Rótulos</span>
                 </label>
                 <label class="checkbox-row" id="lbl-show-lunar-limb" title="Abrir o cerrar el panel del perfil del limbo lunar">
-                    <input type="checkbox" id="chk-show-lunar-limb" onchange="toggleTeleLimbProfile(this.checked)">
+                    <input type="checkbox" id="chk-show-lunar-limb">
                     <span>Perfil del limbo</span>
                 </label>
                 <label class="checkbox-row" id="lbl-limb-labels" style="padding-left: 14px; transition: var(--transition-smooth); opacity: 0.5; pointer-events: none;" title="Mostrar u ocultar los rótulos en el lienzo del perfil del limbo">
@@ -1811,14 +1801,14 @@
     <!-- PANEL FLOTANTE: Perfil del Limbo Lunar (NASA LRO / LOLA) y Perlas de Baily (Estilo Eduard Masana) -->
     <div class="settings-panel collapsed" id="lunar-limb-panel" role="region" aria-label="Panel del Perfil del Limbo" style="right: 375px; width: 350px; z-index: 26;">
         <div class="panel-header">
-            <h1>Perfil del limbo</h1>
-            <div class="panel-toggle" id="btn-toggle-limb" onclick="toggleLunarLimbPanel(false)" title="Minimizar panel"><i class="fa-solid fa-chevron-left"></i></div>
+            <h2>Perfil del limbo</h2>
+            <div class="panel-toggle" id="btn-toggle-limb" onclick="toggleLunarLimbPanel(false)" role="button" tabindex="0" title="Minimizar panel" aria-label="Minimizar panel del perfil del limbo"><i class="fa-solid fa-chevron-left" aria-hidden="true"></i></div>
         </div>
 
         <div style="display: flex; flex-direction: column; gap: 8px; padding-top: 4px;">
             <!-- Bloque Libración Lunar -->
             <div class="section-title" style="margin-top: 2px;">
-                <i class="fa-solid fa-moon"></i> Libración lunar
+                <i class="fa-solid fa-moon" aria-hidden="true"></i> Libración lunar
             </div>
             <div style="display: flex; justify-content: space-around; align-items: center; font-family: var(--font-mono); font-size: 0.76rem; color: #cbd5e1; background: rgba(0,0,0,0.45); padding: 6px 10px; border-radius: 8px; border: 1px solid rgba(56, 189, 248, 0.18);">
                 <span><span style="color: var(--accent-blue); font-weight: 400;">l</span> <span id="limb-lib-l" style="color:#f8fafc;">0.4°</span></span>
@@ -1864,12 +1854,12 @@
                 <span class="player-time-local-box"><span id="player-time-local-label">Obs.</span> <strong id="time-local-text">--:--:--</strong></span>
                 <span class="player-time-utc-box"><span id="player-time-utc-label">UTC</span> <strong id="time-utc-text">--:--:--</strong></span>
             </div>
-            <div class="panel-toggle" onclick="togglePlaybackDock(false)" title="Minimizar reproductor" style="width: 24px; height: 24px; font-size: 0.75rem; border-radius: 6px;"><i class="fa-solid fa-chevron-left"></i></div>
+            <div class="panel-toggle" onclick="togglePlaybackDock(false)" role="button" tabindex="0" title="Minimizar reproductor" aria-label="Minimizar reproductor temporal" style="width: 24px; height: 24px; font-size: 0.75rem; border-radius: 6px;"><i class="fa-solid fa-chevron-left" aria-hidden="true"></i></div>
         </div>
 
         <!-- Línea de Tiempo / Scrubber con Marcadores -->
         <div class="player-slider-container">
-            <input type="range" class="player-slider" id="time-slider" min="-1.5" max="0.75" step="any" value="0">
+            <input type="range" class="player-slider" id="time-slider" min="-1.5" max="0.75" step="any" value="0" aria-label="Control deslizante de tiempo del eclipse">
             <div class="contact-marker" id="marker-c1" title="C1: Inicio Parcial"></div>
             <div class="contact-marker tot" id="marker-c2" title="C2: Inicio Totalidad / Anularidad"></div>
             <div class="contact-marker tot" id="marker-max" title="Máximo Eclipse" style="background: #fff; width: 2.5px;"></div>
@@ -1883,15 +1873,15 @@
                 <span id="speed-indicator-badge" style="font-family: var(--font-mono); font-size: 0.78rem; color: var(--accent-blue); font-weight: 600; padding: 0 4px; min-width: 34px; display: inline-block;">1x</span>
             </div>
             <div class="player-ctrls-compact">
-                <button class="ctrl-btn" id="btn-rewind" onclick="changeSpeedStep(-1)" title="Reducir velocidad (1/2x a 1200x)"><i class="fa-solid fa-backward"></i></button>
-                <button class="ctrl-btn" id="btn-prev-contact" onclick="jumpContactStep(-1)" title="Momento anterior del eclipse (C1, C2, Máx, C3, C4)"><i class="fa-solid fa-step-backward"></i></button>
-                <button class="ctrl-btn play-main" id="btn-play-pause" onclick="toggleSimulation()" title="Reproducir / Pausar"><i class="fa-solid fa-play"></i></button>
-                <button class="ctrl-btn" id="btn-next-contact" onclick="jumpContactStep(1)" title="Momento siguiente del eclipse (C1, C2, Máx, C3, C4)"><i class="fa-solid fa-step-forward"></i></button>
-                <button class="ctrl-btn" id="btn-fast-forward" onclick="changeSpeedStep(1)" title="Aumentar velocidad (1/2x a 1200x)"><i class="fa-solid fa-forward"></i></button>
+                <button class="ctrl-btn" id="btn-rewind" onclick="changeSpeedStep(-1)" title="Reducir velocidad (1/2x a 1200x)" aria-label="Reducir velocidad"><i class="fa-solid fa-backward" aria-hidden="true"></i></button>
+                <button class="ctrl-btn" id="btn-prev-contact" onclick="jumpContactStep(-1)" title="Momento anterior del eclipse (C1, C2, Máx, C3, C4)" aria-label="Contacto anterior"><i class="fa-solid fa-step-backward" aria-hidden="true"></i></button>
+                <button class="ctrl-btn play-main" id="btn-play-pause" onclick="toggleSimulation()" title="Reproducir / Pausar" aria-label="Reproducir o pausar simulación"><i class="fa-solid fa-play" aria-hidden="true"></i></button>
+                <button class="ctrl-btn" id="btn-next-contact" onclick="jumpContactStep(1)" title="Momento siguiente del eclipse (C1, C2, Máx, C3, C4)" aria-label="Contacto siguiente"><i class="fa-solid fa-step-forward" aria-hidden="true"></i></button>
+                <button class="ctrl-btn" id="btn-fast-forward" onclick="changeSpeedStep(1)" title="Aumentar velocidad (1/2x a 1200x)" aria-label="Aumentar velocidad"><i class="fa-solid fa-forward" aria-hidden="true"></i></button>
             </div>
             <div class="playback-dock-bottom-right">
-                <button type="button" class="ctrl-btn" id="btn-recenter" onclick="handleRecenterClick()" title="Centrar Tierra en el eclipse" style="width: 30px; height: 30px; padding: 0; border-radius: 7px;">
-                    <i class="fa-solid fa-crosshairs"></i>
+                <button type="button" class="ctrl-btn" id="btn-recenter" onclick="handleRecenterClick()" title="Centrar Tierra en el eclipse" style="width: 30px; height: 30px; padding: 0; border-radius: 7px;" aria-label="Recentrar cámara en el eclipse">
+                    <i class="fa-solid fa-crosshairs" aria-hidden="true"></i>
                 </button>
             </div>
         </div>
@@ -2129,7 +2119,10 @@
             const earthTolerance = Math.max(EARTH_RADIUS * 2.0, 60.0);
             const sunTolerance = Math.max(SUN_RADIUS * 3.0, 20000.0);
 
-            if (distToMoonRay < moonTolerance && distToMoonRay <= distToEarthRay && distToMoonRay <= distToSunRay && moonMesh3D) {
+            // Test de oclusión por profundidad: si la Luna está detrás de la Tierra respecto a la cámara
+            const isMoonOccludedByEarth = (distToEarthRay < EARTH_RADIUS * 1.05 && distToMoonRay < moonTolerance && projMoon > projEarth);
+
+            if (distToMoonRay < moonTolerance && !isMoonOccludedByEarth && distToMoonRay <= distToEarthRay && distToMoonRay <= distToSunRay && moonMesh3D) {
                 // Doble clic sobre la Luna -> Enfoque detallado
                 focusedBody = 'moon';
                 const moonPos = moonMesh3D.position.clone();
@@ -2340,7 +2333,6 @@
         });
         penumbraConeMesh3D = new THREE.Mesh(penumbraConeGeo, penumbraConeMat);
         penumbraConeMesh3D.renderOrder = 1;
-        scene.add(penumbraConeMesh3D);
         scene.add(penumbraConeMesh3D);
 
         // 궤 Órbita Lunar 3D en el Espacio
@@ -2705,13 +2697,6 @@
         shadowOverlayMesh.renderOrder = 20;
         earthGroup.add(shadowOverlayMesh);
 
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            requestRender();
-        });
-
         // Resiliencia ante pérdida transitoria de contexto WebGL en móviles / cambio de pestaña
         renderer.domElement.addEventListener('webglcontextlost', (e) => {
             e.preventDefault();
@@ -2740,12 +2725,16 @@
             return new THREE.Vector3(x, y, z);
         }
 
+        function getEarthRotationAngleDeg(dtSec) {
+            return dtSec ? 1.0027379 * (dtSec / 240.0) : 0;
+        }
+
         function vector3ToLatLng(v) {
             const r = Math.sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
-            if (r === 0) return { lat: 0, lon: 0 };
+            if (r === 0) return { lat: 0, lon: 0, lng: 0 };
             const lat = Math.asin(Math.max(-1, Math.min(1, v.y / r))) * (180 / Math.PI);
             let lon = Math.atan2(-v.z, v.x) * (180 / Math.PI);
-            return { lat, lon };
+            return { lat, lon, lng: lon };
         }
 
         function getTimeZoneFromLon(lon) {
@@ -2787,6 +2776,9 @@
 
         function getUtcOffsetString(tz, dateObj = new Date()) {
             if (!tz || tz === 'UTC') return 'UTC';
+            if (!dateObj || !(dateObj instanceof Date) || isNaN(dateObj.getTime())) {
+                dateObj = new Date();
+            }
             try {
                 let fmt = _intlOffsetFormatters.get(tz);
                 if (!fmt) {
@@ -2808,12 +2800,12 @@
                 const utcDate = new Date(dateObj.toLocaleString('en-US', { timeZone: 'UTC' }));
                 const tzDate = new Date(dateObj.toLocaleString('en-US', { timeZone: tz }));
                 const diffMin = Math.round((tzDate.getTime() - utcDate.getTime()) / 60000);
-                if (diffMin === 0) return 'UTC';
+                if (isNaN(diffMin) || diffMin === 0) return 'UTC';
                 const sign = diffMin >= 0 ? '+' : '-';
                 const absMin = Math.abs(diffMin);
                 const h = Math.floor(absMin / 60);
                 const m = absMin % 60;
-                if (h === 0 && m === 0) return 'UTC';
+                if (isNaN(h) || isNaN(m) || (h === 0 && m === 0)) return 'UTC';
                 return m === 0 ? ('UTC' + sign + h) : ('UTC' + sign + h + ':' + String(m).padStart(2, '0'));
             } catch(e) {
                 return 'UTC';
@@ -2967,7 +2959,7 @@
                 const catDt = currentEclipse.catalog_dt != null ? currentEclipse.catalog_dt : currentEclipse.dt;
                 const currentDt = currentEclipse.dt != null ? currentEclipse.dt : catDt;
                 const deltaDT = currentDt - catDt;
-                const shiftLonDeg = -1.0027379 * (deltaDT / 240);
+                const shiftLonDeg = -getEarthRotationAngleDeg(deltaDT);
                 const baseLon = currentEclipse.lng_dd_ge != null ? currentEclipse.lng_dd_ge : -25.2283;
                 targetLon = baseLon - shiftLonDeg;
                 targetName = 'Mayor Eclipse (GE)';
@@ -3290,6 +3282,7 @@
             if (intersects.length > 0) {
                 const hit = intersects[0];
                 const localPoint = hit.point.clone();
+                if (earthMesh) earthMesh.worldToLocal(localPoint);
                 const coords = vector3ToLatLng(localPoint);
                 pickedLatLon = coords;
 
@@ -3343,7 +3336,7 @@
             const tMax = (eclipse.tmax != null ? eclipse.tmax : 3.0) + 0.8;
             
             function evalPoly(c0, c1, c2, c3, t) {
-                return (c0 || 0) + (c1 || 0)*t + (c2 || 0)*t*t + (c3 || 0)*t*t*t;
+                return (c0 || 0) + t * ((c1 || 0) + t * ((c2 || 0) + t * (c3 || 0)));
             }
             
             function getParamsAtT(t) {
@@ -3352,7 +3345,7 @@
                 const d = evalPoly(eclipse.d0, eclipse.d1, eclipse.d2, 0, t) * RAD;
                 let muDeg = evalPoly(eclipse.mu0, eclipse.mu1, eclipse.mu2, 0, t);
                 if (dt) {
-                    muDeg -= 1.0027379 * (dt / 240);
+                    muDeg -= getEarthRotationAngleDeg(dt);
                 }
                 const theta = (muDeg + lonDeg) * RAD;
                 
@@ -3380,9 +3373,9 @@
                 const alt = Math.asin(Math.max(-1, Math.min(1, sinH))) * DEG;
                 const az = ((Math.atan2(-cosD * sinTheta, sinD * cosPhi - cosD * sinPhi * cosTheta) * DEG) + 360) % 360;
                 
-                // Ángulo paraláctico q
-                const sinQ = Math.sin(theta);
-                const cosQ = Math.tan(phi) * cosD - sinD * cosTheta;
+                // Ángulo paraláctico q (fórmula sin singularidad en los polos: cosPhi*sinTheta y sinPhi*cosD - cosPhi*sinD*cosTheta)
+                const sinQ = cosPhi * sinTheta;
+                const cosQ = sinPhi * cosD - cosPhi * sinD * cosTheta;
                 const qDeg = Math.atan2(sinQ, cosQ) * DEG;
                 const qRad = Math.atan2(sinQ, cosQ);
 
@@ -3532,18 +3525,22 @@
 
         function formatDurationMmSsTenths(sec) {
             if (sec == null || isNaN(sec) || sec <= 0) return '--';
-            const m = Math.floor(sec / 60);
-            const s = (sec % 60).toFixed(1);
+            const totalTenths = Math.round(sec * 10);
+            const m = Math.floor(totalTenths / 600);
+            const sTenths = totalTenths % 600;
+            const s = (sTenths / 10).toFixed(1);
             return `${String(m).padStart(2, '0')}m ${String(s).padStart(4, '0')}s`;
         }
 
         let localCircumstancesCache = null;
+        let activeContactRowId = null;
 
         function renderLocalSolarCircumstances() {
             const tbody = document.getElementById('mataro-contacts-tbody');
             const badge = document.getElementById('mataro-vis-badge');
             const thTime = document.getElementById('th-local-time');
             if (!tbody || !currentEclipse) return;
+            activeContactRowId = null;
 
             const res = calculateLocalSolarCircumstances(currentEclipse, currentObserver.lat, currentObserver.lon);
             localCircumstancesCache = res;
@@ -3768,7 +3765,6 @@
             const canvas = document.getElementById('canvas-telescopic');
             if (!canvas) return;
 
-            window.addEventListener('resize', resizeTelescopicCanvas);
             resizeTelescopicCanvas();
 
             canvas.addEventListener('wheel', (e) => {
@@ -3787,8 +3783,9 @@
 
             canvas.addEventListener('pointermove', (e) => {
                 if (!isTeleDragging) return;
-                telePanX = e.clientX - teleDragStartX;
-                telePanY = e.clientY - teleDragStartY;
+                const maxPan = Math.max(window.innerWidth, window.innerHeight) * 1.5 * teleZoom;
+                telePanX = Math.max(-maxPan, Math.min(maxPan, e.clientX - teleDragStartX));
+                telePanY = Math.max(-maxPan, Math.min(maxPan, e.clientY - teleDragStartY));
                 requestTelescopicRender();
             });
 
@@ -3820,11 +3817,10 @@
 
         function formatCoordDms(val, isLat) {
             const dir = isLat ? (val >= 0 ? 'N' : 'S') : (val >= 0 ? 'E' : 'O');
-            const abs = Math.abs(val);
-            const deg = Math.floor(abs);
-            const minFloat = (abs - deg) * 60;
-            const min = Math.floor(minFloat);
-            const sec = Math.round((minFloat - min) * 60);
+            const totalSec = Math.round(Math.abs(val) * 3600);
+            const deg = Math.floor(totalSec / 3600);
+            const min = Math.floor((totalSec % 3600) / 60);
+            const sec = totalSec % 60;
             return `${deg}° ${String(min).padStart(2, '0')}' ${String(sec).padStart(2, '0')}" ${dir}`;
         }
 
@@ -4267,7 +4263,7 @@
 
             if (showLimbLabels) {
                 ctx.fillStyle = '#ef4444';
-                ctx.font = '400 9.5px var(--font-sans)';
+                ctx.font = "400 9.5px 'Plus Jakarta Sans', sans-serif";
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
                 ctx.fillText('Norte', cx + projNorth.xNorm * (baseR - 18), cy + projNorth.yNorm * (baseR - 18));
@@ -4284,7 +4280,7 @@
 
             if (showLimbLabels) {
                 ctx.fillStyle = '#eab308';
-                ctx.font = '400 9.5px var(--font-sans)';
+                ctx.font = "400 9.5px 'Plus Jakarta Sans', sans-serif";
                 ctx.fillText('Cenit', cx + projCenit.xNorm * (baseR - 18), cy + projCenit.yNorm * (baseR - 18));
             }
 
@@ -4301,7 +4297,7 @@
             ctx.stroke();
             if (showLimbLabels) {
                 ctx.fillStyle = '#22c55e';
-                ctx.font = '400 9.5px var(--font-sans)';
+                ctx.font = "400 9.5px 'Plus Jakarta Sans', sans-serif";
                 ctx.fillText('NL', cx + projNL.xNorm * (baseR + 17), cy + projNL.yNorm * (baseR + 17));
             }
 
@@ -4375,7 +4371,7 @@
                     // 3. Rótulo de contacto (C2', C3', etc.) DENTRO del círculo lunar
                     if (showLimbLabels) {
                         ctx.save();
-                        ctx.font = '400 9.5px var(--font-sans)';
+                        ctx.font = "400 9.5px 'Plus Jakarta Sans', sans-serif";
                         ctx.textAlign = 'center';
                         ctx.textBaseline = 'middle';
                         const rInside = baseR - 16;
@@ -4395,7 +4391,7 @@
                         ctx.save();
                         ctx.shadowColor = 'rgba(0, 0, 0, 0.95)';
                         ctx.shadowBlur = 4;
-                        ctx.font = '400 8.5px var(--font-sans)';
+                        ctx.font = "400 8.5px 'Plus Jakarta Sans', sans-serif";
 
                         const rText = baseR + 14;
                         let tx = cx + proj.xNorm * rText;
@@ -4485,7 +4481,7 @@
             // Indicador de exageración en la esquina inferior del lienzo
             if (showLimbLabels) {
                 ctx.save();
-                ctx.font = '400 8.5px var(--font-sans)';
+                ctx.font = "400 8.5px 'Plus Jakarta Sans', sans-serif";
                 ctx.fillStyle = 'rgba(148, 163, 184, 0.65)';
                 ctx.textAlign = 'right';
                 ctx.textBaseline = 'bottom';
@@ -4573,7 +4569,7 @@
                     ctx.strokeStyle = 'rgba(56, 189, 248, 0.12)';
                     ctx.stroke();
 
-                    ctx.font = '400 10.5px var(--font-sans)';
+                    ctx.font = "400 10.5px 'Plus Jakarta Sans', sans-serif";
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
 
@@ -4734,7 +4730,7 @@
                         { label: 'NL', pa: ((axisC % 360) + 360) % 360, color: '#22c55e' },
                         { label: 'SL', pa: ((axisC + 180) % 360 + 360) % 360, color: '#22c55e' }
                     ];
-                    ctx.font = '400 9.5px var(--font-sans)';
+                    ctx.font = "400 9.5px 'Plus Jakarta Sans', sans-serif";
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
                     teleMarks.forEach(m => {
@@ -4902,7 +4898,7 @@
                         ctx.strokeStyle = `rgba(255, 255, 255, ${(0.92 * diamondFactor).toFixed(3)})`;
                         ctx.lineWidth = Math.max(1.0, rSunPx * 0.016 * diamondFactor);
                         ctx.shadowColor = 'rgba(224, 242, 254, 0.95)';
-                        ctx.shadowBlur = 12 * diamondFactor;
+                        ctx.shadowBlur = Math.min(10, 12 * diamondFactor);
                         ctx.beginPath();
                         ctx.arc(moonX, moonY, rMoonPx, 0, Math.PI * 2);
                         ctx.stroke();
@@ -4958,7 +4954,7 @@
                             // Núcleo blanco cegador de la gema con escala continua
                             ctx.fillStyle = '#ffffff';
                             ctx.shadowColor = '#ffffff';
-                            ctx.shadowBlur = 18 * b.intensity;
+                            ctx.shadowBlur = Math.min(10, 18 * b.intensity);
                             ctx.beginPath();
                             ctx.arc(b.x, b.y, Math.max(1.0, (rSunPx * 0.038) * b.intensity), 0, Math.PI * 2);
                             ctx.fill();
@@ -5031,7 +5027,7 @@
                         const hx = -ny;
                         const hy = nx;
 
-                        const L = Math.max(R_max * 3, 3000);
+                        const L = R_max * 1.5;
 
                         // Vértices del segmento de horizonte
                         const ax = h0x + L * hx, ay = h0y + L * hy;
@@ -5063,7 +5059,7 @@
 
                         // 3. Rótulo identificativo si los rótulos están activados
                         if (showTeleLabels) {
-                            ctx.font = '500 10px var(--font-sans)';
+                            ctx.font = "500 10px 'Plus Jakarta Sans', sans-serif";
                             ctx.fillStyle = 'rgba(241, 245, 249, 0.90)';
                             ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
                             ctx.shadowBlur = 4;
@@ -5228,7 +5224,7 @@
             let muDeg = (eclipse.mu0 || 0) + (eclipse.mu1 || 0)*t + (eclipse.mu2 || 0)*t*t;
             if (eclipse.dt) {
                 // Conversión rigurosa de ángulo horario de efemérides (TT) al meridiano de referencia en UT1 mediante Delta T
-                muDeg -= 1.0027379 * (eclipse.dt / 240);
+                muDeg -= getEarthRotationAngleDeg(eclipse.dt);
             }
             const mu = muDeg * Math.PI / 180;
 
@@ -5259,7 +5255,7 @@
             let lng = (H - mu) * 180 / Math.PI;
             lng = ((lng + 180) % 360 + 360) % 360 - 180;
 
-            return { lat: latGeodetic, lng: lng, t: t };
+            return { lat: latGeodetic, lon: lng, lng: lng, t: t };
         }
 
         function besselianToLatLng(eclipse, t) {
@@ -5525,7 +5521,7 @@
                 if (typeof baseLng === 'string') baseLng = parseCoordinateStr(baseLng);
                 if (typeof baseLng === 'number' && !isNaN(baseLng)) {
                     const deltaDT = currentDt - catDt;
-                    const shiftLonDeg = -1.0027379 * (deltaDT / 240);
+                    const shiftLonDeg = -getEarthRotationAngleDeg(deltaDT);
                     const dynamicLng = baseLng - shiftLonDeg;
                     lonElem.innerText = formatCoordDms(dynamicLng, false);
                 } else {
@@ -5587,8 +5583,11 @@
                     drawShadowPath(currentEclipse);
                     updateShadowAtTime(simCurrentT);
                     renderLocalSolarCircumstances();
-                    renderLunarLimbRadar();
-                    if (typeof currentActiveView !== 'undefined' && currentActiveView === 'telescopic') renderTelescopicView();
+                    if (typeof currentActiveView !== 'undefined' && currentActiveView === 'telescopic') {
+                        renderTelescopicView();
+                    } else {
+                        renderLunarLimbRadar();
+                    }
                     requestRender();
                 }
             });
@@ -5622,8 +5621,11 @@
                 drawShadowPath(currentEclipse);
                 updateShadowAtTime(simCurrentT);
                 renderLocalSolarCircumstances();
-                renderLunarLimbRadar();
-                if (typeof currentActiveView !== 'undefined' && currentActiveView === 'telescopic') renderTelescopicView();
+                if (typeof currentActiveView !== 'undefined' && currentActiveView === 'telescopic') {
+                    renderTelescopicView();
+                } else {
+                    renderLunarLimbRadar();
+                }
                 requestRender();
             });
         }
@@ -5651,6 +5653,21 @@
         // -------------------------------------------------------------
         // 4. PROYECCIÓN EXACTA Y ILUMINACIÓN SOLAR REALISTA
         // -------------------------------------------------------------
+        function getEclipseTimeBounds(eclipse) {
+            const x0 = eclipse.x0 || 0, x1 = eclipse.x1 || 0;
+            const y0 = eclipse.y0 || 0, y1 = eclipse.y1 || 0;
+            const l10 = eclipse.l10 || 0.54;
+            const v2 = x1 * x1 + y1 * y1;
+            const v = Math.sqrt(v2) || 0.5;
+            const r0_dot_v = x0 * x1 + y0 * y1;
+            const tClosest = v2 > 0 ? -r0_dot_v / v2 : 0;
+            const r0_sq = x0 * x0 + y0 * y0;
+            const rMin_sq = Math.max(0, r0_sq - (r0_dot_v * r0_dot_v) / (v2 || 1));
+            const rPenumbra = 1.0 + l10;
+            const deltaT = Math.sqrt(Math.max(0, rPenumbra * rPenumbra - rMin_sq)) / v;
+            return { tClosest, deltaT, v, v2 };
+        }
+
         function selectEclipse(eclipse, autoRecenter = false) {
             currentEclipse = eclipse;
             if (!eclipse) return;
@@ -5662,9 +5679,20 @@
 
             // Sincronizar estado visual de los chips destacados
             document.querySelectorAll('.preset-chip').forEach(c => {
-                const cat = parseFloat(c.dataset.cat);
-                c.classList.toggle('active', cat === eclipse.cat_no);
+                const cat = parseInt(c.getAttribute('data-cat'), 10);
+                if (cat === eclipse.cat_no) {
+                    c.classList.add('active');
+                } else {
+                    c.classList.remove('active');
+                }
             });
+
+            updateObserverHeaderTz();
+
+            const titleElem = document.getElementById('card-eclipse-title');
+            if (titleElem) {
+                titleElem.innerText = `${eclipse.year} ${MONTH_NAMES_ES[eclipse.month - 1]} ${eclipse.day}`;
+            }
 
             const typeMap = { 'T': 'TOTAL', 'A': 'ANULAR', 'H': 'HÍBRIDO', 'P': 'PARCIAL' };
             const typeClassMap = { 'T': 'type-T', 'A': 'type-A', 'H': 'type-H', 'P': 'type-P' };
@@ -5721,17 +5749,7 @@
             const catElem = document.getElementById('card-cat-no');
             if (catElem) catElem.innerText = eclipse.cat_no ? `#${eclipse.cat_no}` : '--';
 
-            const x0_calc = eclipse.x0 || 0, x1_calc = eclipse.x1 || 0;
-            const y0_calc = eclipse.y0 || 0, y1_calc = eclipse.y1 || 0;
-            const l10_calc = eclipse.l10 || 0.54;
-            const v2_calc = x1_calc*x1_calc + y1_calc*y1_calc;
-            const v_calc = Math.sqrt(v2_calc) || 0.5;
-            const r0_dot_v = x0_calc*x1_calc + y0_calc*y1_calc;
-            const tClosest = v2_calc > 0 ? -r0_dot_v / v2_calc : 0;
-            const r0_sq = x0_calc*x0_calc + y0_calc*y0_calc;
-            const rMin_sq = Math.max(0, r0_sq - (r0_dot_v*r0_dot_v) / (v2_calc || 1));
-            const rPenumbra = 1.0 + l10_calc;
-            const deltaT = Math.sqrt(Math.max(0, rPenumbra*rPenumbra - rMin_sq)) / v_calc;
+            const { tClosest, deltaT } = getEclipseTimeBounds(eclipse);
 
             const slider = document.getElementById('time-slider');
             const minT = parseFloat((tClosest - deltaT - 0.1).toFixed(2));
@@ -5960,17 +5978,7 @@
             }
 
             // Cálculo dinámico riguroso del intervalo de tiempo de penumbra para cualquier eclipse
-            const x0 = eclipse.x0 || 0, x1 = eclipse.x1 || 0;
-            const y0 = eclipse.y0 || 0, y1 = eclipse.y1 || 0;
-            const l10 = eclipse.l10 || 0.54;
-            const v2 = x1*x1 + y1*y1;
-            const v = Math.sqrt(v2) || 0.5;
-            const r0_dot_v = x0*x1 + y0*y1;
-            const tClosest = v2 > 0 ? -r0_dot_v / v2 : 0;
-            const r0_sq = x0*x0 + y0*y0;
-            const rMin_sq = Math.max(0, r0_sq - (r0_dot_v*r0_dot_v) / (v2 || 1));
-            const rPenumbra = 1.0 + l10;
-            const deltaT = Math.sqrt(Math.max(0, rPenumbra*rPenumbra - rMin_sq)) / v;
+            const { tClosest, deltaT, v, v2 } = getEclipseTimeBounds(eclipse);
 
             const tLoopMin = tClosest - deltaT - 0.3;
             const tLoopMax = tClosest + deltaT + 0.3;
@@ -6517,7 +6525,7 @@
             const dDeg = (eclipse.d0 || 0);
             let muDeg = (eclipse.mu0 || 0);
             if (eclipse.dt) {
-                muDeg -= 1.0027379 * (eclipse.dt / 240);
+                muDeg -= getEarthRotationAngleDeg(eclipse.dt);
             }
 
             const wLocal = latLngToVector3(dDeg, -muDeg, 1.0).normalize();
@@ -6680,6 +6688,12 @@
         }
 
         let currentTValEl = null;
+        let _elPlayerTimeLocalLabel = null;
+        let _elPlayerTimeUtcLabel = null;
+        let _elTimeUtcText = null;
+        let _elTimeLocalText = null;
+        let _elPhaseLabel = null;
+        let _elCurrentSlider = null;
 
         function updateShadowAtTime(t) {
             if (!currentEclipse) return;
@@ -6692,7 +6706,7 @@
             let muDeg = (e.mu0 || 0) + (e.mu1 || 0)*t;
             if (e.dt) {
                 // Orientación astronómica exacta del Sol y el punto subsolar en UT mediante Delta T
-                muDeg -= 1.0027379 * (e.dt / 240);
+                muDeg -= getEarthRotationAngleDeg(e.dt);
             }
 
             const l1 = (e.l10 || 0.54) + (e.l11 || 0)*t; 
@@ -6909,46 +6923,46 @@
             const utS = utDateObj.getUTCSeconds();
             const utTimeStr = `${String(utH).padStart(2,'0')}:${String(utM).padStart(2,'0')}:${String(utS).padStart(2,'0')}`;
 
-            const playerTimeLocalLabel = document.getElementById('player-time-local-label');
-            const playerTimeUtcLabel = document.getElementById('player-time-utc-label');
-            const timeUtcText = document.getElementById('time-utc-text');
-            const timeLocalText = document.getElementById('time-local-text');
+            if (!_elPlayerTimeLocalLabel) _elPlayerTimeLocalLabel = document.getElementById('player-time-local-label');
+            if (!_elPlayerTimeUtcLabel) _elPlayerTimeUtcLabel = document.getElementById('player-time-utc-label');
+            if (!_elTimeUtcText) _elTimeUtcText = document.getElementById('time-utc-text');
+            if (!_elTimeLocalText) _elTimeLocalText = document.getElementById('time-local-text');
 
             if (activeExtremeMode) {
-                if (playerTimeLocalLabel) playerTimeLocalLabel.textContent = 'UT1';
-                if (playerTimeUtcLabel) playerTimeUtcLabel.textContent = 'TT';
-                if (timeLocalText) timeLocalText.textContent = utTimeStr;
+                if (_elPlayerTimeLocalLabel) _elPlayerTimeLocalLabel.textContent = 'UT1';
+                if (_elPlayerTimeUtcLabel) _elPlayerTimeUtcLabel.textContent = 'TT';
+                if (_elTimeLocalText) _elTimeLocalText.textContent = utTimeStr;
 
                 const ttDecHour = (e.t0 || 12) + t;
                 const ttDateObj = new Date(baseMidnightUtc + Math.round(ttDecHour * 3600 * 1000));
                 const ttH = ttDateObj.getUTCHours();
                 const ttM = ttDateObj.getUTCMinutes();
                 const ttS = ttDateObj.getUTCSeconds();
-                if (timeUtcText) {
-                    timeUtcText.textContent = `${String(ttH).padStart(2,'0')}:${String(ttM).padStart(2,'0')}:${String(ttS).padStart(2,'0')}`;
+                if (_elTimeUtcText) {
+                    _elTimeUtcText.textContent = `${String(ttH).padStart(2,'0')}:${String(ttM).padStart(2,'0')}:${String(ttS).padStart(2,'0')}`;
                 }
             } else {
-                if (playerTimeLocalLabel) playerTimeLocalLabel.textContent = 'Obs.';
-                if (playerTimeUtcLabel) playerTimeUtcLabel.textContent = 'UTC';
-                if (timeUtcText) {
-                    timeUtcText.textContent = utTimeStr;
+                if (_elPlayerTimeLocalLabel) _elPlayerTimeLocalLabel.textContent = 'Obs.';
+                if (_elPlayerTimeUtcLabel) _elPlayerTimeUtcLabel.textContent = 'UTC';
+                if (_elTimeUtcText) {
+                    _elTimeUtcText.textContent = utTimeStr;
                 }
 
-                if (timeLocalText && currentObserver) {
+                if (_elTimeLocalText && currentObserver) {
                     const tz = currentObserver.tz || getTimeZoneFromLon(currentObserver.lon || 0);
                     try {
                         const localTimeStr = getCachedTimeFormatter(tz).format(utDateObj);
                         const tzOffsetStr = getUtcOffsetString(tz, utDateObj);
-                        timeLocalText.textContent = `${localTimeStr} ${tzOffsetStr}`;
+                        _elTimeLocalText.textContent = `${localTimeStr} ${tzOffsetStr}`;
                     } catch(err) {
-                        timeLocalText.textContent = `${utTimeStr} UTC`;
+                        _elTimeLocalText.textContent = `${utTimeStr} UTC`;
                     }
                 }
             }
 
             // Actualizar etiqueta de fase dinámica en la cabecera del reproductor
-            const phaseLabel = document.getElementById('player-phase-label');
-            if (phaseLabel) {
+            if (!_elPhaseLabel) _elPhaseLabel = document.getElementById('player-phase-label');
+            if (_elPhaseLabel) {
                 const circ = localCircumstancesCache || (currentObserver && calculateLocalSolarCircumstances(e, currentObserver.lat, currentObserver.lon));
 
                 if (circ && circ.c1 && circ.c4) {
@@ -6962,30 +6976,29 @@
 
                     if (t >= t1 && t <= t4) {
                         if (!isSunAbove) {
-                            phaseLabel.innerHTML = `<span style="color: #94a3b8;"><span class="phase-dot" style="background:#64748b;"></span>Bajo horizonte</span>`;
+                            _elPhaseLabel.innerHTML = `<span style="color: #94a3b8;"><span class="phase-dot" style="background:#64748b;"></span>Bajo horizonte</span>`;
                         } else if (t2 != null && t3 != null && t >= t2 && t <= t3) {
                             if (circ.isTotal) {
-                                phaseLabel.innerHTML = `<span style="color: #fca5a5;"><span class="phase-dot total"></span>Totalidad</span>`;
+                                _elPhaseLabel.innerHTML = `<span style="color: #fca5a5;"><span class="phase-dot total"></span>Totalidad</span>`;
                             } else if (circ.isAnnular) {
-                                phaseLabel.innerHTML = `<span style="color: #fde047;"><span class="phase-dot" style="background:#eab308; box-shadow:0 0 6px rgba(234,179,8,0.6);"></span>Anularidad</span>`;
+                                _elPhaseLabel.innerHTML = `<span style="color: #fde047;"><span class="phase-dot" style="background:#eab308; box-shadow:0 0 6px rgba(234,179,8,0.6);"></span>Anularidad</span>`;
                             } else {
-                                phaseLabel.innerHTML = `<span style="color: #93c5fd;"><span class="phase-dot" style="background:#38bdf8; box-shadow:0 0 5px rgba(56,189,248,0.5);"></span>Parcialidad</span>`;
+                                _elPhaseLabel.innerHTML = `<span style="color: #93c5fd;"><span class="phase-dot" style="background:#38bdf8; box-shadow:0 0 5px rgba(56,189,248,0.5);"></span>Parcialidad</span>`;
                             }
                         } else if ((t2 != null && t3 != null && ((t >= t1 && t < t2) || (t > t3 && t <= t4))) || (t2 == null && t >= t1 && t <= t4)) {
-                            phaseLabel.innerHTML = `<span style="color: #93c5fd;"><span class="phase-dot" style="background:#38bdf8; box-shadow:0 0 5px rgba(56,189,248,0.5);"></span>Parcialidad</span>`;
+                            _elPhaseLabel.innerHTML = `<span style="color: #93c5fd;"><span class="phase-dot" style="background:#38bdf8; box-shadow:0 0 5px rgba(56,189,248,0.5);"></span>Parcialidad</span>`;
                         } else {
-                            phaseLabel.innerHTML = '';
+                            _elPhaseLabel.innerHTML = '';
                         }
                     } else {
-                        phaseLabel.innerHTML = '';
+                        _elPhaseLabel.innerHTML = '';
                     }
                 } else {
-                    phaseLabel.innerHTML = '';
+                    _elPhaseLabel.innerHTML = '';
                 }
             }
 
-            // Iluminar fila activa en la tabla horaria de contactos locales
-            document.querySelectorAll('#mataro-contacts-tbody tr').forEach(r => r.classList.remove('active'));
+            // Iluminar fila activa en la tabla horaria de contactos locales (solo si cambia de estado)
             if (localCircumstancesCache) {
                 const circ = localCircumstancesCache;
                 const matchThresholdHours = 100 / 3600; // Margen dinámico de ±100 segundos
@@ -7007,15 +7020,27 @@
                         }
                     }
                 }
-                if (closestKey) {
-                    const activeRow = document.getElementById(`row-contact-${closestKey}`);
-                    if (activeRow) activeRow.classList.add('active');
+                const targetRowId = closestKey ? `row-contact-${closestKey}` : null;
+                if (targetRowId !== activeContactRowId) {
+                    if (activeContactRowId) {
+                        const prevRow = document.getElementById(activeContactRowId);
+                        if (prevRow) prevRow.classList.remove('active');
+                    }
+                    if (targetRowId) {
+                        const newRow = document.getElementById(targetRowId);
+                        if (newRow) newRow.classList.add('active');
+                    }
+                    activeContactRowId = targetRowId;
                 }
+            } else if (activeContactRowId) {
+                const prevRow = document.getElementById(activeContactRowId);
+                if (prevRow) prevRow.classList.remove('active');
+                activeContactRowId = null;
             }
 
-            const currentSlider = document.getElementById('time-slider');
-            if (currentSlider && !isSliderInteracting && document.activeElement !== currentSlider) {
-                currentSlider.value = t;
+            if (!_elCurrentSlider) _elCurrentSlider = document.getElementById('time-slider');
+            if (_elCurrentSlider && !isSliderInteracting && document.activeElement !== _elCurrentSlider) {
+                _elCurrentSlider.value = t;
             }
 
             if (currentActiveView === 'telescopic') {
@@ -7066,23 +7091,7 @@
                 targetT = 0.0 - (30.0 / 3600.0);
             }
 
-            const minT = parseFloat(timeSlider.min) || (currentEclipse?.tmin != null ? currentEclipse.tmin : -2.5);
-            const maxT = parseFloat(timeSlider.max) || (currentEclipse?.tmax != null ? currentEclipse.tmax : 2.5);
-            targetT = Math.max(minT, Math.min(maxT, targetT));
-
-            // Reducir la velocidad a 1x para apreciar las perlas en tiempo real
-            setSimSpeed(1.0);
-
-            // Colocar reproductor en la marca calculada
-            simPlayDirection = 1;
-            simCurrentT = targetT;
-            timeSlider.value = targetT;
-            updateShadowAtTime(targetT);
-
-            // Reanudar reproducción hacia adelante si estaba en pausa
-            if (!isPlaying) {
-                startSimulation();
-            }
+            jumpToSpecificTime(targetT);
         }
 
         function jumpToSpecificTime(targetT) {
@@ -7268,15 +7277,7 @@
         document.getElementById('chk-daylight-mode')?.addEventListener('change', updateLightingMode);
 
         document.getElementById('chk-show-lunar-limb')?.addEventListener('change', (e) => {
-            const isChecked = e.target.checked;
-            if (isChecked) {
-                toggleLunarLimbPanel(true);
-            } else {
-                toggleLunarLimbPanel(false);
-            }
-            if (currentActiveView === 'telescopic') {
-                renderTelescopicView();
-            }
+            toggleLunarLimbPanel(e.target.checked);
         });
 
 
@@ -8309,15 +8310,13 @@
                 '        function formatUT1(t) {',
                 '            const dtH = (APP_DATA.dtSec || 0) / 3600;',
                 '            const utDec = (APP_DATA.t0 || 12) + t - dtH;',
-                '            const totSec = ((utDec % 24 + 24) % 24) * 3600;',
-                '            const h = Math.floor(totSec / 3600);',
-                '            const m = Math.floor((totSec % 3600) / 60);',
-                '            const s = totSec % 60;',
-                '            let sInt = Math.floor(s);',
-                '            let sFrac = Math.round((s - sInt) * 10);',
-                '            if (sFrac >= 10) { sInt++; sFrac = 0; }',
-                '            if (sInt >= 60) { sInt = 0; }',
-                '            return String(h).padStart(2,"0") + ":" + String(m).padStart(2,"0") + ":" + String(sInt).padStart(2,"0") + "." + sFrac;',
+                '            let totalTenths = Math.round((((utDec % 24 + 24) % 24) * 3600) * 10);',
+                '            const frac = totalTenths % 10;',
+                '            const totalSec = Math.floor(totalTenths / 10) % 86400;',
+                '            const h = Math.floor(totalSec / 3600);',
+                '            const m = Math.floor((totalSec % 3600) / 60);',
+                '            const s = totalSec % 60;',
+                '            return String(h).padStart(2,"0") + ":" + String(m).padStart(2,"0") + ":" + String(s).padStart(2,"0") + "." + frac;',
                 '        }',
                 '        function renderCurrentData() {',
                 '            const cur = APP_DATA[currentKey];',
@@ -8487,10 +8486,12 @@
                     activityLogWindowRef.document.close();
                     if (activityLogWindowRef.focus) activityLogWindowRef.focus();
                     try {
-                        activityLogWindowRef.addEventListener('beforeunload', () => {
+                        const onPopupBeforeUnload = () => {
                             const c = document.getElementById('chk-show-activity-log');
                             if (c) c.checked = false;
-                        });
+                        };
+                        activityLogWindowRef.removeEventListener('beforeunload', onPopupBeforeUnload);
+                        activityLogWindowRef.addEventListener('beforeunload', onPopupBeforeUnload, { once: true });
                     } catch(e) {}
                     popupSuccess = true;
                 } catch(err) {
@@ -8547,12 +8548,20 @@
             if (chk) chk.checked = false;
         }
 
-        let lastObservedWindowWidth = window.innerWidth;
+        function handleGlobalResize() {
+            // 1. WebGL 3D (cámara, proyección y renderizador)
+            if (typeof camera !== 'undefined' && camera && typeof renderer !== 'undefined' && renderer) {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                requestRender();
+            }
 
-        window.addEventListener('resize', () => {
+            // 2. Lienzo 2D de la vista telescópica
+            resizeTelescopicCanvas();
+
+            // 3. Gestión y contención de paneles en la UI
             const isSmall = window.innerWidth <= 900;
-            const wasLarge = lastObservedWindowWidth > 900;
-            lastObservedWindowWidth = window.innerWidth;
 
             if (isSmall) {
                 const sidePanel = document.getElementById('sidebar-panel');
@@ -8607,7 +8616,9 @@
             if (currentActiveView === 'telescopic') {
                 renderTelescopicView();
             }
-        });
+        }
+
+        window.addEventListener('resize', handleGlobalResize);
 
         // -------------------------------------------------------------
         // 5. REPRODUCTOR TEMPORAL Y EJECUCIÓN DE LA SIMULACIÓN
