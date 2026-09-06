@@ -1797,18 +1797,28 @@
                     <input type="checkbox" id="chk-tele-labels" checked onchange="renderTelescopicView()">
                     <span>Rótulos</span>
                 </label>
-                <label class="checkbox-row" id="lbl-show-lunar-limb" title="Abrir o cerrar el panel del perfil del limbo lunar">
-                    <input type="checkbox" id="chk-show-lunar-limb">
-                    <span>Perfil del limbo</span>
-                </label>
-                <label class="checkbox-row" id="lbl-limb-labels" style="padding-left: 14px; transition: var(--transition-smooth); opacity: 0.5; pointer-events: none;" title="Mostrar u ocultar los rótulos en el lienzo del perfil del limbo">
-                    <input type="checkbox" id="chk-limb-labels" checked disabled onchange="renderLunarLimbRadar()">
-                    <span>Rótulos</span>
-                </label>
-                <label class="checkbox-row" id="lbl-show-activity-log" style="padding-left: 14px; transition: var(--transition-smooth); opacity: 0.5; pointer-events: none;" title="Abrir o cerrar el Registro de actividad">
-                    <input type="checkbox" id="chk-show-activity-log" disabled onchange="toggleActivityLog(this.checked)">
-                    <span>Registro de actividad</span>
-                </label>
+
+                <!-- Botón Desplegable de Más Opciones Telescopio -->
+                <button type="button" class="more-layers-btn" id="btn-toggle-more-tele" onclick="toggleMoreTele()" title="Mostrar más opciones telescópicas">
+                    <span>Más...</span>
+                    <i class="fa-solid fa-chevron-down"></i>
+                </button>
+
+                <!-- Contenedor Desplegable de Opciones de Telescopio (Perfil del Limbo) -->
+                <div class="more-layers-container" id="more-tele-container">
+                    <label class="checkbox-row" id="lbl-show-lunar-limb" title="Abrir o cerrar el panel del perfil del limbo lunar">
+                        <input type="checkbox" id="chk-show-lunar-limb">
+                        <span>Perfil del limbo</span>
+                    </label>
+                    <label class="checkbox-row disabled" id="lbl-limb-labels" style="padding-left: 24px; transition: var(--transition-smooth);" title="Mostrar u ocultar los rótulos en el lienzo del perfil del limbo">
+                        <input type="checkbox" id="chk-limb-labels" checked disabled onchange="renderLunarLimbRadar()">
+                        <span>Rótulos</span>
+                    </label>
+                    <label class="checkbox-row disabled" id="lbl-show-activity-log" style="padding-left: 24px; transition: var(--transition-smooth);" title="Abrir o cerrar el Registro de actividad">
+                        <input type="checkbox" id="chk-show-activity-log" disabled onchange="toggleActivityLog(this.checked)">
+                        <span>Registro de actividad</span>
+                    </label>
+                </div>
             </div>
         </div>
     </div>
@@ -3820,6 +3830,9 @@
                 if (layerTele) layerTele.classList.add('active');
                 if (group3D) group3D.style.display = 'none';
                 if (groupTele) groupTele.style.display = 'flex';
+                if (document.getElementById('chk-show-lunar-limb')?.checked) {
+                    toggleMoreTele(true);
+                }
                 resizeTelescopicCanvas();
                 renderTelescopicView();
             } else {
@@ -7381,6 +7394,20 @@
             }
         }
 
+        function toggleMoreTele(forceState = null) {
+            const btn = document.getElementById('btn-toggle-more-tele');
+            const container = document.getElementById('more-tele-container');
+            if (!container || !btn) return;
+            const isCurrentlyOpen = container.classList.contains('expanded');
+            const newState = (forceState !== null) ? forceState : !isCurrentlyOpen;
+            container.classList.toggle('expanded', newState);
+            btn.classList.toggle('expanded', newState);
+            const span = btn.querySelector('span');
+            if (span) {
+                span.textContent = newState ? 'Menos...' : 'Más...';
+            }
+        }
+
         document.getElementById('chk-show-shadow')?.addEventListener('change', (e) => {
             if (shadowShaderMaterial) {
                 shadowShaderMaterial.uniforms.uShowPenumbra.value = e.target.checked ? 1.0 : 0.0;
@@ -7896,10 +7923,12 @@
 
                 const chk = document.getElementById('chk-show-lunar-limb');
                 if (chk) chk.checked = true;
+                toggleMoreTele(true);
                 const chkLimbLbls = document.getElementById('chk-limb-labels');
                 const lblLimbLbls = document.getElementById('lbl-limb-labels');
                 if (chkLimbLbls && lblLimbLbls) {
                     chkLimbLbls.disabled = false;
+                    lblLimbLbls.classList.remove('disabled');
                     lblLimbLbls.style.opacity = '1';
                     lblLimbLbls.style.pointerEvents = 'auto';
                 }
@@ -7907,6 +7936,7 @@
                 const lblActLog = document.getElementById('lbl-show-activity-log');
                 if (chkActLog && lblActLog) {
                     chkActLog.disabled = false;
+                    lblActLog.classList.remove('disabled');
                     lblActLog.style.opacity = '1';
                     lblActLog.style.pointerEvents = 'auto';
                 }
@@ -7925,6 +7955,7 @@
                 const lblLimbLbls = document.getElementById('lbl-limb-labels');
                 if (chkLimbLbls && lblLimbLbls) {
                     chkLimbLbls.disabled = true;
+                    lblLimbLbls.classList.add('disabled');
                     lblLimbLbls.style.opacity = '0.5';
                     lblLimbLbls.style.pointerEvents = 'none';
                 }
@@ -7932,6 +7963,7 @@
                 const lblActLog = document.getElementById('lbl-show-activity-log');
                 if (chkActLog && lblActLog) {
                     chkActLog.disabled = true;
+                    lblActLog.classList.add('disabled');
                     lblActLog.style.opacity = '0.5';
                     lblActLog.style.pointerEvents = 'none';
                     if (chkActLog.checked) {
