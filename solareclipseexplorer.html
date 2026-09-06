@@ -985,31 +985,31 @@
             line-height: 20px;
         }
         .stat-input-dt {
-            color: #f8fafc !important;
-            font-weight: 400 !important;
-            font-size: 0.78rem !important;
-            font-family: var(--font-body) !important;
-            text-align: right !important;
-            background: #0f172a !important;
-            border: 1px solid rgba(56, 189, 248, 0.35) !important;
-            border-radius: 4px !important;
-            padding: 0 4px !important;
-            margin: 0 !important;
-            width: 5.5ch !important;
-            height: 17px !important;
-            line-height: 15px !important;
-            box-sizing: border-box !important;
-            appearance: textfield !important;
-            -moz-appearance: textfield !important;
-            cursor: text !important;
-            transition: border-color 0.2s, box-shadow 0.2s, color 0.2s !important;
+            color: #f8fafc;
+            font-weight: 400;
+            font-size: 0.78rem;
+            font-family: var(--font-body);
+            text-align: right;
+            background: #0f172a;
+            border: 1px solid rgba(56, 189, 248, 0.35);
+            border-radius: 4px;
+            padding: 0 4px;
+            margin: 0;
+            width: 5.5ch;
+            height: 17px;
+            line-height: 15px;
+            box-sizing: border-box;
+            appearance: textfield;
+            -moz-appearance: textfield;
+            cursor: text;
+            transition: border-color 0.2s, box-shadow 0.2s, color 0.2s;
         }
         .stat-input-dt:hover, .stat-input-dt:focus {
-            background: #0f172a !important;
-            border-color: rgba(56, 189, 248, 0.7) !important;
-            box-shadow: 0 0 6px rgba(56, 189, 248, 0.25) !important;
-            outline: none !important;
-            color: #38bdf8 !important;
+            background: #0f172a;
+            border-color: rgba(56, 189, 248, 0.7);
+            box-shadow: 0 0 6px rgba(56, 189, 248, 0.25);
+            outline: none;
+            color: #38bdf8;
         }
         .stat-input-dt::-webkit-outer-spin-button,
         .stat-input-dt::-webkit-inner-spin-button {
@@ -1944,6 +1944,7 @@
         let currentActiveView = '3d'; // '3d' | 'telescopic'
         let observerMarkerGroup3D = null;
         let simCurrentT = 0.0;
+        let isSliderInteracting = false;
 
         let needsRender = true;
         function requestRender() {
@@ -2747,13 +2748,55 @@
             return { lat, lon };
         }
 
+        function getTimeZoneFromLon(lon) {
+            if (lon == null || isNaN(lon)) return 'UTC';
+            const offsetHours = Math.round(lon / 15);
+            if (offsetHours === 0) return 'UTC';
+            const sign = offsetHours > 0 ? '-' : '+';
+            return `Etc/GMT${sign}${Math.abs(offsetHours)}`;
+        }
+
+        const _intlTimeFormatters = new Map();
+        function getCachedTimeFormatter(tz) {
+            const key = tz || 'UTC';
+            let fmt = _intlTimeFormatters.get(key);
+            if (!fmt) {
+                try {
+                    fmt = new Intl.DateTimeFormat('es-ES', {
+                        timeZone: key,
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                        hour12: false
+                    });
+                } catch(e) {
+                    fmt = new Intl.DateTimeFormat('es-ES', {
+                        timeZone: 'UTC',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                        hour12: false
+                    });
+                }
+                _intlTimeFormatters.set(key, fmt);
+            }
+            return fmt;
+        }
+
+        const _intlOffsetFormatters = new Map();
+
         function getUtcOffsetString(tz, dateObj = new Date()) {
             if (!tz || tz === 'UTC') return 'UTC';
             try {
-                const parts = new Intl.DateTimeFormat('en-US', {
-                    timeZone: tz,
-                    timeZoneName: 'shortOffset'
-                }).formatToParts(dateObj);
+                let fmt = _intlOffsetFormatters.get(tz);
+                if (!fmt) {
+                    fmt = new Intl.DateTimeFormat('en-US', {
+                        timeZone: tz,
+                        timeZoneName: 'shortOffset'
+                    });
+                    _intlOffsetFormatters.set(tz, fmt);
+                }
+                const parts = fmt.formatToParts(dateObj);
                 const tzPart = parts.find(p => p.type === 'timeZoneName');
                 if (tzPart && tzPart.value) {
                     let v = tzPart.value.replace(/^GMT/, 'UTC');
@@ -2947,9 +2990,7 @@
             } else if (currentEclipse.year === 2026 && currentEclipse.month === 8) {
                 tz = "Atlantic/Reykjavik"; // Islandia / Océano
             } else {
-                const offsetHours = Math.round(targetLon / 15);
-                const sign = offsetHours >= 0 ? '+' : '-';
-                tz = `Etc/GMT${sign === '+' ? '-' : '+'}${Math.abs(offsetHours)}`;
+                tz = getTimeZoneFromLon(targetLon);
             }
 
             updateObserverPosition(targetLat, targetLon, targetName, tz);
@@ -2970,7 +3011,7 @@
             currentObserver.lon = lon;
             const dmsCoordsStr = `${formatCoordDms(lat, true)}  ${formatCoordDms(lon, false)}`;
             currentObserver.name = (name && name !== 'Personalizado') ? name : dmsCoordsStr;
-            if (tz) currentObserver.tz = tz;
+            currentObserver.tz = tz || getTimeZoneFromLon(lon);
 
             if (observerMarkerGroup3D) {
                 observerMarkerGroup3D.position.copy(latLngToVector3(lat, lon, EARTH_RADIUS * 1.004));
@@ -3160,7 +3201,10 @@
             }
         }
 
+        let gpsRequestId = 0;
+
         function onCustomCoordsChange() {
+            gpsRequestId++;
             let latVal = parseFloat(document.getElementById('custom-obs-lat')?.value);
             let lonVal = parseFloat(document.getElementById('custom-obs-lon')?.value);
             if (isNaN(latVal)) latVal = 0;
@@ -3184,8 +3228,11 @@
                 return;
             }
 
+            const currentReqId = ++gpsRequestId;
+
             navigator.geolocation.getCurrentPosition(
                 (pos) => {
+                    if (currentReqId !== gpsRequestId) return;
                     if (btn) btn.classList.remove('active');
                     const lat = parseFloat(pos.coords.latitude.toFixed(2));
                     const lon = parseFloat(pos.coords.longitude.toFixed(2));
@@ -3197,6 +3244,7 @@
                     updateObserverPosition(lat, lon, coordsStr, userTz);
                 },
                 (err) => {
+                    if (currentReqId !== gpsRequestId) return;
                     if (btn) btn.classList.remove('active');
                     console.warn('[GPS] Error obteniendo geolocalización:', err.message);
                     alert('No se pudo obtener la ubicación GPS: ' + err.message);
@@ -3398,7 +3446,35 @@
             function findRoot(targetFunc, tStart, tEnd) {
                 let a = tStart, b = tEnd;
                 let fa = targetFunc(a), fb = targetFunc(b);
-                if (fa * fb > 0) return null;
+                if (fa * fb > 0) {
+                    // Si en el inicio 'a' ya está dentro de la sombra (fa < 0 y fb < 0),
+                    // expandir hacia atrás en pasos progresivos
+                    if (fa < 0 && fb < 0) {
+                        for (let ext = 0.5; ext <= 3.0; ext += 0.5) {
+                            const testA = tStart - ext;
+                            const fTest = targetFunc(testA);
+                            if (fTest >= 0) {
+                                a = testA;
+                                fa = fTest;
+                                break;
+                            }
+                        }
+                    }
+                    // Si en el final 'b' aún sigue dentro de la sombra (fa < 0 y fb < 0),
+                    // expandir hacia adelante en pasos progresivos
+                    if (fa * fb > 0 && fa < 0 && fb < 0) {
+                        for (let ext = 0.5; ext <= 3.0; ext += 0.5) {
+                            const testB = tEnd + ext;
+                            const fTest = targetFunc(testB);
+                            if (fTest >= 0) {
+                                b = testB;
+                                fb = fTest;
+                                break;
+                            }
+                        }
+                    }
+                    if (fa * fb > 0) return null;
+                }
                 for (let i = 0; i < 25; i++) {
                     const mid = (a + b) / 2;
                     const fmid = targetFunc(mid);
@@ -3555,28 +3631,39 @@
                 const isRising = nextAlt >= p.alt;
 
                 const dtHours = (currentEclipse.dt || 0) / 3600;
-                let totalHours = (currentEclipse.t0 || 0) + c.data.t - dtHours;
-                while (totalHours < 0) totalHours += 24;
-                while (totalHours >= 24) totalHours -= 24;
-                const hh = Math.floor(totalHours);
-                const mm = Math.floor((totalHours - hh) * 60);
-                const ss = Math.round(((totalHours - hh) * 60 - mm) * 60);
+                const totalHours = (currentEclipse.t0 || 0) + c.data.t - dtHours;
+                const baseMidnightUtc = Date.UTC(currentEclipse.year || 2026, (currentEclipse.month || 1) - 1, currentEclipse.day || 1, 0, 0, 0);
+                const contactDate = new Date(baseMidnightUtc + Math.round(totalHours * 3600 * 1000));
 
                 let localTimeStr;
                 if (activeExtremeMode) {
+                    const hh = contactDate.getUTCHours();
+                    const mm = contactDate.getUTCMinutes();
+                    const ss = contactDate.getUTCSeconds();
                     localTimeStr = `${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}:${String(ss).padStart(2,'0')}`;
                 } else {
+                    const tz = currentObserver.tz || getTimeZoneFromLon(currentObserver.lon || 0);
                     try {
-                        const d = new Date(Date.UTC(currentEclipse.year, (currentEclipse.month || 1) - 1, currentEclipse.day || 1, hh, mm, ss));
-                        if (currentObserver.tz) {
-                            localTimeStr = new Intl.DateTimeFormat('es-ES', { timeZone: currentObserver.tz, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).format(d);
-                        } else {
-                            const offsetHours = Math.round((currentObserver.lon || 0) / 15);
-                            localTimeStr = new Date(d.getTime() + offsetHours * 3600000).toISOString().slice(11, 19);
-                        }
+                        localTimeStr = getCachedTimeFormatter(tz).format(contactDate);
                     } catch(e) {
+                        const hh = contactDate.getUTCHours();
+                        const mm = contactDate.getUTCMinutes();
+                        const ss = contactDate.getUTCSeconds();
                         localTimeStr = `${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}:${String(ss).padStart(2,'0')}`;
                     }
+
+                    try {
+                        const localDayStr = new Intl.DateTimeFormat('en-US', { timeZone: tz, day: 'numeric', month: 'numeric' }).format(contactDate);
+                        const [mPart, dPart] = localDayStr.split('/').map(Number);
+                        const baseDay = currentEclipse.day || 1;
+                        const baseMonth = currentEclipse.month || 1;
+                        if (dPart !== baseDay || mPart !== baseMonth) {
+                            const diffDays = Math.round((contactDate.getTime() - (baseMidnightUtc + 12 * 3600000)) / 86400000);
+                            if (diffDays !== 0) {
+                                localTimeStr += ` (${diffDays > 0 ? '+' : ''}${diffDays}d)`;
+                            }
+                        }
+                    } catch(_) {}
                 }
 
                 const strokeColor = isAbove ? (isRising ? '#4ade80' : '#f59e0b') : 'var(--text-dim)';
@@ -3668,6 +3755,15 @@
         let teleDragStartX = 0;
         let teleDragStartY = 0;
 
+        let teleRenderRafId = null;
+        function requestTelescopicRender() {
+            if (teleRenderRafId !== null) return;
+            teleRenderRafId = requestAnimationFrame(() => {
+                teleRenderRafId = null;
+                renderTelescopicView();
+            });
+        }
+
         function initTelescopicCanvas() {
             const canvas = document.getElementById('canvas-telescopic');
             if (!canvas) return;
@@ -3679,7 +3775,7 @@
                 e.preventDefault();
                 const zoomFactor = e.deltaY < 0 ? 1.15 : 0.87;
                 teleZoom = Math.max(0.4, Math.min(8.0, teleZoom * zoomFactor));
-                renderTelescopicView();
+                requestTelescopicRender();
             }, { passive: false });
 
             canvas.addEventListener('pointerdown', (e) => {
@@ -3693,7 +3789,7 @@
                 if (!isTeleDragging) return;
                 telePanX = e.clientX - teleDragStartX;
                 telePanY = e.clientY - teleDragStartY;
-                renderTelescopicView();
+                requestTelescopicRender();
             });
 
             const endTeleDrag = (e) => {
@@ -6802,11 +6898,15 @@
             // Etiquetas de tiempo en el dock del reproductor
             const dtHours = (e.dt || 0) / 3600;
             const utDecHour = (e.t0 || 12) + t - dtHours;
+            const year = e.year || 2026;
+            const month = (e.month || 8) - 1;
+            const day = e.day || 12;
+            const baseMidnightUtc = Date.UTC(year, month, day, 0, 0, 0);
+            const utDateObj = new Date(baseMidnightUtc + Math.round(utDecHour * 3600 * 1000));
             
-            const totalUtSec = Math.round(((utDecHour % 24 + 24) % 24) * 3600);
-            const utH = Math.floor(totalUtSec / 3600);
-            const utM = Math.floor((totalUtSec % 3600) / 60);
-            const utS = totalUtSec % 60;
+            const utH = utDateObj.getUTCHours();
+            const utM = utDateObj.getUTCMinutes();
+            const utS = utDateObj.getUTCSeconds();
             const utTimeStr = `${String(utH).padStart(2,'0')}:${String(utM).padStart(2,'0')}:${String(utS).padStart(2,'0')}`;
 
             const playerTimeLocalLabel = document.getElementById('player-time-local-label');
@@ -6820,10 +6920,10 @@
                 if (timeLocalText) timeLocalText.textContent = utTimeStr;
 
                 const ttDecHour = (e.t0 || 12) + t;
-                const totalTtSec = Math.round(((ttDecHour % 24 + 24) % 24) * 3600);
-                const ttH = Math.floor(totalTtSec / 3600);
-                const ttM = Math.floor((totalTtSec % 3600) / 60);
-                const ttS = totalTtSec % 60;
+                const ttDateObj = new Date(baseMidnightUtc + Math.round(ttDecHour * 3600 * 1000));
+                const ttH = ttDateObj.getUTCHours();
+                const ttM = ttDateObj.getUTCMinutes();
+                const ttS = ttDateObj.getUTCSeconds();
                 if (timeUtcText) {
                     timeUtcText.textContent = `${String(ttH).padStart(2,'0')}:${String(ttM).padStart(2,'0')}:${String(ttS).padStart(2,'0')}`;
                 }
@@ -6835,21 +6935,10 @@
                 }
 
                 if (timeLocalText && currentObserver) {
-                    const year = e.year || 2026;
-                    const month = (e.month || 8) - 1;
-                    const day = e.day || 12;
-                    const dateObj = new Date(Date.UTC(year, month, day, 0, 0, totalUtSec));
-                    const tz = currentObserver.tz || "Europe/Madrid";
+                    const tz = currentObserver.tz || getTimeZoneFromLon(currentObserver.lon || 0);
                     try {
-                        const timeFormatter = new Intl.DateTimeFormat('es-ES', {
-                            timeZone: tz,
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            second: '2-digit',
-                            hour12: false
-                        });
-                        const localTimeStr = timeFormatter.format(dateObj);
-                        const tzOffsetStr = getUtcOffsetString(tz, dateObj);
+                        const localTimeStr = getCachedTimeFormatter(tz).format(utDateObj);
+                        const tzOffsetStr = getUtcOffsetString(tz, utDateObj);
                         timeLocalText.textContent = `${localTimeStr} ${tzOffsetStr}`;
                     } catch(err) {
                         timeLocalText.textContent = `${utTimeStr} UTC`;
@@ -6925,7 +7014,7 @@
             }
 
             const currentSlider = document.getElementById('time-slider');
-            if (currentSlider && document.activeElement !== currentSlider) {
+            if (currentSlider && !isSliderInteracting && document.activeElement !== currentSlider) {
                 currentSlider.value = t;
             }
 
@@ -7254,7 +7343,7 @@
             moments.sort((a, b) => a.t - b.t);
 
             const curT = parseFloat(timeSlider.value);
-            const EPS = 0.015; // Margen de ~54 segundos para evitar quedar atascado
+            const EPS = 0.0003; // Margen de ~1 segundo para evitar quedar atascado sin saltar contactos breves
             let targetT = curT;
 
             if (dir > 0) {
@@ -7363,7 +7452,7 @@
                         btnSide.style.position = 'fixed';
                         btnSide.style.top = '15px';
                         btnSide.style.left = '15px';
-                        btnSide.style.zIndex = '45';
+                        btnSide.style.zIndex = '60';
                     }
                     const panelBottom = activePanel.offsetTop + activePanel.offsetHeight;
                     navBar.style.top = `${panelBottom + 8}px`;
@@ -7395,7 +7484,7 @@
             if (!panel) return;
             panel.style.left = '';
             panel.style.top = '';
-            panel.style.right = '';
+            panel.style.right = panelId === 'lunar-limb-panel' ? '375px' : '';
             panel.style.bottom = '';
             panel.style.margin = '';
         }
@@ -7507,12 +7596,20 @@
 
         function pushPanelToSmallScreenStack(panelId) {
             if (window.innerWidth > 900) return;
-            // Minimizar los otros paneles laterales abiertos y mantener su registro
+            // Minimizar los otros paneles laterales abiertos manteniendo su registro y sincronización
             smallScreenPanels.forEach(id => {
                 if (id !== panelId) {
                     const p = document.getElementById(id);
                     if (p && !p.classList.contains('collapsed')) {
-                        p.classList.add('collapsed');
+                        if (id === 'sidebar-panel') {
+                            p.classList.add('collapsed');
+                            resetPanelDefaultPosition('sidebar-panel');
+                        } else if (id === 'settings-panel') {
+                            p.classList.add('collapsed');
+                            resetPanelDefaultPosition('settings-panel');
+                        } else if (id === 'lunar-limb-panel') {
+                            toggleLunarLimbPanel(false, true);
+                        }
                         if (!smallScreenPanelStack.includes(id)) {
                             smallScreenPanelStack.push(id);
                         }
@@ -8382,18 +8479,26 @@
                 activityLogWindowRef = null;
             }
 
+            let popupSuccess = false;
             if (activityLogWindowRef && !activityLogWindowRef.closed && typeof activityLogWindowRef.closed !== 'undefined') {
-                activityLogWindowRef.document.open();
-                activityLogWindowRef.document.write(fullHtml);
-                activityLogWindowRef.document.close();
-                if (activityLogWindowRef.focus) activityLogWindowRef.focus();
                 try {
-                    activityLogWindowRef.addEventListener('beforeunload', () => {
-                        const c = document.getElementById('chk-show-activity-log');
-                        if (c) c.checked = false;
-                    });
-                } catch(e) {}
-            } else {
+                    activityLogWindowRef.document.open();
+                    activityLogWindowRef.document.write(fullHtml);
+                    activityLogWindowRef.document.close();
+                    if (activityLogWindowRef.focus) activityLogWindowRef.focus();
+                    try {
+                        activityLogWindowRef.addEventListener('beforeunload', () => {
+                            const c = document.getElementById('chk-show-activity-log');
+                            if (c) c.checked = false;
+                        });
+                    } catch(e) {}
+                    popupSuccess = true;
+                } catch(err) {
+                    console.warn('[ActivityLog] Error escribiendo en popup, usando modal interno:', err);
+                    popupSuccess = false;
+                }
+            }
+            if (!popupSuccess) {
                 showInAppActivityLogModal(fullHtml);
             }
             if (chk) chk.checked = true;
@@ -8418,10 +8523,20 @@
             `;
             modal.style.display = 'flex';
             const iframe = document.getElementById('activity-log-iframe');
-            if (iframe && iframe.contentDocument) {
-                iframe.contentDocument.open();
-                iframe.contentDocument.write(fullHtml);
-                iframe.contentDocument.close();
+            if (iframe) {
+                try {
+                    if (iframe.contentDocument) {
+                        iframe.contentDocument.open();
+                        iframe.contentDocument.write(fullHtml);
+                        iframe.contentDocument.close();
+                    } else if (iframe.contentWindow) {
+                        iframe.contentWindow.document.open();
+                        iframe.contentWindow.document.write(fullHtml);
+                        iframe.contentWindow.document.close();
+                    }
+                } catch(e) {
+                    iframe.srcdoc = fullHtml;
+                }
             }
         }
 
@@ -8469,6 +8584,24 @@
                     }
                 }
                 resetAllPanelsPositions();
+            } else {
+                // En pantallas > 900px, asegurar que paneles arrastrados no queden fuera del viewport al achicar ventana
+                ['sidebar-panel', 'settings-panel', 'lunar-limb-panel'].forEach(id => {
+                    const p = document.getElementById(id);
+                    if (p && p.style.left) {
+                        const curLeft = parseFloat(p.style.left) || 0;
+                        const curTop = parseFloat(p.style.top) || 0;
+                        const panelW = p.offsetWidth || 340;
+                        const maxLeft = Math.max(10, window.innerWidth - panelW - 10);
+                        const maxTop = Math.max(10, window.innerHeight - 60);
+                        if (curLeft > maxLeft) {
+                            p.style.left = `${maxLeft}px`;
+                        }
+                        if (curTop > maxTop) {
+                            p.style.top = `${maxTop}px`;
+                        }
+                    }
+                });
             }
             updateTopNavButtonsState();
             if (currentActiveView === 'telescopic') {
@@ -8484,7 +8617,17 @@
         const clock = new THREE.Clock();
 
         if (timeSlider) {
+            const startInteract = () => { isSliderInteracting = true; };
+            const endInteract = () => { isSliderInteracting = false; };
+            timeSlider.addEventListener('pointerdown', startInteract);
+            timeSlider.addEventListener('pointerup', endInteract);
+            timeSlider.addEventListener('pointercancel', endInteract);
+            timeSlider.addEventListener('touchstart', startInteract, { passive: true });
+            timeSlider.addEventListener('touchend', endInteract);
+            timeSlider.addEventListener('touchcancel', endInteract);
+            timeSlider.addEventListener('change', endInteract);
             timeSlider.addEventListener('input', (e) => {
+                isSliderInteracting = true;
                 simCurrentT = parseFloat(e.target.value);
                 updateShadowAtTime(simCurrentT);
             });
@@ -8596,7 +8739,9 @@
                 } else if (simPlayDirection < 0 && simCurrentT < minRange) {
                     simCurrentT = maxRange;
                 }
-                timeSlider.value = simCurrentT;
+                if (!isSliderInteracting && document.activeElement !== timeSlider) {
+                    timeSlider.value = simCurrentT;
+                }
                 updateShadowAtTime(simCurrentT);
                 timeOrSceneChanged = true;
             }
