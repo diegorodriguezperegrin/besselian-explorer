@@ -573,7 +573,7 @@
             color: #fef08a;
         }
 
-        input[type="text"], input[type="number"], select {
+        input[type="text"], input[type="number"]:not(.stat-input-dt), select {
             width: 100%;
             background: #111827;
             border: 1px solid rgba(255, 255, 255, 0.18);
@@ -979,21 +979,22 @@
             font-family: var(--font-body);
             line-height: 20px;
         }
+        #input-custom-dt,
         .stat-input-dt {
             color: #f8fafc;
             font-weight: 400;
-            font-size: 0.76rem;
-            font-family: 'Plus Jakarta Sans', var(--font-body), system-ui, -apple-system, sans-serif !important;
-            text-align: center;
+            font-size: 0.78rem;
+            font-family: var(--font-body), 'Plus Jakarta Sans', sans-serif;
+            text-align: left;
             background: #0f172a;
             border: 1px solid rgba(56, 189, 248, 0.35);
             border-radius: 4px;
-            padding: 0 2px;
+            padding: 0 2px 0 3px;
             margin: 0;
-            width: 4.4ch;
+            width: 3.4ch;
             height: 18px;
             line-height: 16px;
-            box-sizing: border-box;
+            box-sizing: content-box;
             appearance: textfield;
             -moz-appearance: textfield;
             -webkit-appearance: none;
@@ -1563,7 +1564,7 @@
                     </span>
                     <div style="display: inline-flex; align-items: center; gap: 2px; flex-shrink: 0;">
                         <input type="number" id="input-custom-dt" class="stat-input-dt" min="-86400" max="86400" step="0.1" title="Diferencia de tiempo TT - UT1 (haz clic para editar)" aria-label="Diferencia de tiempo Delta T en segundos">
-                        <span style="color: #f8fafc; font-weight: 400; font-size: 0.76rem; font-family: inherit;">s</span>
+                        <span style="color: #f8fafc; font-weight: 400; font-size: 0.78rem; font-family: var(--font-body);">s</span>
                     </div>
                 </div>
                 <div class="stat-row">
@@ -5649,10 +5650,19 @@
             }
         }
 
+        function updateDtInputWidth(val) {
+            const dtInput = document.getElementById('input-custom-dt');
+            if (!dtInput) return;
+            const str = (val != null && val !== '') ? String(val) : (dtInput.value || '76.0');
+            const chLen = Math.max(3.3, str.length * 0.85);
+            dtInput.style.width = chLen.toFixed(1) + 'ch';
+        }
+
         const dtInputEl = document.getElementById('input-custom-dt');
         const dtResetBtnEl = document.getElementById('btn-reset-dt');
         if (dtInputEl) {
             dtInputEl.addEventListener('input', () => {
+                updateDtInputWidth(dtInputEl.value);
                 if (!currentEclipse) return;
                 const val = parseFloat(dtInputEl.value);
                 if (!isNaN(val)) {
@@ -5684,6 +5694,7 @@
                     currentEclipse.dt = currentEclipse.catalog_dt;
                     dtInputEl.value = Number(currentEclipse.dt).toFixed(1);
                 }
+                updateDtInputWidth(dtInputEl.value);
                 updateEclipseCardDynamicValues(currentEclipse);
                 if (activeExtremeMode) {
                     switchObserverExtreme(activeExtremeMode, true);
@@ -5696,7 +5707,10 @@
                 e.stopPropagation();
                 if (!currentEclipse || currentEclipse.catalog_dt == null) return;
                 currentEclipse.dt = currentEclipse.catalog_dt;
-                if (dtInputEl) dtInputEl.value = Number(currentEclipse.dt).toFixed(1);
+                if (dtInputEl) {
+                    dtInputEl.value = Number(currentEclipse.dt).toFixed(1);
+                    updateDtInputWidth(dtInputEl.value);
+                }
                 dtResetBtnEl.style.display = 'none';
                 updateEclipseCardDynamicValues(currentEclipse);
                 if (activeExtremeMode) {
@@ -5825,6 +5839,7 @@
             const dtResetBtn = document.getElementById('btn-reset-dt');
             if (dtInput) {
                 dtInput.value = (eclipse.dt != null) ? Number(eclipse.dt).toFixed(1) : '';
+                updateDtInputWidth(dtInput.value);
             }
             if (dtResetBtn) {
                 dtResetBtn.style.display = (eclipse.catalog_dt != null && Math.abs(eclipse.dt - eclipse.catalog_dt) > 0.01) ? 'inline-block' : 'none';
