@@ -64,6 +64,10 @@
             padding: 0;
         }
 
+        input, button, select, textarea {
+            font-family: inherit;
+        }
+
         html, body {
             height: 100%;
             height: 100dvh;
@@ -965,6 +969,7 @@
             font-size: 0.75rem;
             font-weight: 400;
             line-height: 20px;
+            white-space: nowrap;
         }
         .stat-val {
             color: #f8fafc;
@@ -977,20 +982,21 @@
         .stat-input-dt {
             color: #f8fafc;
             font-weight: 400;
-            font-size: 0.78rem;
-            font-family: var(--font-body);
-            text-align: right;
+            font-size: 0.76rem;
+            font-family: 'Plus Jakarta Sans', var(--font-body), system-ui, -apple-system, sans-serif !important;
+            text-align: center;
             background: #0f172a;
             border: 1px solid rgba(56, 189, 248, 0.35);
             border-radius: 4px;
-            padding: 0 4px;
+            padding: 0 2px;
             margin: 0;
-            width: 5.5ch;
-            height: 17px;
-            line-height: 15px;
+            width: 4.4ch;
+            height: 18px;
+            line-height: 16px;
             box-sizing: border-box;
             appearance: textfield;
             -moz-appearance: textfield;
+            -webkit-appearance: none;
             cursor: text;
             transition: border-color 0.2s, box-shadow 0.2s, color 0.2s;
         }
@@ -1549,15 +1555,15 @@
                     <span class="stat-val" id="card-lon">33° 10' 17" E</span>
                 </div>
                 <div class="stat-row">
-                    <span class="stat-lbl" style="display: inline-flex; align-items: center; gap: 4px;" title="Diferencia de tiempo TT - UT1 (Tiempo Terrestre - Tiempo Universal)">
-                        <span>TT-UT1</span>
+                    <span class="stat-lbl" style="display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; flex-shrink: 0;" title="Diferencia de tiempo TT - UT1 (Tiempo Terrestre - Tiempo Universal)">
+                        <span style="white-space: nowrap;">TT&#8209;UT1</span>
                         <button id="btn-reset-dt" style="display: none; background: transparent; border: none; color: #38bdf8; cursor: pointer; padding: 0; font-size: 0.65rem; opacity: 0.85;" title="Restablecer al valor oficial del catálogo" aria-label="Restablecer Delta T al valor del catálogo">
                             <i class="fa-solid fa-rotate-left" aria-hidden="true"></i>
                         </button>
                     </span>
-                    <div style="display: inline-flex; align-items: baseline;">
+                    <div style="display: inline-flex; align-items: center; gap: 2px; flex-shrink: 0;">
                         <input type="number" id="input-custom-dt" class="stat-input-dt" min="-86400" max="86400" step="0.1" title="Diferencia de tiempo TT - UT1 (haz clic para editar)" aria-label="Diferencia de tiempo Delta T en segundos">
-                        <span style="color: #f8fafc; font-weight: 400; font-size: 0.78rem; font-family: var(--font-body); margin-left: 2px;">s</span>
+                        <span style="color: #f8fafc; font-weight: 400; font-size: 0.76rem; font-family: inherit;">s</span>
                     </div>
                 </div>
                 <div class="stat-row">
@@ -1724,6 +1730,10 @@
                     <label class="checkbox-row" id="lbl-show-nodes">
                         <input type="checkbox" id="chk-show-nodes" checked>
                         <span>Nodos y límites de eclipse</span>
+                    </label>
+                    <label class="checkbox-row" id="lbl-show-limits-labels" style="padding-left: 24px; transition: var(--transition-smooth);">
+                        <input type="checkbox" id="chk-show-limits-labels">
+                        <span>Rótulos de los límites</span>
                     </label>
                     <label class="checkbox-row" id="lbl-show-shadow">
                         <input type="checkbox" id="chk-show-shadow">
@@ -2468,6 +2478,8 @@
                 nodesGroup3D.add(line);
 
                 const sprite = createNodeSprite(def.defaultText, def.colorHex);
+                const showLimitLabels = (document.getElementById('chk-show-nodes')?.checked ?? true) && (document.getElementById('chk-show-limits-labels')?.checked ?? false);
+                sprite.visible = showLimitLabels;
                 nodesGroup3D.add(sprite);
 
                 orbitalLimitMarkers.ticks.push({ line, def });
@@ -6954,6 +6966,8 @@
                         }
                     }
 
+                    const showLimitLabels = showNodes && (document.getElementById('chk-show-limits-labels')?.checked ?? false);
+
                     markers.ticks.forEach((item, idx) => {
                         const angleRad = item.def.deg * Math.PI / 180;
                         const pos = new THREE.Vector3()
@@ -6968,9 +6982,12 @@
                         item.line.geometry.setFromPoints(tickPts);
                         item.line.geometry.computeBoundingSphere();
 
-                        // Posicionar rótulo flotante legible
+                        // Posicionar rótulo flotante legible y sincronizar visibilidad
                         const spriteObj = markers.sprites[idx];
-                        spriteObj.sprite.position.copy(pos).addScaledVector(normOrbit, item.def.tickLen + 35.0);
+                        spriteObj.sprite.visible = showLimitLabels;
+                        if (showLimitLabels) {
+                            spriteObj.sprite.position.copy(pos).addScaledVector(normOrbit, item.def.tickLen + 35.0);
+                        }
                     });
                 }
             }
@@ -7287,10 +7304,39 @@
             requestRender();
         });
 
+        function updateLimitLabelsCheckboxState() {
+            const chkNodes = document.getElementById('chk-show-nodes');
+            const chkLimitLabels = document.getElementById('chk-show-limits-labels');
+            const lblLimitLabels = document.getElementById('lbl-show-limits-labels');
+            if (!chkNodes || !chkLimitLabels) return;
+            const isNodesActive = chkNodes.checked;
+            chkLimitLabels.disabled = !isNodesActive;
+            if (lblLimitLabels) {
+                lblLimitLabels.classList.toggle('disabled', !isNodesActive);
+            }
+        }
+
         document.getElementById('chk-show-nodes')?.addEventListener('change', (e) => {
             const vis = e.target.checked;
             if (nodeLine3D) nodeLine3D.visible = vis;
             if (nodesGroup3D) nodesGroup3D.visible = vis;
+            updateLimitLabelsCheckboxState();
+            if (orbitalLimitMarkers && vis) {
+                const showLabels = document.getElementById('chk-show-limits-labels')?.checked ?? false;
+                orbitalLimitMarkers.sprites.forEach(s => {
+                    s.sprite.visible = showLabels;
+                });
+            }
+            requestRender();
+        });
+
+        document.getElementById('chk-show-limits-labels')?.addEventListener('change', (e) => {
+            const showLabels = e.target.checked;
+            if (orbitalLimitMarkers) {
+                orbitalLimitMarkers.sprites.forEach(s => {
+                    s.sprite.visible = showLabels;
+                });
+            }
             requestRender();
         });
 
@@ -7368,8 +7414,9 @@
             requestRender();
         });
 
-        // Inicializar el estado de disponibilidad del checkbox de rótulos
+        // Inicializar el estado de disponibilidad de los checkboxes de rótulos
         updateLabelsCheckboxState();
+        updateLimitLabelsCheckboxState();
 
         function updateLightingMode() {
             const isDaylightOnly = document.getElementById('chk-daylight-mode')?.checked ?? false;
