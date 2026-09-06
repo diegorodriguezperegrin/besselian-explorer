@@ -4141,11 +4141,11 @@
 
             const { libL, libB, axisC } = getEclipseLibrationParams(ec);
 
-            // 3. Trazo del limbo lunar topográfico (azul idéntico al canvas principal, continuo, nítido y detallado a 3.600 puntos reales NASA LOLA)
+            // 3. Trazo del limbo lunar topográfico (azul idéntico al canvas principal, continuo, nítido y detallado a 720 puntos reales NASA LOLA)
             ctx.beginPath();
-            const totalSteps = 3600;
+            const totalSteps = 720;
             for (let i = 0; i <= totalSteps; i++) {
-                const deg = (i * 0.1) % 360;
+                const deg = (i * 0.5) % 360;
                 const proj = skyAngleToCanvas(deg);
                 const hKm = getSmoothLOLAProfile(deg, libL, libB, axisC);
                 const r = baseR + hKm * exag;
@@ -7822,15 +7822,18 @@
             }
 
             let diamondEvent = null;
-            if (isC2 && rawEvents.length > 0) {
-                const candidates = rawEvents.filter(e => e.lastDt <= 10.0);
-                if (candidates.length > 0) {
-                    diamondEvent = candidates.reduce((prev, curr) => (curr.lastDt > prev.lastDt) ? curr : prev, candidates[0]);
+            // El Anillo de Diamantes es un fenómeno exclusivo de eclipses totales (contraste de la corona solar)
+            if (circ && circ.isTotal) {
+                if (isC2 && rawEvents.length > 0) {
+                    const candidates = rawEvents.filter(e => e.lastDt <= 10.0);
+                    if (candidates.length > 0) {
+                        diamondEvent = candidates.reduce((prev, curr) => (curr.lastDt > prev.lastDt) ? curr : prev, candidates[0]);
+                        diamondEvent.fenomeno = 'Anillo de Diamantes';
+                    }
+                } else if (isC3 && rawEvents.length > 0) {
+                    diamondEvent = rawEvents[0];
                     diamondEvent.fenomeno = 'Anillo de Diamantes';
                 }
-            } else if (isC3 && rawEvents.length > 0) {
-                diamondEvent = rawEvents[0];
-                diamondEvent.fenomeno = 'Anillo de Diamantes';
             }
 
             const stats = {
@@ -7850,16 +7853,26 @@
             const dataC3 = hasC3 ? generateBailyActivityLog(circ, ec, 'c3') : { events: [], contactLabel: 'C3', baseT: 0 };
             const dataMax = (!hasC2 && !hasC3 && circ && circ.tMax != null) ? generateBailyActivityLog(circ, ec, 'max') : null;
 
+            const isAnnular = Boolean(circ && circ.isAnnular);
             const initialKey = hasC2 ? defaultKey : (dataMax ? 'max' : 'c2');
             const dataPayload = JSON.stringify({
                 c2: dataC2,
                 c3: dataC3,
                 max: dataMax,
+                isAnnular: isAnnular,
+                isTotal: Boolean(circ && circ.isTotal),
                 eclipseName: ec.name || ('Eclipse Solar ' + (ec.year || '')),
                 observerName: (obs.name || 'Observador') + ' (' + (obs.lat ? obs.lat.toFixed(2) : '') + '°, ' + (obs.lon ? obs.lon.toFixed(2) : '') + '°)',
                 dtSec: ec.dt || 0,
                 t0: ec.t0 || 12
             });
+
+            const docTitle = isAnnular
+                ? 'Registro de actividad — Perlas de Baily'
+                : 'Registro de actividad — Perlas de Baily y Anillo de Diamantes';
+            const pageH1 = isAnnular
+                ? 'Registro de actividad: Perlas de Baily'
+                : 'Registro de actividad: Perlas y Diamantes';
 
             const htmlParts = [
                 '<!DOCTYPE html>',
@@ -7867,7 +7880,7 @@
                 '<head>',
                 '    <meta charset="UTF-8">',
                 '    <meta name="viewport" content="width=device-width, initial-scale=1.0">',
-                '    <title>Registro de actividad — Perlas de Baily y Anillo de Diamantes</title>',
+                '    <title>' + docTitle + '</title>',
                 '    <link rel="preconnect" href="https://fonts.googleapis.com">',
                 '    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>',
                 '    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">',
@@ -8109,7 +8122,7 @@
                 '<body>',
                 '    <div class="header-container">',
                 '        <div class="title-group">',
-                '            <h1>Registro de actividad: Perlas y Diamantes</h1>',
+                '            <h1>' + pageH1 + '</h1>',
                 '            <p id="sub-header"></p>',
                 '        </div>',
                 '        <div style="display: flex; gap: 8px; align-items: center;">',
@@ -8158,6 +8171,10 @@
                 '        let selectedRowIndex = -1;',
                 '        function init() {',
                 '            document.getElementById("sub-header").textContent = APP_DATA.eclipseName + " — " + APP_DATA.observerName;',
+                '            if (APP_DATA.isAnnular) {',
+                '                const btnDia = document.querySelector(\'#filter-pills-box [data-filter="Diamante"]\');',
+                '                if (btnDia) btnDia.style.display = "none";',
+                '            }',
                 '            renderTabs();',
                 '            renderCurrentData();',
                 '        }',
@@ -8167,14 +8184,14 @@
                 '            if (APP_DATA.c2 && APP_DATA.c2.events.length > 0) {',
                 '                const btnC2 = document.createElement("button");',
                 '                btnC2.className = "tab-btn " + (currentKey === "c2" ? "active" : "");',
-                '                btnC2.innerHTML = \'Contacto C2 (Entrada a Totalidad)\';',
+                '                btnC2.innerHTML = APP_DATA.isAnnular ? \'Contacto C2 (Formación del Anillo)\' : \'Contacto C2 (Entrada a Totalidad)\';',
                 '                btnC2.onclick = () => switchKey("c2");',
                 '                box.appendChild(btnC2);',
                 '            }',
                 '            if (APP_DATA.c3 && APP_DATA.c3.events.length > 0) {',
                 '                const btnC3 = document.createElement("button");',
                 '                btnC3.className = "tab-btn " + (currentKey === "c3" ? "active" : "");',
-                '                btnC3.innerHTML = \'Contacto C3 (Salida de Totalidad)\';',
+                '                btnC3.innerHTML = APP_DATA.isAnnular ? \'Contacto C3 (Ruptura del Anillo)\' : \'Contacto C3 (Salida de Totalidad)\';',
                 '                btnC3.onclick = () => switchKey("c3");',
                 '                box.appendChild(btnC3);',
                 '            }',
@@ -8199,8 +8216,10 @@
                 '            const h = Math.floor(totSec / 3600);',
                 '            const m = Math.floor((totSec % 3600) / 60);',
                 '            const s = totSec % 60;',
-                '            const sInt = Math.floor(s);',
-                '            const sFrac = Math.round((s - sInt) * 10);',
+                '            let sInt = Math.floor(s);',
+                '            let sFrac = Math.round((s - sInt) * 10);',
+                '            if (sFrac >= 10) { sInt++; sFrac = 0; }',
+                '            if (sInt >= 60) { sInt = 0; }',
                 '            return String(h).padStart(2,"0") + ":" + String(m).padStart(2,"0") + ":" + String(sInt).padStart(2,"0") + "." + sFrac;',
                 '        }',
                 '        function renderCurrentData() {',
@@ -8280,10 +8299,14 @@
                 '        function jumpTo(t, idx) {',
                 '            selectedRowIndex = idx;',
                 '            renderRows();',
-                '            if (window.opener && !window.opener.closed && typeof window.opener.jumpToSpecificTime === "function") {',
-                '                window.opener.jumpToSpecificTime(t);',
-                '            } else if (window.parent && typeof window.parent.jumpToSpecificTime === "function") {',
-                '                window.parent.jumpToSpecificTime(t);',
+                '            try {',
+                '                if (window.opener && !window.opener.closed && typeof window.opener.jumpToSpecificTime === "function") {',
+                '                    window.opener.jumpToSpecificTime(t);',
+                '                } else if (window.parent && typeof window.parent.jumpToSpecificTime === "function") {',
+                '                    window.parent.jumpToSpecificTime(t);',
+                '                }',
+                '            } catch(e) {',
+                '                console.warn("jumpTo opener restricted:", e);',
                 '            }',
                 '        }',
                 '        function copyCsv() {',
