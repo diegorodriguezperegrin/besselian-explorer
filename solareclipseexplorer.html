@@ -989,9 +989,9 @@
             background: #0f172a;
             border: 1px solid rgba(56, 189, 248, 0.35);
             border-radius: 4px;
-            padding: 0 2px 0 3px;
+            padding: 0 3px 0 4px;
             margin: 0;
-            width: 3.4ch;
+            width: 5.0ch;
             height: 18px;
             line-height: 16px;
             box-sizing: content-box;
@@ -5654,7 +5654,7 @@
             const dtInput = document.getElementById('input-custom-dt');
             if (!dtInput) return;
             const str = (val != null && val !== '') ? String(val) : (dtInput.value || '76.0');
-            const chLen = Math.max(3.3, str.length * 0.85);
+            const chLen = Math.max(5.0, str.length * 0.95);
             dtInput.style.width = chLen.toFixed(1) + 'ch';
         }
 
