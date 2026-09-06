@@ -129,7 +129,7 @@
             z-index: 15;
             pointer-events: none;
             transition: var(--transition-smooth);
-            max-width: calc(100vw - 720px);
+            max-width: max(280px, calc(100vw - 720px));
             justify-content: center;
             text-align: center;
         }
@@ -1347,6 +1347,9 @@
                 align-items: flex-start;
                 gap: 8px;
             }
+            .telescope-hud {
+                max-width: min(calc(100vw - 30px), 480px) !important;
+            }
             .panel-header {
                 cursor: default !important;
                 touch-action: auto !important;
@@ -2418,6 +2421,8 @@
         const nodesGroup3D = new THREE.Group();
         nodesGroup3D.renderOrder = 10;
         scene.add(nodesGroup3D);
+        let cachedNodeSpriteAsc = null;
+        let cachedNodeSpriteDesc = null;
 
         function createNodeSprite(text, colorHex = '#38bdf8') {
             const canvas = document.createElement('canvas');
@@ -2693,8 +2698,8 @@
             side: THREE.FrontSide
         });
 
-        // Esfera superpuesta del shader de sombra (renderizada POR ENCIMA de la línea naranja)
-        const shadowOverlayGeometry = new THREE.SphereGeometry(EARTH_RADIUS * 1.0026, 96, 96);
+        // Esfera superpuesta del shader de sombra (renderizada entre la superficie y las líneas cartográficas)
+        const shadowOverlayGeometry = new THREE.SphereGeometry(EARTH_RADIUS * 1.0012, 96, 96);
         const shadowOverlayMesh = new THREE.Mesh(shadowOverlayGeometry, shadowShaderMaterial);
         shadowOverlayMesh.renderOrder = 20;
         earthGroup.add(shadowOverlayMesh);
@@ -2825,7 +2830,7 @@
             const x = xPoly(t);
             const y = yPoly(t);
             const pt = besselianXYToLatLng(eclipse, t, x, y);
-            const gamma = Math.sqrt(x*x + y*y);
+            const gamma = (y >= 0 ? 1 : -1) * Math.sqrt(x*x + y*y);
 
             return { lat: pt ? pt.lat : 0, lon: pt ? pt.lng : 0, t: t, gamma };
         }
@@ -2834,27 +2839,57 @@
             if (!eclipse || (eclipse.eclipse_type !== 'T' && eclipse.eclipse_type !== 'A' && eclipse.eclipse_type !== 'H')) {
                 return { lat: eclipse?.lat_dd_ge || 0, lon: eclipse?.lng_dd_ge || 0, t: 0, durSec: 0 };
             }
+            if (eclipse._cachedGD && eclipse._cachedGD.dt === eclipse.dt) {
+                return eclipse._cachedGD.result;
+            }
+
             const tMin = eclipse.tmin != null ? eclipse.tmin : -2.5;
             const tMax = eclipse.tmax != null ? eclipse.tmax : 2.5;
-            let maxDur = -1, bestPt = null;
 
-            const step = 0.005;
-            for (let t = tMin; t <= tMax; t += step) {
+            function evalDuration(t) {
                 const x = (eclipse.x0 || 0) + (eclipse.x1 || 0)*t + (eclipse.x2 || 0)*t*t + (eclipse.x3 || 0)*t*t*t;
                 const y = (eclipse.y0 || 0) + (eclipse.y1 || 0)*t + (eclipse.y2 || 0)*t*t + (eclipse.y3 || 0)*t*t*t;
                 const pt = besselianXYToLatLng(eclipse, t, x, y);
-                if (!pt) continue;
-
+                if (!pt) return null;
                 const res = calculateLocalSolarCircumstances(eclipse, pt.lat, pt.lng);
                 if (res && res.c2 && res.c3) {
                     const durSec = (res.c3.t - res.c2.t) * 3600;
-                    if (durSec > maxDur) {
-                        maxDur = durSec;
-                        bestPt = { lat: pt.lat, lon: pt.lng, t, durSec };
+                    return { lat: pt.lat, lon: pt.lng, t, durSec };
+                }
+                return null;
+            }
+
+            let maxDur = -1, bestPt = null;
+            let bestT = tMin;
+
+            // Paso 1: Muestreo grueso (paso 0.04 h = 2.4 min)
+            const coarseStep = 0.04;
+            for (let t = tMin; t <= tMax; t += coarseStep) {
+                const res = evalDuration(t);
+                if (res && res.durSec > maxDur) {
+                    maxDur = res.durSec;
+                    bestPt = res;
+                    bestT = t;
+                }
+            }
+
+            // Paso 2: Refinamiento fino en la vecindad del máximo (paso 0.002 h = 7.2 s)
+            if (bestPt) {
+                const fineMin = Math.max(tMin, bestT - coarseStep);
+                const fineMax = Math.min(tMax, bestT + coarseStep);
+                const fineStep = 0.002;
+                for (let t = fineMin; t <= fineMax; t += fineStep) {
+                    const res = evalDuration(t);
+                    if (res && res.durSec > maxDur) {
+                        maxDur = res.durSec;
+                        bestPt = res;
                     }
                 }
             }
-            return bestPt || { lat: eclipse.lat_dd_ge || 0, lon: eclipse.lng_dd_ge || 0, t: 0, durSec: 0 };
+
+            const result = bestPt || { lat: eclipse.lat_dd_ge || 0, lon: eclipse.lng_dd_ge || 0, t: 0, durSec: 0 };
+            eclipse._cachedGD = { dt: eclipse.dt, result };
+            return result;
         }
 
         function switchObserverExtreme(type, force = false) {
@@ -3310,11 +3345,15 @@
             const step = 0.02;
             let minDelta = 999;
             let tMaxEclipse = 0;
+            let hasVisibleDaylightEclipse = false;
             for (let t = tMin; t <= tMax; t += step) {
                 const p = getParamsAtT(t);
                 if (p.delta < minDelta) {
                     minDelta = p.delta;
                     tMaxEclipse = t;
+                }
+                if (p.delta < p.L1 && (p.alt > -1.0 || p.zeta > 0)) {
+                    hasVisibleDaylightEclipse = true;
                 }
             }
             
@@ -3328,7 +3367,7 @@
             tMaxEclipse = (left + right) / 2;
             const maxP = getParamsAtT(tMaxEclipse);
             
-            const isEclipsed = (maxP.delta < maxP.L1) && (maxP.alt > -1.0 || maxP.zeta > 0);
+            const isEclipsed = (maxP.delta < maxP.L1) && (hasVisibleDaylightEclipse || maxP.alt > -1.0 || maxP.zeta > 0);
             const maxMag = isEclipsed ? Math.max(0, (maxP.L1 - maxP.delta) / (maxP.L1 + maxP.L2)) : 0;
             const isTotal = isEclipsed && (maxP.delta < Math.abs(maxP.L2)) && (maxP.L2 < 0);
             const isAnnular = isEclipsed && (maxP.delta < Math.abs(maxP.L2)) && (maxP.L2 > 0);
@@ -4994,14 +5033,20 @@
                         const rS = (p.L1 + p.L2) / 2.0;
                         const rM = (p.L1 - p.L2) / 2.0;
                         const d = p.delta;
-                        if (d <= rM - rS) {
-                            obsFraction = 1.0;
-                        } else if (d >= rS + rM) {
+                        if (d >= rS + rM) {
                             obsFraction = 0.0;
-                        } else {
+                        } else if (rM >= rS && d <= rM - rS) {
+                            // Totalidad completa
+                            obsFraction = 1.0;
+                        } else if (rM < rS && d <= rS - rM) {
+                            // Anularidad completa: Luna totalmente dentro del disco solar
+                            obsFraction = (rM * rM) / (rS * rS);
+                        } else if (d > 0.00001) {
                             const r1sq = rS * rS, r2sq = rM * rM;
-                            const alpha = 2.0 * Math.acos(Math.max(-1.0, Math.min(1.0, (d * d + r1sq - r2sq) / (2.0 * d * rS))));
-                            const beta = 2.0 * Math.acos(Math.max(-1.0, Math.min(1.0, (d * d + r2sq - r1sq) / (2.0 * d * rM))));
+                            const cosAlpha = Math.max(-1.0, Math.min(1.0, (d * d + r1sq - r2sq) / (2.0 * d * rS)));
+                            const cosBeta = Math.max(-1.0, Math.min(1.0, (d * d + r2sq - r1sq) / (2.0 * d * rM)));
+                            const alpha = 2.0 * Math.acos(cosAlpha);
+                            const beta = 2.0 * Math.acos(cosBeta);
                             const area = 0.5 * (r1sq * (alpha - Math.sin(alpha)) + r2sq * (beta - Math.sin(beta)));
                             obsFraction = Math.max(0.0, Math.min(1.0, area / (Math.PI * r1sq)));
                         }
@@ -5726,7 +5771,7 @@
             }
         }
 
-        function createSegmentedLine(coordList, colorHex, radius = EARTH_RADIUS * 1.002, linewidth = 1, opacity = 1.0) {
+        function createSegmentedLine(coordList, colorHex, radius = EARTH_RADIUS * 1.0028, linewidth = 1, opacity = 1.0) {
             const segmentPoints = [];
             const maxSegmentDist3D = 6.0; // Distancia máxima en unidades 3D (~750 km) para descartar saltos artificiales
 
@@ -5751,10 +5796,11 @@
                     color: colorHex, 
                     linewidth: linewidth,
                     transparent: opacity < 1.0,
-                    opacity: opacity
+                    opacity: opacity,
+                    depthWrite: false
                 });
                 const lineSegs = new THREE.LineSegments(geometry, material);
-                lineSegs.renderOrder = 1;
+                lineSegs.renderOrder = 25;
                 return lineSegs;
             }
             return null;
@@ -5812,7 +5858,7 @@
         };
 
         function precomputeEclipseGeometry(eclipse) {
-            const key = `${eclipse.catalog_number || ''}_${eclipse.date || ''}_${eclipse.eclipse_type || ''}_${eclipse.t0 || ''}_${eclipse.dt || ''}`;
+            const key = `${eclipse.cat_no || eclipse.catalog_number || ''}_${eclipse.year || ''}-${eclipse.month || ''}-${eclipse.day || ''}_${eclipse.eclipse_type || ''}_${eclipse.t0 || ''}_${eclipse.dt || ''}`;
             if (cachedEclipseGeometry.eclipseKey === key) {
                 return cachedEclipseGeometry;
             }
@@ -6433,7 +6479,7 @@
             // 1. Trayectoria / Línea Central (Naranja #f97316)
             const showCenterLine = document.getElementById('chk-show-center-line')?.checked !== false;
             if (data.centerCoords && data.centerCoords.length > 1 && showCenterLine) {
-                pathLine = createSegmentedLine(data.centerCoords, 0xf97316, EARTH_RADIUS * 1.002, 3);
+                pathLine = createSegmentedLine(data.centerCoords, 0xf97316, EARTH_RADIUS * 1.0028, 3);
                 if (pathLine) earthGroup.add(pathLine);
             }
 
@@ -6444,12 +6490,12 @@
 
             if (isCentral && showTotalityBand !== false) {
                 if (data.totNorthCoords && data.totNorthCoords.length > 1) {
-                    totalityNorthLine = createSegmentedLine(data.totNorthCoords, 0xef4444, EARTH_RADIUS * 1.002, 2);
+                    totalityNorthLine = createSegmentedLine(data.totNorthCoords, 0xef4444, EARTH_RADIUS * 1.0028, 2);
                     if (totalityNorthLine) earthGroup.add(totalityNorthLine);
                 }
 
                 if (data.totSouthCoords && data.totSouthCoords.length > 1) {
-                    totalitySouthLine = createSegmentedLine(data.totSouthCoords, 0xef4444, EARTH_RADIUS * 1.002, 2);
+                    totalitySouthLine = createSegmentedLine(data.totSouthCoords, 0xef4444, EARTH_RADIUS * 1.0028, 2);
                     if (totalitySouthLine) earthGroup.add(totalitySouthLine);
                 }
             }
@@ -6463,11 +6509,11 @@
 
                 data.isoLines.forEach(iso => {
                     if (iso.isoNorthCoords && iso.isoNorthCoords.length > 1) {
-                        const lineN = createSegmentedLine(iso.isoNorthCoords, 0xeab308, EARTH_RADIUS * 1.002, 1, 0.70);
+                        const lineN = createSegmentedLine(iso.isoNorthCoords, 0xeab308, EARTH_RADIUS * 1.0028, 1, 0.70);
                         if (lineN) isomagnitudesGroup.add(lineN);
                     }
                     if (iso.isoSouthCoords && iso.isoSouthCoords.length > 1) {
-                        const lineS = createSegmentedLine(iso.isoSouthCoords, 0xeab308, EARTH_RADIUS * 1.002, 1, 0.70);
+                        const lineS = createSegmentedLine(iso.isoSouthCoords, 0xeab308, EARTH_RADIUS * 1.0028, 1, 0.70);
                         if (lineS) isomagnitudesGroup.add(lineS);
                     }
 
@@ -6493,19 +6539,19 @@
 
                 // Renderizar Lóbulo de Amanecer (Naranja #f97316)
                 if (data.sunriseLoop && data.sunriseLoop.length > 1) {
-                    const lineSunriseTerm = createSegmentedLine(data.sunriseLoop, 0xf97316, EARTH_RADIUS * 1.002, 2);
+                    const lineSunriseTerm = createSegmentedLine(data.sunriseLoop, 0xf97316, EARTH_RADIUS * 1.0028, 2);
                     if (lineSunriseTerm) isomagnitudesGroup.add(lineSunriseTerm);
                 }
 
                 // Renderizar Lóbulo de Atardecer (Naranja #f97316)
                 if (data.sunsetLoop && data.sunsetLoop.length > 1) {
-                    const lineSunsetTerm = createSegmentedLine(data.sunsetLoop, 0xf97316, EARTH_RADIUS * 1.002, 2);
+                    const lineSunsetTerm = createSegmentedLine(data.sunsetLoop, 0xf97316, EARTH_RADIUS * 1.0028, 2);
                     if (lineSunsetTerm) isomagnitudesGroup.add(lineSunsetTerm);
                 }
 
                 // Curva de Máximo Eclipse en Horizonte (Espenak analítica Cian #38bdf8)
                 if (data.fullEspenakLoop && data.fullEspenakLoop.length > 1) {
-                    const lineEspenakMax = createSegmentedLine(data.fullEspenakLoop, 0x38bdf8, EARTH_RADIUS * 1.002, 3);
+                    const lineEspenakMax = createSegmentedLine(data.fullEspenakLoop, 0x38bdf8, EARTH_RADIUS * 1.0028, 3);
                     if (lineEspenakMax) isomagnitudesGroup.add(lineEspenakMax);
                 }
 
@@ -6519,7 +6565,7 @@
 
                 data.utLines.forEach(utLine => {
                     if (utLine.pts && utLine.pts.length > 1) {
-                        const utLineMesh = createSegmentedLine(utLine.pts, 0x10b981, EARTH_RADIUS * 1.0018, 1, 0.70);
+                        const utLineMesh = createSegmentedLine(utLine.pts, 0x10b981, EARTH_RADIUS * 1.0028, 1, 0.70);
                         if (utLineMesh) utLinesGroup.add(utLineMesh);
 
                         if (showLabels && utLine.labelPt) {
@@ -6664,8 +6710,7 @@
                         pts.push(p);
                     }
 
-                    moonOrbitLine3D.geometry.dispose();
-                    moonOrbitLine3D.geometry = new THREE.BufferGeometry().setFromPoints(pts);
+                    moonOrbitLine3D.geometry.setFromPoints(pts);
                 }
             }
 
@@ -6680,39 +6725,30 @@
                     uNode.clone().multiplyScalar(-NODE_R),
                     uNode.clone().multiplyScalar(NODE_R)
                 ];
-                nodeLine3D.geometry.dispose();
-                nodeLine3D.geometry = new THREE.BufferGeometry().setFromPoints(nodePts);
+                nodeLine3D.geometry.setFromPoints(nodePts);
 
                 // Actualizar rótulos de nodos en nodesGroup3D
                 if (nodesGroup3D) {
-                    while (nodesGroup3D.children.length > 0) {
-                        const child = nodesGroup3D.children[0];
-                        if (child.material) {
-                            if (child.material.map) child.material.map.dispose();
-                            child.material.dispose();
-                        }
-                        nodesGroup3D.remove(child);
+                    if (!cachedNodeSpriteAsc) {
+                        cachedNodeSpriteAsc = createNodeSprite('Nodo Ascendente (☊)', '#38bdf8');
+                        cachedNodeSpriteDesc = createNodeSprite('Nodo Descendente (☋)', '#38bdf8');
+                        nodesGroup3D.add(cachedNodeSpriteAsc);
+                        nodesGroup3D.add(cachedNodeSpriteDesc);
                     }
 
                     // Determinar cuál nodo es el ascendente (☊) y cuál el descendente (☋)
                     const nodePos1 = uNode.clone().multiplyScalar(MOON_DIST);
                     const nodePos2 = uNode.clone().multiplyScalar(-MOON_DIST);
 
-                    // Velocidad orbital en nodePos1: v = cross(normOrbit, nodePos1)
                     const vOrb1 = new THREE.Vector3().crossVectors(normOrbit, nodePos1).normalize();
                     if (vOrb1.dot(uE) < 0) vOrb1.negate();
                     const isAscending1 = vOrb1.dot(normEcliptic) > 0;
 
-                    const label1 = isAscending1 ? 'Nodo Ascendente (☊)' : 'Nodo Descendente (☋)';
-                    const label2 = isAscending1 ? 'Nodo Descendente (☋)' : 'Nodo Ascendente (☊)';
+                    const ascPos = isAscending1 ? nodePos1 : nodePos2;
+                    const descPos = isAscending1 ? nodePos2 : nodePos1;
 
-                    const sprite1 = createNodeSprite(label1, '#38bdf8');
-                    sprite1.position.copy(nodePos1).addScaledVector(normEcliptic, 60.0);
-                    nodesGroup3D.add(sprite1);
-
-                    const sprite2 = createNodeSprite(label2, '#38bdf8');
-                    sprite2.position.copy(nodePos2).addScaledVector(normEcliptic, 60.0);
-                    nodesGroup3D.add(sprite2);
+                    cachedNodeSpriteAsc.position.copy(ascPos).addScaledVector(normEcliptic, 60.0);
+                    cachedNodeSpriteDesc.position.copy(descPos).addScaledVector(normEcliptic, 60.0);
                 }
             }
 
@@ -6739,14 +6775,14 @@
                     // 1. Cono de Umbra (Totalidad): converge desde la Luna hasta la mancha negra exacta en la superficie (l2)
                     const umbRadBottom = Math.max(0.25, Math.abs(l2) * EARTH_RADIUS);
                     umbraConeMesh3D.geometry.dispose();
-                    umbraConeMesh3D.geometry = new THREE.CylinderGeometry(MOON_RADIUS, umbRadBottom, coneHeight, 64, 1, true);
+                    umbraConeMesh3D.geometry = new THREE.CylinderGeometry(MOON_RADIUS, umbRadBottom, coneHeight, 32, 1, true);
                     umbraConeMesh3D.position.copy(midPos);
                     umbraConeMesh3D.quaternion.copy(coneQuat);
 
                     // 2. Cono de Penumbra: haz exterior de semisombra hacia l1
                     const penRadBottom = Math.max(1.0, l1 * EARTH_RADIUS);
                     penumbraConeMesh3D.geometry.dispose();
-                    penumbraConeMesh3D.geometry = new THREE.CylinderGeometry(MOON_RADIUS, penRadBottom, coneHeight, 64, 1, true);
+                    penumbraConeMesh3D.geometry = new THREE.CylinderGeometry(MOON_RADIUS, penRadBottom, coneHeight, 32, 1, true);
                     penumbraConeMesh3D.position.copy(midPos);
                     penumbraConeMesh3D.quaternion.copy(coneQuat);
                 }
@@ -7000,9 +7036,21 @@
             requestRender();
         });
 
-        renderer.domElement.addEventListener('pointerup', (e) => {
+        let globePickPointerDownPos = null;
+
+        renderer.domElement.addEventListener('pointerdown', (e) => {
             if (isGlobePickingMode) {
-                handleGlobePickingClick(e.clientX, e.clientY);
+                globePickPointerDownPos = { x: e.clientX, y: e.clientY };
+            }
+        });
+
+        renderer.domElement.addEventListener('pointerup', (e) => {
+            if (isGlobePickingMode && globePickPointerDownPos) {
+                const dist = Math.hypot(e.clientX - globePickPointerDownPos.x, e.clientY - globePickPointerDownPos.y);
+                globePickPointerDownPos = null;
+                if (dist < 6) {
+                    handleGlobePickingClick(e.clientX, e.clientY);
+                }
             }
         });
 
@@ -8559,7 +8607,7 @@
                     cameraTransition = null;
                 }
                 timeOrSceneChanged = true;
-            } else if (focusedBody === 'moon' && moonMesh3D && controls) {
+            } else if (isPlaying && focusedBody === 'moon' && moonMesh3D && controls) {
                 // Si la cámara está enfocando a la Luna y la simulación avanza, seguir suavemente el movimiento de la Luna
                 const prevTarget = controls.target.clone();
                 const curMoonPos = moonMesh3D.position.clone();
@@ -8572,7 +8620,9 @@
             const controlsMoved = controls ? controls.update() : false;
 
             if (timeOrSceneChanged || controlsMoved || needsRender) {
-                renderer.render(scene, camera);
+                if (currentActiveView === '3d') {
+                    renderer.render(scene, camera);
+                }
                 needsRender = false;
             }
         }
