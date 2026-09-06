@@ -1723,7 +1723,7 @@
                 <div class="more-layers-container" id="more-layers-container">
                     <label class="checkbox-row" id="lbl-show-nodes">
                         <input type="checkbox" id="chk-show-nodes" checked>
-                        <span>Nodos de la órbita</span>
+                        <span>Nodos y límites de eclipse</span>
                     </label>
                     <label class="checkbox-row" id="lbl-show-shadow">
                         <input type="checkbox" id="chk-show-shadow">
@@ -2410,33 +2410,71 @@
         nodeLine3D.renderOrder = 8;
         scene.add(nodeLine3D);
 
-        // Grupo 3D de Rótulos y Marcadores de Nodos
+        // Grupo 3D de Rótulos y Marcadores de Nodos y Límites de Eclipse
         const nodesGroup3D = new THREE.Group();
         nodesGroup3D.renderOrder = 10;
         scene.add(nodesGroup3D);
-        let cachedNodeSpriteAsc = null;
-        let cachedNodeSpriteDesc = null;
 
-        function createNodeSprite(text, colorHex = '#38bdf8') {
+        function createNodeSprite(text, colorHex = '#38bdf8', fontSize = 28) {
             const canvas = document.createElement('canvas');
             canvas.width = 512;
             canvas.height = 100;
             const ctx = canvas.getContext('2d');
-            ctx.font = 'bold 32px system-ui, -apple-system, sans-serif';
+            ctx.font = `bold ${fontSize}px 'Plus Jakarta Sans', system-ui, sans-serif`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.shadowColor = 'rgba(0, 0, 0, 0.95)';
-            ctx.shadowBlur = 12;
+            ctx.shadowBlur = 10;
             ctx.fillStyle = colorHex;
             ctx.fillText(text, 256, 50);
 
             const texture = new THREE.CanvasTexture(canvas);
             const mat = new THREE.SpriteMaterial({ map: texture, transparent: true, depthTest: true, depthWrite: false });
             const sprite = new THREE.Sprite(mat);
-            sprite.scale.set(380, 75, 1);
+            sprite.scale.set(340, 68, 1);
             sprite.renderOrder = 10;
             sprite.frustumCulled = false;
             return sprite;
+        }
+
+        let orbitalLimitMarkers = null;
+        function initOrbitalLimitMarkers() {
+            if (orbitalLimitMarkers) return orbitalLimitMarkers;
+            orbitalLimitMarkers = {
+                ticks: [],
+                sprites: [],
+                lastNodeLabel: ''
+            };
+
+            const MARKER_DEFS = [
+                { id: 'node', deg: 0.0, color: 0x38bdf8, colorHex: '#38bdf8', tickLen: 60.0, defaultText: 'Nodo (0°)' },
+                { id: 'cen_minus', deg: -10.6, color: 0xef4444, colorHex: '#ef4444', tickLen: 45.0, defaultText: '-Total / Anular (10.6°)' },
+                { id: 'cen_plus', deg: 10.6, color: 0xef4444, colorHex: '#ef4444', tickLen: 45.0, defaultText: '+Total / Anular (10.6°)' },
+                { id: 'par_minus', deg: -16.5, color: 0x06b6d4, colorHex: '#06b6d4', tickLen: 45.0, defaultText: '-Parcial (16.5°)' },
+                { id: 'par_plus', deg: 16.5, color: 0x06b6d4, colorHex: '#06b6d4', tickLen: 45.0, defaultText: '+Parcial (16.5°)' }
+            ];
+
+            MARKER_DEFS.forEach(def => {
+                const geo = new THREE.BufferGeometry();
+                const mat = new THREE.LineBasicMaterial({
+                    color: def.color,
+                    transparent: true,
+                    opacity: 0.95,
+                    depthWrite: false
+                });
+                const line = new THREE.Line(geo, mat);
+                line.frustumCulled = false;
+                line.renderOrder = 9;
+                nodesGroup3D.add(line);
+
+                const sprite = createNodeSprite(def.defaultText, def.colorHex);
+                nodesGroup3D.add(sprite);
+
+                orbitalLimitMarkers.ticks.push({ line, def });
+                orbitalLimitMarkers.sprites.push({ sprite, def });
+            });
+
+            return orbitalLimitMarkers;
         }
 
         // Crear Esfera de la Tierra
@@ -2727,6 +2765,40 @@
 
         function getEarthRotationAngleDeg(dtSec) {
             return dtSec ? 1.0027379 * (dtSec / 240.0) : 0;
+        }
+
+        // Algoritmos astronómicos de Meeus para longitud del Sol, oblicuidad de la Eclíptica y Nodos Lunares
+        function getEclipseMeeusAngles(eclipse, t = 0) {
+            if (!eclipse) return { epsRad: 0.409, epsDeg: 23.44, sunLonDeg: 0, omegaDeg: 0, isDescending: false, eclipseNodeLonDeg: 0, deltaNodeDeg: 0 };
+            const RAD = Math.PI / 180;
+            const ttHour = (eclipse.t0 || 12) + (t || 0);
+            const utHour = ttHour - (eclipse.dt || 0) / 3600;
+            const baseMidnightUtc = Date.UTC(eclipse.year || 2026, (eclipse.month || 8) - 1, eclipse.day || 12, 0, 0, 0);
+            const currentUtcMs = baseMidnightUtc + utHour * 3600000;
+            const jd = (currentUtcMs / 86400000) + 2440587.5;
+            const T = (jd - 2451545.0) / 36525;
+
+            // 1. Oblicuidad de la Eclíptica (Meeus cap. 22)
+            const epsDeg = 23.4392911 - 0.0130042 * T - 0.00000016 * T * T + 0.000000504 * T * T * T;
+            const epsRad = epsDeg * RAD;
+
+            // 2. Longitud eclíptica del Sol (Meeus cap. 25)
+            const L0 = 280.46646 + 36000.76983 * T;
+            const Msun = (357.52911 + 35999.05029 * T) * RAD;
+            const C = (1.914602 - 0.004817 * T) * Math.sin(Msun) + (0.019993 - 0.000101 * T) * Math.sin(2 * Msun) + 0.000289 * Math.sin(3 * Msun);
+            const sunLonDeg = ((L0 + C) % 360 + 360) % 360;
+
+            // 3. Longitud del nodo ascendente lunar (Omega)
+            const omegaDeg = ((125.04452 - 1934.136261 * T + 0.0020708 * T * T) % 360 + 360) % 360;
+            const isDescending = (eclipse.y1 !== undefined && eclipse.y1 < 0);
+            const eclipseNodeLonDeg = isDescending ? ((omegaDeg + 180) % 360) : omegaDeg;
+
+            // 4. Distancia angular del Sol al nodo en la Eclíptica (positiva = hacia el Este del nodo, negativa = antes del nodo)
+            let deltaNodeDeg = sunLonDeg - eclipseNodeLonDeg;
+            while (deltaNodeDeg > 180) deltaNodeDeg -= 360;
+            while (deltaNodeDeg < -180) deltaNodeDeg += 360;
+
+            return { epsRad, epsDeg, sunLonDeg, omegaDeg, isDescending, eclipseNodeLonDeg, deltaNodeDeg };
         }
 
         function vector3ToLatLng(v) {
@@ -6759,16 +6831,30 @@
                 sunGroup3D.lookAt(0, 0, 0);
             }
 
-            // 3b. Orientar Plano Eclíptico 3D y Nodos
+            // 3b. Orientar Plano Eclíptico Físico 3D y Nodos Reales
             const showEcliptic = document.getElementById('chk-show-ecliptic')?.checked ?? true;
             const showNodes = document.getElementById('chk-show-nodes')?.checked ?? true;
             if (eclipticPlaneGroup3D) eclipticPlaneGroup3D.visible = showEcliptic;
             if (nodeLine3D) nodeLine3D.visible = showNodes;
             if (nodesGroup3D) nodesGroup3D.visible = showNodes;
 
-            const uP = new THREE.Vector3(0, 1, 0);
-            const uE = new THREE.Vector3().crossVectors(uP, wLocal).normalize();
-            const normEcliptic = (uE.lengthSq() > 0.001) ? new THREE.Vector3().crossVectors(wLocal, uE).normalize() : new THREE.Vector3(0, 1, 0);
+            // Algoritmos astronómicos de Meeus: calcular longitud del Sol, oblicuidad de la eclíptica y nodo del eclipse
+            const meeus = getEclipseMeeusAngles(currentEclipse, t);
+            const epsRad = meeus.epsRad;
+            const epsDeg = meeus.epsDeg;
+            const deltaNodeDeg = meeus.deltaNodeDeg;
+            const isDescending = meeus.isDescending;
+
+            // Orientación física exacta del Polo Norte Eclíptico en el sistema de coordenadas ecuatorial (Three.js):
+            const alphaSunRad = Math.atan2(Math.cos(epsRad) * Math.sin(meeus.sunLonDeg * Math.PI / 180), Math.cos(meeus.sunLonDeg * Math.PI / 180));
+            const alphaSunDeg = ((alphaSunRad * 180 / Math.PI) % 360 + 360) % 360;
+
+            const muAries = muDeg + alphaSunDeg;
+            const muEclPole = (muAries - 270) % 360;
+            const latEclPole = 90 - epsDeg;
+
+            // Vector unitario normal a la Eclíptica (N_ecl):
+            const normEcliptic = latLngToVector3(latEclPole, -muEclPole, 1.0).normalize();
 
             if (eclipticPlaneGroup3D && showEcliptic) {
                 eclipticPlaneGroup3D.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), normEcliptic);
@@ -6790,22 +6876,33 @@
                 moonMesh3D.rotateY(-Math.PI / 2);
             }
 
-            // 4b. Actualizar Órbita Lunar 3D con inclinación física exacta de 5.145° respecto al plano de la Eclíptica
-            const incRad = 5.145 * Math.PI / 180;
-            // Sentido orbital ascendente/descendente según el signo de y1 (movimiento norte/sur del eje de sombra)
-            const slope = (currentEclipse.y1 !== undefined && currentEclipse.y1 < 0) ? -1.0 : 1.0;
+            // 4b. Vector unitario tangente a la Eclíptica hacia el Este (crecimiento de longitud eclíptica)
+            const uLambda = new THREE.Vector3().crossVectors(normEcliptic, wLocal).normalize();
 
-            // Vector normal al plano orbital lunar inclinado 5.145° alrededor del eje nodal (wLocal)
-            const normOrbit = new THREE.Vector3()
-                .addScaledVector(normEcliptic, Math.cos(incRad))
-                .addScaledVector(uE, -slope * Math.sin(incRad))
+            // Vector unitario de la Línea de Nodos (uNode) en el plano de la Eclíptica:
+            // deltaNodeDeg es la diferencia (Sol - Nodo). El ángulo desde el Sol al Nodo es -deltaNodeDeg.
+            const angleSunToNodeRad = -deltaNodeDeg * Math.PI / 180;
+            let uNode = new THREE.Vector3()
+                .addScaledVector(wLocal, Math.cos(angleSunToNodeRad))
+                .addScaledVector(uLambda, Math.sin(angleSunToNodeRad))
                 .normalize();
 
-            // Base ortonormal en el plano orbital pasando exactamente por la Luna
-            const e1 = moonPos.clone().normalize();
-            const e2 = new THREE.Vector3().crossVectors(normOrbit, e1).normalize();
-            if (e2.dot(uE) < 0) e2.negate(); // Sentido orbital de Oeste a Este
+            // Asegurar ortogonalidad matemática estricta con la normal de la Eclíptica
+            uNode.sub(normEcliptic.clone().multiplyScalar(uNode.dot(normEcliptic))).normalize();
 
+            // Plano orbital lunar inclinado i = 5.145° respecto a la Eclíptica alrededor de la Línea de Nodos (uNode):
+            const incRad = 5.145 * Math.PI / 180;
+            const vEcl = new THREE.Vector3().crossVectors(normEcliptic, uNode).normalize();
+            const slope = isDescending ? 1.0 : -1.0;
+            const normOrbit = new THREE.Vector3()
+                .addScaledVector(normEcliptic, Math.cos(incRad))
+                .addScaledVector(vEcl, slope * Math.sin(incRad))
+                .normalize();
+
+            // Vector unitario tangente orbital en el sentido de traslación lunar (Oeste a Este)
+            const uTangent = new THREE.Vector3().crossVectors(normOrbit, uNode).normalize();
+
+            // Actualizar Órbita Lunar 3D atravesando físicamente el plano eclíptico en el nodo uNode
             if (moonOrbitLine3D) {
                 const showOrbit = document.getElementById('chk-show-moon-orbit')?.checked ?? true;
                 moonOrbitLine3D.visible = showOrbit;
@@ -6813,52 +6910,68 @@
                     const pts = [];
                     const segments = 360;
                     for (let i = 0; i <= segments; i++) {
-                        const theta = (i / segments) * Math.PI * 2;
+                        const a = (i / segments) * Math.PI * 2;
                         const p = new THREE.Vector3()
-                            .addScaledVector(e1, MOON_DIST * Math.cos(theta))
-                            .addScaledVector(e2, MOON_DIST * Math.sin(theta));
+                            .addScaledVector(uNode, MOON_DIST * Math.cos(a))
+                            .addScaledVector(uTangent, MOON_DIST * Math.sin(a));
                         pts.push(p);
                     }
-
                     moonOrbitLine3D.geometry.setFromPoints(pts);
+                    moonOrbitLine3D.geometry.computeBoundingSphere();
                 }
             }
 
-            // 4c. Línea de los Nodos 3D y Rótulos de Nodos (Ascendente ☊ y Descendente ☋)
-            if (nodeLine3D && showNodes) {
-                // Vector unitario de la Línea de Nodos (intersección entre plano orbital lunar y plano eclíptico)
-                let uNode = new THREE.Vector3().crossVectors(normOrbit, normEcliptic).normalize();
-                if (uNode.dot(wLocal) < 0) uNode.negate(); // Apuntar hacia el lado del Sol / Eclipse
+            // 4c. Línea de los Nodos 3D (Eje transversal que pasa por el centro de la Tierra y ambos nodos)
+            if (nodeLine3D) {
+                nodeLine3D.visible = showNodes;
+                if (showNodes) {
+                    const NODE_R = 4500.0;
+                    const nodePts = [
+                        uNode.clone().multiplyScalar(-NODE_R),
+                        uNode.clone().multiplyScalar(NODE_R)
+                    ];
+                    nodeLine3D.geometry.setFromPoints(nodePts);
+                    nodeLine3D.geometry.computeBoundingSphere();
+                }
+            }
 
-                const NODE_R = 4000.0;
-                const nodePts = [
-                    uNode.clone().multiplyScalar(-NODE_R),
-                    uNode.clone().multiplyScalar(NODE_R)
-                ];
-                nodeLine3D.geometry.setFromPoints(nodePts);
+            // 4d. Marcas de Límites de Eclipse y Rótulos Nodales en la Órbita Lunar (Nodo, Total/Anular y Parcial)
+            if (nodesGroup3D) {
+                nodesGroup3D.visible = showNodes;
+                if (showNodes) {
+                    const markers = initOrbitalLimitMarkers();
+                    const currentNodeText = isDescending ? 'Nodo Descendente (☋) (0°)' : 'Nodo Ascendente (☊) (0°)';
 
-                // Actualizar rótulos de nodos en nodesGroup3D
-                if (nodesGroup3D) {
-                    if (!cachedNodeSpriteAsc) {
-                        cachedNodeSpriteAsc = createNodeSprite('Nodo Ascendente (☊)', '#38bdf8');
-                        cachedNodeSpriteDesc = createNodeSprite('Nodo Descendente (☋)', '#38bdf8');
-                        nodesGroup3D.add(cachedNodeSpriteAsc);
-                        nodesGroup3D.add(cachedNodeSpriteDesc);
+                    // Actualizar textura del sprite del nodo si cambia entre ascendente y descendente
+                    if (markers.lastNodeLabel !== currentNodeText) {
+                        markers.lastNodeLabel = currentNodeText;
+                        const nodeSpriteObj = markers.sprites.find(s => s.def.id === 'node');
+                        if (nodeSpriteObj) {
+                            const newSprite = createNodeSprite(currentNodeText, '#38bdf8');
+                            if (nodeSpriteObj.sprite.material.map) nodeSpriteObj.sprite.material.map.dispose();
+                            nodeSpriteObj.sprite.material.map = newSprite.material.map;
+                            nodeSpriteObj.sprite.material.needsUpdate = true;
+                        }
                     }
 
-                    // Determinar cuál nodo es el ascendente (☊) y cuál el descendente (☋)
-                    const nodePos1 = uNode.clone().multiplyScalar(MOON_DIST);
-                    const nodePos2 = uNode.clone().multiplyScalar(-MOON_DIST);
+                    markers.ticks.forEach((item, idx) => {
+                        const angleRad = item.def.deg * Math.PI / 180;
+                        const pos = new THREE.Vector3()
+                            .addScaledVector(uNode, MOON_DIST * Math.cos(angleRad))
+                            .addScaledVector(uTangent, MOON_DIST * Math.sin(angleRad));
 
-                    const vOrb1 = new THREE.Vector3().crossVectors(normOrbit, nodePos1).normalize();
-                    if (vOrb1.dot(uE) < 0) vOrb1.negate();
-                    const isAscending1 = vOrb1.dot(normEcliptic) > 0;
+                        // Línea corta perpendicular al plano orbital
+                        const tickPts = [
+                            pos.clone().addScaledVector(normOrbit, -item.def.tickLen),
+                            pos.clone().addScaledVector(normOrbit, item.def.tickLen)
+                        ];
+                        item.line.geometry.setFromPoints(tickPts);
+                        item.line.geometry.computeBoundingSphere();
 
-                    const ascPos = isAscending1 ? nodePos1 : nodePos2;
-                    const descPos = isAscending1 ? nodePos2 : nodePos1;
-
-                    cachedNodeSpriteAsc.position.copy(ascPos).addScaledVector(normEcliptic, 60.0);
-                    cachedNodeSpriteDesc.position.copy(descPos).addScaledVector(normEcliptic, 60.0);
+                        // Posicionar rótulo flotante legible
+                        const spriteObj = markers.sprites[idx];
+                        spriteObj.sprite.position.copy(pos).addScaledVector(normOrbit, item.def.tickLen + 35.0);
+                    });
                 }
             }
 
