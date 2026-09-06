@@ -1730,7 +1730,11 @@
                 <div class="more-layers-container" id="more-layers-container">
                     <label class="checkbox-row" id="lbl-show-nodes">
                         <input type="checkbox" id="chk-show-nodes" checked>
-                        <span>Nodos y límites de eclipse</span>
+                        <span>Nodos de la órbita</span>
+                    </label>
+                    <label class="checkbox-row" id="lbl-show-limits">
+                        <input type="checkbox" id="chk-show-limits" checked>
+                        <span>Límites de eclipse</span>
                     </label>
                     <label class="checkbox-row" id="lbl-show-limits-labels" style="padding-left: 24px; transition: var(--transition-smooth);">
                         <input type="checkbox" id="chk-show-limits-labels">
@@ -2419,11 +2423,13 @@
         const nodeLine3D = new THREE.Line(new THREE.BufferGeometry(), nodeLineMat);
         nodeLine3D.frustumCulled = false;
         nodeLine3D.renderOrder = 8;
+        nodeLine3D.visible = document.getElementById('chk-show-nodes')?.checked ?? true;
         scene.add(nodeLine3D);
 
         // Grupo 3D de Rótulos y Marcadores de Nodos y Límites de Eclipse
         const nodesGroup3D = new THREE.Group();
         nodesGroup3D.renderOrder = 10;
+        nodesGroup3D.visible = document.getElementById('chk-show-limits')?.checked ?? true;
         scene.add(nodesGroup3D);
 
         function createNodeSprite(text, colorHex = '#38bdf8', fontSize = 28) {
@@ -2479,7 +2485,7 @@
                 nodesGroup3D.add(line);
 
                 const sprite = createNodeSprite(def.defaultText, def.colorHex);
-                const showLimitLabels = (document.getElementById('chk-show-nodes')?.checked ?? true) && (document.getElementById('chk-show-limits-labels')?.checked ?? false);
+                const showLimitLabels = (document.getElementById('chk-show-limits')?.checked ?? true) && (document.getElementById('chk-show-limits-labels')?.checked ?? false);
                 sprite.visible = showLimitLabels;
                 nodesGroup3D.add(sprite);
 
@@ -6861,9 +6867,10 @@
             // 3b. Orientar Plano Eclíptico Físico 3D y Nodos Reales
             const showEcliptic = document.getElementById('chk-show-ecliptic')?.checked ?? true;
             const showNodes = document.getElementById('chk-show-nodes')?.checked ?? true;
+            const showLimits = document.getElementById('chk-show-limits')?.checked ?? true;
             if (eclipticPlaneGroup3D) eclipticPlaneGroup3D.visible = showEcliptic;
             if (nodeLine3D) nodeLine3D.visible = showNodes;
-            if (nodesGroup3D) nodesGroup3D.visible = showNodes;
+            if (nodesGroup3D) nodesGroup3D.visible = showLimits;
 
             // Algoritmos astronómicos de Meeus: calcular longitud del Sol, oblicuidad de la eclíptica y nodo del eclipse
             const meeus = getEclipseMeeusAngles(currentEclipse, t);
@@ -6964,8 +6971,8 @@
 
             // 4d. Marcas de Límites de Eclipse y Rótulos Nodales en la Órbita Lunar (Nodo, Total/Anular y Parcial)
             if (nodesGroup3D) {
-                nodesGroup3D.visible = showNodes;
-                if (showNodes) {
+                nodesGroup3D.visible = showLimits;
+                if (showLimits) {
                     const markers = initOrbitalLimitMarkers();
                     const currentNodeText = isDescending ? 'Nodo Descendente (☋) (0°)' : 'Nodo Ascendente (☊) (0°)';
 
@@ -6981,7 +6988,7 @@
                         }
                     }
 
-                    const showLimitLabels = showNodes && (document.getElementById('chk-show-limits-labels')?.checked ?? false);
+                    const showLimitLabels = showLimits && (document.getElementById('chk-show-limits-labels')?.checked ?? false);
 
                     markers.ticks.forEach((item, idx) => {
                         const angleRad = item.def.deg * Math.PI / 180;
@@ -7320,20 +7327,25 @@
         });
 
         function updateLimitLabelsCheckboxState() {
-            const chkNodes = document.getElementById('chk-show-nodes');
+            const chkLimits = document.getElementById('chk-show-limits');
             const chkLimitLabels = document.getElementById('chk-show-limits-labels');
             const lblLimitLabels = document.getElementById('lbl-show-limits-labels');
-            if (!chkNodes || !chkLimitLabels) return;
-            const isNodesActive = chkNodes.checked;
-            chkLimitLabels.disabled = !isNodesActive;
+            if (!chkLimits || !chkLimitLabels) return;
+            const isLimitsActive = chkLimits.checked;
+            chkLimitLabels.disabled = !isLimitsActive;
             if (lblLimitLabels) {
-                lblLimitLabels.classList.toggle('disabled', !isNodesActive);
+                lblLimitLabels.classList.toggle('disabled', !isLimitsActive);
             }
         }
 
         document.getElementById('chk-show-nodes')?.addEventListener('change', (e) => {
             const vis = e.target.checked;
             if (nodeLine3D) nodeLine3D.visible = vis;
+            requestRender();
+        });
+
+        document.getElementById('chk-show-limits')?.addEventListener('change', (e) => {
+            const vis = e.target.checked;
             if (nodesGroup3D) nodesGroup3D.visible = vis;
             updateLimitLabelsCheckboxState();
             if (orbitalLimitMarkers && vis) {
