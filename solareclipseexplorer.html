@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Solar Eclipse Explorer - Cosmos Mataró</title>
     <meta name="description" content="Explorador interactivo de elementos besselianos y trayectorias de eclipses solares históricos y futuros (del -1999 al +3000) por Cosmos Mataró.">
     <meta name="theme-color" content="#060911">
@@ -63,14 +63,19 @@
             padding: 0;
         }
 
+        html, body {
+            height: 100%;
+            height: 100dvh;
+            width: 100%;
+            width: 100dvw;
+            overflow: hidden;
+            position: relative;
+        }
+
         body {
             background-color: var(--bg-space);
             color: var(--text-primary);
             font-family: var(--font-body);
-            height: 100vh;
-            width: 100vw;
-            overflow: hidden;
-            position: relative;
         }
 
         #viewports-container {
@@ -726,22 +731,35 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            height: 24px;
+            height: auto;
+            min-height: 18px;
             box-sizing: border-box;
             overflow: hidden;
+            margin-bottom: 2px;
         }
 
-        .mataro-vis-tag {
-            font-size: 0.72rem;
+        .mataro-vis-tag,
+        .mataro-vis-tag.vis-total,
+        .mataro-vis-tag.vis-annular,
+        .mataro-vis-tag.vis-hybrid,
+        .mataro-vis-tag.vis-partial,
+        .mataro-vis-tag.vis-none {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
             font-weight: 400;
-            padding: 2px 8px;
-            height: 22px;
-            box-sizing: border-box;
-            border-radius: 6px;
+            color: #f8fafc !important;
+            background: none !important;
+            border: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            height: auto !important;
+            min-height: 0 !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
             display: inline-flex;
             align-items: center;
-            gap: 5px;
-            line-height: 1;
+            line-height: 1.3;
+            letter-spacing: 0;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -1065,13 +1083,14 @@
            BARRA / CÁPSULA DE REPRODUCCIÓN FLOTANTE INFERIOR (PLAYBACK DOCK)
            ========================================================================= */
         .playback-dock {
-            position: absolute;
+            position: fixed;
             bottom: 16px;
+            bottom: calc(16px + env(safe-area-inset-bottom, 0px));
             left: 50%;
             transform: translateX(-50%);
             width: min(calc(100vw - 32px), 460px);
             max-width: 460px;
-            z-index: 22;
+            z-index: 40;
             background: var(--bg-panel);
             backdrop-filter: blur(16px);
             border: 1px solid var(--border-color);
@@ -1086,7 +1105,7 @@
         }
 
         .playback-dock.collapsed {
-            transform: translate(-50%, calc(100% + 40px));
+            transform: translate(-50%, calc(100% + 50px));
             opacity: 0;
             pointer-events: none;
         }
@@ -1352,9 +1371,9 @@
                 max-width: 360px !important;
                 left: 15px !important;
                 right: auto !important;
-                top: 61px !important;
-                max-height: calc(100vh - 80px) !important;
-                max-height: calc(100dvh - 80px) !important;
+                top: 15px !important;
+                max-height: calc(100vh - 110px) !important;
+                max-height: calc(100dvh - 110px) !important;
                 z-index: 50 !important;
             }
             .sidebar-panel.collapsed, .settings-panel.collapsed {
@@ -1363,17 +1382,20 @@
                 pointer-events: none !important;
             }
             .playback-dock {
-                bottom: 12px;
+                position: fixed !important;
+                bottom: 12px !important;
+                bottom: calc(12px + env(safe-area-inset-bottom, 0px)) !important;
                 left: 50% !important;
                 right: auto !important;
                 transform: translateX(-50%) !important;
-                width: min(calc(100vw - 20px), 460px) !important;
+                width: min(calc(100vw - 20px), calc(100dvw - 20px), 460px) !important;
                 max-width: 460px !important;
                 padding: 8px 12px;
                 gap: 5px;
+                z-index: 40 !important;
             }
             .playback-dock.collapsed {
-                transform: translate(-50%, calc(100% + 30px)) !important;
+                transform: translate(-50%, calc(100% + 50px)) !important;
                 opacity: 0 !important;
                 pointer-events: none !important;
             }
@@ -1759,6 +1781,10 @@
                     <input type="checkbox" id="chk-tele-zenith-up" checked onchange="renderTelescopicView()">
                     <span>Orientación altazimutal</span>
                 </label>
+                <label class="checkbox-row" id="lbl-tele-horizon" title="Trazar la línea de horizonte astronómico (altura 0°) y atenuación sub-horizonte">
+                    <input type="checkbox" id="chk-tele-horizon" checked onchange="renderTelescopicView()">
+                    <span>Línea de horizonte</span>
+                </label>
                 <label class="checkbox-row" id="lbl-tele-labels" title="Mostrar u ocultar los rótulos en el lienzo principal (marcas de orientación, contactos y telemetría)">
                     <input type="checkbox" id="chk-tele-labels" checked onchange="renderTelescopicView()">
                     <span>Rótulos</span>
@@ -1770,6 +1796,10 @@
                 <label class="checkbox-row" id="lbl-limb-labels" style="padding-left: 14px; transition: var(--transition-smooth); opacity: 0.5; pointer-events: none;" title="Mostrar u ocultar los rótulos en el lienzo del perfil del limbo">
                     <input type="checkbox" id="chk-limb-labels" checked disabled onchange="renderLunarLimbRadar()">
                     <span>Rótulos</span>
+                </label>
+                <label class="checkbox-row" id="lbl-show-activity-log" style="padding-left: 14px; transition: var(--transition-smooth); opacity: 0.5; pointer-events: none;" title="Abrir o cerrar el Registro de actividad">
+                    <input type="checkbox" id="chk-show-activity-log" disabled onchange="toggleActivityLog(this.checked)">
+                    <span>Registro de actividad</span>
                 </label>
             </div>
         </div>
@@ -1784,9 +1814,8 @@
 
         <div style="display: flex; flex-direction: column; gap: 8px; padding-top: 4px;">
             <!-- Bloque Libración Lunar -->
-            <div class="section-title section-title-between" style="margin-top: 2px;">
-                <span><i class="fa-solid fa-moon"></i> Libración lunar</span>
-                <span id="badge-baily-count" class="mataro-vis-tag" style="background: rgba(255, 255, 255, 0.08); color: rgba(255, 255, 255, 0.7); font-size: 0.68rem; padding: 2px 6px;">Inactivas</span>
+            <div class="section-title" style="margin-top: 2px;">
+                <i class="fa-solid fa-moon"></i> Libración lunar
             </div>
             <div style="display: flex; justify-content: space-around; align-items: center; font-family: var(--font-mono); font-size: 0.76rem; color: #cbd5e1; background: rgba(0,0,0,0.45); padding: 6px 10px; border-radius: 8px; border: 1px solid rgba(56, 189, 248, 0.18);">
                 <span><span style="color: var(--accent-blue); font-weight: 400;">l</span> <span id="limb-lib-l" style="color:#f8fafc;">0.4°</span></span>
@@ -1796,7 +1825,7 @@
 
             <!-- Diagrama Científico del Limbo Lunar (Canvas 2D) -->
             <div style="background: #021019; border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 12px; padding: 6px; text-align: center; position: relative;">
-                <canvas id="canvas-lunar-limb-radar" width="310" height="310" style="width: 100%; max-width: 310px; aspect-ratio: 1; display: block; margin: 0 auto; background: #03141f; border-radius: 8px;"></canvas>
+                <canvas id="canvas-lunar-limb-radar" width="320" height="320" style="width: 100%; max-width: 320px; aspect-ratio: 1 / 1; display: block; margin: 0 auto; background: #03141f; border-radius: 8px;"></canvas>
             </div>
 
             <!-- Datos de Contacto y Telemetría Científica estilo Eclipse Calculator 2.0 -->
@@ -1858,7 +1887,7 @@
                 <button class="ctrl-btn" id="btn-fast-forward" onclick="changeSpeedStep(1)" title="Aumentar velocidad (1/2x a 1200x)"><i class="fa-solid fa-forward"></i></button>
             </div>
             <div class="playback-dock-bottom-right">
-                <button type="button" class="ctrl-btn" id="btn-recenter" onclick="recenterEclipseGE()" title="Centrar Tierra en el Eclipse" style="width: 30px; height: 30px; padding: 0; border-radius: 7px;">
+                <button type="button" class="ctrl-btn" id="btn-recenter" onclick="handleRecenterClick()" title="Centrar Tierra en el eclipse" style="width: 30px; height: 30px; padding: 0; border-radius: 7px;">
                     <i class="fa-solid fa-crosshairs"></i>
                 </button>
             </div>
@@ -2634,8 +2663,10 @@
                         discard; // Fuera de la penumbra
                     }
 
+                    float absL2 = abs(uL2);
+
                     // 3. Gradiente penumbral físico difuso continuo
-                    float normDist = clamp((dist - uL2) / max(0.0001, uL1 - uL2), 0.0, 1.0);
+                    float normDist = clamp((dist - absL2) / max(0.0001, uL1 - absL2), 0.0, 1.0);
                     float factor = 1.0 - normDist;
                     // Atenuación suave difusa
                     float penAlpha = pow(factor, 1.35) * 0.88;
@@ -2645,8 +2676,8 @@
                     float alpha = 0.0;
                     vec3 col = penCol;
 
-                    if (dist <= uL2) {
-                        float umbFactor = clamp(1.0 - (dist / max(0.0001, uL2)), 0.0, 1.0);
+                    if (dist <= absL2) {
+                        float umbFactor = clamp(1.0 - (dist / max(0.0001, absL2)), 0.0, 1.0);
                         alpha = mix(0.88, 0.98, smoothstep(0.0, 0.25, umbFactor));
                         col = vec3(0.0, 0.0, 0.0);
                     } else if (uShowPenumbra > 0.5) {
@@ -3587,6 +3618,7 @@
                 requestRender();
             }
             updateTopNavButtonsState();
+            updateRecenterBtnState();
         }
 
         // --- MOTOR DE LA VISTA TELESCÓPICA 2D ---
@@ -4018,8 +4050,8 @@
             ctx.scale(dpr, dpr);
 
             const w = 320, h = 320;
-            const cx = w / 2, cy = h / 2 + 18;
-            const baseR = 102; // Radio del círculo blanco nominal ajustado para amplitud superior
+            const cx = w / 2, cy = h / 2;
+            const baseR = 105; // Radio del círculo blanco nominal perfectamente centrado
             const exag = 2.5;  // Escala de relieve topográfico en píxeles (calibrada con Eclipse 2.0 Masana)
 
             const ec = currentEclipse;
@@ -4313,40 +4345,6 @@
                     }
                     ctx.restore();
                 });
-            }
-
-            // Avisos de estado en el radar (encima del perfil del limbo, en color blanco puro #ffffff)
-            let noticeLines = null;
-            if (activeBeads && activeBeads.length > 0) {
-                if (isDiamondRing) {
-                    noticeLines = ["Anillo de Diamantes"];
-                } else {
-                    const fallbackText = activeBeads.length === 1 ? '1 perla activa' : `${activeBeads.length} perlas activas`;
-                    noticeLines = [announcementText || fallbackText];
-                }
-            } else if (isTotalNow) {
-                noticeLines = [
-                    "Fotosfera completamente oculta tras el limbo lunar.",
-                    "Corona visible."
-                ];
-            }
-
-            if (showLimbLabels && noticeLines && noticeLines.length > 0) {
-                ctx.save();
-                ctx.font = '400 9.5px var(--font-sans)';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillStyle = '#ffffff';
-                ctx.shadowColor = 'rgba(0, 0, 0, 0.95)';
-                ctx.shadowBlur = 5;
-
-                if (noticeLines.length === 1) {
-                    ctx.fillText(noticeLines[0], cx, 28);
-                } else {
-                    ctx.fillText(noticeLines[0], cx, 20);
-                    ctx.fillText(noticeLines[1], cx, 34);
-                }
-                ctx.restore();
             }
 
             // Indicador de exageración en la esquina inferior del lienzo
@@ -4662,14 +4660,15 @@
 
                         // En el contacto C2 / C3, permitir que el último valle brille suavemente a través de la fotosfera/cromosfera
                         const isContactZone = isObserverTotal && (Math.abs(p.delta - Math.abs(p.L2)) <= 0.002);
-                        const minClearance = isContactZone ? -0.22 : 0.02;
+                        const minClearance = isContactZone ? -0.22 : 0.05;
 
-                        if (clearance > minClearance && clearance <= Math.max(4.0, rSunPx * 0.035)) {
-                            rawBeadPoints.push({ pa, x: px, y: py, hKm, clearance: Math.max(0.01, clearance + (isContactZone ? 0.22 : 0)) });
+                        // Solo registrar puntos donde la fotosfera no esté bloqueada por cumbres lunares
+                        if (clearance > minClearance) {
+                            rawBeadPoints.push({ pa, step, x: px, y: py, hKm, clearance: Math.max(0.01, clearance + (isContactZone ? 0.22 : 0)) });
                         }
                     }
 
-                    // Agrupación contigua en valles geológicos a escala de cráter (tolerancia 2.8°)
+                    // Agrupación de puntos contiguos (resolución angular de 0.5° por paso)
                     const clusters = [];
                     let currentCluster = [];
                     for (let i = 0; i < rawBeadPoints.length; i++) {
@@ -4677,9 +4676,8 @@
                             currentCluster.push(rawBeadPoints[i]);
                         } else {
                             const prev = currentCluster[currentCluster.length - 1];
-                            let diff = Math.abs(rawBeadPoints[i].pa - prev.pa);
-                            if (diff > 180) diff = 360 - diff;
-                            if (diff <= 2.8) {
+                            const stepDiff = rawBeadPoints[i].step - prev.step;
+                            if (stepDiff === 1 || (prev.step === 719 && rawBeadPoints[i].step === 0)) {
                                 currentCluster.push(rawBeadPoints[i]);
                             } else {
                                 clusters.push(currentCluster);
@@ -4689,15 +4687,26 @@
                     }
                     if (currentCluster.length > 0) clusters.push(currentCluster);
 
-                    // Formatear el collar de perlas con intensidad calibrada y transición suave:
+                    // Unir clusters si se conectan a través de los 360° (paso 719 a paso 0)
+                    if (clusters.length > 1) {
+                        const first = clusters[0], last = clusters[clusters.length - 1];
+                        if (first[0].step === 0 && last[last.length - 1].step === 719) {
+                            clusters[0] = last.concat(first);
+                            clusters.pop();
+                        }
+                    }
+
+                    // Formatear las verdaderas Perlas de Baily:
+                    // Una perla física nace cuando las cumbres lunares cortan la luz y dejan valles aislados (anchura <= 10.0°, o <= 14.0° en el contacto inmediato).
+                    // Un arco continuo mayor (> 10.0°) es la uña fotosférica del Sol (ya renderizada por la geometría lunar), NO perlas aisladas.
                     activeBeadsList = [];
                     let globalBeadId = 1;
 
                     clusters.forEach(c => {
                         const widthDeg = c.length * 0.5;
-                        if (widthDeg <= 7.0) {
+                        if (widthDeg <= 10.0 || (widthDeg <= 14.0 && magNow >= 0.997)) {
                             let maxPt = c[0];
-                            c.forEach(p => { if (p.clearance > maxPt.clearance) maxPt = p; });
+                            c.forEach(pt => { if (pt.clearance > maxPt.clearance) maxPt = pt; });
                             const u = Math.min(1.0, Math.max(0.0, maxPt.clearance / 1.5));
                             const s = u * u * (3.0 - 2.0 * u);
                             const intensity = 0.25 + 0.75 * s;
@@ -4711,56 +4720,19 @@
                                 intensity: intensity,
                                 widthDeg: widthDeg
                             });
-                        } else {
-                            // Arco de collar: extraer perlas en cada valle geológico
-                            const minSep = 6; // ~3.0° separación entre perlas del collar
-                            let lastIdx = -minSep;
-                            for (let i = 1; i < c.length - 1; i++) {
-                                const prev = c[i - 1];
-                                const cur = c[i];
-                                const next = c[i + 1];
-                                if (cur.hKm <= prev.hKm && cur.hKm <= next.hKm && (i - lastIdx >= minSep)) {
-                                    const uCur = Math.min(1.0, Math.max(0.0, cur.clearance / 1.5));
-                                    const s = uCur * uCur * (3.0 - 2.0 * uCur);
-                                    const intensity = 0.25 + 0.75 * s;
-                                    activeBeadsList.push({
-                                        id: globalBeadId++,
-                                        angleDeg: cur.pa,
-                                        x: cur.x,
-                                        y: cur.y,
-                                        hKm: cur.hKm,
-                                        clearance: cur.clearance,
-                                        intensity: intensity,
-                                        widthDeg: 3.0
-                                    });
-                                    lastIdx = i;
-                                }
-                            }
-                            if (activeBeadsList.length === 0) {
-                                let maxPt = c[0];
-                                c.forEach(p => { if (p.clearance > maxPt.clearance) maxPt = p; });
-                                const u = Math.min(1.0, Math.max(0.0, maxPt.clearance / 1.5));
-                                const s = u * u * (3.0 - 2.0 * u);
-                                const intensity = 0.25 + 0.75 * s;
-                                activeBeadsList.push({
-                                    id: globalBeadId++,
-                                    angleDeg: maxPt.pa,
-                                    x: maxPt.x,
-                                    y: maxPt.y,
-                                    hKm: maxPt.hKm,
-                                    clearance: maxPt.clearance,
-                                    intensity: intensity,
-                                    widthDeg: widthDeg
-                                });
-                            }
                         }
                     });
 
-                    // Criterio astronómico riguroso para el Anillo de Diamantes
-                    const hasSingleNarrowBead = activeBeadsList.length === 1 && (activeBeadsList[0].widthDeg <= 16.0 || magNow >= 0.998);
+                    // Comprobar si todavía existe una uña fotosférica continua ancha
+                    const hasOpenCrescent = clusters.some(c => c.length * 0.5 > 10.0);
+
+                    // Criterio astronómico riguroso para el Anillo de Diamantes:
+                    // Requiere que la uña continua haya desaparecido (!hasOpenCrescent)
+                    // y que únicamente resten 1 o 2 perlas individuales al borde de la totalidad
+                    const hasSingleNarrowBead = activeBeadsList.length === 1 && (activeBeadsList[0].widthDeg <= 14.0 || magNow >= 0.998);
                     const hasDominantBead = activeBeadsList.length === 2 && activeBeadsList[0].clearance > activeBeadsList[1].clearance * 1.8;
-                    const isContactInstant = Math.abs(p.delta - Math.abs(p.L2)) <= 0.0012 && activeBeadsList.length > 0;
-                    isDiamondRing = isObserverTotal && (activeBeadsList.length <= 2) && (hasSingleNarrowBead || hasDominantBead || isContactInstant) && (magNow >= 0.995 && magNow <= 1.010);
+                    const isContactInstant = Math.abs(p.delta - Math.abs(p.L2)) <= 0.0015 && activeBeadsList.length > 0;
+                    isDiamondRing = !hasOpenCrescent && isObserverTotal && (activeBeadsList.length <= 2) && (hasSingleNarrowBead || hasDominantBead || isContactInstant) && (magNow >= 0.998 && magNow <= 1.010);
 
                     // 1. EL ARO DEL ANILLO DE DIAMANTES (Corona solar circundante sobre la Luna con fundido suave)
                     primaryDiamondId = null;
@@ -4856,12 +4828,11 @@
                             ctx.arc(b.x, b.y, Math.max(1.0, (rSunPx * 0.038) * b.intensity), 0, Math.PI * 2);
                             ctx.fill();
 
-                            // Etiqueta flotante del anillo de diamantes (sin nombre de accidente)
+                            // Etiqueta flotante del anillo de diamantes (sin recuadro de fondo ni borde)
                             if (showTeleLabels && isDiamondRing && (b.id === primaryDiamondId || activeBeadsList.length === 1)) {
                                 const tagText = '💎 Anillo de Diamantes';
                                 ctx.save();
                                 ctx.font = '600 11px system-ui, -apple-system, sans-serif';
-                                const textW = ctx.measureText(tagText).width;
                                 const dirX = b.x - moonX, dirY = b.y - moonY;
                                 const dLen = Math.hypot(dirX, dirY) || 1;
                                 const tagDist = 38;
@@ -4875,27 +4846,105 @@
                                 ctx.lineTo(tx, ty);
                                 ctx.stroke();
 
-                                const pX = 8, pY = 4, bH = 22, bW = textW + pX * 2;
-                                const bx = (dirX >= 0) ? tx : (tx - bW);
-                                const by = ty - bH / 2;
-
-                                ctx.fillStyle = 'rgba(2, 6, 23, 0.88)';
-                                ctx.strokeStyle = 'rgba(250, 204, 21, 0.75)';
-                                ctx.lineWidth = 1.2;
-                                ctx.beginPath();
-                                ctx.roundRect(bx, by, bW, bH, 6);
-                                ctx.fill();
-                                ctx.stroke();
-
                                 ctx.fillStyle = '#ffffff';
-                                ctx.textAlign = 'left';
+                                ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
+                                ctx.shadowBlur = 4;
+                                ctx.textAlign = (dirX >= 0) ? 'left' : 'right';
                                 ctx.textBaseline = 'middle';
-                                ctx.fillText(tagText, bx + pX, ty);
+                                const textX = (dirX >= 0) ? (tx + 8) : (tx - 8);
+                                ctx.fillText(tagText, textX, ty);
                                 ctx.restore();
                             }
                         }
                         ctx.restore();
                     });
+                }
+
+                // =========================================================================
+                // C. LÍNEA DE HORIZONTE Y ATENUACIÓN SUB-HORIZONTE (h = 0°)
+                // =========================================================================
+                const showHorizon = document.getElementById('chk-tele-horizon')?.checked ?? true;
+                if (showHorizon && p && p.alt != null) {
+                    const pxPerDeg = rSunPx / 0.2666; // Escala angular telescópica: semidiámetro solar medio (16' = 0.2666°)
+                    const distPx = p.alt * pxPerDeg; // Distancia desde el centro solar (0,0) hasta el horizonte a lo largo de la vertical
+
+                    // Vector unitario hacia el Nadir (dirección hacia el suelo local)
+                    const projNadir = skyAngleToCanvas((qDeg + 180) % 360);
+                    const nx = projNadir.xNorm;
+                    const ny = projNadir.yNorm;
+
+                    // Distancia máxima desde el centro solar a cualquier esquina del lienzo visible
+                    const maxDistToCorner = Math.hypot(
+                        Math.max(cx, w - cx),
+                        Math.max(cy, h - cy)
+                    );
+                    const R_max = maxDistToCorner + 20;
+
+                    if (distPx < -R_max) {
+                        // El horizonte queda completamente por encima del encuadre visible: todo el lienzo está bajo el horizonte
+                        ctx.save();
+                        ctx.fillStyle = 'rgba(2, 6, 23, 0.50)';
+                        ctx.fillRect(-cx, -cy, w, h);
+                        ctx.restore();
+                    } else if (distPx <= R_max) {
+                        // La línea de horizonte intersecta o bordea el encuadre visible
+                        // Punto sobre la línea de horizonte más próximo al centro solar (0, 0)
+                        const h0x = distPx * nx;
+                        const h0y = distPx * ny;
+
+                        // Vector unitario paralelo a la línea de horizonte (perpendicular al Nadir)
+                        const hx = -ny;
+                        const hy = nx;
+
+                        const L = Math.max(R_max * 3, 3000);
+
+                        // Vértices del segmento de horizonte
+                        const ax = h0x + L * hx, ay = h0y + L * hy;
+                        const bx = h0x - L * hx, by = h0y - L * hy;
+
+                        // Vértices que extienden el polígono hacia el fondo (en dirección del Nadir)
+                        const cxPt = bx + L * nx, cyPt = by + L * ny;
+                        const dxPt = ax + L * nx, dyPt = ay + L * ny;
+
+                        ctx.save();
+
+                        // 1. Zona sub-horizonte (atenuación semitransparente sin ocultar totalmente el disco o la corona)
+                        ctx.beginPath();
+                        ctx.moveTo(ax, ay);
+                        ctx.lineTo(bx, by);
+                        ctx.lineTo(cxPt, cyPt);
+                        ctx.lineTo(dxPt, dyPt);
+                        ctx.closePath();
+                        ctx.fillStyle = 'rgba(2, 6, 23, 0.50)';
+                        ctx.fill();
+
+                        // 2. Trazo nítido de la línea de horizonte geométrica (altura h = 0°)
+                        ctx.beginPath();
+                        ctx.moveTo(ax, ay);
+                        ctx.lineTo(bx, by);
+                        ctx.strokeStyle = 'rgba(203, 213, 225, 0.85)';
+                        ctx.lineWidth = 1.6;
+                        ctx.stroke();
+
+                        // 3. Rótulo identificativo si los rótulos están activados
+                        if (showTeleLabels) {
+                            ctx.font = '500 10px var(--font-sans)';
+                            ctx.fillStyle = 'rgba(241, 245, 249, 0.90)';
+                            ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
+                            ctx.shadowBlur = 4;
+                            ctx.textAlign = 'left';
+                            ctx.textBaseline = 'bottom';
+
+                            // Ubicar el rótulo desplazado lateralmente a lo largo del horizonte
+                            const labelOffset = Math.max(rReticle + 15, rSunPx * 1.85);
+                            const sideDir = (hx >= 0) ? 1 : -1;
+                            const lx = h0x + hx * labelOffset * sideDir - nx * 4;
+                            const ly = h0y + hy * labelOffset * sideDir - ny * 4;
+                            ctx.fillText('Horizonte (0°)', lx, ly);
+                        }
+
+                        ctx.restore();
+                    }
                 }
 
                 // Generar texto unificado de aviso para perlas y diamante
@@ -4905,30 +4954,6 @@
                 const limbPanel = document.getElementById('lunar-limb-panel');
                 if (limbPanel && !limbPanel.classList.contains('collapsed')) {
                     renderLunarLimbRadar(activeBeadsList, isDiamondRing, beadAnnouncement);
-                    const bailyBadge = document.getElementById('badge-baily-count');
-                    if (bailyBadge) {
-                        if (isDiamondRing) {
-                            bailyBadge.className = 'mataro-vis-tag vis-rise';
-                            bailyBadge.style.background = 'rgba(255, 255, 255, 0.16)';
-                            bailyBadge.style.color = '#ffffff';
-                            bailyBadge.innerHTML = `<i class="fa-solid fa-gem"></i> Anillo de Diamantes`;
-                        } else if (activeBeadsList.length > 0) {
-                            bailyBadge.className = 'mataro-vis-tag vis-rise';
-                            bailyBadge.style.background = 'rgba(255, 255, 255, 0.16)';
-                            bailyBadge.style.color = '#ffffff';
-                            bailyBadge.innerHTML = `<i class="fa-solid fa-sparkles"></i> ${activeBeadsList.length === 1 ? '1 perla' : activeBeadsList.length + ' perlas'}`;
-                        } else if (isTotalNow) {
-                            bailyBadge.className = 'mataro-vis-tag vis-full';
-                            bailyBadge.style.background = 'rgba(255, 255, 255, 0.16)';
-                            bailyBadge.style.color = '#ffffff';
-                            bailyBadge.textContent = 'Totalidad (Corona)';
-                        } else {
-                            bailyBadge.className = 'mataro-vis-tag';
-                            bailyBadge.style.background = 'rgba(255, 255, 255, 0.08)';
-                            bailyBadge.style.color = 'rgba(255, 255, 255, 0.7)';
-                            bailyBadge.textContent = 'Inactivas';
-                        }
-                    }
                 }
 
                 // 5. Telemetría HUD
@@ -6712,7 +6737,7 @@
                     const coneQuat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), coneDir);
 
                     // 1. Cono de Umbra (Totalidad): converge desde la Luna hasta la mancha negra exacta en la superficie (l2)
-                    const umbRadBottom = Math.max(0.25, l2 * EARTH_RADIUS);
+                    const umbRadBottom = Math.max(0.25, Math.abs(l2) * EARTH_RADIUS);
                     umbraConeMesh3D.geometry.dispose();
                     umbraConeMesh3D.geometry = new THREE.CylinderGeometry(MOON_RADIUS, umbRadBottom, coneHeight, 64, 1, true);
                     umbraConeMesh3D.position.copy(midPos);
@@ -6888,6 +6913,85 @@
                 const maxLat = currentEclipse.lat_dd_ge || 0;
                 const maxLng = currentEclipse.lng_dd_ge || 0;
                 recenterEarth(maxLat, maxLng);
+            }
+        }
+
+        function handleRecenterClick() {
+            if (currentActiveView === 'telescopic') {
+                jumpToKeyMomentTele();
+            } else {
+                recenterEclipseGE();
+            }
+        }
+
+        function jumpToKeyMomentTele() {
+            if (!currentEclipse) return;
+            const circ = localCircumstancesCache || (currentObserver ? calculateLocalSolarCircumstances(currentEclipse, currentObserver.lat, currentObserver.lon) : null);
+
+            let targetT = 0.0;
+            const hasC2 = circ && (circ.isTotal || circ.isAnnular) && circ.c2 && circ.c2.t != null;
+
+            if (hasC2) {
+                // Eclipse total o anular: contacto C2 menos 30 segundos
+                targetT = circ.c2.t - (30.0 / 3600.0);
+            } else if (circ && circ.tMax != null) {
+                // Eclipse parcial: Máximo menos 30 segundos
+                targetT = circ.tMax - (30.0 / 3600.0);
+            } else {
+                targetT = 0.0 - (30.0 / 3600.0);
+            }
+
+            const minT = parseFloat(timeSlider.min) || (currentEclipse?.tmin != null ? currentEclipse.tmin : -2.5);
+            const maxT = parseFloat(timeSlider.max) || (currentEclipse?.tmax != null ? currentEclipse.tmax : 2.5);
+            targetT = Math.max(minT, Math.min(maxT, targetT));
+
+            // Reducir la velocidad a 1x para apreciar las perlas en tiempo real
+            setSimSpeed(1.0);
+
+            // Colocar reproductor en la marca calculada
+            simPlayDirection = 1;
+            simCurrentT = targetT;
+            timeSlider.value = targetT;
+            updateShadowAtTime(targetT);
+
+            // Reanudar reproducción hacia adelante si estaba en pausa
+            if (!isPlaying) {
+                startSimulation();
+            }
+        }
+
+        function jumpToSpecificTime(targetT) {
+            if (!currentEclipse) return;
+            if (currentActiveView !== 'telescopic') {
+                switchMainView('telescopic');
+            }
+            const minT = parseFloat(timeSlider.min) || (currentEclipse?.tmin != null ? currentEclipse.tmin : -2.5);
+            const maxT = parseFloat(timeSlider.max) || (currentEclipse?.tmax != null ? currentEclipse.tmax : 2.5);
+            targetT = Math.max(minT, Math.min(maxT, targetT));
+
+            setSimSpeed(1.0);
+            simPlayDirection = 1;
+            simCurrentT = targetT;
+            if (timeSlider) timeSlider.value = targetT;
+            updateShadowAtTime(targetT);
+            if (!isPlaying) {
+                startSimulation();
+            }
+        }
+        window.jumpToSpecificTime = jumpToSpecificTime;
+
+        function updateRecenterBtnState() {
+            const btn = document.getElementById('btn-recenter');
+            if (!btn) return;
+            if (currentActiveView === 'telescopic') {
+                const circ = localCircumstancesCache || (currentEclipse && currentObserver ? calculateLocalSolarCircumstances(currentEclipse, currentObserver.lat, currentObserver.lon) : null);
+                if (circ && (circ.isTotal || circ.isAnnular) && circ.c2 && circ.c2.t != null) {
+                    btn.title = circ.isTotal ? 'Ir a C2 − 30 s (Perlas de Baily a 1x)' : 'Ir a C2 − 30 s (Anillo a 1x)';
+                } else {
+                    btn.title = 'Ir a Máx − 30 s (a 1x)';
+                }
+            } else {
+                btn.title = 'Centrar Tierra en el eclipse';
             }
         }
 
@@ -7164,6 +7268,7 @@
                 if (mC3) mC3.style.display = 'none';
                 setMarker(mC4, maxT, 'Fin Global');
             }
+            updateRecenterBtnState();
         }
 
         function updateTopNavButtonsState() {
@@ -7346,7 +7451,52 @@
             });
         }
 
-        function toggleSidebar(show = null) {
+        // -------------------------------------------------------------
+        // PILA LIFO DE PANELES EN PANTALLAS PEQUEÑAS (<= 900px)
+        // -------------------------------------------------------------
+        const smallScreenPanelStack = [];
+        const smallScreenPanels = ['sidebar-panel', 'settings-panel', 'lunar-limb-panel'];
+
+        function pushPanelToSmallScreenStack(panelId) {
+            if (window.innerWidth > 900) return;
+            // Minimizar los otros paneles laterales abiertos y mantener su registro
+            smallScreenPanels.forEach(id => {
+                if (id !== panelId) {
+                    const p = document.getElementById(id);
+                    if (p && !p.classList.contains('collapsed')) {
+                        p.classList.add('collapsed');
+                        if (!smallScreenPanelStack.includes(id)) {
+                            smallScreenPanelStack.push(id);
+                        }
+                    }
+                }
+            });
+            const existingIdx = smallScreenPanelStack.indexOf(panelId);
+            if (existingIdx !== -1) {
+                smallScreenPanelStack.splice(existingIdx, 1);
+            }
+            smallScreenPanelStack.push(panelId);
+        }
+
+        function popPanelFromSmallScreenStack(closedPanelId, wasActive = true) {
+            if (window.innerWidth > 900) return;
+            const idx = smallScreenPanelStack.indexOf(closedPanelId);
+            if (idx !== -1) {
+                smallScreenPanelStack.splice(idx, 1);
+            }
+            if (wasActive && smallScreenPanelStack.length > 0) {
+                const prevId = smallScreenPanelStack[smallScreenPanelStack.length - 1];
+                if (prevId === 'sidebar-panel') {
+                    toggleSidebar(true, true);
+                } else if (prevId === 'settings-panel') {
+                    toggleSettingsPanel(true, true);
+                } else if (prevId === 'lunar-limb-panel') {
+                    toggleLunarLimbPanel(true, true);
+                }
+            }
+        }
+
+        function toggleSidebar(show = null, fromHistory = false) {
             const panel = document.getElementById('sidebar-panel');
             if (!panel) return;
             const isCurrentlyOpen = !panel.classList.contains('collapsed');
@@ -7355,20 +7505,23 @@
 
             if (targetState) {
                 resetPanelDefaultPosition('sidebar-panel');
-                panel.classList.remove('collapsed');
-                if (isMobile) {
-                    toggleSettingsPanel(false);
-                    toggleLunarLimbPanel(false);
-                    togglePlaybackDock(false);
+                if (isMobile && !fromHistory) {
+                    pushPanelToSmallScreenStack('sidebar-panel');
                 }
+                panel.classList.remove('collapsed');
+                bringPanelToFront(panel);
             } else {
+                const wasActive = isCurrentlyOpen;
                 panel.classList.add('collapsed');
                 resetPanelDefaultPosition('sidebar-panel');
+                if (isMobile) {
+                    popPanelFromSmallScreenStack('sidebar-panel', wasActive);
+                }
             }
             updateTopNavButtonsState();
         }
 
-        function toggleSettingsPanel(show = null) {
+        function toggleSettingsPanel(show = null, fromHistory = false) {
             const panel = document.getElementById('settings-panel');
             if (!panel) return;
             const isCurrentlyOpen = !panel.classList.contains('collapsed');
@@ -7377,19 +7530,23 @@
 
             if (targetState) {
                 resetPanelDefaultPosition('settings-panel');
-                panel.classList.remove('collapsed');
-                if (isMobile) {
-                    toggleSidebar(false);
-                    toggleLunarLimbPanel(false);
+                if (isMobile && !fromHistory) {
+                    pushPanelToSmallScreenStack('settings-panel');
                 }
+                panel.classList.remove('collapsed');
+                bringPanelToFront(panel);
             } else {
+                const wasActive = isCurrentlyOpen;
                 panel.classList.add('collapsed');
                 resetPanelDefaultPosition('settings-panel');
+                if (isMobile) {
+                    popPanelFromSmallScreenStack('settings-panel', wasActive);
+                }
             }
             updateTopNavButtonsState();
         }
 
-        function toggleLunarLimbPanel(show = null) {
+        function toggleLunarLimbPanel(show = null, fromHistory = false) {
             const panel = document.getElementById('lunar-limb-panel');
             if (!panel) return;
             const isCurrentlyOpen = !panel.classList.contains('collapsed');
@@ -7398,13 +7555,12 @@
 
             if (targetState) {
                 resetPanelDefaultPosition('lunar-limb-panel');
+                if (isMobile && !fromHistory) {
+                    pushPanelToSmallScreenStack('lunar-limb-panel');
+                }
                 panel.classList.remove('collapsed');
                 bringPanelToFront(panel);
-                if (isMobile) {
-                    toggleSidebar(false);
-                    toggleSettingsPanel(false);
-                    togglePlaybackDock(false);
-                }
+
                 const chk = document.getElementById('chk-show-lunar-limb');
                 if (chk) chk.checked = true;
                 const chkLimbLbls = document.getElementById('chk-limb-labels');
@@ -7414,12 +7570,20 @@
                     lblLimbLbls.style.opacity = '1';
                     lblLimbLbls.style.pointerEvents = 'auto';
                 }
+                const chkActLog = document.getElementById('chk-show-activity-log');
+                const lblActLog = document.getElementById('lbl-show-activity-log');
+                if (chkActLog && lblActLog) {
+                    chkActLog.disabled = false;
+                    lblActLog.style.opacity = '1';
+                    lblActLog.style.pointerEvents = 'auto';
+                }
                 if (currentActiveView === 'telescopic') {
                     renderTelescopicView();
                 } else {
                     renderLunarLimbRadar([], false);
                 }
             } else {
+                const wasActive = isCurrentlyOpen;
                 panel.classList.add('collapsed');
                 resetPanelDefaultPosition('lunar-limb-panel');
                 const chk = document.getElementById('chk-show-lunar-limb');
@@ -7430,6 +7594,20 @@
                     chkLimbLbls.disabled = true;
                     lblLimbLbls.style.opacity = '0.5';
                     lblLimbLbls.style.pointerEvents = 'none';
+                }
+                const chkActLog = document.getElementById('chk-show-activity-log');
+                const lblActLog = document.getElementById('lbl-show-activity-log');
+                if (chkActLog && lblActLog) {
+                    chkActLog.disabled = true;
+                    lblActLog.style.opacity = '0.5';
+                    lblActLog.style.pointerEvents = 'none';
+                    if (chkActLog.checked) {
+                        chkActLog.checked = false;
+                        toggleActivityLog(false);
+                    }
+                }
+                if (isMobile) {
+                    popPanelFromSmallScreenStack('lunar-limb-panel', wasActive);
                 }
                 if (currentActiveView === 'telescopic') {
                     renderTelescopicView();
@@ -7443,17 +7621,744 @@
             if (!panel) return;
             const isCurrentlyOpen = !panel.classList.contains('collapsed');
             const targetState = (show !== null) ? show : !isCurrentlyOpen;
-            const isMobile = window.innerWidth <= 900;
 
             if (targetState) {
                 panel.classList.remove('collapsed');
-                if (isMobile) {
-                    toggleSidebar(false);
-                }
             } else {
                 panel.classList.add('collapsed');
             }
             updateTopNavButtonsState();
+        }
+
+        // -------------------------------------------------------------
+        // REGISTRO DE ACTIVIDAD DEL LIMBO LUNAR (PERLAS Y DIAMANTES)
+        // -------------------------------------------------------------
+        function generateBailyActivityLog(circ, ec, contactKey = 'c2') {
+            if (!circ || !ec) return { events: [], contactLabel: 'C2', baseT: 0, stats: {} };
+            const { libL, libB, axisC } = getEclipseLibrationParams(ec);
+
+            let contact = null;
+            let contactLabel = 'C2';
+            const isC2 = contactKey === 'c2' && circ.c2 && circ.c2.t != null;
+            const isC3 = contactKey === 'c3' && circ.c3 && circ.c3.t != null;
+
+            if (isC2) {
+                contact = circ.c2;
+                contactLabel = 'C2';
+            } else if (isC3) {
+                contact = circ.c3;
+                contactLabel = 'C3';
+            } else if (circ.tMax != null) {
+                contact = { t: circ.tMax };
+                contactLabel = 'Máx';
+            } else {
+                return { events: [], contactLabel: 'N/A', baseT: 0, stats: {} };
+            }
+
+            const baseT = contact.t;
+            const rSunPx = 180;
+            const rawEvents = [];
+            let prevBeads = [];
+
+            let maxSimultaneousBeads = 0;
+            let collarStartDt = null;
+            let collarEndDt = null;
+
+            for (let dt = -30.0; dt <= 30.0; dt += 0.5) {
+                const t = baseT + dt / 3600.0;
+                const p = circ.getParamsAtT ? circ.getParamsAtT(t) : null;
+                if (!p) continue;
+                const kRatio = (p.L1 - p.L2) / (p.L1 + p.L2);
+                const rMoonPx = rSunPx * kRatio;
+                const sepNorm = p.delta / ((p.L1 + p.L2) / 2);
+                const sepDistPx = sepNorm * rSunPx;
+                const paMoonDeg = (Math.atan2(p.u, p.v) * DEG + 360) % 360;
+                const radMoon = paMoonDeg * RAD;
+                const moonX = -Math.sin(radMoon) * sepDistPx;
+                const moonY = Math.cos(radMoon) * sepDistPx;
+                const pxPerKm = rMoonPx / 1737.4;
+                const magNow = (p && p.delta < p.L1) ? Math.max(0, (p.L1 - p.delta) / (p.L1 + p.L2)) : 0;
+                const isTotalNow = (p && p.delta < Math.abs(p.L2) && p.L2 < 0);
+                const isContactZone = (Math.abs(p.delta - Math.abs(p.L2)) <= 0.002);
+                const minClearance = isContactZone ? -0.22 : 0.05;
+
+                const rawBeadPoints = [];
+                for (let step = 0; step < 720; step++) {
+                    const pa = step * 0.5;
+                    const rad = pa * RAD;
+                    const hKm = getSmoothLOLAProfile(pa, libL, libB, axisC);
+                    const rLimb = rMoonPx + hKm * pxPerKm;
+                    const px = moonX - Math.sin(rad) * rLimb;
+                    const py = moonY + Math.cos(rad) * rLimb;
+                    const distToSun = Math.hypot(px, py);
+                    const clearance = rSunPx - distToSun;
+                    if (clearance > minClearance) {
+                        rawBeadPoints.push({ pa, step, clearance: Math.max(0.01, clearance + (isContactZone ? 0.22 : 0)) });
+                    }
+                }
+
+                const clusters = [];
+                let currentCluster = [];
+                for (let i = 0; i < rawBeadPoints.length; i++) {
+                    if (currentCluster.length === 0) {
+                        currentCluster.push(rawBeadPoints[i]);
+                    } else {
+                        const prev = currentCluster[currentCluster.length - 1];
+                        let stepDiff = rawBeadPoints[i].step - prev.step;
+                        if (stepDiff === 1 || (prev.step === 719 && rawBeadPoints[i].step === 0)) {
+                            currentCluster.push(rawBeadPoints[i]);
+                        } else {
+                            clusters.push(currentCluster);
+                            currentCluster = [rawBeadPoints[i]];
+                        }
+                    }
+                }
+                if (currentCluster.length > 0) clusters.push(currentCluster);
+                if (clusters.length > 1) {
+                    const first = clusters[0], last = clusters[clusters.length - 1];
+                    if (first[0].step === 0 && last[last.length - 1].step === 719) {
+                        clusters[0] = last.concat(first);
+                        clusters.pop();
+                    }
+                }
+
+                const currentBeads = [];
+                clusters.forEach(c => {
+                    const widthDeg = c.length * 0.5;
+                    if (widthDeg <= 10.0 || (widthDeg <= 14.0 && magNow >= 0.998)) {
+                        let maxPt = c[0];
+                        c.forEach(pt => { if (pt.clearance > maxPt.clearance) maxPt = pt; });
+                        currentBeads.push({
+                            pa: maxPt.pa,
+                            clearance: maxPt.clearance,
+                            widthDeg
+                        });
+                    }
+                });
+
+                if (currentBeads.length > maxSimultaneousBeads) maxSimultaneousBeads = currentBeads.length;
+                if (currentBeads.length >= 3) {
+                    if (collarStartDt === null) collarStartDt = dt;
+                    collarEndDt = dt;
+                }
+
+                const ANG_TOL = 2.5;
+                const nextPrevBeads = [];
+
+                currentBeads.forEach(cb => {
+                    const match = prevBeads.find(pb => {
+                        let d = Math.abs(cb.pa - pb.pa);
+                        if (d > 180) d = 360 - d;
+                        return d <= ANG_TOL;
+                    });
+                    if (!match) {
+                        const feat = getLimbFeatureAtPA(cb.pa, axisC);
+                        const ev = {
+                            dt,
+                            t,
+                            fenomeno: 'Perla de Baily',
+                            pa: cb.pa,
+                            feature: feat.name,
+                            landmark: feat.landmark,
+                            lastDt: dt
+                        };
+                        rawEvents.push(ev);
+                        nextPrevBeads.push({ pa: cb.pa, eventRef: ev });
+                    } else {
+                        match.eventRef.lastDt = dt;
+                        nextPrevBeads.push({ pa: cb.pa, eventRef: match.eventRef });
+                    }
+                });
+
+                prevBeads = nextPrevBeads;
+            }
+
+            let diamondEvent = null;
+            if (isC2 && rawEvents.length > 0) {
+                const candidates = rawEvents.filter(e => e.lastDt <= 10.0);
+                if (candidates.length > 0) {
+                    diamondEvent = candidates.reduce((prev, curr) => (curr.lastDt > prev.lastDt) ? curr : prev, candidates[0]);
+                    diamondEvent.fenomeno = 'Anillo de Diamantes';
+                }
+            } else if (isC3 && rawEvents.length > 0) {
+                diamondEvent = rawEvents[0];
+                diamondEvent.fenomeno = 'Anillo de Diamantes';
+            }
+
+            const stats = {
+                maxSimultaneousBeads,
+                collarWindow: collarStartDt !== null ? [collarStartDt, collarEndDt] : null,
+                diamondFeature: diamondEvent ? diamondEvent.feature + ' (PA ' + Math.round(diamondEvent.pa) + '°)' : null
+            };
+
+            return { events: rawEvents, contactLabel, baseT, stats };
+        }
+
+        function buildActivityLogPageHtml(circ, ec, obs, defaultKey = 'c2') {
+            const hasC2 = circ && (circ.isTotal || circ.isAnnular) && circ.c2 && circ.c2.t != null;
+            const hasC3 = circ && (circ.isTotal || circ.isAnnular) && circ.c3 && circ.c3.t != null;
+
+            const dataC2 = hasC2 ? generateBailyActivityLog(circ, ec, 'c2') : { events: [], contactLabel: 'C2', baseT: 0 };
+            const dataC3 = hasC3 ? generateBailyActivityLog(circ, ec, 'c3') : { events: [], contactLabel: 'C3', baseT: 0 };
+            const dataMax = (!hasC2 && !hasC3 && circ && circ.tMax != null) ? generateBailyActivityLog(circ, ec, 'max') : null;
+
+            const initialKey = hasC2 ? defaultKey : (dataMax ? 'max' : 'c2');
+            const dataPayload = JSON.stringify({
+                c2: dataC2,
+                c3: dataC3,
+                max: dataMax,
+                eclipseName: ec.name || ('Eclipse Solar ' + (ec.year || '')),
+                observerName: (obs.name || 'Observador') + ' (' + (obs.lat ? obs.lat.toFixed(2) : '') + '°, ' + (obs.lon ? obs.lon.toFixed(2) : '') + '°)',
+                dtSec: ec.dt || 0,
+                t0: ec.t0 || 12
+            });
+
+            const htmlParts = [
+                '<!DOCTYPE html>',
+                '<html lang="es">',
+                '<head>',
+                '    <meta charset="UTF-8">',
+                '    <meta name="viewport" content="width=device-width, initial-scale=1.0">',
+                '    <title>Registro de actividad — Perlas de Baily y Anillo de Diamantes</title>',
+                '    <link rel="preconnect" href="https://fonts.googleapis.com">',
+                '    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>',
+                '    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">',
+                '    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">',
+                '    <style>',
+                '        :root {',
+                '            --bg-body: #060913;',
+                '            --bg-card: #0c1220;',
+                '            --bg-card-hover: rgba(56, 189, 248, 0.10);',
+                '            --border-card: rgba(255, 255, 255, 0.08);',
+                '            --accent-blue: #38bdf8;',
+                '            --accent-yellow: #fbbf24;',
+                '            --text-main: #f1f5f9;',
+                '            --text-soft: #cbd5e1;',
+                '            --text-muted: #94a3b8;',
+                '            --text-dim: #64748b;',
+                '            --font-main: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;',
+                '            --font-mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;',
+                '        }',
+                '        * { box-sizing: border-box; margin: 0; padding: 0; }',
+                '        body {',
+                '            background: var(--bg-body);',
+                '            color: var(--text-main);',
+                '            font-family: var(--font-main);',
+                '            padding: 16px 20px;',
+                '            line-height: 1.45;',
+                '        }',
+                '        .header-container {',
+                '            display: flex;',
+                '            justify-content: space-between;',
+                '            align-items: flex-start;',
+                '            border-bottom: 1px solid var(--border-card);',
+                '            padding-bottom: 12px;',
+                '            margin-bottom: 14px;',
+                '            flex-wrap: wrap;',
+                '            gap: 12px;',
+                '        }',
+                '        .title-group h1 {',
+                '            font-size: 1.18rem;',
+                '            font-weight: 600;',
+                '            display: flex;',
+                '            align-items: center;',
+                '            gap: 8px;',
+                '            color: #ffffff;',
+                '        }',
+                '        .title-group p {',
+                '            font-size: 0.80rem;',
+                '            color: var(--text-muted);',
+                '            margin-top: 3px;',
+                '            font-family: var(--font-mono);',
+                '        }',
+                '        .btn-action {',
+                '            background: transparent;',
+                '            color: #ffffff;',
+                '            border: 1px solid var(--border-card);',
+                '            padding: 5px 12px;',
+                '            border-radius: 6px;',
+                '            font-size: 0.78rem;',
+                '            font-family: var(--font-mono);',
+                '            cursor: pointer;',
+                '            display: inline-flex;',
+                '            align-items: center;',
+                '            gap: 6px;',
+                '            transition: all 0.15s;',
+                '        }',
+                '        .btn-action:hover {',
+                '            background: rgba(255, 255, 255, 0.1);',
+                '            border-color: rgba(255, 255, 255, 0.3);',
+                '        }',
+                '        .tabs-container {',
+                '            display: flex;',
+                '            gap: 8px;',
+                '            margin-bottom: 12px;',
+                '        }',
+                '        .tab-btn {',
+                '            background: rgba(15, 23, 42, 0.6);',
+                '            color: var(--text-muted);',
+                '            border: 1px solid var(--border-card);',
+                '            padding: 6px 14px;',
+                '            border-radius: 6px;',
+                '            font-size: 0.82rem;',
+                '            font-family: var(--font-mono);',
+                '            cursor: pointer;',
+                '            display: inline-flex;',
+                '            align-items: center;',
+                '            gap: 6px;',
+                '            transition: all 0.15s;',
+                '        }',
+                '        .tab-btn.active {',
+                '            background: rgba(56, 189, 248, 0.15);',
+                '            border-color: var(--accent-blue);',
+                '            color: #ffffff;',
+                '            font-weight: 600;',
+                '        }',
+                '        .stats-banner {',
+                '            display: flex;',
+                '            flex-wrap: wrap;',
+                '            gap: 8px;',
+                '            background: rgba(15, 23, 42, 0.5);',
+                '            border: 1px solid var(--border-card);',
+                '            border-radius: 8px;',
+                '            padding: 8px 12px;',
+                '            margin-bottom: 12px;',
+                '            font-size: 0.76rem;',
+                '            font-family: var(--font-mono);',
+                '            align-items: center;',
+                '        }',
+                '        .stat-pill {',
+                '            background: transparent;',
+                '            color: var(--text-muted);',
+                '            margin-right: 6px;',
+                '        }',
+                '        .stat-pill strong { color: #ffffff; }',
+                '        .filter-toolbar {',
+                '            display: flex;',
+                '            justify-content: space-between;',
+                '            align-items: center;',
+                '            gap: 10px;',
+                '            margin-bottom: 12px;',
+                '            flex-wrap: wrap;',
+                '        }',
+                '        .filter-pills {',
+                '            display: flex;',
+                '            gap: 6px;',
+                '            flex-wrap: wrap;',
+                '        }',
+                '        .filter-btn {',
+                '            background: transparent;',
+                '            border: 1px solid var(--border-card);',
+                '            color: var(--text-muted);',
+                '            padding: 3px 10px;',
+                '            border-radius: 6px;',
+                '            font-size: 0.74rem;',
+                '            font-family: var(--font-mono);',
+                '            cursor: pointer;',
+                '            transition: all 0.15s;',
+                '        }',
+                '        .filter-btn.active {',
+                '            background: rgba(255, 255, 255, 0.12);',
+                '            border-color: rgba(255, 255, 255, 0.4);',
+                '            color: #ffffff;',
+                '            font-weight: 600;',
+                '        }',
+                '        .search-box {',
+                '            background: rgba(15, 23, 42, 0.7);',
+                '            border: 1px solid var(--border-card);',
+                '            border-radius: 6px;',
+                '            padding: 5px 10px;',
+                '            color: #ffffff;',
+                '            font-size: 0.78rem;',
+                '            font-family: var(--font-mono);',
+                '            min-width: 240px;',
+                '            outline: none;',
+                '        }',
+                '        .search-box:focus { border-color: var(--accent-blue); }',
+                '        .table-container {',
+                '            background: var(--bg-card);',
+                '            border: 1px solid var(--border-card);',
+                '            border-radius: 8px;',
+                '            overflow: hidden;',
+                '            box-shadow: 0 4px 18px rgba(0,0,0,0.35);',
+                '        }',
+                '        table {',
+                '            width: 100%;',
+                '            border-collapse: collapse;',
+                '            text-align: left;',
+                '            font-size: 0.78rem;',
+                '            font-family: var(--font-mono);',
+                '            table-layout: fixed;',
+                '            color: var(--text-soft);',
+                '        }',
+                '        thead {',
+                '            position: sticky;',
+                '            top: 0;',
+                '            background: #0f1626;',
+                '            z-index: 10;',
+                '            box-shadow: 0 1px 0 rgba(255, 255, 255, 0.08);',
+                '        }',
+                '        th {',
+                '            height: 21px;',
+                '            max-height: 21px;',
+                '            line-height: 20px;',
+                '            vertical-align: middle;',
+                '            padding: 0 4px;',
+                '            font-size: 0.75rem;',
+                '            font-weight: 500;',
+                '            color: var(--text-muted);',
+                '            text-transform: uppercase;',
+                '            letter-spacing: 0.04em;',
+                '            font-family: var(--font-mono);',
+                '            white-space: nowrap;',
+                '            box-sizing: border-box;',
+                '            border-bottom: 1px solid rgba(255, 255, 255, 0.08);',
+                '        }',
+                '        tbody tr {',
+                '            height: 21px;',
+                '            max-height: 21px;',
+                '            min-height: 21px;',
+                '            box-sizing: border-box;',
+                '            cursor: pointer;',
+                '            transition: background 0.15s ease;',
+                '        }',
+                '        td {',
+                '            height: 21px;',
+                '            max-height: 21px;',
+                '            min-height: 21px;',
+                '            line-height: 20px;',
+                '            vertical-align: middle;',
+                '            padding: 0 4px;',
+                '            border-bottom: 1px solid rgba(255, 255, 255, 0.04);',
+                '            font-size: 0.78rem;',
+                '            color: var(--text-soft);',
+                '            font-family: var(--font-mono);',
+                '            font-variant-numeric: tabular-nums;',
+                '            white-space: nowrap;',
+                '            overflow: hidden;',
+                '            text-overflow: ellipsis;',
+                '            box-sizing: border-box;',
+                '        }',
+                '        tbody tr:hover td {',
+                '            background: rgba(56, 189, 248, 0.12);',
+                '            color: #ffffff;',
+                '        }',
+                '        tbody tr.row-selected td {',
+                '            color: var(--accent-blue);',
+                '            font-weight: 700;',
+                '            background: rgba(56, 189, 248, 0.16);',
+                '        }',
+                '        @media print {',
+                '            body { background: #ffffff; color: #000000; padding: 0; }',
+                '            .btn-action, .tabs-container, .filter-toolbar { display: none !important; }',
+                '            .table-container { box-shadow: none; border: 1px solid #ccc; }',
+                '            th { color: #555555 !important; border-color: #ddd; }',
+                '            td { border-color: #ddd; color: #000000 !important; }',
+                '            thead { background: #f1f5f9; }',
+                '        }',
+                '    </style>',
+                '</head>',
+                '<body>',
+                '    <div class="header-container">',
+                '        <div class="title-group">',
+                '            <h1>Registro de actividad: Perlas y Diamantes</h1>',
+                '            <p id="sub-header"></p>',
+                '        </div>',
+                '        <div style="display: flex; gap: 8px; align-items: center;">',
+                '            <button class="btn-action" onclick="copyCsv()"><i class="fa-solid fa-file-csv"></i> Copiar CSV</button>',
+                '            <button class="btn-action" onclick="window.print()"><i class="fa-solid fa-print"></i> Imprimir</button>',
+                '        </div>',
+                '    </div>',
+                '    <div class="tabs-container" id="tabs-box"></div>',
+                '    <div class="stats-banner" id="stats-box"></div>',
+                '    <div class="filter-toolbar">',
+                '        <div class="filter-pills" id="filter-pills-box">',
+                '            <button class="filter-btn active" data-filter="todos" onclick="setFilter(\'todos\', this)">Todos</button>',
+                '            <button class="filter-btn" data-filter="Diamante" onclick="setFilter(\'Diamante\', this)">Diamante</button>',
+                '            <button class="filter-btn" data-filter="Perla" onclick="setFilter(\'Perla\', this)">Perlas</button>',
+                '        </div>',
+                '        <input type="text" id="input-search" class="search-box" placeholder="Filtrar por relieve, ángulo..." oninput="handleSearch(this.value)">',
+                '    </div>',
+                '    <div class="table-container">',
+                '        <table>',
+                '            <colgroup>',
+                '                <col style="width: 36px;">',
+                '                <col style="width: 96px;">',
+                '                <col style="width: 48px;">',
+                '                <col style="width: 150px;">',
+                '                <col style="width: 46px;">',
+                '                <col>',
+                '            </colgroup>',
+                '            <thead>',
+                '                <tr>',
+                '                    <th style="text-align: center;">#</th>',
+                '                    <th>Hora (UT1)</th>',
+                '                    <th style="text-align: right;" title="Diferencia de tiempo en segundos respecto al contacto">Δt</th>',
+                '                    <th>Fenómeno</th>',
+                '                    <th style="text-align: right;" title="Ángulo de posición (Position Angle) en grados respecto al norte celeste">PA</th>',
+                '                    <th>Accidente Lunar (NASA LOLA)</th>',
+                '                </tr>',
+                '            </thead>',
+                '            <tbody id="table-body"></tbody>',
+                '        </table>',
+                '    </div>',
+                '    <script>',
+                '        const APP_DATA = ' + dataPayload + ';',
+                '        let currentKey = "' + initialKey + '";',
+                '        let currentFilter = "todos";',
+                '        let searchQuery = "";',
+                '        let selectedRowIndex = -1;',
+                '        function init() {',
+                '            document.getElementById("sub-header").textContent = APP_DATA.eclipseName + " — " + APP_DATA.observerName;',
+                '            renderTabs();',
+                '            renderCurrentData();',
+                '        }',
+                '        function renderTabs() {',
+                '            const box = document.getElementById("tabs-box");',
+                '            box.innerHTML = "";',
+                '            if (APP_DATA.c2 && APP_DATA.c2.events.length > 0) {',
+                '                const btnC2 = document.createElement("button");',
+                '                btnC2.className = "tab-btn " + (currentKey === "c2" ? "active" : "");',
+                '                btnC2.innerHTML = \'Contacto C2 (Entrada a Totalidad)\';',
+                '                btnC2.onclick = () => switchKey("c2");',
+                '                box.appendChild(btnC2);',
+                '            }',
+                '            if (APP_DATA.c3 && APP_DATA.c3.events.length > 0) {',
+                '                const btnC3 = document.createElement("button");',
+                '                btnC3.className = "tab-btn " + (currentKey === "c3" ? "active" : "");',
+                '                btnC3.innerHTML = \'Contacto C3 (Salida de Totalidad)\';',
+                '                btnC3.onclick = () => switchKey("c3");',
+                '                box.appendChild(btnC3);',
+                '            }',
+                '            if (APP_DATA.max && APP_DATA.max.events.length > 0) {',
+                '                const btnMax = document.createElement("button");',
+                '                btnMax.className = "tab-btn " + (currentKey === "max" ? "active" : "");',
+                '                btnMax.innerHTML = \'Máximo del Eclipse\';',
+                '                btnMax.onclick = () => switchKey("max");',
+                '                box.appendChild(btnMax);',
+                '            }',
+                '        }',
+                '        function switchKey(key) {',
+                '            currentKey = key;',
+                '            selectedRowIndex = -1;',
+                '            renderTabs();',
+                '            renderCurrentData();',
+                '        }',
+                '        function formatUT1(t) {',
+                '            const dtH = (APP_DATA.dtSec || 0) / 3600;',
+                '            const utDec = (APP_DATA.t0 || 12) + t - dtH;',
+                '            const totSec = ((utDec % 24 + 24) % 24) * 3600;',
+                '            const h = Math.floor(totSec / 3600);',
+                '            const m = Math.floor((totSec % 3600) / 60);',
+                '            const s = totSec % 60;',
+                '            const sInt = Math.floor(s);',
+                '            const sFrac = Math.round((s - sInt) * 10);',
+                '            return String(h).padStart(2,"0") + ":" + String(m).padStart(2,"0") + ":" + String(sInt).padStart(2,"0") + "." + sFrac;',
+                '        }',
+                '        function renderCurrentData() {',
+                '            const cur = APP_DATA[currentKey];',
+                '            if (!cur) return;',
+                '            const events = cur.events || [];',
+                '            const refTimeStr = cur.baseT ? formatUT1(cur.baseT) : "--:--:--";',
+                '            const total = events.length;',
+                '            const st = cur.stats || {};',
+                '            let statsHtml = ',
+                '                \'<span class="stat-pill">Hora \' + cur.contactLabel + \': <strong>\' + refTimeStr + \' UT1</strong></span>\' + ',
+                '                \'<span class="stat-pill">Ventana: <strong>[-30 s, +30 s]</strong></span>\' + ',
+                '                \'<span class="stat-pill">Total perlas: <strong>\' + total + \'</strong></span>\';',
+                '            if (st.diamondFeature) {',
+                '                statsHtml += \'<span class="stat-pill">Gema del Diamante: <strong>\' + st.diamondFeature + \'</strong></span>\';',
+                '            }',
+                '            if (st.maxSimultaneousBeads >= 3) {',
+                '                statsHtml += \'<span class="stat-pill">Collar de perlas: <strong>Sí (máx. \' + st.maxSimultaneousBeads + \' perlas)</strong></span>\';',
+                '            }',
+                '            document.getElementById("stats-box").innerHTML = statsHtml;',
+                '            renderRows();',
+                '        }',
+                '        function renderRows() {',
+                '            const cur = APP_DATA[currentKey];',
+                '            const tbody = document.getElementById("table-body");',
+                '            tbody.innerHTML = "";',
+                '            if (!cur || !cur.events || cur.events.length === 0) {',
+                '                tbody.innerHTML = \'<tr><td colspan="6" style="text-align:center; padding: 24px; color: #64748b;">No hay actividad de perlas en esta ventana.</td></tr>\';',
+                '                return;',
+                '            }',
+                '            let visibleCount = 0;',
+                '            cur.events.forEach((e, idx) => {',
+                '                if (currentFilter !== "todos") {',
+                '                    if (currentFilter === "Diamante" && !e.fenomeno.includes("Diamante")) return;',
+                '                    if (currentFilter === "Perla" && !e.fenomeno.includes("Perla")) return;',
+                '                }',
+                '                if (searchQuery) {',
+                '                    const q = searchQuery.toLowerCase();',
+                '                    const hay = (e.feature + " " + e.landmark + " " + e.pa.toFixed(1) + " " + e.fenomeno).toLowerCase();',
+                '                    if (!hay.includes(q)) return;',
+                '                }',
+                '                visibleCount++;',
+                '                const tr = document.createElement("tr");',
+                '                if (idx === selectedRowIndex) tr.className = "row-selected";',
+                '                tr.onclick = () => jumpTo(e.t, idx);',
+                '                tr.title = "Clic para reproducir en este instante en el visor telescópico";',
+                '                const timeStr = formatUT1(e.t);',
+                '                let dtRound = Math.round(e.dt);',
+                '                if (Object.is(dtRound, -0) || dtRound === 0) dtRound = 0;',
+                '                const dtStr = (dtRound > 0 ? "+" : "") + dtRound;',
+                '                const paRound = Math.round(e.pa);',
+                '                const fenoClean = e.fenomeno.replace(/💎|📿|✨/g, "").trim();',
+                '                const featureFull = e.feature + (e.landmark ? " — " + e.landmark : "");',
+                '                tr.innerHTML = ',
+                '                    \'<td style="color:var(--text-dim); text-align:center;">\' + (idx + 1) + \'</td>\' + ',
+                '                    \'<td style="color:var(--text-soft); font-weight:500;">\' + timeStr + \'</td>\' + ',
+                '                    \'<td style="color:var(--text-soft); text-align:right;">\' + dtStr + \'</td>\' + ',
+                '                    \'<td style="color:var(--text-main); font-weight:500;">\' + fenoClean + \'</td>\' + ',
+                '                    \'<td style="color:var(--text-soft); text-align:right;">\' + paRound + \'</td>\' + ',
+                '                    \'<td style="color:var(--text-muted);" title="\' + featureFull.replace(/"/g, "&quot;") + \'">\' + featureFull + \'</td>\';',
+                '                tbody.appendChild(tr);',
+                '            });',
+                '            if (visibleCount === 0) {',
+                '                tbody.innerHTML = \'<tr><td colspan="6" style="text-align:center; padding: 20px; color: #64748b;">No se encontraron eventos con los filtros aplicados.</td></tr>\';',
+                '            }',
+                '        }',
+                '        function setFilter(filt, btn) {',
+                '            currentFilter = filt;',
+                '            document.querySelectorAll("#filter-pills-box .filter-btn").forEach(b => b.classList.remove("active"));',
+                '            if (btn) btn.classList.add("active");',
+                '            renderRows();',
+                '        }',
+                '        function handleSearch(val) {',
+                '            searchQuery = val.trim();',
+                '            renderRows();',
+                '        }',
+                '        function jumpTo(t, idx) {',
+                '            selectedRowIndex = idx;',
+                '            renderRows();',
+                '            if (window.opener && !window.opener.closed && typeof window.opener.jumpToSpecificTime === "function") {',
+                '                window.opener.jumpToSpecificTime(t);',
+                '            } else if (window.parent && typeof window.parent.jumpToSpecificTime === "function") {',
+                '                window.parent.jumpToSpecificTime(t);',
+                '            }',
+                '        }',
+                '        function copyCsv() {',
+                '            const cur = APP_DATA[currentKey];',
+                '            if (!cur || !cur.events) return;',
+                '            let csv = "#,Hora_UT1,dt_segundos,Fenomeno,PA_grados,Accidente,Relieve\\n";',
+                '            cur.events.forEach((e, i) => {',
+                '                let dtRound = Math.round(e.dt);',
+                '                if (Object.is(dtRound, -0) || dtRound === 0) dtRound = 0;',
+                '                const dtStr = (dtRound > 0 ? "+" : "") + dtRound;',
+                '                const paRound = Math.round(e.pa);',
+                '                const fenoClean = e.fenomeno.replace(/💎|📿|✨/g, "").trim();',
+                '                csv += (i+1) + "," + formatUT1(e.t) + "," + dtStr + "," + ',
+                '                       \'"\' + fenoClean + \'","\' + paRound + \'","\' + ',
+                '                       \'"\' + e.feature + \'","\' + \'"\' + e.landmark + \'"\\n\';',
+                '            });',
+                '            navigator.clipboard.writeText(csv).then(() => {',
+                '                alert("¡Registro CSV copiado al portapapeles!");',
+                '            }).catch(() => {',
+                '                prompt("Copia el CSV:", csv);',
+                '            });',
+                '        }',
+                '        window.onload = init;',
+                '    ' + '<' + '/script>',
+                '</body>',
+                '</html>'
+            ];
+
+            return htmlParts.join('\n');
+        }
+
+        let activityLogWindowRef = null;
+
+        function toggleActivityLog(show = null) {
+            const chk = document.getElementById('chk-show-activity-log');
+            const targetState = (show !== null) ? show : (chk ? chk.checked : false);
+            if (chk) chk.checked = targetState;
+
+            if (targetState) {
+                openActivityLogWindow();
+            } else {
+                closeInAppActivityLogModal();
+                if (activityLogWindowRef && !activityLogWindowRef.closed) {
+                    try {
+                        activityLogWindowRef.close();
+                    } catch(e) {}
+                    activityLogWindowRef = null;
+                }
+            }
+        }
+
+        function openActivityLogWindow(contactKey = null) {
+            const chk = document.getElementById('chk-show-activity-log');
+            if (!currentEclipse) {
+                if (chk) chk.checked = false;
+                return;
+            }
+            const circ = localCircumstancesCache || (currentObserver ? calculateLocalSolarCircumstances(currentEclipse, currentObserver.lat, currentObserver.lon) : null);
+            if (!circ || !circ.isEclipsed) {
+                alert('El observador seleccionado no experimenta el eclipse.');
+                if (chk) chk.checked = false;
+                return;
+            }
+
+            const hasC2 = circ && (circ.isTotal || circ.isAnnular) && circ.c2 && circ.c2.t != null;
+            const targetKey = contactKey || (hasC2 ? 'c2' : 'max');
+
+            const fullHtml = buildActivityLogPageHtml(circ, currentEclipse, currentObserver || { name: 'Observador', lat: 0, lon: 0 }, targetKey);
+
+            try {
+                activityLogWindowRef = window.open('', 'RegistroActividadCosmos', 'width=1040,height=780,scrollbars=yes,resizable=yes');
+            } catch(e) {
+                activityLogWindowRef = null;
+            }
+
+            if (activityLogWindowRef && !activityLogWindowRef.closed && typeof activityLogWindowRef.closed !== 'undefined') {
+                activityLogWindowRef.document.open();
+                activityLogWindowRef.document.write(fullHtml);
+                activityLogWindowRef.document.close();
+                if (activityLogWindowRef.focus) activityLogWindowRef.focus();
+                try {
+                    activityLogWindowRef.addEventListener('beforeunload', () => {
+                        const c = document.getElementById('chk-show-activity-log');
+                        if (c) c.checked = false;
+                    });
+                } catch(e) {}
+            } else {
+                showInAppActivityLogModal(fullHtml);
+            }
+            if (chk) chk.checked = true;
+        }
+
+        function showInAppActivityLogModal(fullHtml) {
+            let modal = document.getElementById('activity-log-inapp-modal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'activity-log-inapp-modal';
+                modal.style.cssText = 'position:fixed;inset:0;background:rgba(2,6,23,0.85);backdrop-filter:blur(8px);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;';
+                document.body.appendChild(modal);
+            }
+
+            modal.innerHTML = `
+                <div style="position:relative;width:100%;max-width:1040px;height:90vh;max-height:850px;background:#060913;border:1px solid rgba(255,255,255,0.12);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 12px 40px rgba(0,0,0,0.8);">
+                    <button type="button" onclick="closeInAppActivityLogModal()" style="position:absolute;top:12px;right:14px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#cbd5e1;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:0.82rem;z-index:100;transition:all 0.2s;" onmouseover="this.style.background='rgba(244,63,94,0.2)';this.style.color='#f43f5e'" onmouseout="this.style.background='rgba(255,255,255,0.08)';this.style.color='#cbd5e1'">
+                        ✕ Cerrar
+                    </button>
+                    <iframe id="activity-log-iframe" style="width:100%;height:100%;border:none;background:#060913;"></iframe>
+                </div>
+            `;
+            modal.style.display = 'flex';
+            const iframe = document.getElementById('activity-log-iframe');
+            if (iframe && iframe.contentDocument) {
+                iframe.contentDocument.open();
+                iframe.contentDocument.write(fullHtml);
+                iframe.contentDocument.close();
+            }
+        }
+
+        function closeInAppActivityLogModal() {
+            const modal = document.getElementById('activity-log-inapp-modal');
+            if (modal) modal.style.display = 'none';
+            const chk = document.getElementById('chk-show-activity-log');
+            if (chk) chk.checked = false;
         }
 
         let lastObservedWindowWidth = window.innerWidth;
@@ -7472,13 +8377,25 @@
                 const setOpen = setPanel && !setPanel.classList.contains('collapsed');
                 const limbOpen = limbPanel && !limbPanel.classList.contains('collapsed');
 
-                if (limbOpen) {
-                    toggleSidebar(false);
-                    toggleSettingsPanel(false);
-                    togglePlaybackDock(false);
-                } else if (sideOpen && setOpen) {
-                    toggleSettingsPanel(false);
-                    togglePlaybackDock(false);
+                const openPanels = [];
+                if (sideOpen) openPanels.push('sidebar-panel');
+                if (setOpen) openPanels.push('settings-panel');
+                if (limbOpen) openPanels.push('lunar-limb-panel');
+
+                if (openPanels.length > 1) {
+                    smallScreenPanelStack.length = 0;
+                    openPanels.forEach(id => smallScreenPanelStack.push(id));
+                    const activeId = smallScreenPanelStack[smallScreenPanelStack.length - 1];
+                    openPanels.forEach(id => {
+                        if (id !== activeId) {
+                            const p = document.getElementById(id);
+                            if (p) p.classList.add('collapsed');
+                        }
+                    });
+                } else if (openPanels.length === 1) {
+                    if (!smallScreenPanelStack.includes(openPanels[0])) {
+                        smallScreenPanelStack.push(openPanels[0]);
+                    }
                 }
                 resetAllPanelsPositions();
             }
