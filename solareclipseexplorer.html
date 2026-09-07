@@ -1492,7 +1492,7 @@
             <div style="width: 96px; flex-shrink: 0; position: relative;" id="search-input-col">
                 <input type="number" class="search-input" id="year-input" placeholder="Año" value="2027" min="-1999" max="3000" aria-label="Año del eclipse" style="width: 100%; height: 36px; box-sizing: border-box; padding: 0 6px; font-size: 0.88rem; font-weight: 400; text-align: center; background: #0f172a; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 10px;">
                 <div id="century-combobox-container" class="custom-combobox-container" style="display: none; position: relative; width: 100%;">
-                    <input type="text" class="search-select custom-combobox-input" id="century-input" readonly value="S. XXI" placeholder="Siglo" style="width: 100%; height: 36px; box-sizing: border-box; padding: 0 20px 0 6px; font-family: var(--font-mono); font-size: 0.80rem; font-weight: 600; text-align: center; background-color: #0f172a; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 10px; color: #f8fafc; cursor: pointer; outline: none; user-select: none; text-overflow: ellipsis; white-space: nowrap;" onclick="toggleCenturyDropdown()" title="Seleccionar siglo para ver eclipses visibles">
+                    <input type="text" class="search-select custom-combobox-input" id="century-input" readonly value="S.XXI" placeholder="Siglo" style="width: 100%; height: 36px; box-sizing: border-box; padding: 0 20px 0 6px; font-family: var(--font-mono); font-size: 0.80rem; font-weight: 600; text-align: center; background-color: #0f172a; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 10px; color: #f8fafc; cursor: pointer; outline: none; user-select: none; text-overflow: ellipsis; white-space: nowrap;" onclick="toggleCenturyDropdown()" title="Seleccionar siglo para ver eclipses visibles">
                     <span style="position: absolute; right: 7px; top: 50%; transform: translateY(-50%); pointer-events: none; color: #94a3b8; font-size: 0.65rem;"><i class="fa-solid fa-chevron-down"></i></span>
                     <div id="century-dropdown-menu" class="custom-dropdown-menu" style="display: none; position: absolute; top: calc(100% + 4px); left: 0; min-width: 220px; width: max-content; box-sizing: border-box; max-height: 240px; overflow-y: auto; background: #0b1329; border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 10px; box-shadow: 0 12px 30px rgba(0,0,0,0.85); z-index: 1000; padding: 4px; font-family: var(--font-mono);">
                     </div>
@@ -5552,9 +5552,9 @@
 
         function getCenturyShortLabel(c) {
             if (c > 0) {
-                return `S. ${toRoman(c)}`;
+                return `S.${toRoman(c)}`;
             } else {
-                return `S. ${toRoman(Math.abs(c))} a.C.`;
+                return `S.${toRoman(Math.abs(c))} a.C.`;
             }
         }
 
