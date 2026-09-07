@@ -2970,7 +2970,7 @@
 
         function formatCoordDms(val, isLat) {
             if (val == null || isNaN(val)) return '--';
-            const dir = isLat ? (val >= 0 ? 'N' : 'S') : (val >= 0 ? 'E' : 'W');
+            const dir = isLat ? (val >= 0 ? 'N' : 'S') : (val >= 0 ? 'E' : 'O');
             const abs = Math.abs(val);
             const deg = Math.floor(abs);
             const minFloat = (abs - deg) * 60;
