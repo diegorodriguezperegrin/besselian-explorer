@@ -1506,9 +1506,8 @@
         </div>
 
         <div class="eclipse-card" id="eclipse-details">
-            <div id="card-long-type-row" style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); display: flex; align-items: center; justify-content: space-between; gap: 8px;">
-                <span id="card-long-type-text" style="font-size: 0.77rem; font-weight: 600; color: #f8fafc; font-family: var(--font-heading); line-height: 1.25;">Eclipse Total Central</span>
-                <span id="card-raw-type-badge" class="type-badge-sm type-T" style="font-size: 0.72rem; padding: 2px 6px; flex-shrink: 0;" title="Código técnico oficial de la NASA">T</span>
+            <div class="stat-row" id="card-long-type-row" style="margin-bottom: 2px;">
+                <span id="card-long-type-text" class="stat-val" style="font-weight: 400; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Eclipse Total Central</span>
             </div>
             <div class="stat-grid">
                 <!-- Columna 1 (6 elementos) -->
@@ -6221,12 +6220,6 @@
             const longTypeElem = getDOM('card-long-type-text');
             if (longTypeElem) {
                 longTypeElem.innerText = longDesc;
-            }
-            const rawTypeBadge = getDOM('card-raw-type-badge');
-            if (rawTypeBadge) {
-                rawTypeBadge.innerText = rawType;
-                rawTypeBadge.className = `type-badge-sm ${shortInfo.className}`;
-                rawTypeBadge.title = `Código técnico oficial NASA: ${rawType}`;
             }
 
             const typeElem = getDOM('card-type');
