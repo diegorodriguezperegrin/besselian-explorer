@@ -5892,7 +5892,7 @@
             const rMin_sq = Math.max(0, r0_sq - (r0_dot_v * r0_dot_v) / (v2 || 1));
             const rPenumbra = 1.0 + l10;
             const deltaT = Math.sqrt(Math.max(0, rPenumbra * rPenumbra - rMin_sq)) / v;
-            return { tClosest, deltaT, v, v2 };
+            return { tClosest, deltaT, v, v2, rMin_sq };
         }
 
         function selectEclipse(eclipse, autoRecenter = false) {
@@ -6206,7 +6206,7 @@
             }
 
             // Cálculo dinámico riguroso del intervalo de tiempo de penumbra para cualquier eclipse
-            const { tClosest, deltaT, v, v2 } = getEclipseTimeBounds(eclipse);
+            const { tClosest, deltaT, v, v2, rMin_sq } = getEclipseTimeBounds(eclipse);
 
             const tLoopMin = tClosest - deltaT - 0.3;
             const tLoopMax = tClosest + deltaT + 0.3;
@@ -6403,9 +6403,18 @@
                 });
             });
 
-            // Lóbulos del terminador y máximo en horizonte
+            // -------------------------------------------------------------
+            // Lóbulos del terminador y Máximo en horizonte (Formulación unificada analítica de Espenak)
+            // -------------------------------------------------------------
             const sunriseBranch1 = [], sunriseBranch2 = [];
             const sunsetBranch1 = [], sunsetBranch2 = [];
+            const fullBranch1 = [], fullBranch2 = [];
+            const srA = [], srB = [];
+            const ssA = [], ssB = [];
+
+            const l1Closest = (eclipse.l10 || 0.54) + (eclipse.l11 || 0) * tClosest;
+            const rMin = Math.sqrt(rMin_sq != null ? rMin_sq : 0);
+            const entersCompletely = (rMin < (1.0 - l1Closest));
 
             const findLimbContactPoint = (tA, tB, isOuter) => {
                 let a = tA, b = tB;
@@ -6414,14 +6423,14 @@
                     const xm = (eclipse.x0||0) + (eclipse.x1||0)*m + (eclipse.x2||0)*m*m + (eclipse.x3||0)*m*m*m;
                     const ym = (eclipse.y0||0) + (eclipse.y1||0)*m + (eclipse.y2||0)*m*m + (eclipse.y3||0)*m*m*m;
                     const l1m = (eclipse.l10||0.54) + (eclipse.l11||0)*m;
-                    const rm = Math.sqrt(xm*xm + ym*ym);
+                    const rm = Math.hypot(xm, ym);
                     const target = isOuter ? (1.0 + l1m) : Math.abs(1.0 - l1m);
                     const fm = rm - target;
 
                     const xa = (eclipse.x0||0) + (eclipse.x1||0)*a + (eclipse.x2||0)*a*a + (eclipse.x3||0)*a*a*a;
                     const ya = (eclipse.y0||0) + (eclipse.y1||0)*a + (eclipse.y2||0)*a*a + (eclipse.y3||0)*a*a*a;
                     const l1a = (eclipse.l10||0.54) + (eclipse.l11||0)*a;
-                    const ra = Math.sqrt(xa*xa + ya*ya);
+                    const ra = Math.hypot(xa, ya);
                     const targetA = isOuter ? (1.0 + l1a) : Math.abs(1.0 - l1a);
                     const fa = ra - targetA;
 
@@ -6431,102 +6440,11 @@
                 const tMid = 0.5 * (a + b);
                 const xMid = (eclipse.x0||0) + (eclipse.x1||0)*tMid + (eclipse.x2||0)*tMid*tMid + (eclipse.x3||0)*tMid*tMid*tMid;
                 const yMid = (eclipse.y0||0) + (eclipse.y1||0)*tMid + (eclipse.y2||0)*tMid*tMid + (eclipse.y3||0)*tMid*tMid*tMid;
-                const RMid = Math.sqrt(xMid*xMid + yMid*yMid);
+                const RMid = Math.hypot(xMid, yMid);
                 if (RMid === 0) return null;
                 return besselianXYToLatLng(eclipse, tMid, xMid / RMid, yMid / RMid);
             };
 
-            let prevSunriseInside = false;
-            let prevSunsetInside = false;
-            let prevT = tLoopMin;
-
-            for (let i = 0; i <= numSteps; i++) {
-                const t = tLoopMin + i * dt;
-                const x = (eclipse.x0 || 0) + (eclipse.x1 || 0)*t + (eclipse.x2 || 0)*t*t + (eclipse.x3 || 0)*t*t*t;
-                const y = (eclipse.y0 || 0) + (eclipse.y1 || 0)*t + (eclipse.y2 || 0)*t*t + (eclipse.y3 || 0)*t*t*t;
-                const l1 = (eclipse.l10 || 0.54) + (eclipse.l11 || 0)*t;
-
-                const R = Math.sqrt(x*x + y*y);
-                const isSunrise = (t < tClosest);
-                const inside = (R <= 1 + l1 && R >= Math.abs(1 - l1));
-
-                if (isSunrise) {
-                    if (inside && !prevSunriseInside) {
-                        const ptOuter = findLimbContactPoint(prevT, t, true);
-                        if (ptOuter) {
-                            sunriseBranch1.push(ptOuter);
-                            sunriseBranch2.push(ptOuter);
-                        }
-                    } else if (!inside && prevSunriseInside) {
-                        const ptInner = findLimbContactPoint(prevT, t, false);
-                        if (ptInner) {
-                            sunriseBranch1.push(ptInner);
-                            sunriseBranch2.push(ptInner);
-                        }
-                    }
-                    prevSunriseInside = inside;
-                } else {
-                    if (inside && !prevSunsetInside) {
-                        const ptInner = findLimbContactPoint(prevT, t, false);
-                        if (ptInner) {
-                            sunsetBranch1.push(ptInner);
-                            sunsetBranch2.push(ptInner);
-                        }
-                    } else if (!inside && prevSunsetInside) {
-                        const ptOuter = findLimbContactPoint(prevT, t, true);
-                        if (ptOuter) {
-                            sunsetBranch1.push(ptOuter);
-                            sunsetBranch2.push(ptOuter);
-                        }
-                    }
-                    prevSunsetInside = inside;
-                }
-
-                if (inside) {
-                    const a = (1 - l1*l1 + R*R) / (2 * R);
-                    const h2 = Math.max(0, 1 - a*a);
-                    const h = Math.sqrt(h2);
-                    const x2 = a * x / R;
-                    const y2 = a * y / R;
-                    
-                    const x3 = x2 + h * y / R;
-                    const y3 = y2 - h * x / R;
-                    
-                    const x4 = x2 - h * y / R;
-                    const y4 = y2 + h * x / R;
-
-                    const pt1 = besselianXYToLatLng(eclipse, t, x3, y3);
-                    const pt2 = besselianXYToLatLng(eclipse, t, x4, y4);
-
-                    if (isSunrise) {
-                        if (pt1) sunriseBranch1.push(pt1);
-                        if (pt2) sunriseBranch2.push(pt2);
-                    } else {
-                        if (pt1) sunsetBranch1.push(pt1);
-                        if (pt2) sunsetBranch2.push(pt2);
-                    }
-                }
-
-                prevT = t;
-            }
-
-            let sunriseLoop = [];
-            if (sunriseBranch1.length > 0 && sunriseBranch2.length > 0) {
-                sunriseLoop = sunriseBranch1.concat(sunriseBranch2.reverse());
-                sunriseLoop.push(sunriseLoop[0]);
-            }
-
-            let sunsetLoop = [];
-            if (sunsetBranch1.length > 0 && sunsetBranch2.length > 0) {
-                sunsetLoop = sunsetBranch1.concat(sunsetBranch2.reverse());
-                sunsetLoop.push(sunsetLoop[0]);
-            }
-
-            // Máximo eclipse en horizonte (Espenak analítica)
-            const sunrise1 = [], sunrise2 = [];
-            const sunset1 = [], sunset2 = [];
-            const dtEspenak = 0.002;
-            const numStepsEspenak = Math.ceil((tLoopMax - tLoopMin) / dtEspenak);
             const getH2AtT = (t_val) => {
                 const x = (eclipse.x0||0)+(eclipse.x1||0)*t_val+(eclipse.x2||0)*t_val*t_val+(eclipse.x3||0)*t_val*t_val*t_val;
                 const y = (eclipse.y0||0)+(eclipse.y1||0)*t_val+(eclipse.y2||0)*t_val*t_val+(eclipse.y3||0)*t_val*t_val*t_val;
@@ -6544,100 +6462,203 @@
                 return 1.0 - (x_proj*x_proj + y_proj*y_proj);
             };
 
-            const findH2Apex = (tA, tB) => {
-                let a = tA, b = tB;
-                for (let k = 0; k < 35; k++) {
-                    const m = 0.5 * (a + b);
-                    const hm = getH2AtT(m);
-                    const ha = getH2AtT(a);
-                    if ((hm > 0) === (ha > 0)) a = m;
-                    else b = m;
-                }
-                const tMid = 0.5 * (a + b);
-                const x = (eclipse.x0||0)+(eclipse.x1||0)*tMid+(eclipse.x2||0)*tMid*tMid+(eclipse.x3||0)*tMid*tMid*tMid;
-                const y = (eclipse.y0||0)+(eclipse.y1||0)*tMid+(eclipse.y2||0)*tMid*tMid+(eclipse.y3||0)*tMid*tMid*tMid;
-                const u = (eclipse.x1||0)+2*(eclipse.x2||0)*tMid+3*(eclipse.x3||0)*tMid*tMid;
-                const v = (eclipse.y1||0)+2*(eclipse.y2||0)*tMid+3*(eclipse.y3||0)*tMid*tMid;
-                const dDeg = (eclipse.d0||0)+(eclipse.d1||0)*tMid+(eclipse.d2||0)*tMid*tMid;
-                const omega = Math.sin(dDeg * Math.PI / 180) * (eclipse.mu1||15.004) * Math.PI / 180;
+            const getEspenakPoint = (t, isBranchA) => {
+                const x = (eclipse.x0 || 0) + (eclipse.x1 || 0)*t + (eclipse.x2 || 0)*t*t + (eclipse.x3 || 0)*t*t*t;
+                const y = (eclipse.y0 || 0) + (eclipse.y1 || 0)*t + (eclipse.y2 || 0)*t*t + (eclipse.y3 || 0)*t*t*t;
+                const u = (eclipse.x1 || 0) + 2*(eclipse.x2 || 0)*t + 3*(eclipse.x3 || 0)*t*t;
+                const v = (eclipse.y1 || 0) + 2*(eclipse.y2 || 0)*t + 3*(eclipse.y3 || 0)*t*t;
+                const dDeg = (eclipse.d0 || 0) + (eclipse.d1 || 0)*t + (eclipse.d2 || 0)*t*t;
+                const omega = Math.sin(dDeg * Math.PI / 180) * (eclipse.mu1 || 15.004) * Math.PI / 180;
                 const u_eff = u + omega * y;
                 const v_eff = v - omega * x;
                 const c = u_eff*x + v_eff*y;
                 const veff2 = u_eff*u_eff + v_eff*v_eff;
-                if (veff2 === 0) return null;
-                const x_proj = c * u_eff / veff2;
-                const y_proj = c * v_eff / veff2;
-                return besselianXYToLatLng(eclipse, tMid, x_proj, y_proj);
-            };
-
-            let prevH2 = -1, prevEspenakT = tLoopMin;
-            let sunriseApex = null, sunsetApex = null;
-
-            for (let i = 0; i <= numStepsEspenak; i++) {
-                const t = tLoopMin + i * dtEspenak;
-                const x = (eclipse.x0||0)+(eclipse.x1||0)*t+(eclipse.x2||0)*t*t+(eclipse.x3||0)*t*t*t;
-                const y = (eclipse.y0||0)+(eclipse.y1||0)*t+(eclipse.y2||0)*t*t+(eclipse.y3||0)*t*t*t;
-                const u = (eclipse.x1||0)+2*(eclipse.x2||0)*t+3*(eclipse.x3||0)*t*t;
-                const v = (eclipse.y1||0)+2*(eclipse.y2||0)*t+3*(eclipse.y3||0)*t*t;
-                const l1 = (eclipse.l10||0.54)+(eclipse.l11||0)*t;
-                const dDeg = (eclipse.d0||0)+(eclipse.d1||0)*t+(eclipse.d2||0)*t*t;
-                const omega = Math.sin(dDeg * Math.PI / 180) * (eclipse.mu1||15.004) * Math.PI / 180;
-                const u_eff = u + omega * y;
-                const v_eff = v - omega * x;
-                const c = u_eff*x + v_eff*y;
-                const veff2 = u_eff*u_eff + v_eff*v_eff;
-                if (veff2 === 0) continue;
+                if (veff2 <= 0) return null;
                 const x_proj = c * u_eff / veff2;
                 const y_proj = c * v_eff / veff2;
                 const h2 = 1.0 - (x_proj*x_proj + y_proj*y_proj);
+                if (h2 < 0) return null;
+                const h = Math.sqrt(h2);
+                const Veff = Math.sqrt(veff2);
+                const sign = isBranchA ? 1 : -1;
+                const xi = x_proj - sign * h * v_eff / Veff;
+                const eta = y_proj + sign * h * u_eff / Veff;
+                const l1 = (eclipse.l10 || 0.54) + (eclipse.l11 || 0)*t;
+                const d = Math.hypot(xi - x, eta - y);
+                return { t, xi, eta, d, l1, inside: (d <= l1 + 0.0001) };
+            };
 
-                if (h2 >= 0 && prevH2 < 0 && t < tClosest) {
-                    sunriseApex = findH2Apex(prevEspenakT, t);
-                } else if (h2 < 0 && prevH2 >= 0 && t > tClosest) {
-                    sunsetApex = findH2Apex(prevEspenakT, t);
+            const findEspenakBoundaryPoint = (tIn, tOut, isBranchA) => {
+                let a = tIn, b = tOut;
+                for (let iter = 0; iter < 20; iter++) {
+                    const m = 0.5 * (a + b);
+                    const pt = getEspenakPoint(m, isBranchA);
+                    if (!pt || !pt.inside) b = m;
+                    else a = m;
                 }
-                prevH2 = h2;
-                prevEspenakT = t;
+                const pt = getEspenakPoint(a, isBranchA);
+                return pt ? besselianXYToLatLng(eclipse, pt.t, pt.xi, pt.eta) : null;
+            };
 
-                if (h2 < 0) continue;
-                const h = Math.sqrt(h2), Veff = Math.sqrt(veff2);
-                const xi1 = x_proj - h * v_eff / Veff,  eta1 = y_proj + h * u_eff / Veff;
-                const xi2 = x_proj + h * v_eff / Veff,  eta2 = y_proj - h * u_eff / Veff;
+            let ptSrOuter = null, ptSrInner = null;
+            let ptSsInner = null, ptSsOuter = null;
+            let ptFullOuterStart = null, ptFullOuterEnd = null;
 
-                const isSunrise = (t < tClosest);
-                const dist1 = Math.sqrt((xi1-x)*(xi1-x)+(eta1-y)*(eta1-y));
-                const dist2 = Math.sqrt((xi2-x)*(xi2-x)+(eta2-y)*(eta2-y));
+            let prevSrInside = false, prevSsInside = false, prevFullInside = false;
+            let prevInA = false, prevInB = false, prevT = tLoopMin;
 
-                // Condición de contención estricta (cero sobrepaso fuera del lóbulo de penumbra)
-                if (dist1 <= l1 + 0.0001) {
-                    const pt = besselianXYToLatLng(eclipse, t, xi1, eta1);
-                    if (pt) {
-                        if (isSunrise) sunrise1.push(pt);
-                        else sunset1.push(pt);
+            for (let i = 0; i <= numSteps; i++) {
+                const t = tLoopMin + i * dt;
+                const x = (eclipse.x0 || 0) + (eclipse.x1 || 0)*t + (eclipse.x2 || 0)*t*t + (eclipse.x3 || 0)*t*t*t;
+                const y = (eclipse.y0 || 0) + (eclipse.y1 || 0)*t + (eclipse.y2 || 0)*t*t + (eclipse.y3 || 0)*t*t*t;
+                const l1 = (eclipse.l10 || 0.54) + (eclipse.l11 || 0)*t;
+
+                // 1. Curva analítica de Máximo Eclipse en el horizonte (Espenak)
+                const ptA = getEspenakPoint(t, true);
+                const ptB = getEspenakPoint(t, false);
+
+                if (ptA && ptA.inside) {
+                    if (!prevInA) {
+                        const edge = findEspenakBoundaryPoint(t, prevT, true);
+                        if (edge) { if (t < tClosest) srA.push(edge); else ssA.push(edge); }
+                    }
+                    const p = besselianXYToLatLng(eclipse, t, ptA.xi, ptA.eta);
+                    if (p) { if (t < tClosest) srA.push(p); else ssA.push(p); }
+                    prevInA = true;
+                } else {
+                    if (prevInA) {
+                        const edge = findEspenakBoundaryPoint(prevT, t, true);
+                        if (edge) { if (prevT < tClosest) srA.push(edge); else ssA.push(edge); }
+                    }
+                    prevInA = false;
+                }
+
+                if (ptB && ptB.inside) {
+                    if (!prevInB) {
+                        const edge = findEspenakBoundaryPoint(t, prevT, false);
+                        if (edge) { if (t < tClosest) srB.push(edge); else ssB.push(edge); }
+                    }
+                    const p = besselianXYToLatLng(eclipse, t, ptB.xi, ptB.eta);
+                    if (p) { if (t < tClosest) srB.push(p); else ssB.push(p); }
+                    prevInB = true;
+                } else {
+                    if (prevInB) {
+                        const edge = findEspenakBoundaryPoint(prevT, t, false);
+                        if (edge) { if (prevT < tClosest) srB.push(edge); else ssB.push(edge); }
+                    }
+                    prevInB = false;
+                }
+
+                // 2. Intersección de la penumbra con el limbo terrestre (Lóbulos del terminador)
+                const R = Math.hypot(x, y);
+                const inside = (Math.abs(1.0 - l1) <= R && R <= 1.0 + l1);
+
+                if (entersCompletely) {
+                    const isSunrise = (t < tClosest);
+                    if (isSunrise) {
+                        if (inside && !prevSrInside) {
+                            ptSrOuter = findLimbContactPoint(prevT, t, true);
+                        } else if (!inside && prevSrInside) {
+                            ptSrInner = findLimbContactPoint(prevT, t, false);
+                        }
+                        prevSrInside = inside;
+                    } else {
+                        if (inside && !prevSsInside) {
+                            ptSsInner = findLimbContactPoint(prevT, t, false);
+                        } else if (!inside && prevSsInside) {
+                            ptSsOuter = findLimbContactPoint(prevT, t, true);
+                        }
+                        prevSsInside = inside;
+                    }
+                } else {
+                    if (inside && !prevFullInside) {
+                        ptFullOuterStart = findLimbContactPoint(prevT, t, true);
+                    } else if (!inside && prevFullInside) {
+                        ptFullOuterEnd = findLimbContactPoint(prevT, t, true);
+                    }
+                    prevFullInside = inside;
+                }
+
+                if (inside) {
+                    const a = (1.0 - l1*l1 + R*R) / (2.0 * R);
+                    const h_limb = Math.sqrt(Math.max(0, 1.0 - a*a));
+                    const x2 = a * x / R;
+                    const y2 = a * y / R;
+                    const x3 = x2 + h_limb * y / R;
+                    const y3 = y2 - h_limb * x / R;
+                    const x4 = x2 - h_limb * y / R;
+                    const y4 = y2 + h_limb * x / R;
+
+                    const p3 = besselianXYToLatLng(eclipse, t, x3, y3);
+                    const p4 = besselianXYToLatLng(eclipse, t, x4, y4);
+
+                    if (entersCompletely) {
+                        if (t < tClosest) {
+                            if (p3) sunriseBranch1.push(p3);
+                            if (p4) sunriseBranch2.push(p4);
+                        } else {
+                            if (p3) sunsetBranch1.push(p3);
+                            if (p4) sunsetBranch2.push(p4);
+                        }
+                    } else {
+                        if (p3) fullBranch1.push(p3);
+                        if (p4) fullBranch2.push(p4);
                     }
                 }
-                if (dist2 <= l1 + 0.0001) {
-                    const pt = besselianXYToLatLng(eclipse, t, xi2, eta2);
-                    if (pt) {
-                        if (isSunrise) sunrise2.push(pt);
-                        else sunset2.push(pt);
-                    }
+
+                prevT = t;
+            }
+
+            let sunriseLoop = [];
+            let sunsetLoop = [];
+
+            if (entersCompletely) {
+                if (sunriseBranch1.length > 0 || sunriseBranch2.length > 0) {
+                    sunriseLoop = (ptSrOuter ? [ptSrOuter] : [])
+                        .concat(sunriseBranch1)
+                        .concat(ptSrInner ? [ptSrInner] : [])
+                        .concat(sunriseBranch2.reverse());
+                    if (sunriseLoop.length > 0) sunriseLoop.push(sunriseLoop[0]);
+                }
+                if (sunsetBranch1.length > 0 || sunsetBranch2.length > 0) {
+                    sunsetLoop = (ptSsInner ? [ptSsInner] : [])
+                        .concat(sunsetBranch1)
+                        .concat(ptSsOuter ? [ptSsOuter] : [])
+                        .concat(sunsetBranch2.reverse());
+                    if (sunsetLoop.length > 0) sunsetLoop.push(sunsetLoop[0]);
+                }
+            } else {
+                if (fullBranch1.length > 0 || fullBranch2.length > 0) {
+                    sunriseLoop = (ptFullOuterStart ? [ptFullOuterStart] : [])
+                        .concat(fullBranch1)
+                        .concat(ptFullOuterEnd ? [ptFullOuterEnd] : [])
+                        .concat(fullBranch2.reverse());
+                    if (sunriseLoop.length > 0) sunriseLoop.push(sunriseLoop[0]);
                 }
             }
 
-            const fullEspenakLoop = sunrise1.slice().reverse()
-                .concat(sunriseApex ? [sunriseApex] : [])
-                .concat(sunrise2)
-                .concat(sunset2)
-                .concat(sunsetApex ? [sunsetApex] : [])
-                .concat(sunset1.slice().reverse());
+            let fullEspenakLoop = [];
+            if (entersCompletely) {
+                const sunrisePart = srB.slice().reverse().concat(srA);
+                const sunsetPart = ssA.concat(ssB.slice().reverse());
+                fullEspenakLoop = sunrisePart.concat(sunsetPart);
+            } else {
+                if (srA.length > 0 || ssA.length > 0) {
+                    fullEspenakLoop = srA.concat(ssA);
+                } else {
+                    fullEspenakLoop = srB.concat(ssB);
+                }
+            }
 
             // Líneas de Tiempo Universal (Horas UT) — Ecuación rigurosa de Máximo Eclipse de Bessel/Chauvenet
+            // Se trazan las líneas alrededor del Máximo Eclipse (GE) para evitar ramas deformadas en el limbo
             const utLines = [];
             const dtHours = (eclipse.dt || 0) / 3600;
-            const utMin = (eclipse.t0 || 12) + tLoopMin - dtHours;
-            const utMax = (eclipse.t0 || 12) + tLoopMax - dtHours;
-            const stepHours = (utMax - utMin < 2.5) ? 0.25 : 0.5;
+            const utGE = (eclipse.t0 || 12) + tClosest - dtHours;
+            const winHours = 1.25;
+            const utMin = utGE - winHours;
+            const utMax = utGE + winHours;
+            const stepHours = 0.5;
             const startHalfHour = Math.ceil(utMin / stepHours) * stepHours;
             const endHalfHour = Math.floor(utMax / stepHours) * stepHours;
 
@@ -6680,6 +6701,7 @@
                 const pts = [];
                 const numSubSteps = 50;
                 let labelPt = null;
+                let firstValidIndex = null, lastValidIndex = null;
 
                 // Barrido transversal a lo largo del cono penumbral con refinamiento Newton-Raphson
                 for (let i = -numSubSteps; i <= numSubSteps; i++) {
@@ -6705,6 +6727,8 @@
                         const ll = besselianXYToLatLng(eclipse, t, xi, eta);
                         if (ll) {
                             pts.push(ll);
+                            if (firstValidIndex === null) firstValidIndex = i;
+                            lastValidIndex = i;
                             if (i === Math.round(numSubSteps * 0.55)) {
                                 labelPt = ll;
                             }
@@ -6712,13 +6736,62 @@
                     }
                 }
 
-                if (pts.length > 1) {
+                if (pts.length >= 15) {
+                    // Refinamiento exacto por bisección de los extremos en el limbo o límite penumbral
+                    const solvePointAtS = (s_val) => {
+                        let xi = x + s_val * tx;
+                        let eta = y + s_val * ty;
+                        for (let iter = 0; iter < 4; iter++) {
+                            const ev = evalF(xi, eta);
+                            if (!ev) break;
+                            const gradN = ev.u * nx + ev.v * ny;
+                            if (Math.abs(gradN) < 1e-6) break;
+                            const delta = ev.F / gradN;
+                            xi += delta * nx;
+                            eta += delta * ny;
+                            if (Math.abs(delta) < 1e-6) break;
+                        }
+                        const r2 = xi*xi + eta*eta;
+                        const dist = Math.hypot(x - xi, y - eta);
+                        return { xi, eta, r2, dist, valid: (r2 <= 1.0001 && dist <= L1 + 0.0005) };
+                    };
+
+                    const ds = (L1 * 1.06) / numSubSteps;
+                    const bisectEdge = (sIn, sOut) => {
+                        let a = sIn, b = sOut;
+                        for (let k = 0; k < 15; k++) {
+                            const m = 0.5 * (a + b);
+                            const p = solvePointAtS(m);
+                            if (p.valid) a = m;
+                            else b = m;
+                        }
+                        const pEdge = solvePointAtS(a);
+                        return pEdge.valid ? besselianXYToLatLng(eclipse, t, pEdge.xi, pEdge.eta) : null;
+                    };
+
+                    if (firstValidIndex !== null && firstValidIndex > -numSubSteps) {
+                        const sIn = (firstValidIndex / numSubSteps) * (L1 * 1.06);
+                        const sOut = sIn - ds;
+                        const ptEdgeStart = bisectEdge(sIn, sOut);
+                        if (ptEdgeStart && Math.hypot(ptEdgeStart.lat - pts[0].lat, ptEdgeStart.lng - pts[0].lng) < 3.0) {
+                            pts.unshift(ptEdgeStart);
+                        }
+                    }
+                    if (lastValidIndex !== null && lastValidIndex < numSubSteps) {
+                        const sIn = (lastValidIndex / numSubSteps) * (L1 * 1.06);
+                        const sOut = sIn + ds;
+                        const ptEdgeEnd = bisectEdge(sIn, sOut);
+                        if (ptEdgeEnd && Math.hypot(ptEdgeEnd.lat - pts[pts.length-1].lat, ptEdgeEnd.lng - pts[pts.length-1].lng) < 3.0) {
+                            pts.push(ptEdgeEnd);
+                        }
+                    }
+
                     if (!labelPt && pts.length > 0) {
                         labelPt = pts[Math.floor(pts.length * 0.75)] || pts[pts.length - 1];
                     }
                     const utH = Math.floor((ut % 24 + 24) % 24);
                     const utM = Math.round(((ut - Math.floor(ut)) * 60 + 60) % 60);
-                    const labelText = `${String(utH).padStart(2,'0')}:${String(utM).padStart(2,'0')} UT`;
+                    const labelText = `${String(utH).padStart(2,'0')}:${String(utM).padStart(2,'0')} UT1`;
                     utLines.push({
                         pts,
                         labelPt,
@@ -7164,6 +7237,20 @@
                 }
             }
 
+            // Sincronización exacta con la línea central cartográfica (corrección elipsoidal geodésica WGS84 sobre esfera 3D)
+            let shadowCenterX = x;
+            let shadowCenterY = y;
+            let centerSurfacePos = null;
+
+            const centerLL = besselianToLatLng(e, t);
+            if (centerLL) {
+                const pCenterWorld = latLngToVector3(centerLL.lat, centerLL.lng, 1.0)
+                    .applyAxisAngle(new THREE.Vector3(0, 1, 0), deltaMuRad);
+                shadowCenterX = pCenterWorld.dot(uCanon);
+                shadowCenterY = pCenterWorld.dot(vCanon);
+                centerSurfacePos = pCenterWorld.clone().multiplyScalar(EARTH_RADIUS);
+            }
+
             // 5. Conos Volumétricos de Umbra y Penumbra 3D
             const showSpaceCones = getDOM('chk-show-space-cones')?.checked ?? true;
             if (umbraConeMesh3D && penumbraConeMesh3D) {
@@ -7174,14 +7261,14 @@
                     // Posición exacta del centro de la sombra sobre la superficie esférica de la Tierra (z = zeta * R_E)
                     const r2 = x * x + y * y;
                     const zeta = r2 < 1.0 ? Math.sqrt(1.0 - r2) : 0.0;
-                    const surfacePos = new THREE.Vector3()
+                    const surfacePos = centerSurfacePos || new THREE.Vector3()
                         .addScaledVector(uCanon, x * EARTH_RADIUS)
                         .addScaledVector(vCanon, y * EARTH_RADIUS)
                         .addScaledVector(wCanon, zeta * EARTH_RADIUS);
                     
-                    const coneHeight = Math.max(10.0, MOON_DIST - (zeta * EARTH_RADIUS));
+                    const coneHeight = Math.max(10.0, centerSurfacePos ? moonPos.distanceTo(centerSurfacePos) : (MOON_DIST - (zeta * EARTH_RADIUS)));
                     const midPos = moonPos.clone().add(surfacePos).multiplyScalar(0.5);
-                    const coneDir = wCanon.clone();
+                    const coneDir = centerSurfacePos ? moonPos.clone().sub(centerSurfacePos).normalize() : wCanon.clone();
                     const coneQuat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), coneDir);
 
                     // 1. Cono de Umbra (Totalidad): converge desde la Luna hasta la mancha negra exacta en la superficie (l2)
@@ -7220,7 +7307,7 @@
             shadowShaderMaterial.uniforms.uSunDir.value.copy(wCanon);
             shadowShaderMaterial.uniforms.uVx.value.copy(uCanon);
             shadowShaderMaterial.uniforms.uVy.value.copy(vCanon);
-            shadowShaderMaterial.uniforms.uShadowCenter.value.set(x, y);
+            shadowShaderMaterial.uniforms.uShadowCenter.value.set(shadowCenterX, shadowCenterY);
             shadowShaderMaterial.uniforms.uL1.value = l1;
             shadowShaderMaterial.uniforms.uL2.value = l2;
             shadowShaderMaterial.uniformsNeedUpdate = true;
