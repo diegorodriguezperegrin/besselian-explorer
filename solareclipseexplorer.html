@@ -5749,8 +5749,8 @@
                 const mStr = String(e.month || 1).padStart(2, '0');
                 const dStr = String(e.day || 1).padStart(2, '0');
                 const dateStr = `${yStr}-${mStr}-${dStr}`;
-                // Directamente número de saros (sin "S.")
-                opt.text = `${e.saros} ${dateStr} ${typeName}${durStr}`;
+                // Directamente número de saros seguido de "/" y fecha sin espacios
+                opt.text = `${e.saros}/${dateStr} ${typeName}${durStr}`;
                 eclipseSelect.add(opt);
             });
 
@@ -5785,12 +5785,11 @@
                         }
                     }
                     const nSeqVal = e.nSeq != null ? e.nSeq : (idx + 1);
-                    const seqStr = `${nSeqVal} `;
                     const yStr = e.year < 0 ? `-${Math.abs(e.year)}` : String(e.year);
                     const mStr = String(e.month || 1).padStart(2, '0');
                     const dStr = String(e.day || 1).padStart(2, '0');
                     const dateStr = `${yStr}-${mStr}-${dStr}`;
-                    opt.text = `${seqStr}${dateStr} ${typeName}${durSec}`;
+                    opt.text = `${nSeqVal}/${dateStr} ${typeName}${durSec}`;
                 } else {
                     opt.text = `${e.day} de ${mName} (${typeName})`;
                 }
