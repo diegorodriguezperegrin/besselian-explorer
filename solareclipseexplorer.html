@@ -7490,23 +7490,8 @@
                 eclipticPlaneGroup3D.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), normEcliptic);
             }
 
-            // 4. Posicionar Luna 3D en el Espacio Inercial a su velocidad orbital real (~1 km/s)
-            const xVal = x * EARTH_RADIUS;
-            const yVal = y * EARTH_RADIUS;
-            const zVal = Math.sqrt(Math.max(0, MOON_DIST * MOON_DIST - xVal * xVal - yVal * yVal));
-
-            const moonPos = new THREE.Vector3()
-                .addScaledVector(uCanon, xVal)
-                .addScaledVector(vCanon, yVal)
-                .addScaledVector(wCanon, zVal);
-
-            if (moonMesh3D) {
-                moonMesh3D.position.copy(moonPos);
-                moonMesh3D.lookAt(0, 0, 0);
-                moonMesh3D.rotateY(-Math.PI / 2);
-            }
-
-            // 4b. Vector unitario tangente a la Eclíptica hacia el Este (crecimiento de longitud eclíptica)
+            // 4b. Geometría inercial eclíptica y orbital según las leyes de Cassini
+            // Vector unitario tangente a la Eclíptica hacia el Este (crecimiento de longitud eclíptica)
             const uLambda = new THREE.Vector3().crossVectors(normEcliptic, wCanon).normalize();
 
             // Vector unitario de la Línea de Nodos (uNode) en el plano de la Eclíptica:
@@ -7528,6 +7513,41 @@
                 .addScaledVector(normEcliptic, Math.cos(incRad))
                 .addScaledVector(vEcl, slope * Math.sin(incRad))
                 .normalize();
+
+            // Tercera ley de Cassini: el eje de rotación lunar (moonSpinAxis), la normal a la Eclíptica (normEcliptic)
+            // y la normal a la órbita (normOrbit) son coplanarios, con normEcliptic situado entre ambos.
+            // Inclinación del eje de rotación lunar respecto a la normal eclíptica: I = 1.543° (en sentido opuesto a la órbita)
+            const incMoonSpinRad = 1.543 * Math.PI / 180;
+            const moonSpinAxis = new THREE.Vector3()
+                .addScaledVector(normEcliptic, Math.cos(incMoonSpinRad))
+                .addScaledVector(vEcl, -slope * Math.sin(incMoonSpinRad))
+                .normalize();
+
+            // 4. Posicionar y orientar la Luna 3D con rigor astronómico (leyes de Cassini y anclaje sincrónico)
+            const xVal = x * EARTH_RADIUS;
+            const yVal = y * EARTH_RADIUS;
+            const zVal = Math.sqrt(Math.max(0, MOON_DIST * MOON_DIST - xVal * xVal - yVal * yVal));
+
+            const moonPos = new THREE.Vector3()
+                .addScaledVector(uCanon, xVal)
+                .addScaledVector(vCanon, yVal)
+                .addScaledVector(wCanon, zVal);
+
+            if (moonMesh3D) {
+                moonMesh3D.position.copy(moonPos);
+
+                // Orientación de la Luna según el estado de Cassini:
+                // Eje +Y local: Eje polar físico de rotación lunar (inclinado exactamente 1.543° respecto a la Eclíptica)
+                // Eje +X local: Meridiano central selenográfico de la cara visible (apuntando hacia la Tierra)
+                // Eje +Z local: Completa el triedro ortonormal hacia el limbo orbital lunar
+                const vToEarth = moonPos.clone().negate().normalize();
+                const axisY = moonSpinAxis.clone().normalize();
+                const axisX = vToEarth.clone().sub(axisY.clone().multiplyScalar(vToEarth.dot(axisY))).normalize();
+                const axisZ = new THREE.Vector3().crossVectors(axisX, axisY).normalize();
+
+                const rotMatrix = new THREE.Matrix4().makeBasis(axisX, axisY, axisZ);
+                moonMesh3D.quaternion.setFromRotationMatrix(rotMatrix);
+            }
 
             // Vector unitario tangente orbital en el sentido de traslación lunar (Oeste a Este)
             const uTangent = new THREE.Vector3().crossVectors(normOrbit, uNode).normalize();
