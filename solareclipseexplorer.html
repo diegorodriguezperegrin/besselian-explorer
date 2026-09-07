@@ -1506,6 +1506,10 @@
         </div>
 
         <div class="eclipse-card" id="eclipse-details">
+            <div id="card-long-type-row" style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                <span id="card-long-type-text" style="font-size: 0.77rem; font-weight: 600; color: #f8fafc; font-family: var(--font-heading); line-height: 1.25;">Eclipse Total Central</span>
+                <span id="card-raw-type-badge" class="type-badge-sm type-T" style="font-size: 0.72rem; padding: 2px 6px; flex-shrink: 0;" title="Código técnico oficial de la NASA">T</span>
+            </div>
             <div class="stat-grid">
                 <!-- Columna 1 (6 elementos) -->
                 <div class="stat-row">
@@ -5525,6 +5529,47 @@
         let searchMode = 'year'; // 'year' | 'saros' | 'location'
         const locationEclipsesCache = new Map();
 
+        const NASA_LONG_TYPE_MAP = {
+            'T': 'Eclipse Total Central',
+            'Tm': 'Eclipse Total (Punto medio de la serie de Saros)',
+            'Ts': 'Eclipse Total No Central (solo límite sur)',
+            'Tn': 'Eclipse Total No Central (solo límite norte)',
+            'T+': 'Eclipse Total No Central (eje fuera de la Tierra, norte)',
+            'T-': 'Eclipse Total No Central (eje fuera de la Tierra, sur)',
+            'A': 'Eclipse Anular Central',
+            'Am': 'Eclipse Anular (Punto medio de la serie de Saros)',
+            'As': 'Eclipse Anular No Central (solo límite sur)',
+            'An': 'Eclipse Anular No Central (solo límite norte)',
+            'A+': 'Eclipse Anular No Central (eje fuera de la Tierra, norte)',
+            'A-': 'Eclipse Anular No Central (eje fuera de la Tierra, sur)',
+            'H': 'Eclipse Híbrido (Anular-Total)',
+            'Hm': 'Eclipse Híbrido (Punto medio de la serie de Saros)',
+            'H2': 'Eclipse Híbrido (comienza anular y termina total)',
+            'H3': 'Eclipse Híbrido (comienza total y termina anular)',
+            'P': 'Eclipse Parcial',
+            'Pb': 'Eclipse Parcial (Inicio de la serie de Saros)',
+            'Pe': 'Eclipse Parcial (Fin de la serie de Saros)'
+        };
+
+        function getLongEclipseType(rawType) {
+            if (NASA_LONG_TYPE_MAP[rawType]) return NASA_LONG_TYPE_MAP[rawType];
+            const code = (rawType || '').toUpperCase();
+            if (code.startsWith('T')) return 'Eclipse Total';
+            if (code.startsWith('A')) return 'Eclipse Anular';
+            if (code.startsWith('H')) return 'Eclipse Híbrido';
+            if (code.startsWith('P')) return 'Eclipse Parcial';
+            return 'Eclipse Solar';
+        }
+
+        function getShortEclipseType(rawType) {
+            const code = (rawType || '').toUpperCase();
+            if (code.startsWith('T')) return { label: 'TOTAL', className: 'type-T' };
+            if (code.startsWith('A')) return { label: 'ANULAR', className: 'type-A' };
+            if (code.startsWith('H')) return { label: 'HÍBRIDO', className: 'type-H' };
+            if (code.startsWith('P')) return { label: 'PARCIAL', className: 'type-P' };
+            return { label: code || 'TOTAL', className: 'type-T' };
+        }
+
         let currentSelectedCentury = 21;
 
         function getCenturyYears(c) {
@@ -5749,8 +5794,9 @@
                 const mStr = String(e.month || 1).padStart(2, '0');
                 const dStr = String(e.day || 1).padStart(2, '0');
                 const dateStr = `${yStr}-${mStr}-${dStr}`;
-                // Directamente número de saros seguido de "/" y fecha sin espacios
-                opt.text = `${e.saros}/${dateStr} ${typeName}${durStr}`;
+                // Directamente número de saros seguido de "/" y fecha sin espacios, con código técnico completo
+                const rawType = e.eclipse_type || 'T';
+                opt.text = `${e.saros}/${dateStr} ${rawType}${durStr}`;
                 eclipseSelect.add(opt);
             });
 
@@ -5789,7 +5835,8 @@
                     const mStr = String(e.month || 1).padStart(2, '0');
                     const dStr = String(e.day || 1).padStart(2, '0');
                     const dateStr = `${yStr}-${mStr}-${dStr}`;
-                    opt.text = `${nSeqVal}/${dateStr} ${typeName}${durSec}`;
+                    const rawType = e.eclipse_type || 'T';
+                    opt.text = `${nSeqVal}/${dateStr} ${rawType}${durSec}`;
                 } else {
                     opt.text = `${e.day} de ${mName} (${typeName})`;
                 }
@@ -6167,12 +6214,25 @@
                 titleElem.innerText = `${eclipse.year} ${MONTH_NAMES[(eclipse.month || 1) - 1] || ''} ${eclipse.day}`;
             }
 
-            const typeMap = { 'T': 'TOTAL', 'A': 'ANULAR', 'H': 'HÍBRIDO', 'P': 'PARCIAL' };
-            const typeClassMap = { 'T': 'type-T', 'A': 'type-A', 'H': 'type-H', 'P': 'type-P' };
+            const rawType = eclipse.eclipse_type || 'T';
+            const shortInfo = getShortEclipseType(rawType);
+            const longDesc = getLongEclipseType(rawType);
+
+            const longTypeElem = getDOM('card-long-type-text');
+            if (longTypeElem) {
+                longTypeElem.innerText = longDesc;
+            }
+            const rawTypeBadge = getDOM('card-raw-type-badge');
+            if (rawTypeBadge) {
+                rawTypeBadge.innerText = rawType;
+                rawTypeBadge.className = `type-badge-sm ${shortInfo.className}`;
+                rawTypeBadge.title = `Código técnico oficial NASA: ${rawType}`;
+            }
+
             const typeElem = getDOM('card-type');
             if (typeElem) {
-                typeElem.innerText = typeMap[eclipse.eclipse_type] || eclipse.eclipse_type;
-                typeElem.className = `stat-val type-badge-sm ${typeClassMap[eclipse.eclipse_type] || ''}`;
+                typeElem.innerText = shortInfo.label;
+                typeElem.className = `stat-val type-badge-sm ${shortInfo.className}`;
             }
 
             const sarosElem = getDOM('card-saros');
