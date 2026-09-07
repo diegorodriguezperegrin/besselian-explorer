@@ -522,36 +522,55 @@
             transform: translateY(-1px);
         }
 
-        /* Ficha de Circunstancias Locales Mataró */
+        /* Ficha de Circunstancias Locales */
         .mataro-card {
-            background: linear-gradient(135deg, rgba(14, 165, 233, 0.08), rgba(194, 65, 12, 0.06));
+            background: linear-gradient(135deg, rgba(14, 165, 233, 0.08), rgba(249, 115, 22, 0.06));
             border: 1px solid rgba(56, 189, 248, 0.25);
             border-radius: 12px;
-            padding: 12px;
+            padding: 10px 12px;
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 6px;
         }
 
         .mataro-badge-header {
             display: flex;
-            justify-content: flex-start;
+            justify-content: space-between;
             align-items: center;
-            height: 24px;
+            height: auto;
+            min-height: 18px;
             box-sizing: border-box;
+            overflow: hidden;
+            margin-bottom: 2px;
         }
 
-        .mataro-vis-tag {
-            font-size: 0.72rem;
-            font-weight: 700;
-            padding: 2px 8px;
-            height: 22px;
-            box-sizing: border-box;
-            border-radius: 6px;
+        .mataro-vis-tag,
+        .mataro-vis-tag.vis-total,
+        .mataro-vis-tag.vis-partial,
+        .mataro-vis-tag.vis-full,
+        .mataro-vis-tag.vis-rise,
+        .mataro-vis-tag.vis-set,
+        .mataro-vis-tag.vis-none {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            font-weight: 400;
+            color: #f8fafc !important;
+            background: none !important;
+            border: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            height: auto !important;
+            min-height: 0 !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
             display: inline-flex;
             align-items: center;
-            gap: 5px;
-            line-height: 1;
+            line-height: 1.3;
+            letter-spacing: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
         }
 
         .vis-total, .type-T { background: rgba(239, 68, 68, 0.25); color: #ffffff; border: 1px solid #ef4444; }
@@ -1492,11 +1511,11 @@
         </div>
         <div style="display: flex; gap: 8px; align-items: center;">
             <div class="custom-combobox-container" id="observer-combobox-container" style="position: relative; flex: 1; min-width: 0;">
-                <input type="text" class="search-select custom-combobox-input" id="observer-location-input" placeholder="Buscar o elegir ciudad..." value="Mataró (Cosmos Mataró, ES)" style="width: 100%; height: 36px; box-sizing: border-box; padding: 0 32px 0 12px; font-size: 0.84rem; font-weight: 400; background-color: #0f172a; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 10px; color: #f8fafc; cursor: text; outline: none; text-overflow: ellipsis;" autocomplete="off" onfocus="openObserverDropdown(); this.select();" oninput="filterObserverDropdown(this.value, true)" onkeydown="onObserverInputKeyDown(event)">
+                <input type="text" class="search-select custom-combobox-input" id="observer-location-input" placeholder="Buscar o elegir ciudad..." value="Mataró (Cosmos Mataró, ES)" style="width: 100%; height: 36px; box-sizing: border-box; padding: 0 32px 0 12px; font-family: var(--font-mono); font-size: 0.80rem; font-weight: 400; background-color: #0f172a; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 10px; color: #f8fafc; cursor: text; outline: none; text-overflow: ellipsis;" autocomplete="off" onfocus="openObserverDropdown(); this.select();" oninput="filterObserverDropdown(this.value, true)" onkeydown="onObserverInputKeyDown(event)">
                 <span style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; color: #94a3b8; font-size: 0.72rem;"><i class="fa-solid fa-chevron-down"></i></span>
                 
-                <!-- Desplegable Filtrable Flotante Estilizado -->
-                <div id="observer-dropdown-menu" class="custom-dropdown-menu" style="display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; max-height: 230px; overflow-y: auto; background: #0b1329; border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 10px; box-shadow: 0 12px 30px rgba(0,0,0,0.8); z-index: var(--z-dropdown); padding: 4px;">
+                <!-- Desplegable Filtrable Flotante Estilizado Adaptativo -->
+                <div id="observer-dropdown-menu" class="custom-dropdown-menu" style="display: none; position: absolute; top: calc(100% + 4px); left: 0; min-width: 100%; width: max-content; max-width: calc(100% + 116px); box-sizing: border-box; max-height: 230px; overflow-y: auto; background: #0b1329; border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 10px; box-shadow: 0 12px 30px rgba(0,0,0,0.85); z-index: 1000; padding: 4px; font-family: var(--font-mono);">
                     <!-- Poblado dinámicamente con filtrado sucesivo -->
                 </div>
             </div>
@@ -1518,22 +1537,25 @@
         <!-- Inputs para Coordenadas Personalizadas -->
         <div id="observer-custom-coords" style="display: none; gap: 6px; align-items: center;">
             <div style="flex: 1; display: flex; align-items: center; background: rgba(0,0,0,0.3); border: 1px solid rgba(56,189,248,0.25); border-radius: 6px; padding: 0 6px;">
-                <span style="font-size: 0.68rem; color: var(--text-secondary); margin-right: 4px;">Lat:</span>
-                <input type="number" id="custom-obs-lat" step="0.01" value="41.54" style="width: 100%; background: transparent; border: none; color: #fff; font-size: 0.75rem; padding: 4px 0;" oninput="onCustomCoordsChange()" onchange="onCustomCoordsChange()">
+                <span style="font-size: 0.68rem; color: var(--text-secondary); margin-right: 4px; font-family: var(--font-mono);">Lat:</span>
+                <input type="number" id="custom-obs-lat" min="-90" max="90" step="0.01" value="41.54" aria-label="Latitud del observador" style="width: 100%; background: transparent; border: none; color: #fff; font-family: var(--font-mono); font-size: 0.75rem; padding: 4px 0;" oninput="onCustomCoordsChange()" onchange="onCustomCoordsChange()">
             </div>
             <div style="flex: 1; display: flex; align-items: center; background: rgba(0,0,0,0.3); border: 1px solid rgba(56,189,248,0.25); border-radius: 6px; padding: 0 6px;">
-                <span style="font-size: 0.68rem; color: var(--text-secondary); margin-right: 4px;">Lon:</span>
-                <input type="number" id="custom-obs-lon" step="0.01" value="2.44" style="width: 100%; background: transparent; border: none; color: #fff; font-size: 0.75rem; padding: 4px 0;" oninput="onCustomCoordsChange()" onchange="onCustomCoordsChange()">
+                <span style="font-size: 0.68rem; color: var(--text-secondary); margin-right: 4px; font-family: var(--font-mono);">Lon:</span>
+                <input type="number" id="custom-obs-lon" min="-180" max="180" step="0.01" value="2.44" aria-label="Longitud del observador" style="width: 100%; background: transparent; border: none; color: #fff; font-family: var(--font-mono); font-size: 0.75rem; padding: 4px 0;" oninput="onCustomCoordsChange()" onchange="onCustomCoordsChange()">
             </div>
             <button class="ctrl-btn" onclick="toggleGlobePickingMode(true)" title="Marcar en el globo 3D" style="height: 28px; padding: 0 8px; font-size: 0.72rem; gap: 4px; border-radius: 6px; flex-shrink: 0;">
                 <i class="fa-solid fa-earth-americas" aria-hidden="true"></i>
             </button>
         </div>
 
-        <!-- Indicador de la Ubicación Seleccionada Activa -->
-        <div style="margin-top: 6px; margin-bottom: 2px; font-size: 0.74rem; color: var(--accent-blue); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 6px; padding: 0 16px;">
-            <i class="fa-solid fa-location-crosshairs" style="font-size: 0.72rem;"></i>
-            <span id="observer-header-subtitle">41° 32' 58" N  2° 26' 53" E</span>
+        <!-- Indicador de la Ubicación Seleccionada Activa y Zona Horaria -->
+        <div style="margin-top: 2px; margin-bottom: 2px; font-size: 0.74rem; color: #f8fafc; font-family: var(--font-mono); display: flex; justify-content: space-between; align-items: center; padding: 0 16px;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+                <i class="fa-solid fa-location-crosshairs" style="font-size: 0.72rem; color: var(--accent-blue);"></i>
+                <span id="observer-header-subtitle" style="font-family: var(--font-mono); font-size: 0.75rem; color: #f8fafc; font-weight: 400; letter-spacing: 0;">41° 32' 58" N  2° 26' 53" E</span>
+            </div>
+            <span id="observer-header-tz" style="font-family: var(--font-mono); font-size: 0.72rem; color: #f8fafc; font-weight: 600;">UTC+2</span>
         </div>
 
         <!-- 2. Visibilidad y Fases Locales -->
@@ -1543,11 +1565,17 @@
         </div>
         <div class="mataro-card" style="margin-top: 0;">
             <div class="mataro-badge-header">
-                <span class="mataro-vis-tag vis-full" id="mataro-vis-badge">VISIBLE AL ORTO</span>
+                <span class="mataro-vis-tag vis-full" id="mataro-vis-badge">Visible al orto</span>
             </div>
             <table class="contacts-table" id="mataro-contacts-table">
+                <colgroup>
+                    <col style="width: 17%;">
+                    <col style="width: 37%;">
+                    <col style="width: 26%;">
+                    <col style="width: 20%;">
+                </colgroup>
                 <thead>
-                    <tr><th>Fase</th><th id="th-local-time">Hora UTC+2</th><th>Altitud</th><th>Azimut</th></tr>
+                    <tr><th>Fase</th><th id="th-local-time">Hora (UTC+2)</th><th>Altitud</th><th>Azimut</th></tr>
                 </thead>
                 <tbody id="mataro-contacts-tbody">
                     <!-- Rellenado dinámicamente -->
@@ -2073,20 +2101,58 @@
         }
 
         // 3. Circunstancias Locales del Observador
-        function getTzAbbr(date, tz) {
+        const _intlOffsetFormatters = new Map();
+
+        function getUtcOffsetString(tz, dateObj = new Date()) {
             if (!tz || tz === 'UTC') return 'UTC';
+            if (!dateObj || !(dateObj instanceof Date) || isNaN(dateObj.getTime())) {
+                dateObj = new Date();
+            }
             try {
-                const parts = new Intl.DateTimeFormat('en-US', { timeZone: tz, timeZoneName: 'short' }).formatToParts(date);
+                let fmt = _intlOffsetFormatters.get(tz);
+                if (!fmt) {
+                    fmt = new Intl.DateTimeFormat('en-US', {
+                        timeZone: tz,
+                        timeZoneName: 'shortOffset'
+                    });
+                    _intlOffsetFormatters.set(tz, fmt);
+                }
+                const parts = fmt.formatToParts(dateObj);
                 const tzPart = parts.find(p => p.type === 'timeZoneName');
-                let val = tzPart ? tzPart.value : '';
-                // Sustituir cualquier referencia a GMT por la nomenclatura oficial internacional UTC (ej. GMT+2 -> UTC+2, GMT -> UTC)
-                val = val.replace(/\bGMT([+-]\d+)?/gi, (match, offset) => {
-                    return offset ? `UTC${offset}` : 'UTC';
-                });
-                return val;
+                if (tzPart && tzPart.value) {
+                    let v = tzPart.value.replace(/^GMT/, 'UTC');
+                    if (v === 'UTC+0' || v === 'UTC-0' || v === 'UTC+00:00' || v === 'UTC' || v === 'UTC+00' || v === 'UTC-00') return 'UTC';
+                    return v;
+                }
+            } catch(e) {}
+            try {
+                const utcDate = new Date(dateObj.toLocaleString('en-US', { timeZone: 'UTC' }));
+                const tzDate = new Date(dateObj.toLocaleString('en-US', { timeZone: tz }));
+                const diffMin = Math.round((tzDate.getTime() - utcDate.getTime()) / 60000);
+                if (isNaN(diffMin) || diffMin === 0) return 'UTC';
+                const sign = diffMin >= 0 ? '+' : '-';
+                const absMin = Math.abs(diffMin);
+                const h = Math.floor(absMin / 60);
+                const m = absMin % 60;
+                if (isNaN(h) || isNaN(m) || (h === 0 && m === 0)) return 'UTC';
+                return m === 0 ? ('UTC' + sign + h) : ('UTC' + sign + h + ':' + String(m).padStart(2, '0'));
             } catch(e) {
                 return 'UTC';
             }
+        }
+
+        function updateObserverHeaderTz() {
+            const tzEl = document.getElementById('observer-header-tz');
+            if (!tzEl) return;
+            const sampleDate = currentEclipse && currentEclipse.maxMs
+                ? new Date(currentEclipse.maxMs)
+                : new Date();
+            const tzStr = getUtcOffsetString(currentObserver.tz || "Europe/Madrid", sampleDate);
+            tzEl.textContent = tzStr;
+        }
+
+        function getTzAbbr(date, tz) {
+            return getUtcOffsetString(tz, date);
         }
 
         let activeDropdownIndex = -1;
@@ -2358,6 +2424,7 @@
                 timeLocalLabel.textContent = 'Obs.:';
             }
 
+            updateObserverHeaderTz();
             if (currentEclipse) {
                 renderMataroCircumstances();
             }
@@ -2408,9 +2475,10 @@
             if (!tbody) return;
 
             if (thTime) {
-                const tzStr = getTzAbbr(new Date(ec.maxMs || Date.now()), currentObserver.tz || "Europe/Madrid");
-                thTime.textContent = 'Hora ' + tzStr;
+                const tzStr = getUtcOffsetString(currentObserver.tz || "Europe/Madrid", new Date(ec.maxMs || Date.now()));
+                thTime.textContent = 'Hora (' + tzStr + ')';
             }
+            updateObserverHeaderTz();
 
             const contacts = [
                 { key: 'P1', name: 'Inicio Penumbra', jumpKey: 'p1', ms: ec.p1Ms },
@@ -2469,19 +2537,19 @@
             if (badge) {
                 if (visibleCount === contacts.length) {
                     badge.className = 'mataro-vis-tag vis-full';
-                    badge.textContent = 'VISIBLE COMPLETO';
+                    badge.textContent = 'Visible completo';
                 } else if (visibleCount > 0) {
                     const firstCoords = getMoonHorizontalCoords(ec.zenLat, ec.zenLon, contacts[0].ms, ec.maxMs, currentObserver.lat, currentObserver.lon);
                     if (firstCoords.alt <= 0) {
                         badge.className = 'mataro-vis-tag vis-rise';
-                        badge.textContent = 'VISIBLE AL ORTO';
+                        badge.textContent = 'Visible al orto';
                     } else {
                         badge.className = 'mataro-vis-tag vis-set';
-                        badge.textContent = 'VISIBLE AL OCASO';
+                        badge.textContent = 'Visible al ocaso';
                     }
                 } else {
                     badge.className = 'mataro-vis-tag vis-none';
-                    badge.textContent = 'NO VISIBLE';
+                    badge.textContent = 'No visible';
                 }
             }
         }
@@ -3002,13 +3070,20 @@
             return group;
         }
 
-        // Red geográfica 3D de la Tierra (Paralelos y Meridianos cada 15°)
+        let moonPolarAxisGroup = null;
+
+        // Red geográfica 3D de la Tierra (Paralelos y Meridianos cada 15°) y Eje Polar
         function createGraticule() {
             const group = new THREE.Group();
             const material = new THREE.LineBasicMaterial({
                 color: 0xffffff,
                 transparent: true,
                 opacity: 0.15
+            });
+            const axisMaterial = new THREE.LineBasicMaterial({
+                color: 0xffffff,
+                transparent: true,
+                opacity: 0.45
             });
             const EARTH_RADIUS = 6.37;
             const radius = EARTH_RADIUS * 1.002;
@@ -3034,6 +3109,65 @@
                 const line = new THREE.Line(geometry, material);
                 group.add(line);
             }
+
+            // Eje polar terrestre: marcas en polo norte y polo sur (segmento axial y cruceta de polo)
+            const earthAxisPoints = [
+                // Polo norte: segmento axial que sobresale del globo terrestre
+                new THREE.Vector3(0, EARTH_RADIUS * 0.98, 0),
+                new THREE.Vector3(0, EARTH_RADIUS * 1.14, 0),
+                // Polo norte: cruceta superficial
+                new THREE.Vector3(-0.23, EARTH_RADIUS * 1.002, 0),
+                new THREE.Vector3(0.23, EARTH_RADIUS * 1.002, 0),
+                new THREE.Vector3(0, EARTH_RADIUS * 1.002, -0.23),
+                new THREE.Vector3(0, EARTH_RADIUS * 1.002, 0.23),
+
+                // Polo sur: segmento axial que sobresale del globo terrestre
+                new THREE.Vector3(0, -EARTH_RADIUS * 0.98, 0),
+                new THREE.Vector3(0, -EARTH_RADIUS * 1.14, 0),
+                // Polo sur: cruceta superficial
+                new THREE.Vector3(-0.23, -EARTH_RADIUS * 1.002, 0),
+                new THREE.Vector3(0.23, -EARTH_RADIUS * 1.002, 0),
+                new THREE.Vector3(0, -EARTH_RADIUS * 1.002, -0.23),
+                new THREE.Vector3(0, -EARTH_RADIUS * 1.002, 0.23)
+            ];
+            const earthAxisGeo = new THREE.BufferGeometry().setFromPoints(earthAxisPoints);
+            const earthAxisLines = new THREE.LineSegments(earthAxisGeo, axisMaterial);
+            group.add(earthAxisLines);
+
+            return group;
+        }
+
+        // Marcas del eje polar lunar en polo norte y sur selenográficos
+        function createMoonPolarAxis() {
+            const group = new THREE.Group();
+            const axisMaterial = new THREE.LineBasicMaterial({
+                color: 0xffffff,
+                transparent: true,
+                opacity: 0.45
+            });
+
+            const moonAxisPoints = [
+                // Polo norte lunar: segmento axial que sobresale del limbo lunar
+                new THREE.Vector3(0, MOON_RADIUS * 0.98, 0),
+                new THREE.Vector3(0, MOON_RADIUS * 1.18, 0),
+                // Polo norte lunar: cruceta superficial
+                new THREE.Vector3(-0.08, MOON_RADIUS * 1.002, 0),
+                new THREE.Vector3(0.08, MOON_RADIUS * 1.002, 0),
+                new THREE.Vector3(0, MOON_RADIUS * 1.002, -0.08),
+                new THREE.Vector3(0, MOON_RADIUS * 1.002, 0.08),
+
+                // Polo sur lunar: segmento axial que sobresale del limbo lunar
+                new THREE.Vector3(0, -MOON_RADIUS * 0.98, 0),
+                new THREE.Vector3(0, -MOON_RADIUS * 1.18, 0),
+                // Polo sur lunar: cruceta superficial
+                new THREE.Vector3(-0.08, -MOON_RADIUS * 1.002, 0),
+                new THREE.Vector3(0.08, -MOON_RADIUS * 1.002, 0),
+                new THREE.Vector3(0, -MOON_RADIUS * 1.002, -0.08),
+                new THREE.Vector3(0, -MOON_RADIUS * 1.002, 0.08)
+            ];
+            const moonAxisGeo = new THREE.BufferGeometry().setFromPoints(moonAxisPoints);
+            const moonAxisLines = new THREE.LineSegments(moonAxisGeo, axisMaterial);
+            group.add(moonAxisLines);
 
             return group;
         }
@@ -3755,6 +3889,10 @@
             moonMesh3D = new THREE.Mesh(moonGeo, moonMat);
             scene3D.add(moonMesh3D);
 
+            moonPolarAxisGroup = createMoonPolarAxis();
+            moonPolarAxisGroup.visible = document.getElementById('chk-show-graticule')?.checked ?? false;
+            moonMesh3D.add(moonPolarAxisGroup);
+
             // Línea de Órbita Lunar 3D (Azul celeste luminoso idéntico a Solar Eclipse Explorer)
             const orbitMat = new THREE.LineBasicMaterial({
                 color: 0x38bdf8,
@@ -3808,6 +3946,7 @@
             });
             document.getElementById('chk-show-graticule')?.addEventListener('change', (e) => {
                 if (graticuleGroup) graticuleGroup.visible = e.target.checked;
+                if (moonPolarAxisGroup) moonPolarAxisGroup.visible = e.target.checked;
                 scene3DNeedsRender = true;
                 if (renderer3D && scene3D && camera3D) renderer3D.render(scene3D, camera3D);
             });
@@ -3874,10 +4013,6 @@
             const z3D = -Math.sqrt(Math.max(0, MOON_DIST * MOON_DIST - x3D * x3D - y3D * y3D));
             const moonPos = new THREE.Vector3(x3D, y3D, z3D);
 
-            moonMesh3D.position.copy(moonPos);
-            moonMesh3D.lookAt(0, 0, 0);          // Acoplamiento de marea hacia la Tierra
-            moonMesh3D.rotateY(-Math.PI / 2);    // Orientar meridiano central 0° (cara visible) hacia la Tierra
-
             // Inclinación física astronómica pura del plano orbital lunar (i = 5.145°) respecto a la Eclíptica
             const realSlope = Math.tan(5.145 * RAD);
             const isAscending = (currentEclipse.saros % 2 === 0);
@@ -3886,7 +4021,31 @@
             const slope = (isAscending ? -1 : 1) * realSlope;
             const zMax = -Math.sqrt(Math.max(0, MOON_DIST * MOON_DIST - y3D * y3D));
             // Vector normal del plano orbital con pendiente dy/dx = slope
-            const normOrbit = new THREE.Vector3(zMax * slope, -zMax, y3D).normalize();
+            let normOrbit = new THREE.Vector3(zMax * slope, -zMax, y3D).normalize();
+            const normEcliptic = new THREE.Vector3(0, 1, 0);
+            if (normOrbit.dot(normEcliptic) < 0) normOrbit.negate();
+
+            // Tercera ley de Cassini: el eje de rotación lunar (moonSpinAxis), la normal a la Eclíptica (normEcliptic)
+            // y la normal a la órbita (normOrbit) son coplanarios, con normEcliptic situado entre ambos.
+            // Inclinación del eje de rotación lunar respecto a la Eclíptica: I = 1.543° (en sentido opuesto a la órbita)
+            const vTilt = normOrbit.clone().sub(normEcliptic.clone().multiplyScalar(normOrbit.dot(normEcliptic))).normalize();
+            const incMoonSpinRad = 1.543 * RAD;
+            const moonSpinAxis = new THREE.Vector3()
+                .addScaledVector(normEcliptic, Math.cos(incMoonSpinRad))
+                .addScaledVector(vTilt, -Math.sin(incMoonSpinRad))
+                .normalize();
+
+            // Orientación de la Luna según el estado de Cassini y anclaje de marea:
+            // Eje +Y local: Eje polar físico de rotación lunar (inclinado exactamente 1.543° respecto a la Eclíptica)
+            // Eje +X local: Meridiano central selenográfico de la cara visible (apuntando hacia la Tierra)
+            // Eje +Z local: Completa el triedro ortonormal hacia el limbo orbital lunar
+            moonMesh3D.position.copy(moonPos);
+            const vToEarth = moonPos.clone().negate().normalize();
+            const axisY = moonSpinAxis.clone().normalize();
+            const axisX = vToEarth.clone().sub(axisY.clone().multiplyScalar(vToEarth.dot(axisY))).normalize();
+            const axisZ = new THREE.Vector3().crossVectors(axisX, axisY).normalize();
+            const rotMatrix = new THREE.Matrix4().makeBasis(axisX, axisY, axisZ);
+            moonMesh3D.quaternion.setFromRotationMatrix(rotMatrix);
 
             // Base ortonormal en el plano orbital:
             const e1 = new THREE.Vector3(0, y3D, zMax).normalize();
