@@ -467,7 +467,7 @@
             text-align: right !important;
         }
 
-        /* Search Mode Switch (Año vs Saros) */
+        /* Search Mode Switch (Año vs Saros vs Ubicación) */
         .search-mode-tabs {
             display: flex;
             background: rgba(255, 255, 255, 0.04);
@@ -479,12 +479,13 @@
         }
         .search-mode-btn {
             flex: 1;
-            padding: 5px 8px;
+            min-width: 0;
+            padding: 5px 3px;
             border-radius: 6px;
             border: 1px solid transparent;
             background: transparent;
             color: var(--text-secondary);
-            font-size: 0.74rem;
+            font-size: 0.71rem;
             font-weight: 600;
             font-family: var(--font-heading);
             cursor: pointer;
@@ -493,7 +494,8 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 5px;
+            gap: 4px;
+            white-space: nowrap;
         }
         .search-mode-btn:hover {
             color: var(--text-primary);
@@ -1481,11 +1483,16 @@
             <button class="search-mode-btn" id="btn-mode-saros" title="Explorar serie por Ciclo de Saros (18 años 11 días)" aria-label="Explorar por Saros">
                 <i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i> Por Saros
             </button>
+            <button class="search-mode-btn" id="btn-mode-location" title="Explorar eclipses visibles en la ubicación seleccionada" aria-label="Explorar por Ubicación">
+                <i class="fa-solid fa-location-dot" aria-hidden="true"></i> Por Ubicación
+            </button>
         </div>
 
         <div class="search-row" style="display: flex; gap: 8px; align-items: center; margin-bottom: 6px;">
-            <div style="width: 85px; flex-shrink: 0;">
-                <input type="number" class="search-input" id="year-input" placeholder="Año" value="2027" min="1800" max="2200" aria-label="Año del eclipse" style="width: 100%; height: 36px; box-sizing: border-box; padding: 0 6px; font-size: 0.88rem; font-weight: 400; text-align: center; background: #0f172a; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 10px;">
+            <div style="width: 95px; flex-shrink: 0;" id="search-input-col">
+                <input type="number" class="search-input" id="year-input" placeholder="Año" value="2027" min="-1999" max="3000" aria-label="Año del eclipse" style="width: 100%; height: 36px; box-sizing: border-box; padding: 0 6px; font-size: 0.88rem; font-weight: 400; text-align: center; background: #0f172a; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 10px;">
+                <select class="search-select" id="century-select" style="display: none; width: 100%; height: 36px; box-sizing: border-box; padding: 0 16px 0 6px; font-size: 0.74rem; font-weight: 600; text-align: center; background-color: #0f172a; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 10px; color: #f8fafc;" title="Seleccionar siglo para ver eclipses visibles">
+                </select>
             </div>
             <div style="flex: 1; min-width: 0;">
                 <select class="search-select" id="eclipse-select" style="width: 100%; height: 36px; box-sizing: border-box; padding: 0 30px 0 12px; font-size: 0.84rem; font-weight: 400; background-color: #0f172a; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 10px; color: #f8fafc;">
@@ -3185,6 +3192,13 @@
                     renderTelescopicView();
                 }
                 updateShadowAtTime(simCurrentT);
+            }
+            if (typeof searchMode !== 'undefined' && searchMode === 'location') {
+                const centurySel = getDOM('century-select');
+                const cVal = centurySel ? parseInt(centurySel.value, 10) : (typeof getCenturyFromYear === 'function' ? getCenturyFromYear(currentEclipse?.year || 2027) : 21);
+                if (typeof filterEclipsesByLocation === 'function') {
+                    filterEclipsesByLocation(cVal);
+                }
             }
             requestRender();
         }
@@ -5501,32 +5515,165 @@
         const yearInput = getDOM('year-input');
         const eclipseSelect = getDOM('eclipse-select');
         const MONTH_NAMES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-        let searchMode = 'year'; // 'year' | 'saros'
+        let searchMode = 'year'; // 'year' | 'saros' | 'location'
+        const locationEclipsesCache = new Map();
+
+        function getCenturyYears(c) {
+            if (c >= 1) {
+                return { start: (c - 1) * 100 + 1, end: c * 100 };
+            } else {
+                const absC = Math.abs(c);
+                return { start: -absC * 100 + 1, end: -(absC - 1) * 100 };
+            }
+        }
+
+        function toRoman(num) {
+            const val = [1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1];
+            const syms = ['M', 'CM', 'D', 'CD', 'C', 'XC', 'L', 'XL', 'X', 'IX', 'V', 'IV', 'I'];
+            let roman = '';
+            let n = Math.abs(num);
+            for (let i = 0; i < val.length; i++) {
+                while (n >= val[i]) {
+                    roman += syms[i];
+                    n -= val[i];
+                }
+            }
+            return roman;
+        }
+
+        function getCenturyLabel(c) {
+            const { start, end } = getCenturyYears(c);
+            if (c > 0) {
+                return `S. ${toRoman(c)} (${start}-${end})`;
+            } else {
+                return `S. ${toRoman(Math.abs(c))} a.C. (${start} a ${end})`;
+            }
+        }
+
+        function getCenturyFromYear(y) {
+            if (y >= 1) return Math.floor((y - 1) / 100) + 1;
+            const bc = 1 - y;
+            return -(Math.floor((bc - 1) / 100) + 1);
+        }
+
+        function initCenturySelect() {
+            const centurySelect = getDOM('century-select');
+            if (!centurySelect || centurySelect.options.length > 0) return;
+            // Catálogo NASA de eclipses: del siglo -20 (XX a.C.) al siglo +30 (XXX d.C.) en orden cronológico
+            for (let c = -20; c <= 30; c++) {
+                if (c === 0) continue;
+                const opt = document.createElement('option');
+                opt.value = c;
+                opt.textContent = getCenturyLabel(c);
+                centurySelect.add(opt);
+            }
+        }
 
         function setSearchMode(mode) {
             searchMode = mode;
             const btnYear = getDOM('btn-mode-year');
             const btnSaros = getDOM('btn-mode-saros');
+            const btnLocation = getDOM('btn-mode-location');
             const input = getDOM('year-input');
+            const centurySel = getDOM('century-select');
+
+            btnYear?.classList.remove('active');
+            btnSaros?.classList.remove('active');
+            btnLocation?.classList.remove('active');
 
             if (mode === 'saros') {
-                btnYear?.classList.remove('active');
                 btnSaros?.classList.add('active');
+                if (centurySel) centurySel.style.display = 'none';
                 if (input) {
+                    input.style.display = 'block';
                     input.placeholder = 'Saros';
                     const sarosVal = currentEclipse?.saros || 136;
                     input.value = sarosVal;
                     filterEclipsesBySaros(sarosVal);
                 }
+            } else if (mode === 'location') {
+                btnLocation?.classList.add('active');
+                initCenturySelect();
+                if (input) input.style.display = 'none';
+                if (centurySel) {
+                    centurySel.style.display = 'block';
+                    const cVal = getCenturyFromYear(currentEclipse?.year || 2027);
+                    centurySel.value = cVal;
+                    filterEclipsesByLocation(cVal);
+                }
             } else {
-                btnSaros?.classList.remove('active');
                 btnYear?.classList.add('active');
+                if (centurySel) centurySel.style.display = 'none';
                 if (input) {
+                    input.style.display = 'block';
                     input.placeholder = 'Año';
                     const yrVal = currentEclipse?.year || 2027;
                     input.value = yrVal;
                     filterEclipsesByYear(yrVal);
                 }
+            }
+        }
+
+        function filterEclipsesByLocation(centuryVal) {
+            if (!centuryVal) centuryVal = getCenturyFromYear(currentEclipse?.year || 2027);
+            const centurySelect = getDOM('century-select');
+            if (centurySelect) centurySelect.value = centuryVal;
+
+            if (!currentObserver || currentObserver.lat == null || currentObserver.lon == null) {
+                eclipseSelect.innerHTML = '<option value="">Selecciona ubicación...</option>';
+                return;
+            }
+
+            const { start, end } = getCenturyYears(centuryVal);
+            const cacheKey = `${currentObserver.lat.toFixed(4)},${currentObserver.lon.toFixed(4)},${centuryVal}`;
+            let visibleList = locationEclipsesCache.get(cacheKey);
+
+            if (!visibleList) {
+                const candidates = eclipseData.filter(e => e.year >= start && e.year <= end);
+                visibleList = [];
+                for (const e of candidates) {
+                    const circ = calculateLocalSolarCircumstances(e, currentObserver.lat, currentObserver.lon);
+                    if (circ && circ.isEclipsed) {
+                        visibleList.push({ eclipse: e, circ });
+                    }
+                }
+                locationEclipsesCache.set(cacheKey, visibleList);
+            }
+
+            if (visibleList.length === 0) {
+                const cLabel = getCenturyLabel(centuryVal);
+                eclipseSelect.innerHTML = `<option value="">Sin eclipses en ${cLabel}</option>`;
+                return;
+            }
+
+            eclipseSelect.innerHTML = '';
+            visibleList.forEach(({ eclipse: e, circ }) => {
+                const opt = document.createElement('option');
+                opt.value = e.cat_no;
+                
+                const isTot = circ.isTotal;
+                const isAnn = circ.isAnnular;
+                const typeName = isTot ? 'Total' : isAnn ? 'Anular' : (circ.isHybrid ? 'Híbrido' : 'Parcial');
+                let durStr = '';
+                if ((isTot || isAnn) && circ.c2 && circ.c3) {
+                    durStr = ` ${Math.round(Math.abs(circ.c3.t - circ.c2.t) * 3600)}s`;
+                } else if (circ.maxMag != null) {
+                    durStr = ` ${Math.round(circ.maxMag * 100)}%`;
+                }
+                const yStr = e.year < 0 ? `-${Math.abs(e.year)}` : String(e.year);
+                const mStr = String(e.month || 1).padStart(2, '0');
+                const dStr = String(e.day || 1).padStart(2, '0');
+                const dateStr = `${yStr}-${mStr}-${dStr}`;
+                opt.text = `S.${e.saros} ${dateStr} ${typeName}${durStr}`;
+                eclipseSelect.add(opt);
+            });
+
+            const currentInList = visibleList.find(item => item.eclipse.cat_no === currentEclipse?.cat_no);
+            if (currentInList) {
+                eclipseSelect.value = currentInList.eclipse.cat_no;
+            } else {
+                selectEclipse(visibleList[0].eclipse, false);
+                eclipseSelect.value = visibleList[0].eclipse.cat_no;
             }
         }
 
@@ -5645,7 +5792,11 @@
                 if (searchMode === 'year') {
                     if (yearInput) yearInput.value = targetEclipse.year;
                     populateSelect(eclipseData.filter(e => e.year === targetEclipse.year));
+                } else if (searchMode === 'saros') {
+                    if (yearInput) yearInput.value = targetEclipse.saros;
+                    populateSelect(members);
                 } else {
+                    setSearchMode('saros');
                     if (yearInput) yearInput.value = targetEclipse.saros;
                     populateSelect(members);
                 }
@@ -5665,7 +5816,7 @@
                     if (!isNaN(num)) {
                         if (searchMode === 'saros') {
                             filterEclipsesBySaros(num);
-                        } else {
+                        } else if (searchMode === 'year') {
                             filterEclipsesByYear(num);
                         }
                     }
@@ -5675,6 +5826,14 @@
 
         getDOM('btn-mode-year')?.addEventListener('click', () => setSearchMode('year'));
         getDOM('btn-mode-saros')?.addEventListener('click', () => setSearchMode('saros'));
+        getDOM('btn-mode-location')?.addEventListener('click', () => setSearchMode('location'));
+
+        getDOM('century-select')?.addEventListener('change', (e) => {
+            const cVal = parseInt(e.target.value, 10);
+            if (!isNaN(cVal)) {
+                filterEclipsesByLocation(cVal);
+            }
+        });
 
         getDOM('card-saros')?.addEventListener('click', () => {
             if (currentEclipse && currentEclipse.saros) {
@@ -5700,8 +5859,8 @@
             const catNo = parseFloat(e.target.value);
             const found = eclipseData.find(item => item.cat_no === catNo);
             if (found) {
-                // En modo Saros, preservar el punto de vista del usuario; en modo Año, recentrar
-                const autoRecenter = (searchMode !== 'saros');
+                // En modo Saros y Ubicación, preservar el punto de vista del usuario; en modo Año, recentrar
+                const autoRecenter = (searchMode === 'year');
                 selectEclipse(found, autoRecenter);
             }
         });
@@ -5714,7 +5873,7 @@
                 const catNo = parseFloat(this.dataset.cat);
                 const found = eclipseData.find(item => item.cat_no === catNo);
                 if (found) {
-                    if (searchMode === 'saros') {
+                    if (searchMode !== 'year') {
                         setSearchMode('year');
                     }
                     if (yearInput) yearInput.value = found.year;
