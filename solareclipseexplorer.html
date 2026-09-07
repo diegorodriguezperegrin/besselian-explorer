@@ -1477,14 +1477,14 @@
         </div>
 
         <div class="search-mode-tabs">
-            <button class="search-mode-btn active" id="btn-mode-year" title="Explorar catálogo por Año" aria-label="Explorar por Año">
-                <i class="fa-solid fa-calendar-days" aria-hidden="true"></i> Por Año
+            <button class="search-mode-btn active" id="btn-mode-year" title="Explorar catálogo por año" aria-label="Explorar por año">
+                <i class="fa-solid fa-calendar-days" aria-hidden="true"></i> Por año
             </button>
-            <button class="search-mode-btn" id="btn-mode-saros" title="Explorar serie por Ciclo de Saros (18 años 11 días)" aria-label="Explorar por Saros">
-                <i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i> Por Saros
+            <button class="search-mode-btn" id="btn-mode-saros" title="Explorar serie por ciclo de saros (18 años 11 días)" aria-label="Explorar por saros">
+                <i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i> Por saros
             </button>
-            <button class="search-mode-btn" id="btn-mode-location" title="Explorar eclipses visibles en la ubicación seleccionada" aria-label="Explorar por Ubicación">
-                <i class="fa-solid fa-location-dot" aria-hidden="true"></i> Por Ubicación
+            <button class="search-mode-btn" id="btn-mode-location" title="Explorar eclipses visibles en la ubicación seleccionada" aria-label="Explorar por ubicación">
+                <i class="fa-solid fa-location-dot" aria-hidden="true"></i> Por ubicación
             </button>
         </div>
 
@@ -1507,7 +1507,7 @@
 
         <div class="eclipse-card" id="eclipse-details">
             <div class="stat-row" id="card-long-type-row" style="margin-bottom: 2px;">
-                <span id="card-long-type-text" class="stat-val" style="font-weight: 400; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Eclipse Total Central</span>
+                <span id="card-long-type-text" class="stat-val" style="font-weight: 400; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Eclipse total central</span>
             </div>
             <div class="stat-grid">
                 <!-- Columna 1 (6 elementos) -->
@@ -1517,7 +1517,7 @@
                 </div>
                 <div class="stat-row">
                     <span class="stat-lbl">Saros</span>
-                    <span class="stat-val interactive-saros" id="card-saros" role="button" tabindex="0" title="Clic para explorar todos los eclipses de esta serie de Saros">136 <small style="color:var(--text-secondary); font-size:0.7rem;">(38/71)</small> <i class="fa-solid fa-arrow-up-right-from-square" style="font-size:0.65rem; opacity:0.8;"></i></span>
+                    <span class="stat-val interactive-saros" id="card-saros" role="button" tabindex="0" title="Clic para explorar todos los eclipses de esta serie de saros">136 <small style="color:var(--text-secondary); font-size:0.7rem;">(38/71)</small> <i class="fa-solid fa-arrow-up-right-from-square" style="font-size:0.65rem; opacity:0.8;"></i></span>
                 </div>
                 <div class="stat-row">
                     <span class="stat-lbl">Magnitud</span>
@@ -5529,35 +5529,35 @@
         const locationEclipsesCache = new Map();
 
         const NASA_LONG_TYPE_MAP = {
-            'T': 'Eclipse Total Central',
-            'Tm': 'Eclipse Total (Punto medio de la serie de Saros)',
-            'Ts': 'Eclipse Total No Central (solo límite sur)',
-            'Tn': 'Eclipse Total No Central (solo límite norte)',
-            'T+': 'Eclipse Total No Central (eje fuera de la Tierra, norte)',
-            'T-': 'Eclipse Total No Central (eje fuera de la Tierra, sur)',
-            'A': 'Eclipse Anular Central',
-            'Am': 'Eclipse Anular (Punto medio de la serie de Saros)',
-            'As': 'Eclipse Anular No Central (solo límite sur)',
-            'An': 'Eclipse Anular No Central (solo límite norte)',
-            'A+': 'Eclipse Anular No Central (eje fuera de la Tierra, norte)',
-            'A-': 'Eclipse Anular No Central (eje fuera de la Tierra, sur)',
-            'H': 'Eclipse Híbrido (Anular-Total)',
-            'Hm': 'Eclipse Híbrido (Punto medio de la serie de Saros)',
-            'H2': 'Eclipse Híbrido (comienza anular y termina total)',
-            'H3': 'Eclipse Híbrido (comienza total y termina anular)',
-            'P': 'Eclipse Parcial',
-            'Pb': 'Eclipse Parcial (Inicio de la serie de Saros)',
-            'Pe': 'Eclipse Parcial (Fin de la serie de Saros)'
+            'T': 'Eclipse total central',
+            'Tm': 'Eclipse total (punto medio de la serie de saros)',
+            'Ts': 'Eclipse total no central (solo límite sur)',
+            'Tn': 'Eclipse total no central (solo límite norte)',
+            'T+': 'Eclipse total no central (eje fuera de la Tierra, norte)',
+            'T-': 'Eclipse total no central (eje fuera de la Tierra, sur)',
+            'A': 'Eclipse anular central',
+            'Am': 'Eclipse anular (punto medio de la serie de saros)',
+            'As': 'Eclipse anular no central (solo límite sur)',
+            'An': 'Eclipse anular no central (solo límite norte)',
+            'A+': 'Eclipse anular no central (eje fuera de la Tierra, norte)',
+            'A-': 'Eclipse anular no central (eje fuera de la Tierra, sur)',
+            'H': 'Eclipse híbrido (anular-total)',
+            'Hm': 'Eclipse híbrido (punto medio de la serie de saros)',
+            'H2': 'Eclipse híbrido (comienza anular y termina total)',
+            'H3': 'Eclipse híbrido (comienza total y termina anular)',
+            'P': 'Eclipse parcial',
+            'Pb': 'Eclipse parcial (inicio de la serie de saros)',
+            'Pe': 'Eclipse parcial (fin de la serie de saros)'
         };
 
         function getLongEclipseType(rawType) {
             if (NASA_LONG_TYPE_MAP[rawType]) return NASA_LONG_TYPE_MAP[rawType];
             const code = (rawType || '').toUpperCase();
-            if (code.startsWith('T')) return 'Eclipse Total';
-            if (code.startsWith('A')) return 'Eclipse Anular';
-            if (code.startsWith('H')) return 'Eclipse Híbrido';
-            if (code.startsWith('P')) return 'Eclipse Parcial';
-            return 'Eclipse Solar';
+            if (code.startsWith('T')) return 'Eclipse total';
+            if (code.startsWith('A')) return 'Eclipse anular';
+            if (code.startsWith('H')) return 'Eclipse híbrido';
+            if (code.startsWith('P')) return 'Eclipse parcial';
+            return 'Eclipse solar';
         }
 
         function getShortEclipseType(rawType) {
@@ -6233,7 +6233,7 @@
                 const totalInSeries = eclipse.nSer || 71;
                 const seqNum = eclipse.nSeq || (eclipse.saros_member || 1);
                 sarosElem.innerHTML = `${eclipse.saros || '--'} <small style="color:var(--text-secondary); font-size:0.7rem;">(${seqNum}/${totalInSeries})</small> <i class="fa-solid fa-arrow-up-right-from-square" style="font-size:0.65rem; opacity:0.8;"></i>`;
-                sarosElem.title = `Abrir catálogo oficial de la serie Saros ${eclipse.saros} (NASA GSFC)`;
+                sarosElem.title = `Abrir catálogo oficial de la serie de saros ${eclipse.saros} (NASA GSFC)`;
             }
 
             const gammaElem = getDOM('card-gamma');
