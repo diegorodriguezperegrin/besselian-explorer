@@ -6364,6 +6364,7 @@
         let totalitySouthLine = null;
         let isomagnitudesGroup = null;
         let graticuleGroup = null;
+        let moonPolarAxisGroup = null;
         let utLinesGroup = null;
 
         function createGraticule() {
@@ -6372,6 +6373,11 @@
                 color: 0xffffff,
                 transparent: true,
                 opacity: 0.15
+            });
+            const axisMaterial = new THREE.LineBasicMaterial({
+                color: 0xffffff,
+                transparent: true,
+                opacity: 0.45
             });
             const radius = EARTH_RADIUS * 1.002;
 
@@ -6397,6 +6403,65 @@
                 group.add(line);
             }
 
+            // Eje polar terrestre: marcas en polo norte y polo sur (segmento axial y cruceta de polo)
+            const earthAxisPoints = [
+                // Polo norte: segmento axial que sobresale del globo
+                new THREE.Vector3(0, EARTH_RADIUS * 0.98, 0),
+                new THREE.Vector3(0, EARTH_RADIUS * 1.14, 0),
+                // Polo norte: cruceta superficial
+                new THREE.Vector3(-1.8, EARTH_RADIUS * 1.002, 0),
+                new THREE.Vector3(1.8, EARTH_RADIUS * 1.002, 0),
+                new THREE.Vector3(0, EARTH_RADIUS * 1.002, -1.8),
+                new THREE.Vector3(0, EARTH_RADIUS * 1.002, 1.8),
+
+                // Polo sur: segmento axial que sobresale del globo
+                new THREE.Vector3(0, -EARTH_RADIUS * 0.98, 0),
+                new THREE.Vector3(0, -EARTH_RADIUS * 1.14, 0),
+                // Polo sur: cruceta superficial
+                new THREE.Vector3(-1.8, -EARTH_RADIUS * 1.002, 0),
+                new THREE.Vector3(1.8, -EARTH_RADIUS * 1.002, 0),
+                new THREE.Vector3(0, -EARTH_RADIUS * 1.002, -1.8),
+                new THREE.Vector3(0, -EARTH_RADIUS * 1.002, 1.8)
+            ];
+            const earthAxisGeo = new THREE.BufferGeometry().setFromPoints(earthAxisPoints);
+            const earthAxisLines = new THREE.LineSegments(earthAxisGeo, axisMaterial);
+            group.add(earthAxisLines);
+
+            return group;
+        }
+
+        function createMoonPolarAxis() {
+            const group = new THREE.Group();
+            const axisMaterial = new THREE.LineBasicMaterial({
+                color: 0xffffff,
+                transparent: true,
+                opacity: 0.45
+            });
+
+            // Eje polar lunar: marcas en polo norte y polo sur (segmento axial y cruceta de polo)
+            const moonAxisPoints = [
+                // Polo norte lunar: segmento axial que sobresale del limbo lunar
+                new THREE.Vector3(0, MOON_RADIUS * 0.98, 0),
+                new THREE.Vector3(0, MOON_RADIUS * 1.18, 0),
+                // Polo norte lunar: cruceta superficial
+                new THREE.Vector3(-0.6, MOON_RADIUS * 1.002, 0),
+                new THREE.Vector3(0.6, MOON_RADIUS * 1.002, 0),
+                new THREE.Vector3(0, MOON_RADIUS * 1.002, -0.6),
+                new THREE.Vector3(0, MOON_RADIUS * 1.002, 0.6),
+
+                // Polo sur lunar: segmento axial que sobresale del limbo lunar
+                new THREE.Vector3(0, -MOON_RADIUS * 0.98, 0),
+                new THREE.Vector3(0, -MOON_RADIUS * 1.18, 0),
+                // Polo sur lunar: cruceta superficial
+                new THREE.Vector3(-0.6, -MOON_RADIUS * 1.002, 0),
+                new THREE.Vector3(0.6, -MOON_RADIUS * 1.002, 0),
+                new THREE.Vector3(0, -MOON_RADIUS * 1.002, -0.6),
+                new THREE.Vector3(0, -MOON_RADIUS * 1.002, 0.6)
+            ];
+            const moonAxisGeo = new THREE.BufferGeometry().setFromPoints(moonAxisPoints);
+            const moonAxisLines = new THREE.LineSegments(moonAxisGeo, axisMaterial);
+            group.add(moonAxisLines);
+
             return group;
         }
 
@@ -6405,10 +6470,19 @@
                 dispose3DObject(graticuleGroup);
                 graticuleGroup = null;
             }
+            if (moonPolarAxisGroup) {
+                dispose3DObject(moonPolarAxisGroup);
+                moonPolarAxisGroup = null;
+            }
             const showGraticule = getDOM('chk-show-graticule')?.checked;
             if (showGraticule) {
                 graticuleGroup = createGraticule();
                 if (graticuleGroup) earthGroup.add(graticuleGroup);
+
+                if (typeof moonMesh3D !== 'undefined' && moonMesh3D) {
+                    moonPolarAxisGroup = createMoonPolarAxis();
+                    if (moonPolarAxisGroup) moonMesh3D.add(moonPolarAxisGroup);
+                }
             }
         }
 
