@@ -1470,7 +1470,7 @@
             <div class="preset-chip" data-cat="9569">26 Ene 2028 (Anular España)</div>
         </div>
 
-        <div class="section-title section-title-between" style="margin-top: 4px; margin-bottom: 6px;">
+        <div class="section-title section-title-between">
             <span><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i> Buscar</span>
             <span id="csv-status-badge" style="color: var(--text-secondary); font-weight: 600; text-transform: none; letter-spacing: 0; cursor: help;" title="Five Millennium Catalog of Solar Eclipses (-1999 a +3000) · Fred Espenak &amp; Jean Meeus (NASA GSFC)">
                 <i class="fa-solid fa-circle-notch fa-spin" aria-hidden="true"></i> Cargando...
@@ -1604,7 +1604,7 @@
         </div>
 
         <!-- 1. Selector de Ubicación del Observador -->
-        <div class="section-title" style="display: flex; justify-content: space-between; align-items: center;">
+        <div class="section-title" style="display: flex; justify-content: space-between; align-items: flex-start;">
             <span><i class="fa-solid fa-location-dot" aria-hidden="true"></i> Ubicación</span>
             <div class="view-mode-selector" style="margin-bottom: 0; padding: 1px; gap: 2px;">
                 <button type="button" class="mode-btn" id="btn-obs-ge" onclick="switchObserverExtreme('GE')" style="padding: 2px 8px; font-size: 0.70rem; height: 20px;" title="Mayor Eclipse (GE): Mínima distancia del eje de sombra al centro de la Tierra">GE</button>
@@ -1829,9 +1829,9 @@
             <div class="panel-toggle" id="btn-toggle-limb" onclick="toggleLunarLimbPanel(false)" role="button" tabindex="0" title="Minimizar panel" aria-label="Minimizar panel del perfil del limbo"><i class="fa-solid fa-chevron-left" aria-hidden="true"></i></div>
         </div>
 
-        <div style="display: flex; flex-direction: column; gap: 8px; padding-top: 4px;">
+        <div style="display: flex; flex-direction: column; gap: 8px;">
             <!-- Bloque Libración Lunar -->
-            <div class="section-title" style="margin-top: 2px;">
+            <div class="section-title">
                 <i class="fa-solid fa-moon" aria-hidden="true"></i> Libración lunar
             </div>
             <div style="display: flex; justify-content: space-around; align-items: center; font-family: var(--font-mono); font-size: 0.76rem; color: #cbd5e1; background: rgba(0,0,0,0.45); padding: 6px 10px; border-radius: 8px; border: 1px solid rgba(56, 189, 248, 0.18);">
