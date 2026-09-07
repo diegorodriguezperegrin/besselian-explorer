@@ -779,9 +779,7 @@
             font-size: 0.76rem;
             font-family: var(--font-mono);
             table-layout: fixed;
-            height: 108px;
-            max-height: 108px;
-            min-height: 108px;
+            height: auto;
         }
 
         .contacts-table th {
@@ -1829,43 +1827,46 @@
             <div class="panel-toggle" id="btn-toggle-limb" onclick="toggleLunarLimbPanel(false)" role="button" tabindex="0" title="Minimizar panel" aria-label="Minimizar panel del perfil del limbo"><i class="fa-solid fa-chevron-left" aria-hidden="true"></i></div>
         </div>
 
-        <div style="display: flex; flex-direction: column; gap: 8px;">
-            <!-- Bloque Libración Lunar -->
-            <div class="section-title">
-                <i class="fa-solid fa-moon" aria-hidden="true"></i> Libración lunar
-            </div>
-            <div style="display: flex; justify-content: space-around; align-items: center; font-family: var(--font-mono); font-size: 0.76rem; color: #cbd5e1; background: rgba(0,0,0,0.45); padding: 6px 10px; border-radius: 8px; border: 1px solid rgba(56, 189, 248, 0.18);">
-                <span><span style="color: var(--accent-blue); font-weight: 400;">l</span> <span id="limb-lib-l" style="color:#f8fafc;">0.4°</span></span>
-                <span><span style="color: var(--accent-blue); font-weight: 400;">b</span> <span id="limb-lib-b" style="color:#f8fafc;">0.0°</span></span>
-                <span><span style="color: var(--accent-blue); font-weight: 400;">c</span> <span id="limb-lib-c" style="color:#f8fafc;">14.0°</span></span>
-            </div>
+        <!-- Bloque Libración Lunar -->
+        <div class="section-title">
+            <i class="fa-solid fa-moon" aria-hidden="true"></i> Libración lunar
+        </div>
+        <div style="display: flex; justify-content: space-around; align-items: center; font-family: var(--font-mono); font-size: 0.76rem; color: #cbd5e1; background: rgba(0,0,0,0.45); padding: 6px 10px; border-radius: 8px; border: 1px solid rgba(56, 189, 248, 0.18);">
+            <span><span style="color: var(--accent-blue); font-weight: 400;">l</span> <span id="limb-lib-l" style="color:#f8fafc;">0.4°</span></span>
+            <span><span style="color: var(--accent-blue); font-weight: 400;">b</span> <span id="limb-lib-b" style="color:#f8fafc;">0.0°</span></span>
+            <span><span style="color: var(--accent-blue); font-weight: 400;">c</span> <span id="limb-lib-c" style="color:#f8fafc;">14.0°</span></span>
+        </div>
 
-            <!-- Diagrama Científico del Limbo Lunar (Canvas 2D) -->
-            <div style="background: #021019; border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 12px; padding: 6px; text-align: center; position: relative;">
-                <canvas id="canvas-lunar-limb-radar" width="320" height="320" style="width: 100%; max-width: 320px; aspect-ratio: 1 / 1; display: block; margin: 0 auto; background: #03141f; border-radius: 8px;"></canvas>
-            </div>
+        <!-- Diagrama Científico del Limbo Lunar (Canvas 2D) -->
+        <div style="background: #021019; border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 12px; padding: 6px; text-align: center; position: relative;">
+            <canvas id="canvas-lunar-limb-radar" width="320" height="320" style="width: 100%; max-width: 320px; aspect-ratio: 1 / 1; display: block; margin: 0 auto; background: #03141f; border-radius: 8px;"></canvas>
+        </div>
 
-            <!-- Datos de Contacto y Telemetría Científica estilo Eclipse Calculator 2.0 -->
-            <div style="display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; font-family: var(--font-mono); font-size: 0.78rem; background: rgba(0,0,0,0.45); padding: 8px 10px; border-radius: 10px; border: 1px solid rgba(56, 189, 248, 0.18); align-items: center;">
-                <div style="display: flex; align-items: baseline; gap: 6px; font-size: 0.70rem; color: var(--text-secondary); border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 4px; font-weight: 400;">
+        <!-- Datos de Contacto y Telemetría Científica estilo Eclipse Calculator 2.0 (interlineado idéntico a tabla de contactos) -->
+        <div style="background: rgba(0,0,0,0.45); padding: 8px 10px; border-radius: 10px; border: 1px solid rgba(56, 189, 248, 0.18); display: flex; flex-direction: column;">
+            <div style="display: flex; justify-content: space-between; align-items: center; height: 18px; min-height: 18px; max-height: 18px; line-height: 17px; font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-secondary); border-bottom: 1px solid rgba(255,255,255,0.04); padding: 0 4px; box-sizing: border-box;">
+                <div style="display: flex; align-items: center; gap: 6px;">
                     <span style="min-width: 38px;">Fase</span>
                     <span id="limb-time-header-label">Hora (UT1)</span>
                 </div>
-                <div style="display: flex; align-items: baseline; justify-content: flex-end; font-size: 0.70rem; color: var(--text-secondary); border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 4px; font-weight: 400; text-align: right;">
-                    <span>Ángulo polar</span>
-                </div>
-                <div id="limb-c2-text" style="display: flex; align-items: baseline; gap: 6px; white-space: nowrap;"><span style="color: var(--accent-blue); font-weight: 400; min-width: 38px;">C2'</span> <span style="color: #f8fafc; min-width: 68px;">--:--:--</span></div>
-                <div id="limb-p2-text" style="display: flex; align-items: baseline; justify-content: flex-end; gap: 6px; white-space: nowrap;"><span style="color: var(--accent-blue); font-weight: 400; min-width: 26px; text-align: left;">P2'</span> <span style="color: #f8fafc; min-width: 48px; text-align: right;">--</span></div>
-                <div id="limb-c3-text" style="display: flex; align-items: baseline; gap: 6px; white-space: nowrap;"><span style="color: var(--accent-blue); font-weight: 400; min-width: 38px;">C3'</span> <span style="color: #f8fafc; min-width: 68px;">--:--:--</span></div>
-                <div id="limb-p3-text" style="display: flex; align-items: baseline; justify-content: flex-end; gap: 6px; white-space: nowrap;"><span style="color: var(--accent-blue); font-weight: 400; min-width: 26px; text-align: left;">P3'</span> <span style="color: #f8fafc; min-width: 48px; text-align: right;">--</span></div>
-                <div id="limb-duration-text" style="display: flex; align-items: baseline; gap: 6px; white-space: nowrap;"><span style="color: var(--accent-blue); font-weight: 400; min-width: 38px;">Dur.</span> <span style="color: #f8fafc; min-width: 68px;">--</span></div>
+                <span style="text-align: right;">Ángulo polar</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; height: 18px; min-height: 18px; max-height: 18px; line-height: 17px; font-family: var(--font-mono); font-size: 0.76rem; border-bottom: 1px solid rgba(255,255,255,0.04); padding: 0 4px; box-sizing: border-box;">
+                <div id="limb-c2-text" style="display: flex; align-items: center; gap: 6px; white-space: nowrap;"><span style="color: var(--accent-blue); font-weight: 400; min-width: 38px;">C2'</span> <span style="color: #f8fafc; min-width: 68px;">--:--:--</span></div>
+                <div id="limb-p2-text" style="display: flex; align-items: center; justify-content: flex-end; gap: 6px; white-space: nowrap;"><span style="color: var(--accent-blue); font-weight: 400; min-width: 26px; text-align: left;">P2'</span> <span style="color: #f8fafc; min-width: 48px; text-align: right;">--</span></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; height: 18px; min-height: 18px; max-height: 18px; line-height: 17px; font-family: var(--font-mono); font-size: 0.76rem; border-bottom: 1px solid rgba(255,255,255,0.04); padding: 0 4px; box-sizing: border-box;">
+                <div id="limb-c3-text" style="display: flex; align-items: center; gap: 6px; white-space: nowrap;"><span style="color: var(--accent-blue); font-weight: 400; min-width: 38px;">C3'</span> <span style="color: #f8fafc; min-width: 68px;">--:--:--</span></div>
+                <div id="limb-p3-text" style="display: flex; align-items: center; justify-content: flex-end; gap: 6px; white-space: nowrap;"><span style="color: var(--accent-blue); font-weight: 400; min-width: 26px; text-align: left;">P3'</span> <span style="color: #f8fafc; min-width: 48px; text-align: right;">--</span></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; height: 18px; min-height: 18px; max-height: 18px; line-height: 17px; font-family: var(--font-mono); font-size: 0.76rem; padding: 0 4px; box-sizing: border-box;">
+                <div id="limb-duration-text" style="display: flex; align-items: center; gap: 6px; white-space: nowrap;"><span style="color: var(--accent-blue); font-weight: 400; min-width: 38px;">Dur.</span> <span style="color: #f8fafc; min-width: 68px;">--</span></div>
                 <div></div>
             </div>
+        </div>
 
-
-            <div style="margin-top: 2px; padding: 6px 4px 0 4px; border-top: 1px solid rgba(255,255,255,0.06); font-size: 0.70rem; color: var(--text-secondary); line-height: 1.35; display: flex; justify-content: flex-start; align-items: center;">
-                <span>Altimetría: <em>NASA LRO / LOLA</em></span>
-            </div>
+        <div style="margin-top: 2px; padding: 6px 4px 0 4px; border-top: 1px solid rgba(255,255,255,0.06); font-size: 0.70rem; color: var(--text-secondary); line-height: 1.35; display: flex; justify-content: flex-start; align-items: center;">
+            <span>Altimetría: <em>NASA LRO / LOLA</em></span>
         </div>
     </div>
 
