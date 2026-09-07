@@ -207,16 +207,16 @@
         .sidebar-panel {
             left: 15px;
             width: 350px;
-            padding: 14px 16px;
-            gap: 9px;
+            padding: 12px 14px;
+            gap: 8px;
         }
 
         /* Right Panel: Visualization Layers and Legend */
         .settings-panel {
             right: 15px;
             width: 360px;
-            padding: 16px 18px;
-            gap: 12px;
+            padding: 12px 14px;
+            gap: 8px;
         }
 
         .sidebar-panel::-webkit-scrollbar,
@@ -232,11 +232,11 @@
         /* Cabeceras Sticky y Arrastrables de los Paneles */
         .panel-header {
             position: sticky;
-            top: -16px;
-            margin-top: -16px;
-            margin-left: -18px;
-            margin-right: -18px;
-            padding: 14px 18px 10px 18px;
+            top: -12px;
+            margin-top: -12px;
+            margin-left: -14px;
+            margin-right: -14px;
+            padding: 10px 14px 8px 14px;
             background: rgba(12, 16, 25, 0.96);
             backdrop-filter: blur(16px);
             border-bottom: 1px solid var(--border-color);
@@ -246,7 +246,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            height: 56px;
+            height: 46px;
             box-sizing: border-box;
             cursor: grab;
             user-select: none;
@@ -269,7 +269,7 @@
         .panel-header h1,
         .panel-header h2 {
             font-family: var(--font-heading);
-            font-size: 1.15rem;
+            font-size: 1.10rem;
             font-weight: 700;
             color: #f8fafc;
             line-height: 1.2;
@@ -288,10 +288,10 @@
 
         .panel-toggle {
             cursor: pointer;
-            font-size: 0.95rem;
-            width: 32px;
-            height: 32px;
-            border-radius: 8px;
+            font-size: 0.82rem;
+            width: 26px;
+            height: 26px;
+            border-radius: 6px;
             color: var(--text-secondary);
             transition: var(--transition-smooth);
             background: rgba(255, 255, 255, 0.05);
@@ -415,15 +415,15 @@
 
         .section-title {
             font-family: var(--font-heading);
-            font-size: 0.85rem;
+            font-size: 0.78rem;
             font-weight: 700;
             color: var(--text-secondary);
             text-transform: uppercase;
             letter-spacing: 0.05em;
             display: flex;
             align-items: center;
-            gap: 10px;
-            margin-top: 4px;
+            gap: 8px;
+            margin-top: 1px;
             margin-bottom: 0;
             line-height: 1.2;
         }
@@ -605,17 +605,17 @@
             border-radius: 8px;
             padding: 2px;
             gap: 2px;
-            margin-bottom: 2px;
+            margin-bottom: 0;
         }
 
         .mode-btn {
             flex: 1;
-            padding: 5px 8px;
+            padding: 4px 6px;
             border-radius: 6px;
             border: 1px solid transparent;
             background: transparent;
             color: var(--text-secondary);
-            font-size: 0.74rem;
+            font-size: 0.72rem;
             font-weight: 600;
             font-family: var(--font-heading);
             cursor: pointer;
@@ -624,7 +624,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 6px;
+            gap: 5px;
         }
 
         .mode-btn:hover {
@@ -679,22 +679,22 @@
             align-items: center;
             background: rgba(255, 255, 255, 0.04);
             border: 1px solid var(--border-color);
-            border-radius: 10px;
+            border-radius: 8px;
             padding: 2px;
             gap: 2px;
             flex-shrink: 0;
-            height: 36px;
+            height: 32px;
             box-sizing: border-box;
         }
 
         .location-tool-btn {
-            width: 30px;
-            height: 30px;
-            border-radius: 8px;
+            width: 26px;
+            height: 26px;
+            border-radius: 6px;
             border: 1px solid transparent;
             background: transparent;
             color: var(--text-secondary);
-            font-size: 0.80rem;
+            font-size: 0.75rem;
             cursor: pointer;
             display: flex;
             align-items: center;
@@ -720,10 +720,10 @@
             background: linear-gradient(135deg, rgba(14, 165, 233, 0.08), rgba(249, 115, 22, 0.06));
             border: 1px solid rgba(56, 189, 248, 0.25);
             border-radius: 12px;
-            padding: 10px 12px;
+            padding: 8px 10px;
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 4px;
         }
 
         .mataro-badge-header {
@@ -775,12 +775,12 @@
         .contacts-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 0.78rem;
+            font-size: 0.76rem;
             font-family: var(--font-mono);
             table-layout: fixed;
-            height: 126px;
-            max-height: 126px;
-            min-height: 126px;
+            height: 108px;
+            max-height: 108px;
+            min-height: 108px;
         }
 
         .contacts-table th {
@@ -788,34 +788,34 @@
             color: var(--text-secondary);
             padding: 0 4px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-            font-size: 0.75rem;
+            font-size: 0.72rem;
             font-weight: 400;
-            height: 21px;
-            max-height: 21px;
-            line-height: 20px;
+            height: 18px;
+            max-height: 18px;
+            line-height: 17px;
             vertical-align: middle;
             box-sizing: border-box;
             white-space: nowrap;
         }
 
         .contacts-table tr {
-            height: 21px;
-            max-height: 21px;
-            min-height: 21px;
+            height: 18px;
+            max-height: 18px;
+            min-height: 18px;
             box-sizing: border-box;
             cursor: pointer;
             transition: background 0.15s ease;
         }
 
         .contacts-table td {
-            height: 21px;
-            max-height: 21px;
-            min-height: 21px;
-            line-height: 20px;
+            height: 18px;
+            max-height: 18px;
+            min-height: 18px;
+            line-height: 17px;
             vertical-align: middle;
             padding: 0 4px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-            font-size: 0.78rem;
+            font-size: 0.76rem;
             color: #f8fafc;
             font-weight: 400;
             box-sizing: border-box;
@@ -1004,9 +1004,9 @@
             border-radius: 8px;
             color: var(--accent-blue);
             font-family: var(--font-heading);
-            font-size: 0.74rem;
+            font-size: 0.72rem;
             font-weight: 600;
-            padding: 5px 10px;
+            padding: 4px 8px;
             cursor: pointer;
             display: flex;
             align-items: center;
@@ -1014,7 +1014,7 @@
             width: 100%;
             box-sizing: border-box;
             transition: var(--transition-smooth);
-            margin-top: 2px;
+            margin-top: 1px;
         }
 
         .more-layers-btn:hover {
@@ -1612,7 +1612,7 @@
         </div>
         <div style="display: flex; gap: 8px; align-items: center;">
             <div class="custom-combobox-container" id="observer-combobox-container" style="position: relative; flex: 1; min-width: 0;">
-                <input type="text" class="search-select custom-combobox-input" id="observer-location-input" placeholder="Buscar o elegir ciudad..." value="Mataró (Cosmos Mataró, ES)" style="width: 100%; height: 36px; box-sizing: border-box; padding: 0 32px 0 12px; font-family: var(--font-mono); font-size: 0.80rem; font-weight: 400; background-color: #0f172a; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 10px; color: #f8fafc; cursor: text; outline: none; text-overflow: ellipsis;" autocomplete="off" onfocus="openObserverDropdown(); this.select();" oninput="filterObserverDropdown(this.value, true)" onkeydown="onObserverInputKeyDown(event)">
+                <input type="text" class="search-select custom-combobox-input" id="observer-location-input" placeholder="Buscar o elegir ciudad..." value="Mataró (Cosmos Mataró, ES)" style="width: 100%; height: 32px; box-sizing: border-box; padding: 0 32px 0 12px; font-family: var(--font-mono); font-size: 0.80rem; font-weight: 400; background-color: #0f172a; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 10px; color: #f8fafc; cursor: text; outline: none; text-overflow: ellipsis;" autocomplete="off" onfocus="openObserverDropdown(); this.select();" oninput="filterObserverDropdown(this.value, true)" onkeydown="onObserverInputKeyDown(event)">
                 <span style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; color: #94a3b8; font-size: 0.72rem;"><i class="fa-solid fa-chevron-down"></i></span>
                 
                 <!-- Desplegable Filtrable Flotante Estilizado Adaptativo -->
@@ -1701,7 +1701,7 @@
         <div class="section-title">
             <i class="fa-solid fa-layer-group"></i> Capas y opciones
         </div>
-        <div class="panel-section" style="display: flex; flex-direction: column; gap: 0.45rem; background: rgba(255,255,255,0.03); padding: 0.5rem 0.65rem; border-radius: 12px; border: 1px solid var(--border-color);">
+        <div class="panel-section" style="display: flex; flex-direction: column; gap: 0.35rem; background: rgba(255,255,255,0.03); padding: 0.4rem 0.6rem; border-radius: 12px; border: 1px solid var(--border-color);">
             <!-- GRUPO 1: CONTROLES PARA MODO ESPACIO 3D -->
             <div id="layers-group-3d" style="display: flex; flex-direction: column; gap: 0.45rem;">
                 <!-- 3 Primeros Controles Siempre Visibles en Espacio 3D -->
