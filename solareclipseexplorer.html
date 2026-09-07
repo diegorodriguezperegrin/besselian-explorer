@@ -1489,10 +1489,14 @@
         </div>
 
         <div class="search-row" style="display: flex; gap: 8px; align-items: center; margin-bottom: 6px;">
-            <div style="width: 95px; flex-shrink: 0;" id="search-input-col">
+            <div style="width: 96px; flex-shrink: 0; position: relative;" id="search-input-col">
                 <input type="number" class="search-input" id="year-input" placeholder="Año" value="2027" min="-1999" max="3000" aria-label="Año del eclipse" style="width: 100%; height: 36px; box-sizing: border-box; padding: 0 6px; font-size: 0.88rem; font-weight: 400; text-align: center; background: #0f172a; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 10px;">
-                <select class="search-select" id="century-select" style="display: none; width: 100%; height: 36px; box-sizing: border-box; padding: 0 16px 0 6px; font-size: 0.74rem; font-weight: 600; text-align: center; background-color: #0f172a; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 10px; color: #f8fafc;" title="Seleccionar siglo para ver eclipses visibles">
-                </select>
+                <div id="century-combobox-container" class="custom-combobox-container" style="display: none; position: relative; width: 100%;">
+                    <input type="text" class="search-select custom-combobox-input" id="century-input" readonly value="S. XXI" placeholder="Siglo" style="width: 100%; height: 36px; box-sizing: border-box; padding: 0 20px 0 6px; font-family: var(--font-mono); font-size: 0.80rem; font-weight: 600; text-align: center; background-color: #0f172a; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 10px; color: #f8fafc; cursor: pointer; outline: none; user-select: none; text-overflow: ellipsis; white-space: nowrap;" onclick="toggleCenturyDropdown()" title="Seleccionar siglo para ver eclipses visibles">
+                    <span style="position: absolute; right: 7px; top: 50%; transform: translateY(-50%); pointer-events: none; color: #94a3b8; font-size: 0.65rem;"><i class="fa-solid fa-chevron-down"></i></span>
+                    <div id="century-dropdown-menu" class="custom-dropdown-menu" style="display: none; position: absolute; top: calc(100% + 4px); left: 0; min-width: 220px; width: max-content; box-sizing: border-box; max-height: 240px; overflow-y: auto; background: #0b1329; border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 10px; box-shadow: 0 12px 30px rgba(0,0,0,0.85); z-index: 1000; padding: 4px; font-family: var(--font-mono);">
+                    </div>
+                </div>
             </div>
             <div style="flex: 1; min-width: 0;">
                 <select class="search-select" id="eclipse-select" style="width: 100%; height: 36px; box-sizing: border-box; padding: 0 30px 0 12px; font-size: 0.84rem; font-weight: 400; background-color: #0f172a; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 10px; color: #f8fafc;">
@@ -3194,8 +3198,7 @@
                 updateShadowAtTime(simCurrentT);
             }
             if (typeof searchMode !== 'undefined' && searchMode === 'location') {
-                const centurySel = getDOM('century-select');
-                const cVal = centurySel ? parseInt(centurySel.value, 10) : (typeof getCenturyFromYear === 'function' ? getCenturyFromYear(currentEclipse?.year || 2027) : 21);
+                const cVal = (typeof currentSelectedCentury !== 'undefined' && currentSelectedCentury) ? currentSelectedCentury : (typeof getCenturyFromYear === 'function' ? getCenturyFromYear(currentEclipse?.year || 2027) : 21);
                 if (typeof filterEclipsesByLocation === 'function') {
                     filterEclipsesByLocation(cVal);
                 }
@@ -3343,6 +3346,10 @@
             const container = getDOM('observer-combobox-container');
             if (container && !container.contains(e.target)) {
                 closeObserverDropdown();
+            }
+            const centuryContainer = getDOM('century-combobox-container');
+            if (centuryContainer && !centuryContainer.contains(e.target)) {
+                closeCenturyDropdown();
             }
         });
 
@@ -5518,6 +5525,8 @@
         let searchMode = 'year'; // 'year' | 'saros' | 'location'
         const locationEclipsesCache = new Map();
 
+        let currentSelectedCentury = 21;
+
         function getCenturyYears(c) {
             if (c >= 1) {
                 return { start: (c - 1) * 100 + 1, end: c * 100 };
@@ -5541,13 +5550,17 @@
             return roman;
         }
 
-        function getCenturyLabel(c) {
-            const { start, end } = getCenturyYears(c);
+        function getCenturyShortLabel(c) {
             if (c > 0) {
-                return `S. ${toRoman(c)} (${start}-${end})`;
+                return `S. ${toRoman(c)}`;
             } else {
-                return `S. ${toRoman(Math.abs(c))} a.C. (${start} a ${end})`;
+                return `S. ${toRoman(Math.abs(c))} a.C.`;
             }
+        }
+
+        function getCenturyRangeLabel(c) {
+            const { start, end } = getCenturyYears(c);
+            return `${start} a ${end}`;
         }
 
         function getCenturyFromYear(y) {
@@ -5556,17 +5569,89 @@
             return -(Math.floor((bc - 1) / 100) + 1);
         }
 
-        function initCenturySelect() {
-            const centurySelect = getDOM('century-select');
-            if (!centurySelect || centurySelect.options.length > 0) return;
-            // Catálogo NASA de eclipses: del siglo -20 (XX a.C.) al siglo +30 (XXX d.C.) en orden cronológico
+        function toggleCenturyDropdown() {
+            const menu = getDOM('century-dropdown-menu');
+            if (!menu) return;
+            if (menu.style.display === 'block') {
+                closeCenturyDropdown();
+            } else {
+                openCenturyDropdown();
+            }
+        }
+
+        function openCenturyDropdown() {
+            const menu = getDOM('century-dropdown-menu');
+            if (!menu) return;
+            renderCenturyDropdownItems();
+            menu.style.display = 'block';
+
+            // Auto-scroll centrado al siglo actualmente seleccionado
+            const activeItem = menu.querySelector('.century-option-active');
+            if (activeItem) {
+                setTimeout(() => {
+                    activeItem.scrollIntoView({ block: 'center' });
+                }, 10);
+            }
+        }
+
+        function closeCenturyDropdown() {
+            const menu = getDOM('century-dropdown-menu');
+            if (menu) menu.style.display = 'none';
+        }
+
+        function renderCenturyDropdownItems() {
+            const menu = getDOM('century-dropdown-menu');
+            if (!menu) return;
+            menu.innerHTML = '';
+
             for (let c = -20; c <= 30; c++) {
                 if (c === 0) continue;
-                const opt = document.createElement('option');
-                opt.value = c;
-                opt.textContent = getCenturyLabel(c);
-                centurySelect.add(opt);
+                const isSelected = (c === currentSelectedCentury);
+                const item = document.createElement('div');
+                item.className = 'dropdown-option-item' + (isSelected ? ' century-option-active' : '');
+                item.style.padding = '6px 10px';
+                item.style.fontFamily = 'var(--font-mono)';
+                item.style.fontSize = '0.78rem';
+                item.style.color = isSelected ? 'var(--accent-blue)' : '#f8fafc';
+                item.style.fontWeight = isSelected ? '600' : '400';
+                item.style.cursor = 'pointer';
+                item.style.borderRadius = '6px';
+                item.style.transition = 'background 0.15s';
+                item.style.display = 'flex';
+                item.style.alignItems = 'center';
+                item.style.justifyContent = 'space-between';
+                item.style.gap = '14px';
+                item.style.whiteSpace = 'nowrap';
+                if (isSelected) {
+                    item.style.background = 'rgba(56, 189, 248, 0.14)';
+                }
+
+                const shortLabel = getCenturyShortLabel(c);
+                const rangeLabel = getCenturyRangeLabel(c);
+                item.innerHTML = `<span style="font-weight: 600; color: inherit;">${shortLabel}</span><span style="font-size: 0.74rem; color: #94a3b8; flex-shrink: 0;">${rangeLabel}</span>`;
+
+                item.onmouseenter = () => { item.style.background = 'rgba(56, 189, 248, 0.22)'; };
+                item.onmouseleave = () => { item.style.background = (c === currentSelectedCentury) ? 'rgba(56, 189, 248, 0.14)' : 'transparent'; };
+
+                item.onclick = (e) => {
+                    e.stopPropagation();
+                    selectCentury(c);
+                };
+
+                menu.appendChild(item);
             }
+        }
+
+        function selectCentury(c) {
+            setCenturyValue(c);
+            closeCenturyDropdown();
+            filterEclipsesByLocation(c);
+        }
+
+        function setCenturyValue(c) {
+            currentSelectedCentury = c;
+            const input = getDOM('century-input');
+            if (input) input.value = getCenturyShortLabel(c);
         }
 
         function setSearchMode(mode) {
@@ -5575,7 +5660,7 @@
             const btnSaros = getDOM('btn-mode-saros');
             const btnLocation = getDOM('btn-mode-location');
             const input = getDOM('year-input');
-            const centurySel = getDOM('century-select');
+            const centuryContainer = getDOM('century-combobox-container');
 
             btnYear?.classList.remove('active');
             btnSaros?.classList.remove('active');
@@ -5583,7 +5668,8 @@
 
             if (mode === 'saros') {
                 btnSaros?.classList.add('active');
-                if (centurySel) centurySel.style.display = 'none';
+                if (centuryContainer) centuryContainer.style.display = 'none';
+                closeCenturyDropdown();
                 if (input) {
                     input.style.display = 'block';
                     input.placeholder = 'Saros';
@@ -5593,17 +5679,17 @@
                 }
             } else if (mode === 'location') {
                 btnLocation?.classList.add('active');
-                initCenturySelect();
                 if (input) input.style.display = 'none';
-                if (centurySel) {
-                    centurySel.style.display = 'block';
+                if (centuryContainer) {
+                    centuryContainer.style.display = 'block';
                     const cVal = getCenturyFromYear(currentEclipse?.year || 2027);
-                    centurySel.value = cVal;
+                    setCenturyValue(cVal);
                     filterEclipsesByLocation(cVal);
                 }
             } else {
                 btnYear?.classList.add('active');
-                if (centurySel) centurySel.style.display = 'none';
+                if (centuryContainer) centuryContainer.style.display = 'none';
+                closeCenturyDropdown();
                 if (input) {
                     input.style.display = 'block';
                     input.placeholder = 'Año';
@@ -5615,9 +5701,8 @@
         }
 
         function filterEclipsesByLocation(centuryVal) {
-            if (!centuryVal) centuryVal = getCenturyFromYear(currentEclipse?.year || 2027);
-            const centurySelect = getDOM('century-select');
-            if (centurySelect) centurySelect.value = centuryVal;
+            if (!centuryVal) centuryVal = currentSelectedCentury || getCenturyFromYear(currentEclipse?.year || 2027);
+            setCenturyValue(centuryVal);
 
             if (!currentObserver || currentObserver.lat == null || currentObserver.lon == null) {
                 eclipseSelect.innerHTML = '<option value="">Selecciona ubicación...</option>';
@@ -5641,7 +5726,7 @@
             }
 
             if (visibleList.length === 0) {
-                const cLabel = getCenturyLabel(centuryVal);
+                const cLabel = getCenturyShortLabel(centuryVal);
                 eclipseSelect.innerHTML = `<option value="">Sin eclipses en ${cLabel}</option>`;
                 return;
             }
@@ -5664,7 +5749,8 @@
                 const mStr = String(e.month || 1).padStart(2, '0');
                 const dStr = String(e.day || 1).padStart(2, '0');
                 const dateStr = `${yStr}-${mStr}-${dStr}`;
-                opt.text = `S.${e.saros} ${dateStr} ${typeName}${durStr}`;
+                // Directamente número de saros (sin "S.")
+                opt.text = `${e.saros} ${dateStr} ${typeName}${durStr}`;
                 eclipseSelect.add(opt);
             });
 
@@ -5828,10 +5914,12 @@
         getDOM('btn-mode-saros')?.addEventListener('click', () => setSearchMode('saros'));
         getDOM('btn-mode-location')?.addEventListener('click', () => setSearchMode('location'));
 
-        getDOM('century-select')?.addEventListener('change', (e) => {
-            const cVal = parseInt(e.target.value, 10);
-            if (!isNaN(cVal)) {
-                filterEclipsesByLocation(cVal);
+        getDOM('century-input')?.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeCenturyDropdown();
+            } else if (e.key === 'ArrowDown' || e.key === 'Enter') {
+                openCenturyDropdown();
+                e.preventDefault();
             }
         });
 
