@@ -4687,25 +4687,25 @@
                     const by = cy + projBead.yNorm * r;
 
                     const intens = Math.min(1.0, Math.max(0.0, b.intensity || 0.5));
-                    const bR = isRadarDiamond ? Math.max(1.2, 6.5 * intens) : Math.max(0.8, 4.5 * intens);
-                    const alpha = Math.min(1.0, intens * 1.2);
+                    const bR = isRadarDiamond ? Math.max(2.8, 7.5 * intens) : Math.max(2.2, 5.0 * intens);
+                    const alpha = Math.min(1.0, Math.max(0.70, intens * 1.25));
 
                     ctx.save();
-                    const bGrad = getCachedGradient(ctx, 'radial', [bx, by, 0, bx, by, bR * 2.2], [
+                    const bGrad = getCachedGradient(ctx, 'radial', [bx, by, 0, bx, by, bR * 2.5], [
                         [0, `rgba(255, 255, 255, ${alpha.toFixed(3)})`],
-                        [0.3, `rgba(254, 240, 138, ${(0.95 * alpha).toFixed(3)})`],
-                        [0.7, `rgba(249, 115, 22, ${(0.45 * alpha).toFixed(3)})`],
+                        [0.25, `rgba(254, 240, 138, ${(0.98 * alpha).toFixed(3)})`],
+                        [0.65, `rgba(249, 115, 22, ${(0.65 * alpha).toFixed(3)})`],
                         [1, 'transparent']
                     ]);
                     ctx.beginPath();
-                    ctx.arc(bx, by, bR * 2.2, 0, Math.PI * 2);
+                    ctx.arc(bx, by, bR * 2.5, 0, Math.PI * 2);
                     ctx.fillStyle = bGrad;
                     ctx.fill();
 
                     if (isRadarDiamond && intens > 0.05) {
-                        const spike = 18 * intens;
+                        const spike = Math.max(12, 18 * intens);
                         ctx.strokeStyle = `rgba(255, 255, 255, ${(0.95 * alpha).toFixed(3)})`;
-                        ctx.lineWidth = Math.max(0.6, 1.2 * intens);
+                        ctx.lineWidth = Math.max(0.8, 1.4 * intens);
                         ctx.beginPath();
                         ctx.moveTo(bx - spike, by); ctx.lineTo(bx + spike, by);
                         ctx.moveTo(bx, by - spike); ctx.lineTo(bx, by + spike);
@@ -5149,20 +5149,20 @@
                     activeBeadsList.forEach(b => {
                         ctx.save();
                         const isThisTheDiamond = isDiamondRing && (b.id === primaryDiamondId);
-                        const beadR = isThisTheDiamond ? (2.5 + (rSunPx * 0.050) * b.intensity) : (1.2 + (rSunPx * 0.026) * b.intensity);
-                        const alpha = Math.min(1.0, 0.45 + 0.55 * b.intensity);
+                        const beadR = isThisTheDiamond ? Math.max(4.2, (3.2 + (rSunPx * 0.052) * b.intensity)) : Math.max(2.8, (1.8 + (rSunPx * 0.030) * b.intensity));
+                        const alpha = Math.min(1.0, Math.max(0.65, 0.45 + 0.55 * b.intensity));
 
-                        // Resplandor cálido fotosférico con opacidad progresiva
-                        const beadGrad = getCachedGradient(ctx, 'radial', [b.x, b.y, 0, b.x, b.y, beadR * 2.8], [
+                        // Resplandor cálido fotosférico con opacidad progresiva y halo prominente
+                        const beadGrad = getCachedGradient(ctx, 'radial', [b.x, b.y, 0, b.x, b.y, beadR * 3.5], [
                             [0, `rgba(255, 255, 255, ${alpha.toFixed(3)})`],
-                            [0.25, isThisTheDiamond ? `rgba(255, 255, 255, ${(0.98 * alpha).toFixed(3)})` : `rgba(254, 240, 138, ${(0.95 * alpha).toFixed(3)})`],
-                            [0.60, isThisTheDiamond ? `rgba(254, 240, 138, ${(0.85 * alpha).toFixed(3)})` : `rgba(249, 115, 22, ${(0.55 * alpha).toFixed(3)})`],
+                            [0.22, isThisTheDiamond ? `rgba(255, 255, 255, ${(0.98 * alpha).toFixed(3)})` : `rgba(254, 240, 138, ${(0.95 * alpha).toFixed(3)})`],
+                            [0.55, isThisTheDiamond ? `rgba(254, 240, 138, ${(0.85 * alpha).toFixed(3)})` : `rgba(249, 115, 22, ${(0.60 * alpha).toFixed(3)})`],
                             [1.0, 'transparent']
                         ]);
 
                         ctx.beginPath();
                         ctx.fillStyle = beadGrad;
-                        ctx.arc(b.x, b.y, beadR * 2.8, 0, Math.PI * 2);
+                        ctx.arc(b.x, b.y, beadR * 3.5, 0, Math.PI * 2);
                         ctx.fill();
 
                         // 3. LA GEMA DEL DIAMANTE: Destello óptico estelar de 8 puntas suaves con escala progresiva
@@ -7923,13 +7923,11 @@
             const maxT = parseFloat(timeSlider.max) || (currentEclipse?.tmax != null ? currentEclipse.tmax : 2.5);
             targetT = Math.max(minT, Math.min(maxT, targetT));
 
-            setSimSpeed(1.0);
-            simPlayDirection = 1;
             simCurrentT = targetT;
             if (timeSlider) timeSlider.value = targetT;
             updateShadowAtTime(targetT);
-            if (!isPlaying) {
-                startSimulation();
+            if (isPlaying) {
+                toggleSimulation();
             }
         }
         window.jumpToSpecificTime = jumpToSpecificTime;
@@ -8774,14 +8772,16 @@
                 const currentBeads = [];
                 clusters.forEach(c => {
                     const widthDeg = c.length * 0.5;
-                    if (widthDeg <= 10.0 || (widthDeg <= 14.0 && magNow >= 0.998)) {
+                    if (widthDeg <= 10.0 || (widthDeg <= 14.0 && magNow >= 0.997)) {
                         let maxPt = c[0];
                         c.forEach(pt => { if (pt.clearance > maxPt.clearance) maxPt = pt; });
-                        currentBeads.push({
-                            pa: maxPt.pa,
-                            clearance: maxPt.clearance,
-                            widthDeg
-                        });
+                        if (maxPt.clearance >= 0.08) {
+                            currentBeads.push({
+                                pa: maxPt.pa,
+                                clearance: maxPt.clearance,
+                                widthDeg
+                            });
+                        }
                     }
                 });
 
@@ -8791,7 +8791,7 @@
                     collarEndDt = dt;
                 }
 
-                const ANG_TOL = 2.5;
+                const ANG_TOL = 3.5;
                 const nextPrevBeads = [];
 
                 currentBeads.forEach(cb => {
@@ -8809,12 +8809,14 @@
                             pa: cb.pa,
                             feature: feat.name,
                             landmark: feat.landmark,
-                            lastDt: dt
+                            lastDt: dt,
+                            maxClearance: cb.clearance
                         };
                         rawEvents.push(ev);
                         nextPrevBeads.push({ pa: cb.pa, eventRef: ev });
                     } else {
                         match.eventRef.lastDt = dt;
+                        if (cb.clearance > match.eventRef.maxClearance) match.eventRef.maxClearance = cb.clearance;
                         nextPrevBeads.push({ pa: cb.pa, eventRef: match.eventRef });
                     }
                 });
@@ -8822,17 +8824,20 @@
                 prevBeads = nextPrevBeads;
             }
 
+            // Filtrar parpadeos de duración nula (< 0.5s) y holgura insignificante
+            const validEvents = rawEvents.filter(e => (e.lastDt - e.dt) >= 0.4 || e.maxClearance >= 0.20);
+
             let diamondEvent = null;
             // El Anillo de Diamantes es un fenómeno exclusivo de eclipses totales (contraste de la corona solar)
             if (circ && circ.isTotal) {
-                if (isC2 && rawEvents.length > 0) {
-                    const candidates = rawEvents.filter(e => e.lastDt <= 10.0);
+                if (isC2 && validEvents.length > 0) {
+                    const candidates = validEvents.filter(e => e.lastDt <= 10.0);
                     if (candidates.length > 0) {
                         diamondEvent = candidates.reduce((prev, curr) => (curr.lastDt > prev.lastDt) ? curr : prev, candidates[0]);
                         diamondEvent.fenomeno = 'Anillo de Diamantes';
                     }
-                } else if (isC3 && rawEvents.length > 0) {
-                    diamondEvent = rawEvents[0];
+                } else if (isC3 && validEvents.length > 0) {
+                    diamondEvent = validEvents[0];
                     diamondEvent.fenomeno = 'Anillo de Diamantes';
                 }
             }
@@ -8843,7 +8848,7 @@
                 diamondFeature: diamondEvent ? diamondEvent.feature + ' (PA ' + Math.round(diamondEvent.pa) + '°)' : null
             };
 
-            return { events: rawEvents, contactLabel, baseT, stats };
+            return { events: validEvents, contactLabel, baseT, stats };
         }
 
         function buildActivityLogPageHtml(circ, ec, obs, defaultKey = 'c2') {
@@ -9147,7 +9152,8 @@
                 '                <col style="width: 36px;">',
                 '                <col style="width: 96px;">',
                 '                <col style="width: 48px;">',
-                '                <col style="width: 150px;">',
+                '                <col style="width: 148px;">',
+                '                <col style="width: 66px;">',
                 '                <col style="width: 46px;">',
                 '                <col>',
                 '            </colgroup>',
@@ -9157,6 +9163,7 @@
                 '                    <th>Hora (UT1)</th>',
                 '                    <th style="text-align: right;" title="Diferencia de tiempo en segundos respecto al contacto">Δt</th>',
                 '                    <th>Fenómeno</th>',
+                '                    <th style="text-align: right;" title="Duración del fenómeno en segundos">Duración</th>',
                 '                    <th style="text-align: right;" title="Ángulo de posición (Position Angle) en grados respecto al norte celeste">PA</th>',
                 '                    <th>Accidente Lunar (NASA LOLA)</th>',
                 '                </tr>',
@@ -9246,7 +9253,7 @@
                 '            const tbody = document.getElementById("table-body");',
                 '            tbody.innerHTML = "";',
                 '            if (!cur || !cur.events || cur.events.length === 0) {',
-                '                tbody.innerHTML = \'<tr><td colspan="6" style="text-align:center; padding: 24px; color: #64748b;">No hay actividad de perlas en esta ventana.</td></tr>\';',
+                '                tbody.innerHTML = \'<tr><td colspan="7" style="text-align:center; padding: 24px; color: #64748b;">No hay actividad de perlas en esta ventana.</td></tr>\';',
                 '                return;',
                 '            }',
                 '            let visibleCount = 0;',
@@ -9272,17 +9279,20 @@
                 '                const paRound = Math.round(e.pa);',
                 '                const fenoClean = e.fenomeno.replace(/💎|📿|✨/g, "").trim();',
                 '                const featureFull = e.feature + (e.landmark ? " — " + e.landmark : "");',
+                '                const durVal = Math.max(0.5, ((e.lastDt != null ? e.lastDt : e.dt) - e.dt));',
+                '                const durStr = durVal.toFixed(1) + " s";',
                 '                tr.innerHTML = ',
                 '                    \'<td style="color:var(--text-dim); text-align:center;">\' + (idx + 1) + \'</td>\' + ',
                 '                    \'<td style="color:var(--text-soft); font-weight:500;">\' + timeStr + \'</td>\' + ',
                 '                    \'<td style="color:var(--text-soft); text-align:right;">\' + dtStr + \'</td>\' + ',
                 '                    \'<td style="color:var(--text-main); font-weight:500;">\' + fenoClean + \'</td>\' + ',
+                '                    \'<td style="color:var(--text-soft); text-align:right; font-variant-numeric: tabular-nums;">\' + durStr + \'</td>\' + ',
                 '                    \'<td style="color:var(--text-soft); text-align:right;">\' + paRound + \'</td>\' + ',
                 '                    \'<td style="color:var(--text-muted);" title="\' + featureFull.replace(/"/g, "&quot;") + \'">\' + featureFull + \'</td>\';',
                 '                tbody.appendChild(tr);',
                 '            });',
                 '            if (visibleCount === 0) {',
-                '                tbody.innerHTML = \'<tr><td colspan="6" style="text-align:center; padding: 20px; color: #64748b;">No se encontraron eventos con los filtros aplicados.</td></tr>\';',
+                '                tbody.innerHTML = \'<tr><td colspan="7" style="text-align:center; padding: 20px; color: #64748b;">No se encontraron eventos con los filtros aplicados.</td></tr>\';',
                 '            }',
                 '        }',
                 '        function setFilter(filt, btn) {',
@@ -9311,15 +9321,16 @@
                 '        function copyCsv() {',
                 '            const cur = APP_DATA[currentKey];',
                 '            if (!cur || !cur.events) return;',
-                '            let csv = "#,Hora_UT1,dt_segundos,Fenomeno,PA_grados,Accidente,Relieve\\n";',
+                '            let csv = "#,Hora_UT1,dt_segundos,Fenomeno,Duracion_s,PA_grados,Accidente,Relieve\\n";',
                 '            cur.events.forEach((e, i) => {',
                 '                let dtRound = Math.round(e.dt);',
                 '                if (Object.is(dtRound, -0) || dtRound === 0) dtRound = 0;',
                 '                const dtStr = (dtRound > 0 ? "+" : "") + dtRound;',
                 '                const paRound = Math.round(e.pa);',
                 '                const fenoClean = e.fenomeno.replace(/💎|📿|✨/g, "").trim();',
+                '                const durVal = Math.max(0.5, ((e.lastDt != null ? e.lastDt : e.dt) - e.dt));',
                 '                csv += (i+1) + "," + formatUT1(e.t) + "," + dtStr + "," + ',
-                '                       \'"\' + fenoClean + \'","\' + paRound + \'","\' + ',
+                '                       \'"\' + fenoClean + \'",\' + durVal.toFixed(1) + \',"\' + paRound + \'","\' + ',
                 '                       \'"\' + e.feature + \'","\' + \'"\' + e.landmark + \'"\\n\';',
                 '            });',
                 '            navigator.clipboard.writeText(csv).then(() => {',
