@@ -32,6 +32,7 @@
     <script src="lunar_limb_lola_data.js"></script>
     <!-- Texturas Globales Base64 de la Tierra (Carga Offline 100% libre de CORS) -->
     <script src="textures_data.js"></script>
+    <script src="observer_locations.js"></script>
     <!-- FontAwesome icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha384-iw3OoTErCYJJB9mCa8LNS2hbsQ7M3C0EpIsO/H5+EGAkPGc6rk+V8i04oW/K5xq0" crossorigin="anonymous">
 
@@ -1924,46 +1925,19 @@
             return _domCache.get(id);
         }
 
-        const OBSERVER_PRESETS = [
-            { name: "Mataró (Cosmos Mataró, ES)", lat: 41.54, lon: 2.44, tz: "Europe/Madrid" },
-            { name: "A Coruña (ES)", lat: 43.37, lon: -8.40, tz: "Europe/Madrid" },
-            { name: "Barcelona (ES)", lat: 41.39, lon: 2.17, tz: "Europe/Madrid" },
-            { name: "Bilbao (ES)", lat: 43.26, lon: -2.93, tz: "Europe/Madrid" },
-            { name: "Bogotá (CO)", lat: 4.71, lon: -74.07, tz: "America/Bogota" },
-            { name: "Buenos Aires (AR)", lat: -34.60, lon: -58.38, tz: "America/Argentina/Buenos_Aires" },
-            { name: "Caracas (VE)", lat: 10.48, lon: -66.90, tz: "America/Caracas" },
-            { name: "Ciudad de México (MX)", lat: 19.43, lon: -99.13, tz: "America/Mexico_City" },
-            { name: "El Cairo (EG)", lat: 30.04, lon: 31.24, tz: "Africa/Cairo" },
-            { name: "Granada (ES)", lat: 37.18, lon: -3.60, tz: "Europe/Madrid" },
-            { name: "Gallocanta (ES)", lat: 40.996880720248335, lon: -1.512905158468881, tz: "Europe/Madrid" },
-            { name: "Greenwich / Londres (GB)", lat: 51.48, lon: 0.00, tz: "Europe/London" },
-            { name: "La Habana (CU)", lat: 23.11, lon: -82.37, tz: "America/Havana" },
-            { name: "La Paz (BO)", lat: -16.50, lon: -68.15, tz: "America/La_Paz" },
-            { name: "Las Palmas de Gran Canaria (ES)", lat: 28.12, lon: -15.43, tz: "Atlantic/Canary" },
-            { name: "Lima (PE)", lat: -12.05, lon: -77.04, tz: "America/Lima" },
-            { name: "Lisboa (PT)", lat: 38.72, lon: -9.14, tz: "Europe/Lisbon" },
-            { name: "Los Ángeles (US)", lat: 34.05, lon: -118.24, tz: "America/Los_Angeles" },
-            { name: "Madrid (ES)", lat: 40.42, lon: -3.70, tz: "Europe/Madrid" },
-            { name: "Málaga (ES)", lat: 36.72, lon: -4.42, tz: "Europe/Madrid" },
-            { name: "Medellín (CO)", lat: 6.24, lon: -75.58, tz: "America/Bogota" },
-            { name: "Montevideo (UY)", lat: -34.90, lon: -56.16, tz: "America/Montevideo" },
-            { name: "Nueva York (US)", lat: 40.71, lon: -74.01, tz: "America/New_York" },
-            { name: "Palma de Mallorca (ES)", lat: 39.57, lon: 2.65, tz: "Europe/Madrid" },
-            { name: "París (FR)", lat: 48.86, lon: 2.35, tz: "Europe/Paris" },
-            { name: "Quito (EC)", lat: -0.18, lon: -78.47, tz: "America/Guayaquil" },
-            { name: "Río de Janeiro (BR)", lat: -22.91, lon: -43.17, tz: "America/Sao_Paulo" },
-            { name: "Roma (IT)", lat: 41.90, lon: 12.50, tz: "Europe/Rome" },
-            { name: "San José (CR)", lat: 9.93, lon: -84.09, tz: "America/Costa_Rica" },
-            { name: "San Juan (PR)", lat: 18.47, lon: -66.11, tz: "America/Puerto_Rico" },
-            { name: "Santiago (CL)", lat: -33.45, lon: -70.67, tz: "America/Santiago" },
-            { name: "Santo Domingo (DO)", lat: 18.49, lon: -69.93, tz: "America/Santo_Domingo" },
-            { name: "Sevilla (ES)", lat: 37.39, lon: -5.98, tz: "Europe/Madrid" },
-            { name: "Sídney (AU)", lat: -33.87, lon: 151.21, tz: "Australia/Sydney" },
-            { name: "Tenerife / Obs. Teide (ES)", lat: 28.30, lon: -16.51, tz: "Atlantic/Canary" },
-            { name: "Tokio (JP)", lat: 35.68, lon: 139.69, tz: "Asia/Tokyo" },
-            { name: "Valencia (ES)", lat: 39.47, lon: -0.38, tz: "Europe/Madrid" },
-            { name: "Zaragoza (ES)", lat: 41.65, lon: -0.88, tz: "Europe/Madrid" }
-        ];
+        const OBSERVER_PRESETS = (typeof window !== 'undefined' && window.OBSERVER_LOCATIONS_CATALOG && window.OBSERVER_LOCATIONS_CATALOG.length > 0)
+            ? window.OBSERVER_LOCATIONS_CATALOG
+            : [
+                { name: "Mataró (Cosmos Mataró, ES)", lat: 41.54, lon: 2.44, tz: "Europe/Madrid", category: "España" },
+                { name: "Barcelona (ES)", lat: 41.39, lon: 2.17, tz: "Europe/Madrid", category: "España" },
+                { name: "Madrid (ES)", lat: 40.42, lon: -3.70, tz: "Europe/Madrid", category: "España" },
+                { name: "Gallocanta (ES)", lat: 40.9969, lon: -1.5129, tz: "Europe/Madrid", category: "España" },
+                { name: "Granada (ES)", lat: 37.18, lon: -3.60, tz: "Europe/Madrid", category: "España" },
+                { name: "Tenerife / Obs. Teide (ES)", lat: 28.30, lon: -16.51, tz: "Atlantic/Canary", category: "Observatorios Astronómicos" },
+                { name: "Buenos Aires (AR)", lat: -34.60, lon: -58.38, tz: "America/Argentina/Buenos_Aires", category: "América Latina" },
+                { name: "Ciudad de México (MX)", lat: 19.43, lon: -99.13, tz: "America/Mexico_City", category: "América Latina" },
+                { name: "Greenwich / Londres (GB)", lat: 51.48, lon: 0.00, tz: "Europe/London", category: "Europa y Resto del Mundo" }
+            ];
 
         let currentObserver = { ...OBSERVER_PRESETS[0] };
         let currentActiveView = '3d'; // '3d' | 'telescopic'
@@ -3259,7 +3233,22 @@
                 return;
             }
 
+            let lastCat = null;
             matches.forEach((preset, idx) => {
+                if (!cleanQuery && preset.category && preset.category !== lastCat) {
+                    lastCat = preset.category;
+                    const catHeader = document.createElement('div');
+                    catHeader.style.padding = (idx > 0 ? '10px' : '4px') + ' 10px 4px 10px';
+                    catHeader.style.fontSize = '0.68rem';
+                    catHeader.style.fontWeight = '700';
+                    catHeader.style.textTransform = 'uppercase';
+                    catHeader.style.letterSpacing = '0.07em';
+                    catHeader.style.color = '#38bdf8';
+                    catHeader.style.borderBottom = '1px solid rgba(56, 189, 248, 0.20)';
+                    catHeader.style.marginBottom = '4px';
+                    catHeader.textContent = preset.category;
+                    menu.appendChild(catHeader);
+                }
                 const item = document.createElement('div');
                 item.className = 'dropdown-option-item';
                 item.style.padding = '7px 10px';
@@ -9279,7 +9268,7 @@
                 '                const fenoClean = e.fenomeno.replace(/💎|📿|✨/g, "").trim();',
                 '                const featureFull = e.feature + (e.landmark ? " — " + e.landmark : "");',
                 '                const durVal = Math.max(0.5, ((e.lastDt != null ? e.lastDt : e.dt) - e.dt));',
-                '                const durStr = durVal.toFixed(1) + " s";',
+                '                const durStr = durVal.toFixed(1);',
                 '                tr.innerHTML = ',
                 '                    \'<td style="color:var(--text-dim); text-align:center;">\' + (idx + 1) + \'</td>\' + ',
                 '                    \'<td style="color:var(--text-soft); font-weight:500;">\' + timeStr + \'</td>\' + ',
