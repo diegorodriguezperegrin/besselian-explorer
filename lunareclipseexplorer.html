@@ -677,7 +677,7 @@
 
     <!-- SCRIPT PRINCIPAL DE LA APLICACIÓN -->
     <script src="lunar_observer_manager.js"></script>
-    <script src="lunar_ui_panels.js"></script>
+    <script src="shared_ui_panels.js"></script>
     <script src="lunar_scene_3d.js"></script>
     <script src="lunar_telescopic.js"></script>
     <script>
@@ -726,6 +726,41 @@
         // [Textura Lunar y Variables Telescópicas] Extraído a lunar_telescopic.js
 
         const MONTH_NAMES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+
+        // Exportar a iCalendar (.ics)
+        function exportSelectedEclipseToICal() {
+            if (!currentEclipse) return;
+            const ec = currentEclipse;
+            const start = new Date(ec.p1Ms);
+            const end = new Date(ec.p4Ms);
+            const pad = (n) => String(n).padStart(2, '0');
+            const format = (d) => `${d.getUTCFullYear()}${pad(d.getUTCMonth()+1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}00Z`;
+
+            const summary = `🌕 Eclipse Lunar ${ec.typeLabel} - ${currentObserver.name}`;
+            const desc = `Eclipse Lunar ${ec.typeLabel} (Saros ${ec.saros}, Gamma ${ec.gamma.toFixed(2)}). Máximo: ${ec.timeTD} TD. Visibilidad en ${currentObserver.name}: ${document.getElementById('mataro-vis-badge')?.textContent || ''}.`;
+
+            const icsData = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Cosmos Mataro//Lunar Eclipse Explorer//ES
+BEGIN:VEVENT
+UID:lunar-eclipse-${ec.id}@cosmosmataro.org
+DTSTAMP:${format(new Date())}
+DTSTART:${format(start)}
+DTEND:${format(end)}
+SUMMARY:${summary}
+DESCRIPTION:${desc}
+LOCATION:${currentObserver.name} (${formatLatLonString(currentObserver.lat, currentObserver.lon, 2)})
+END:VEVENT
+END:VCALENDAR`;
+
+            const blob = new Blob([icsData], { type: 'text/calendar;charset=utf-8' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `Eclipse_Lunar_${ec.dateStr}_${currentObserver.name.replace(/[^a-zA-Z0-9]/g, '_')}.ics`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
 
         // Inicialización al cargar DOM
         window.addEventListener('DOMContentLoaded', () => {
