@@ -16,25 +16,10 @@
     <meta property="og:title" content="Simulador de Órbitas 3D Tierra-Luna-Sol - Cosmos Mataró">
     <meta property="og:description" content="Simulador 3D interactivo en Three.js del sistema Tierra-Luna-Sol, estaciones astronómicas, precesión y eclipses.">
 
-    <!-- Inline CSS matching style.css theme but tailored for 3D full-screen simulator -->
-    <style>        :root {
-            --bg-space: #060911;
-            --bg-card: rgba(13, 18, 28, 0.85);
-            --bg-panel: rgba(12, 16, 25, 0.92);
-            --border-color: rgba(255, 255, 255, 0.08);
-            --border-color-active: rgba(56, 189, 248, 0.4);
-            --text-primary: #f8fafc;
-            --text-secondary: #94a3b8;
-            --solar-yellow: #fef08a;
-            --solar-orange: #38bdf8;
-            --solar-red: #ef4444;
-            --accent-blue: #38bdf8;
-            --accent-green: #34d399;
-            --accent-purple: #c084fc;
-            --font-heading: 'Outfit', sans-serif;
-            --font-body: 'Plus Jakarta Sans', sans-serif;
-            --transition-smooth: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-        }
+    <!-- Tokens de diseño compartidos -->
+    <link rel="stylesheet" href="shared.css">
+
+    <style>
 
         html, body {
             overflow-x: hidden;
