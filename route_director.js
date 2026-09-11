@@ -34,12 +34,45 @@ var routeIntroTimer = 0.0;
             return currentRouteData;
         }
 
-        function getTargetVector(tg) {
+        function getShadowWorldPosition(t, radius) {
+            const eclipse = (typeof currentEclipse !== 'undefined' && currentEclipse) ? currentEclipse : ((typeof PRESET_ECLIPSES !== 'undefined') ? PRESET_ECLIPSES.find(e => e.year === 2027) : null);
+            if (!eclipse) return new THREE.Vector3(0, 0, 0);
+            const centerLL = (typeof besselianToLatLng === 'function') ? besselianToLatLng(eclipse, t) : null;
+            if (!centerLL) return new THREE.Vector3(0, 0, 0);
+            const r = (radius != null) ? radius : ((typeof EARTH_RADIUS !== 'undefined') ? EARTH_RADIUS * 1.002 : 50.1);
+            const rotY = (typeof earthGroup !== 'undefined' && earthGroup && earthGroup.rotation) ? earthGroup.rotation.y : 0;
+            return latLngToVector3(centerLL.lat, centerLL.lng, r).applyAxisAngle(new THREE.Vector3(0, 1, 0), rotY);
+        }
+
+        function getTargetVector(tg, curT = 0) {
             if (!tg) return new THREE.Vector3(0, 0, 0);
-            if (tg instanceof THREE.Vector3) return tg;
+            if (tg instanceof THREE.Vector3) return tg.clone();
+            if (typeof tg === 'string') {
+                const s = tg.toLowerCase();
+                if (s === 'moon') {
+                    return (typeof moonMesh3D !== 'undefined' && moonMesh3D) ? moonMesh3D.position.clone() : new THREE.Vector3(0, 0, 0);
+                }
+                if (s === 'sun') {
+                    return (typeof sunGroup3D !== 'undefined' && sunGroup3D) ? sunGroup3D.position.clone() : new THREE.Vector3(0, 0, 100000);
+                }
+                if (s === 'shadow') {
+                    return getShadowWorldPosition(curT);
+                }
+                if (s === 'earth') {
+                    return new THREE.Vector3(0, 0, 0);
+                }
+            }
+            if (tg.body) {
+                const b = tg.body.toLowerCase();
+                if (b === 'moon') return (typeof moonMesh3D !== 'undefined' && moonMesh3D) ? moonMesh3D.position.clone() : new THREE.Vector3(0, 0, 0);
+                if (b === 'sun') return (typeof sunGroup3D !== 'undefined' && sunGroup3D) ? sunGroup3D.position.clone() : new THREE.Vector3(0, 0, 100000);
+                if (b === 'shadow') return getShadowWorldPosition(curT);
+                if (b === 'earth') return new THREE.Vector3(0, 0, 0);
+            }
             if (tg.lat != null && tg.lng != null) {
                 if (!tg.radius || tg.radius === 0) return new THREE.Vector3(0, 0, 0);
-                return latLngToVector3(tg.lat, tg.lng, tg.radius);
+                const rotY = (typeof earthGroup !== 'undefined' && earthGroup && earthGroup.rotation && tg.rotateWithEarth !== false) ? earthGroup.rotation.y : 0;
+                return latLngToVector3(tg.lat, tg.lng, tg.radius).applyAxisAngle(new THREE.Vector3(0, 1, 0), rotY);
             }
             return new THREE.Vector3(tg.x || 0, tg.y || 0, tg.z || 0);
         }
@@ -74,6 +107,10 @@ var routeIntroTimer = 0.0;
             routeIntroTimer = (route.introDuration != null) ? route.introDuration : 4.0;
             if (controls) controls.enabled = false;
 
+            // Guardar preferencia previa de conos volumétricos
+            const chkCones = (typeof getDOM === 'function' ? getDOM('chk-show-space-cones') : document.getElementById('chk-show-space-cones'));
+            window._savedRouteSpaceConesPref = chkCones ? chkCones.checked : true;
+
             const slider = (typeof getDOM === 'function' ? getDOM('time-slider') : document.getElementById('time-slider'));
             if (slider) {
                 slider.min = 0;
@@ -102,6 +139,17 @@ var routeIntroTimer = 0.0;
             }
             const routeHud = (typeof getDOM === 'function' ? getDOM('route-cinematic-hud') : document.getElementById('route-cinematic-hud'));
             if (routeHud) routeHud.style.display = 'none';
+
+            const routeBadgeEl = (typeof getDOM === 'function' ? getDOM('route-scene-badge') : document.getElementById('route-scene-badge'));
+            if (routeBadgeEl) routeBadgeEl.style.display = 'none';
+
+            // Restaurar conos volumétricos a la preferencia previa del usuario
+            if (window._savedRouteSpaceConesPref != null) {
+                const chkCones = (typeof getDOM === 'function' ? getDOM('chk-show-space-cones') : document.getElementById('chk-show-space-cones'));
+                if (chkCones) chkCones.checked = window._savedRouteSpaceConesPref;
+                if (typeof umbraConeMesh3D !== 'undefined' && umbraConeMesh3D) umbraConeMesh3D.visible = window._savedRouteSpaceConesPref;
+                if (typeof penumbraConeMesh3D !== 'undefined' && penumbraConeMesh3D) penumbraConeMesh3D.visible = window._savedRouteSpaceConesPref;
+            }
 
             const dockBadge = (typeof getDOM === 'function' ? getDOM('player-phase-label') : document.getElementById('player-phase-label'));
             if (dockBadge) {
@@ -284,40 +332,99 @@ var routeIntroTimer = 0.0;
             const rawT = Math.min(1.0, Math.max(0.0, (routeCurrentTime - activeScene.timeStart) / activeScene.duration));
             const ease = rawT < 0.5 ? 4 * rawT * rawT * rawT : 1 - Math.pow(-2 * rawT + 2, 3) / 2;
 
-            // Presentación inicial: durante los 4 segundos en pausa solo se muestra el título (sin descripción)
+            // 1. Sombra y tiempo astronómico del eclipse (calcular antes de la cámara para que los cuerpos y la Tierra estén en su posición física)
+            const curEclipseT = activeScene.tEclipseStart + (activeScene.tEclipseEnd - activeScene.tEclipseStart) * ease;
+            simCurrentT = curEclipseT;
+            if (timeSlider && !(window.isSliderInteracting) && typeof currentActiveView !== 'undefined' && currentActiveView === 'route') {
+                timeSlider.value = curEclipseT;
+            }
+            if (typeof updateShadowAtTime === 'function') {
+                updateShadowAtTime(curEclipseT);
+            }
+
+            // 2. Capa de conos volumétricos por escena (Punto B)
+            if (typeof activeScene.showSpaceCones === 'boolean') {
+                if (typeof umbraConeMesh3D !== 'undefined' && umbraConeMesh3D) umbraConeMesh3D.visible = activeScene.showSpaceCones;
+                if (typeof penumbraConeMesh3D !== 'undefined' && penumbraConeMesh3D) penumbraConeMesh3D.visible = activeScene.showSpaceCones;
+                const chkCones = (typeof getDOM === 'function' ? getDOM('chk-show-space-cones') : document.getElementById('chk-show-space-cones'));
+                if (chkCones) chkCones.checked = activeScene.showSpaceCones;
+            }
+
+            // 3. Marcador geográfico de observador destacado en escena (Punto D)
+            if (activeScene.observerLocation && typeof observerMarkerGroup3D !== 'undefined' && observerMarkerGroup3D) {
+                const loc = activeScene.observerLocation;
+                const earthR = (typeof EARTH_RADIUS !== 'undefined') ? EARTH_RADIUS : 50.0;
+                observerMarkerGroup3D.position.copy(latLngToVector3(loc.lat, loc.lon, earthR * 1.004));
+                observerMarkerGroup3D.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), latLngToVector3(loc.lat, loc.lon, 1.0).normalize());
+                observerMarkerGroup3D.visible = true;
+            }
+
+            // 4. Textos flotantes del HUD (Presentación inicial limpia durante los 4s, y badges temáticos por escena)
             const isIntro = (routeIntroTimer > 0) || (routeCurrentTime === 0 && !isRoutePlaying && route.title);
             const targetTitle = isIntro ? (route.title || '') : (activeScene.title || '');
             const targetDesc = isIntro ? '' : (activeScene.desc || '');
+            const targetBadge = isIntro ? '' : (activeScene.badge || '');
 
             const titleEl = (typeof getDOM === 'function' ? getDOM('route-scene-title') : document.getElementById('route-scene-title'));
             const descEl = (typeof getDOM === 'function' ? getDOM('route-scene-desc') : document.getElementById('route-scene-desc'));
+            const badgeEl = (typeof getDOM === 'function' ? getDOM('route-scene-badge') : document.getElementById('route-scene-badge'));
+
             if (titleEl && titleEl.textContent !== targetTitle) {
                 titleEl.textContent = targetTitle;
             }
             if (descEl && descEl.textContent !== targetDesc) {
                 descEl.textContent = targetDesc;
             }
+            if (badgeEl) {
+                if (targetBadge) {
+                    if (badgeEl.textContent !== targetBadge) badgeEl.textContent = targetBadge;
+                    badgeEl.style.display = 'inline-block';
+                } else {
+                    badgeEl.style.display = 'none';
+                }
+            }
 
-            const curLat = activeScene.camStart.lat + (activeScene.camEnd.lat - activeScene.camStart.lat) * ease;
-            const curLng = activeScene.camStart.lng + (activeScene.camEnd.lng - activeScene.camStart.lng) * ease;
-            const curRad = activeScene.camStart.radius + (activeScene.camEnd.radius - activeScene.camStart.radius) * ease;
-            const targetCamPos = latLngToVector3(curLat, curLng, curRad);
+            // 5. Posicionamiento dinámico de cámara y objetivo visual
+            let targetCamPos = null;
+            let curTarget = null;
+
+            if (activeScene.follow === 'shadow') {
+                // MODO PERSECUCIÓN DE LA SOMBRA (SHADOW CHASE / AVIÓN)
+                const shadowPos = getShadowWorldPosition(curEclipseT);
+                const prevShadowPos = getShadowWorldPosition(curEclipseT - 0.012);
+                let dir = shadowPos.clone().sub(prevShadowPos);
+                if (dir.lengthSq() > 0.0001) {
+                    dir.normalize();
+                } else {
+                    dir = new THREE.Vector3(1, 0, 0);
+                }
+
+                const distBehind = activeScene.distBehind != null ? activeScene.distBehind : 16.0;
+                const altitude = activeScene.altitude != null ? activeScene.altitude : 24.0;
+                const earthR = (typeof EARTH_RADIUS !== 'undefined') ? EARTH_RADIUS : 50.0;
+                const totalRadius = earthR + altitude;
+
+                targetCamPos = shadowPos.clone().sub(dir.clone().multiplyScalar(distBehind));
+                targetCamPos.setLength(totalRadius);
+
+                curTarget = shadowPos.clone().add(dir.clone().multiplyScalar(4.0));
+            } else {
+                const curLat = activeScene.camStart.lat + (activeScene.camEnd.lat - activeScene.camStart.lat) * ease;
+                const curLng = activeScene.camStart.lng + (activeScene.camEnd.lng - activeScene.camStart.lng) * ease;
+                const curRad = activeScene.camStart.radius + (activeScene.camEnd.radius - activeScene.camStart.radius) * ease;
+                targetCamPos = latLngToVector3(curLat, curLng, curRad);
+
+                const tStart = getTargetVector(activeScene.targetStart, curEclipseT);
+                const tEnd = getTargetVector(activeScene.targetEnd, curEclipseT);
+                curTarget = new THREE.Vector3().lerpVectors(tStart, tEnd, ease);
+            }
+
             camera.position.copy(targetCamPos);
-
-            const tStart = getTargetVector(activeScene.targetStart);
-            const tEnd = getTargetVector(activeScene.targetEnd);
-            const curTarget = new THREE.Vector3().lerpVectors(tStart, tEnd, ease);
             if (controls) {
                 controls.target.copy(curTarget);
             }
             camera.lookAt(curTarget);
 
-            const curEclipseT = activeScene.tEclipseStart + (activeScene.tEclipseEnd - activeScene.tEclipseStart) * ease;
-            simCurrentT = curEclipseT;
-            if (timeSlider) {
-                timeSlider.value = curEclipseT;
-            }
-            updateShadowAtTime(curEclipseT);
             requestRender();
         }
 
