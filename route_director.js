@@ -408,39 +408,63 @@ var routeIntroTimer = 0.0;
             const keyframes = [];
             keyframes.push({
                 time: scenes[0].timeStart,
-                pos: latLngToVector3(scenes[0].camStart.lat, scenes[0].camStart.lng, scenes[0].camStart.radius)
+                lat: scenes[0].camStart.lat,
+                lng: scenes[0].camStart.lng,
+                radius: scenes[0].camStart.radius
             });
             for (let i = 0; i < scenes.length; i++) {
                 const sc = scenes[i];
                 keyframes.push({
                     time: sc.timeStart + sc.duration,
-                    pos: latLngToVector3(sc.camEnd.lat, sc.camEnd.lng, sc.camEnd.radius)
+                    lat: sc.camEnd.lat,
+                    lng: sc.camEnd.lng,
+                    radius: sc.camEnd.radius
                 });
             }
 
-            const velocities = [];
+            const deltasLat = [];
+            const deltasLng = [];
+            const deltasRad = [];
+            for (let i = 0; i < keyframes.length - 1; i++) {
+                const dt = (keyframes[i + 1].time - keyframes[i].time) || 1.0;
+                deltasLat.push((keyframes[i + 1].lat - keyframes[i].lat) / dt);
+                deltasLng.push((keyframes[i + 1].lng - keyframes[i].lng) / dt);
+                deltasRad.push((keyframes[i + 1].radius - keyframes[i].radius) / dt);
+            }
+
+            const vels = [];
             for (let i = 0; i < keyframes.length; i++) {
                 if (i === 0) {
-                    const dt = keyframes[1].time - keyframes[0].time;
-                    velocities.push(keyframes[1].pos.clone().sub(keyframes[0].pos).multiplyScalar(1 / (dt || 1)));
+                    vels.push({ dLat: deltasLat[0], dLng: deltasLng[0], dRad: deltasRad[0] });
                 } else if (i === keyframes.length - 1) {
-                    const dt = keyframes[i].time - keyframes[i - 1].time;
-                    velocities.push(keyframes[i].pos.clone().sub(keyframes[i - 1].pos).multiplyScalar(1 / (dt || 1)));
+                    vels.push({
+                        dLat: deltasLat[deltasLat.length - 1],
+                        dLng: deltasLng[deltasLng.length - 1],
+                        dRad: deltasRad[deltasRad.length - 1]
+                    });
                 } else {
-                    const dt = keyframes[i + 1].time - keyframes[i - 1].time;
-                    velocities.push(keyframes[i + 1].pos.clone().sub(keyframes[i - 1].pos).multiplyScalar(1 / (dt || 1)));
+                    const calcPchip = (d0, d1) => {
+                        if (d0 * d1 <= 0) return 0.0;
+                        return (2.0 * d0 * d1) / (d0 + d1);
+                    };
+                    const dtSpan = (keyframes[i + 1].time - keyframes[i - 1].time) || 1.0;
+                    vels.push({
+                        dLat: (keyframes[i + 1].lat - keyframes[i - 1].lat) / dtSpan,
+                        dLng: (keyframes[i + 1].lng - keyframes[i - 1].lng) / dtSpan,
+                        dRad: calcPchip(deltasRad[i - 1], deltasRad[i])
+                    });
                 }
             }
 
-            return { keyframes, velocities, _routeId: routeData.id || 'default' };
+            return { keyframes, vels, _routeId: routeData.id || 'default' };
         }
 
         function getSplineCameraPosition(t, splineData) {
             if (!splineData || !splineData.keyframes) return null;
             const kfs = splineData.keyframes;
-            const vels = splineData.velocities;
-            if (t <= kfs[0].time) return kfs[0].pos.clone();
-            if (t >= kfs[kfs.length - 1].time) return kfs[kfs.length - 1].pos.clone();
+            const vels = splineData.vels;
+            if (t <= kfs[0].time) return latLngToVector3(kfs[0].lat, kfs[0].lng, kfs[0].radius);
+            if (t >= kfs[kfs.length - 1].time) return latLngToVector3(kfs[kfs.length - 1].lat, kfs[kfs.length - 1].lng, kfs[kfs.length - 1].radius);
 
             for (let i = 0; i < kfs.length - 1; i++) {
                 const t0 = kfs[i].time;
@@ -456,15 +480,16 @@ var routeIntroTimer = 0.0;
                     const h01 = -2 * u3 + 3 * u2;
                     const h11 = u3 - u2;
 
-                    const res = new THREE.Vector3();
-                    res.addScaledVector(kfs[i].pos, h00);
-                    res.addScaledVector(vels[i], h10 * dt);
-                    res.addScaledVector(kfs[i + 1].pos, h01);
-                    res.addScaledVector(vels[i + 1], h11 * dt);
-                    return res;
+                    const curLat = h00 * kfs[i].lat + h10 * dt * vels[i].dLat + h01 * kfs[i + 1].lat + h11 * dt * vels[i + 1].dLat;
+                    const curLng = h00 * kfs[i].lng + h10 * dt * vels[i].dLng + h01 * kfs[i + 1].lng + h11 * dt * vels[i + 1].dLng;
+                    const curRad = h00 * kfs[i].radius + h10 * dt * vels[i].dRad + h01 * kfs[i + 1].radius + h11 * dt * vels[i + 1].dRad;
+
+                    const safeRadius = Math.max(51.5, curRad);
+                    return latLngToVector3(curLat, curLng, safeRadius);
                 }
             }
-            return kfs[kfs.length - 1].pos.clone();
+            const last = kfs[kfs.length - 1];
+            return latLngToVector3(last.lat, last.lng, last.radius);
         }
 
         function updateCinematicRoute(delta) {
