@@ -8,7 +8,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- FontAwesome (CDN con Fallback local offline) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" onerror="this.onerror=null;this.href='vendor/fontawesome/css/all.min.css';">
     
     <!-- Meta tags for sharing & PWA -->
     <meta name="description" content="Simulador de Órbitas 3D Tierra-Luna-Sol interactivo con física orbital, estaciones, precesión axial y nodal, nutación, meses lunares y eclipses - Cosmos Mataró.">
@@ -356,10 +357,11 @@
 
 
 
-    <!-- Three.js Library and OrbitControls from CDN -->
-        <!-- Three.js Library and OrbitControls from CDN -->
+    <!-- Three.js Library and OrbitControls (CDN con Fallback local offline) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>window.THREE || document.write('<script src="vendor/three.min.js"><\/script>')</script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script>(window.THREE && window.THREE.OrbitControls) || document.write('<script src="vendor/OrbitControls.js"><\/script>')</script>
     <script src="simulador3d_engine.js"></script>
     <script src="simulador3d_widgets.js"></script>
 
