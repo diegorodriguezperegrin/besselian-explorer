@@ -44,16 +44,26 @@ var routeIntroTimer = 0.0;
             return latLngToVector3(centerLL.lat, centerLL.lng, r).applyAxisAngle(new THREE.Vector3(0, 1, 0), rotY);
         }
 
-        function getTargetVector(tg, curT = 0) {
+        function getTargetVector(tg, curT = 0, cPos = null) {
             if (!tg) return new THREE.Vector3(0, 0, 0);
             if (tg instanceof THREE.Vector3) return tg.clone();
+            const refCam = cPos || (typeof camera !== 'undefined' ? camera.position : new THREE.Vector3(0, 0, 100));
+
             if (typeof tg === 'string') {
                 const s = tg.toLowerCase();
                 if (s === 'moon') {
-                    return (typeof moonMesh3D !== 'undefined' && moonMesh3D) ? moonMesh3D.position.clone() : new THREE.Vector3(0, 0, 0);
+                    if (typeof moonMesh3D !== 'undefined' && moonMesh3D) {
+                        const mDir = moonMesh3D.position.clone().sub(refCam).normalize();
+                        return refCam.clone().add(mDir.multiplyScalar(120.0));
+                    }
+                    return new THREE.Vector3(0, 0, 0);
                 }
                 if (s === 'sun') {
-                    return (typeof sunGroup3D !== 'undefined' && sunGroup3D) ? sunGroup3D.position.clone() : new THREE.Vector3(0, 0, 100000);
+                    if (typeof sunGroup3D !== 'undefined' && sunGroup3D) {
+                        const sDir = sunGroup3D.position.clone().sub(refCam).normalize();
+                        return refCam.clone().add(sDir.multiplyScalar(120.0));
+                    }
+                    return refCam.clone().add(new THREE.Vector3(0, 0.7, 0.7).multiplyScalar(120.0));
                 }
                 if (s === 'shadow') {
                     return getShadowWorldPosition(curT);
@@ -64,8 +74,20 @@ var routeIntroTimer = 0.0;
             }
             if (tg.body) {
                 const b = tg.body.toLowerCase();
-                if (b === 'moon') return (typeof moonMesh3D !== 'undefined' && moonMesh3D) ? moonMesh3D.position.clone() : new THREE.Vector3(0, 0, 0);
-                if (b === 'sun') return (typeof sunGroup3D !== 'undefined' && sunGroup3D) ? sunGroup3D.position.clone() : new THREE.Vector3(0, 0, 100000);
+                if (b === 'moon') {
+                    if (typeof moonMesh3D !== 'undefined' && moonMesh3D) {
+                        const mDir = moonMesh3D.position.clone().sub(refCam).normalize();
+                        return refCam.clone().add(mDir.multiplyScalar(120.0));
+                    }
+                    return new THREE.Vector3(0, 0, 0);
+                }
+                if (b === 'sun') {
+                    if (typeof sunGroup3D !== 'undefined' && sunGroup3D) {
+                        const sDir = sunGroup3D.position.clone().sub(refCam).normalize();
+                        return refCam.clone().add(sDir.multiplyScalar(120.0));
+                    }
+                    return refCam.clone().add(new THREE.Vector3(0, 0.7, 0.7).multiplyScalar(120.0));
+                }
                 if (b === 'shadow') return getShadowWorldPosition(curT);
                 if (b === 'earth') return new THREE.Vector3(0, 0, 0);
             }
@@ -420,7 +442,8 @@ var routeIntroTimer = 0.0;
             }
 
             const rawT = Math.min(1.0, Math.max(0.0, (routeCurrentTime - activeScene.timeStart) / activeScene.duration));
-            const ease = rawT < 0.5 ? 4 * rawT * rawT * rawT : 1 - Math.pow(-2 * rawT + 2, 3) / 2;
+            // Atenuación senoidal suave (Cosine Easing): velocidad angular y lineal uniforme sin tirones
+            const ease = 0.5 * (1.0 - Math.cos(rawT * Math.PI));
 
             // 1. Sombra y tiempo astronómico del eclipse (calcular antes de la cámara para que los cuerpos y la Tierra estén en su posición física)
             const curEclipseT = activeScene.tEclipseStart + (activeScene.tEclipseEnd - activeScene.tEclipseStart) * ease;
@@ -500,18 +523,53 @@ var routeIntroTimer = 0.0;
                 }
             }
 
-            // Interpolación continua y suave del objetivo de la mirada (LookAt) entre targetStart y targetEnd
-            const tStart = getTargetVector(activeScene.targetStart, curEclipseT);
-            const tEnd = getTargetVector(activeScene.targetEnd, curEclipseT);
-            const curTarget = new THREE.Vector3().lerpVectors(tStart, tEnd, ease);
-
             if (targetCamPos) {
                 camera.position.copy(targetCamPos);
             }
-            if (controls) {
-                controls.target.copy(curTarget);
+
+            // Interpolación de mirada (LookAt) continua sin singularidades ni cruces por el cuerpo de cámara
+            const tStart = getTargetVector(activeScene.targetStart, curEclipseT, targetCamPos);
+            const tEnd = getTargetVector(activeScene.targetEnd, curEclipseT, targetCamPos);
+
+            if (activeScene.targetStart === activeScene.targetEnd || !targetCamPos) {
+                if (controls) controls.target.copy(tStart);
+                camera.lookAt(tStart);
+            } else {
+                const vStart = tStart.clone().sub(targetCamPos);
+                const vEnd = tEnd.clone().sub(targetCamPos);
+                const dStart = vStart.length();
+                const dEnd = vEnd.length();
+                const dirStart = dStart > 0.0001 ? vStart.multiplyScalar(1 / dStart) : new THREE.Vector3(0, 0, -1);
+                const dirEnd = dEnd > 0.0001 ? vEnd.multiplyScalar(1 / dEnd) : new THREE.Vector3(0, 0, -1);
+
+                // Interpolación angular esférica exacta (Fórmula de Rodrigues en SO(3)):
+                // Sin singularidades, sin cambios bruscos de eje y con velocidad angular perfectamente uniforme
+                const dot = Math.max(-1.0, Math.min(1.0, dirStart.dot(dirEnd)));
+                const totalAngle = Math.acos(dot);
+                let curDir;
+
+                if (totalAngle < 0.0001) {
+                    curDir = dirStart.clone();
+                } else {
+                    const cross = new THREE.Vector3().crossVectors(dirStart, dirEnd);
+                    const len = cross.length();
+                    let rotAxis;
+                    if (len > 0.0001) {
+                        rotAxis = cross.multiplyScalar(1.0 / len);
+                    } else {
+                        rotAxis = new THREE.Vector3().crossVectors(targetCamPos, new THREE.Vector3(0, 1, 0)).normalize();
+                        if (rotAxis.lengthSq() < 0.0001) rotAxis = new THREE.Vector3(1, 0, 0);
+                    }
+                    curDir = dirStart.clone().applyAxisAngle(rotAxis, totalAngle * ease);
+                }
+
+                // El target visual se proyecta al frente a distancia fija (evita colisión o paso por el sensor)
+                const curTarget = targetCamPos.clone().add(curDir.multiplyScalar(100.0));
+                if (controls) {
+                    controls.target.copy(curTarget);
+                }
+                camera.lookAt(curTarget);
             }
-            camera.lookAt(curTarget);
 
             requestRender();
         }
