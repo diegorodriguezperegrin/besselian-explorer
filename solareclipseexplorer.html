@@ -347,39 +347,14 @@
         </button>
     </div>
 
-    <!-- Banner / HUD Flotante para el Modo Ruta (Vuelo Cinemático) -->
-    <div id="route-cinematic-hud" style="display: none; position: absolute; top: 18px; left: 50%; transform: translateX(-50%); z-index: var(--z-modal); flex-direction: column; gap: 8px; background: rgba(8, 14, 28, 0.94); border: 1px solid rgba(56, 189, 248, 0.45); padding: 10px 16px; border-radius: 16px; box-shadow: 0 12px 36px rgba(0,0,0,0.85), 0 0 20px rgba(56, 189, 248, 0.15); backdrop-filter: blur(16px); pointer-events: auto; max-width: calc(100vw - 32px); width: 640px; box-sizing: border-box;">
-        <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%;">
-            <div style="display: flex; align-items: center; gap: 10px; overflow: hidden;">
-                <div style="width: 28px; height: 28px; border-radius: 8px; background: rgba(56, 189, 248, 0.18); border: 1px solid var(--accent-blue); display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: var(--accent-blue);">
-                    <i class="fa-solid fa-film" style="font-size: 0.85rem;" aria-hidden="true"></i>
-                </div>
-                <div style="display: flex; flex-direction: column; overflow: hidden; text-align: left;">
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <span style="font-family: var(--font-heading); font-size: 0.80rem; font-weight: 700; color: #f8fafc; letter-spacing: 0.03em; text-transform: uppercase;">Ruta Cinemática 2027</span>
-                        <span id="route-badge-live" style="background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.5); color: #f87171; font-size: 0.65rem; font-weight: 700; padding: 1px 6px; border-radius: 6px; font-family: var(--font-mono); letter-spacing: 0.05em;">EN VUELO</span>
-                    </div>
-                    <span id="route-scene-title" style="font-family: var(--font-mono); font-size: 0.74rem; font-weight: 600; color: var(--accent-blue); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px;">1/5 · Encuentro cósmico en el espacio</span>
-                </div>
-            </div>
-            <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
-                <button class="ctrl-btn" id="btn-route-playpause" onclick="toggleRoutePlay()" style="height: 30px; width: 32px; padding: 0; font-size: 0.82rem; border-radius: 8px;" title="Pausar / Reanudar vuelo" aria-label="Pausar o reanudar">
-                    <i class="fa-solid fa-pause" id="icon-route-playpause" aria-hidden="true"></i>
-                </button>
-                <button class="ctrl-btn" onclick="restartCinematicRoute()" style="height: 30px; width: 32px; padding: 0; font-size: 0.80rem; border-radius: 8px;" title="Rebobinar vuelo al inicio" aria-label="Rebobinar vuelo">
-                    <i class="fa-solid fa-rotate-left" aria-hidden="true"></i>
-                </button>
-                <button class="ctrl-btn" onclick="switchMainView('3d')" style="height: 30px; width: 32px; padding: 0; font-size: 0.82rem; border-radius: 8px;" title="Salir de Ruta y volver a Espacio 3D libre" aria-label="Salir de ruta">
-                    <i class="fa-solid fa-xmark" aria-hidden="true"></i>
-                </button>
-            </div>
+    <!-- Texto flotante cinematográfico para el Modo Ruta (sin fondo ni borde, estilo documental con text-shadow) -->
+    <div id="route-cinematic-hud" style="display: none; position: absolute; top: 28px; left: 50%; transform: translateX(-50%); z-index: var(--z-modal); flex-direction: column; align-items: center; text-align: center; gap: 8px; pointer-events: none; max-width: 760px; width: calc(100vw - 32px); box-sizing: border-box;">
+        <div id="route-scene-title" style="font-family: var(--font-heading); font-size: 1.15rem; font-weight: 700; color: #f8fafc; letter-spacing: 0.04em; text-transform: uppercase; text-shadow: 0 2px 14px rgba(0,0,0,0.95), 0 0 24px rgba(0,0,0,0.9); line-height: 1.3;">
+            1/5 · Encuentro cósmico en el espacio
         </div>
-        <p id="route-scene-desc" style="font-family: var(--font-body); font-size: 0.78rem; line-height: 1.35; color: #cbd5e1; margin: 0; text-align: left;">
+        <p id="route-scene-desc" style="font-family: var(--font-body); font-size: 0.95rem; line-height: 1.45; color: #cbd5e1; margin: 0; text-shadow: 0 2px 10px rgba(0,0,0,0.95), 0 0 20px rgba(0,0,0,0.95); max-width: 660px; font-weight: 400;">
             A través del vacío espacial, la Luna proyecta sus conos de umbra y penumbra hacia el hemisferio diurno de la Tierra.
         </p>
-        <div style="width: 100%; height: 3px; background: rgba(255, 255, 255, 0.12); border-radius: 2px; overflow: hidden; margin-top: 2px;">
-            <div id="route-progress-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, var(--accent-blue), #34d399); transition: width 0.1s linear;"></div>
-        </div>
     </div>
     <!-- Barra Flotante de Paneles Minimizados (Apilados a la izquierda) -->
     <nav class="top-nav-bar" id="top-nav-bar" aria-label="Controles de navegación de paneles">
@@ -901,7 +876,8 @@
             ];
 
         let currentObserver = { ...OBSERVER_PRESETS[0] };
-        let currentActiveView = '3d'; // '3d' | 'telescopic' | 'route'
+        var currentActiveView = '3d'; // '3d' | 'telescopic' | 'route'
+        window.currentActiveView = currentActiveView;
         // isRouteActive, isRoutePlaying, routeCurrentTime, currentRouteData definidos en route_director.js
         // observerMarkerGroup3D definido en scene_3d.js
         let simCurrentT = 0.0;
@@ -1638,6 +1614,7 @@
         // --- SELECTOR DE MODO DE VISTA (ESPACIO 3D vs TELESCOPIO) ---
         function switchMainView(mode) {
             currentActiveView = mode;
+            window.currentActiveView = mode;
             const btn3D = getDOM('btn-mode-3d');
             const btnTele = getDOM('btn-mode-telescopic');
             const btnRoute = getDOM('btn-mode-route');
@@ -1687,6 +1664,7 @@
             updateTopNavButtonsState();
             updateRecenterBtnState();
         }
+        window.switchMainView = switchMainView;
 
         // --- MOTOR DE LA VISTA TELESCÓPICA 2D ---
         let teleZoom = 1.0;
@@ -3338,6 +3316,10 @@
         // [Escena 3D: renderizado de trayectorias en globo, sombra y recentrado] Extraído a scene_3d.js
 
         function handleRecenterClick() {
+            if (currentActiveView === 'route') {
+                if (typeof restartCinematicRoute === 'function') restartCinematicRoute();
+                return;
+            }
             if (currentActiveView === 'telescopic') {
                 jumpToKeyMomentTele();
                 return;
@@ -3362,6 +3344,7 @@
                 recenterEclipseGE();
             }
         }
+        window.handleRecenterClick = handleRecenterClick;
 
         function jumpToKeyMomentTele() {
             if (!currentEclipse) return;
@@ -3404,6 +3387,14 @@
         function updateRecenterBtnState() {
             const btn = getDOM('btn-recenter');
             if (!btn) return;
+            if (currentActiveView === 'route') {
+                btn.innerHTML = '<i class="fa-solid fa-rotate-left" aria-hidden="true"></i>';
+                btn.title = 'Rebobinar vuelo al inicio';
+                btn.setAttribute('aria-label', 'Rebobinar vuelo al inicio');
+                btn.classList.remove('active');
+                return;
+            }
+            btn.innerHTML = '<i class="fa-solid fa-crosshairs" aria-hidden="true"></i>';
             if (currentActiveView === 'telescopic') {
                 btn.classList.remove('active');
                 const circ = localCircumstancesCache || (currentEclipse && currentObserver ? calculateLocalSolarCircumstances(currentEclipse, currentObserver.lat, currentObserver.lon) : null);
@@ -3689,6 +3680,10 @@
         }
 
         function jumpContactStep(dir) {
+            if (currentActiveView === 'route') {
+                if (typeof jumpRouteSceneStep === 'function') jumpRouteSceneStep(dir);
+                return;
+            }
             if (!currentEclipse) return;
             const moments = [];
             if (localCircumstancesCache && localCircumstancesCache.isEclipsed) {
@@ -3724,6 +3719,7 @@
             timeSlider.value = targetT;
             updateShadowAtTime(targetT);
         }
+        window.jumpContactStep = jumpContactStep;
 
         function setSimSpeed(speed) {
             simSpeedMultiplier = parseFloat(speed) || 1.0;
@@ -3872,6 +3868,10 @@
             timeSlider.addEventListener('change', endInteract);
             timeSlider.addEventListener('input', (e) => {
                 isSliderInteracting = true;
+                if (currentActiveView === 'route') {
+                    if (typeof setRouteTime === 'function') setRouteTime(parseFloat(e.target.value));
+                    return;
+                }
                 simCurrentT = parseFloat(e.target.value);
                 updateShadowAtTime(simCurrentT);
             });
@@ -3905,6 +3905,10 @@
         }
 
         function toggleSimulation() {
+            if (currentActiveView === 'route') {
+                if (typeof toggleRoutePlay === 'function') toggleRoutePlay();
+                return;
+            }
             if (isPlaying) {
                 // Guardar el estado en el que se encontraba durante la reproducción
                 playbackCenteredPref = isPlaybackCentered;
@@ -3918,6 +3922,7 @@
                 startSimulation();
             }
         }
+        window.toggleSimulation = toggleSimulation;
 
         // Inicializar selección por defecto: 2 de Agosto de 2027
         const defaultCat = 9568;

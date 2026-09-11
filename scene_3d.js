@@ -1668,41 +1668,43 @@ var observerMarkerGroup3D = null;
                 }
             }
 
-            // Actualizar etiqueta de fase dinámica en la cabecera del reproductor
-            if (!_elPhaseLabel) _elPhaseLabel = getDOM('player-phase-label');
-            if (_elPhaseLabel) {
-                const circ = localCircumstancesCache || (currentObserver && calculateLocalSolarCircumstances(e, currentObserver.lat, currentObserver.lon));
+            // Actualizar etiqueta de fase dinámica en la cabecera del reproductor (si no estamos en Modo Ruta)
+            if (typeof currentActiveView === 'undefined' || currentActiveView !== 'route') {
+                if (!_elPhaseLabel) _elPhaseLabel = getDOM('player-phase-label');
+                if (_elPhaseLabel) {
+                    const circ = localCircumstancesCache || (currentObserver && calculateLocalSolarCircumstances(e, currentObserver.lat, currentObserver.lon));
 
-                if (circ && circ.c1 && circ.c4) {
-                    const t1 = circ.c1.t;
-                    const t4 = circ.c4.t;
-                    const t2 = circ.c2 ? circ.c2.t : null;
-                    const t3 = circ.c3 ? circ.c3.t : null;
+                    if (circ && circ.c1 && circ.c4) {
+                        const t1 = circ.c1.t;
+                        const t4 = circ.c4.t;
+                        const t2 = circ.c2 ? circ.c2.t : null;
+                        const t3 = circ.c3 ? circ.c3.t : null;
 
-                    const pNow = circ.getParamsAtT ? circ.getParamsAtT(t) : null;
-                    const isSunAbove = pNow ? (pNow.alt > -0.5) : true;
+                        const pNow = circ.getParamsAtT ? circ.getParamsAtT(t) : null;
+                        const isSunAbove = pNow ? (pNow.alt > -0.5) : true;
 
-                    if (t >= t1 && t <= t4) {
-                        if (!isSunAbove) {
-                            _elPhaseLabel.innerHTML = `<span style="color: #94a3b8;"><span class="phase-dot" style="background:#64748b;"></span>Bajo horizonte</span>`;
-                        } else if (t2 != null && t3 != null && t >= t2 && t <= t3) {
-                            if (circ.isTotal) {
-                                _elPhaseLabel.innerHTML = `<span style="color: #fca5a5;"><span class="phase-dot total"></span>Totalidad</span>`;
-                            } else if (circ.isAnnular) {
-                                _elPhaseLabel.innerHTML = `<span style="color: #fde047;"><span class="phase-dot" style="background:#eab308; box-shadow:0 0 6px rgba(234,179,8,0.6);"></span>Anularidad</span>`;
-                            } else {
+                        if (t >= t1 && t <= t4) {
+                            if (!isSunAbove) {
+                                _elPhaseLabel.innerHTML = `<span style="color: #94a3b8;"><span class="phase-dot" style="background:#64748b;"></span>Bajo horizonte</span>`;
+                            } else if (t2 != null && t3 != null && t >= t2 && t <= t3) {
+                                if (circ.isTotal) {
+                                    _elPhaseLabel.innerHTML = `<span style="color: #fca5a5;"><span class="phase-dot total"></span>Totalidad</span>`;
+                                } else if (circ.isAnnular) {
+                                    _elPhaseLabel.innerHTML = `<span style="color: #fde047;"><span class="phase-dot" style="background:#eab308; box-shadow:0 0 6px rgba(234,179,8,0.6);"></span>Anularidad</span>`;
+                                } else {
+                                    _elPhaseLabel.innerHTML = `<span style="color: #93c5fd;"><span class="phase-dot" style="background:#38bdf8; box-shadow:0 0 5px rgba(56,189,248,0.5);"></span>Parcialidad</span>`;
+                                }
+                            } else if ((t2 != null && t3 != null && ((t >= t1 && t < t2) || (t > t3 && t <= t4))) || (t2 == null && t >= t1 && t <= t4)) {
                                 _elPhaseLabel.innerHTML = `<span style="color: #93c5fd;"><span class="phase-dot" style="background:#38bdf8; box-shadow:0 0 5px rgba(56,189,248,0.5);"></span>Parcialidad</span>`;
+                            } else {
+                                _elPhaseLabel.innerHTML = '';
                             }
-                        } else if ((t2 != null && t3 != null && ((t >= t1 && t < t2) || (t > t3 && t <= t4))) || (t2 == null && t >= t1 && t <= t4)) {
-                            _elPhaseLabel.innerHTML = `<span style="color: #93c5fd;"><span class="phase-dot" style="background:#38bdf8; box-shadow:0 0 5px rgba(56,189,248,0.5);"></span>Parcialidad</span>`;
                         } else {
                             _elPhaseLabel.innerHTML = '';
                         }
                     } else {
                         _elPhaseLabel.innerHTML = '';
                     }
-                } else {
-                    _elPhaseLabel.innerHTML = '';
                 }
             }
 
