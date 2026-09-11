@@ -9,6 +9,7 @@ var isRouteActive = false;
 var isRoutePlaying = false;
 var routeCurrentTime = 0.0;
 var currentRouteData = null;
+var routeIntroTimer = 0.0;
 
         // -------------------------------------------------------------
                 // =========================================================================
@@ -68,8 +69,9 @@ var currentRouteData = null;
             focusedBody = null;
 
             isRouteActive = true;
-            isRoutePlaying = true;
+            isRoutePlaying = false;
             routeCurrentTime = 0.0;
+            routeIntroTimer = (route.introDuration != null) ? route.introDuration : 4.0;
             if (controls) controls.enabled = false;
 
             const slider = (typeof getDOM === 'function' ? getDOM('time-slider') : document.getElementById('time-slider'));
@@ -85,7 +87,7 @@ var currentRouteData = null;
             });
 
             updateRoutePlayPauseIcon();
-            updateRouteBadge(true);
+            updateRouteBadge(false);
             if (typeof updateRecenterBtnState === 'function') updateRecenterBtnState();
             updateCinematicRoute(0);
             requestRender();
@@ -94,6 +96,7 @@ var currentRouteData = null;
         function stopCinematicRoute() {
             isRouteActive = false;
             isRoutePlaying = false;
+            routeIntroTimer = 0.0;
             if (typeof controls !== 'undefined' && controls) {
                 controls.enabled = true;
             }
@@ -125,17 +128,27 @@ var currentRouteData = null;
 
         function toggleRoutePlay() {
             if (!isRouteActive) return;
-            isRoutePlaying = !isRoutePlaying;
+            if (routeIntroTimer > 0) {
+                // Si el usuario pulsa reproducir durante la pausa inicial, finaliza la espera y vuela de inmediato
+                routeIntroTimer = 0;
+                isRoutePlaying = true;
+            } else {
+                isRoutePlaying = !isRoutePlaying;
+            }
             updateRoutePlayPauseIcon();
             updateRouteBadge(isRoutePlaying);
+            updateCinematicRoute(0);
+            if (typeof requestRender === 'function') requestRender();
         }
 
         function restartCinematicRoute() {
+            const route = currentRouteData || window.DEFAULT_ROUTE_2027_DATA;
             routeCurrentTime = 0.0;
-            isRoutePlaying = true;
+            routeIntroTimer = (route && route.introDuration != null) ? route.introDuration : 4.0;
+            isRoutePlaying = false;
             updateCinematicRoute(0);
             updateRoutePlayPauseIcon();
-            updateRouteBadge(true);
+            updateRouteBadge(false);
             requestRender();
         }
 
@@ -185,6 +198,7 @@ var currentRouteData = null;
         }
 
         function jumpRouteSceneStep(dir) {
+            routeIntroTimer = 0;
             const route = currentRouteData || window.DEFAULT_ROUTE_2027_DATA;
             if (!route || !route.scenes || route.scenes.length === 0) return;
             
@@ -205,6 +219,7 @@ var currentRouteData = null;
         function setRouteTime(t) {
             const route = currentRouteData || window.DEFAULT_ROUTE_2027_DATA;
             if (!route) return;
+            if (t > 0) routeIntroTimer = 0;
             routeCurrentTime = Math.max(0, Math.min(route.totalDurationSec, t));
             updateCinematicRoute(0);
             if (typeof requestRender === 'function') requestRender();
@@ -212,11 +227,20 @@ var currentRouteData = null;
 
         function updateCinematicRoute(delta) {
             if (!isRouteActive) return;
-            if (isRoutePlaying) {
-                routeCurrentTime += delta;
-            }
 
             const route = currentRouteData || window.DEFAULT_ROUTE_2027_DATA; if (!route) return;
+
+            // Manejo de la presentación inicial (4 segundos en pausa mostrando solo el título)
+            if (routeIntroTimer > 0) {
+                routeIntroTimer = Math.max(0, routeIntroTimer - delta);
+                if (routeIntroTimer === 0) {
+                    isRoutePlaying = true;
+                    updateRoutePlayPauseIcon();
+                    updateRouteBadge(true);
+                }
+            } else if (isRoutePlaying) {
+                routeCurrentTime += delta;
+            }
 
             if (routeCurrentTime >= route.totalDurationSec) {
                 routeCurrentTime = route.totalDurationSec;
@@ -262,11 +286,10 @@ var currentRouteData = null;
             const rawT = Math.min(1.0, Math.max(0.0, (routeCurrentTime - activeScene.timeStart) / activeScene.duration));
             const ease = rawT < 0.5 ? 4 * rawT * rawT * rawT : 1 - Math.pow(-2 * rawT + 2, 3) / 2;
 
-            // Título dinámico: durante los primeros segundos muestra el título general de la ruta
-            const introDuration = (route.introDuration != null) ? route.introDuration : 4.0;
-            const isIntro = Boolean(route.title && routeCurrentTime < introDuration);
-            const targetTitle = isIntro ? route.title : (activeScene.title || '');
-            const targetDesc = activeScene.desc || '';
+            // Presentación inicial: durante los 4 segundos en pausa solo se muestra el título (sin descripción)
+            const isIntro = (routeIntroTimer > 0) || (routeCurrentTime === 0 && !isRoutePlaying && route.title);
+            const targetTitle = isIntro ? (route.title || '') : (activeScene.title || '');
+            const targetDesc = isIntro ? '' : (activeScene.desc || '');
 
             const titleEl = (typeof getDOM === 'function' ? getDOM('route-scene-title') : document.getElementById('route-scene-title'));
             const descEl = (typeof getDOM === 'function' ? getDOM('route-scene-desc') : document.getElementById('route-scene-desc'));
@@ -317,6 +340,7 @@ if (typeof window !== 'undefined') {
     window.updateRoutePlayPauseIcon = updateRoutePlayPauseIcon;
     window.updateRouteBadge = updateRouteBadge;
     window.updateCinematicRoute = updateCinematicRoute;
+    window.routeIntroTimer = routeIntroTimer;
     window.RouteDirector = {
         start: startCinematicRoute,
         stop: stopCinematicRoute,
@@ -326,6 +350,7 @@ if (typeof window !== 'undefined') {
         setTime: setRouteTime,
         update: updateCinematicRoute,
         get isActive() { return isRouteActive; },
-        get isPlaying() { return isRoutePlaying; }
+        get isPlaying() { return isRoutePlaying; },
+        get isIntro() { return routeIntroTimer > 0; }
     };
 }
