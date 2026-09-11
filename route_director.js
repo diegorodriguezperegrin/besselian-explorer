@@ -16,23 +16,20 @@ var currentRouteData = null;
         // =========================================================================
                 // currentRouteData declarada arriba
 
-        // El Director lee y parsea el archivo JSON externo de la ruta seleccionada
+        // El Director lee los datos de la ruta desde route_eclipse_2027.js (o fallback a JSON)
         async function loadRouteData(urlOrPath = 'route_eclipse_2027.json') {
             if (currentRouteData) return currentRouteData;
+            if (window.DEFAULT_ROUTE_2027_DATA) {
+                currentRouteData = window.DEFAULT_ROUTE_2027_DATA;
+                return currentRouteData;
+            }
             try {
                 const response = await fetch(urlOrPath);
                 if (response.ok) {
                     currentRouteData = await response.json();
-                    console.log('[Director] Ruta cinemática cargada exitosamente desde JSON:', urlOrPath);
                     return currentRouteData;
                 }
-            } catch (err) {
-                console.warn('[Director] Fetch de JSON no disponible en modo file:// sin servidor local. Usando datos precargados:', err.message);
-            }
-            if (window.DEFAULT_ROUTE_2027_DATA) {
-                currentRouteData = window.DEFAULT_ROUTE_2027_DATA;
-                console.log('[Director] Ruta cargada desde DEFAULT_ROUTE_2027_DATA');
-            }
+            } catch (err) {}
             return currentRouteData;
         }
 
