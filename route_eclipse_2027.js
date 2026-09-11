@@ -60,7 +60,7 @@ window.DEFAULT_ROUTE_2027_DATA = {
       "timeStart": 38.0,
       "duration": 8.0,
       "title": "5/5 · Despedida sobre el Mar Rojo y el Índico",
-      "desc": "El cono de sombra roza Yemen y las costas de Somalia antes de elevarse de nuevo hacia el espacio.",
+      "desc": "El cono de sombra roza Yemen y las costas de Somalia antes de fundirse de nuevo en el espacio.",
       "camStart": { "lat": 25.0, "lng": 35.0, "radius": 125.0 },
       "camEnd":   { "lat": 15.0, "lng": 55.0, "radius": 220.0 },
       "targetStart": { "lat": 25.5, "lng": 33.2, "radius": 20.0 },

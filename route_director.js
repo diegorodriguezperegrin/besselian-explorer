@@ -52,10 +52,10 @@ var currentRouteData = null;
                 return;
             }
 
-            const targetYear = route.year || 2027;
-            if (!currentEclipse || currentEclipse.year !== targetYear) {
-                const ecTarget = PRESET_ECLIPSES.find(e => e.year === targetYear) || PRESET_ECLIPSES[1];
-                if (ecTarget) {
+            const targetYear = route.year;
+            if (targetYear && (!currentEclipse || currentEclipse.year !== targetYear)) {
+                const ecTarget = (typeof PRESET_ECLIPSES !== 'undefined' ? PRESET_ECLIPSES.find(e => e.year === targetYear) : null);
+                if (ecTarget && typeof selectEclipse === 'function') {
                     selectEclipse(ecTarget, false);
                 }
             }
@@ -171,12 +171,16 @@ var currentRouteData = null;
                     badge.innerText = 'PAUSA';
                 }
             }
-            // Sincronizar el badge del reproductor inferior
+            // Sincronizar el badge del reproductor inferior (fases universales para cualquier ruta)
             const dockBadge = (typeof getDOM === 'function' ? getDOM('player-phase-label') : document.getElementById('player-phase-label'));
             if (dockBadge && typeof currentActiveView !== 'undefined' && currentActiveView === 'route') {
                 dockBadge.className = active ? 'player-phase-badge tot' : 'player-phase-badge';
                 dockBadge.style.display = 'inline-flex';
-                dockBadge.textContent = active ? 'RUTA 2027 · EN VUELO' : 'RUTA 2027 · PAUSA';
+                if (active) {
+                    dockBadge.innerHTML = '<span style="color: #fca5a5;"><span class="phase-dot total"></span>En vuelo</span>';
+                } else {
+                    dockBadge.innerHTML = '<span style="color: #fde047;"><span class="phase-dot" style="background:#eab308; box-shadow:0 0 6px rgba(234,179,8,0.6);"></span>En pausa</span>';
+                }
             }
         }
 
@@ -258,13 +262,19 @@ var currentRouteData = null;
             const rawT = Math.min(1.0, Math.max(0.0, (routeCurrentTime - activeScene.timeStart) / activeScene.duration));
             const ease = rawT < 0.5 ? 4 * rawT * rawT * rawT : 1 - Math.pow(-2 * rawT + 2, 3) / 2;
 
-            const titleEl = getDOM('route-scene-title');
-            const descEl = getDOM('route-scene-desc');
-            if (titleEl && titleEl.innerText !== activeScene.title) {
-                titleEl.innerText = activeScene.title;
+            // Título dinámico: durante los primeros segundos muestra el título general de la ruta
+            const introDuration = (route.introDuration != null) ? route.introDuration : 4.0;
+            const isIntro = Boolean(route.title && routeCurrentTime < introDuration);
+            const targetTitle = isIntro ? route.title : (activeScene.title || '');
+            const targetDesc = activeScene.desc || '';
+
+            const titleEl = (typeof getDOM === 'function' ? getDOM('route-scene-title') : document.getElementById('route-scene-title'));
+            const descEl = (typeof getDOM === 'function' ? getDOM('route-scene-desc') : document.getElementById('route-scene-desc'));
+            if (titleEl && titleEl.textContent !== targetTitle) {
+                titleEl.textContent = targetTitle;
             }
-            if (descEl && descEl.innerText !== activeScene.desc) {
-                descEl.innerText = activeScene.desc;
+            if (descEl && descEl.textContent !== targetDesc) {
+                descEl.textContent = targetDesc;
             }
 
             const curLat = activeScene.camStart.lat + (activeScene.camEnd.lat - activeScene.camStart.lat) * ease;
