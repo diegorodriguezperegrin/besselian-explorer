@@ -20,9 +20,6 @@ window.DEFAULT_ROUTE_2027_DATA = {
       "targetStart": "moon",
       "targetEnd":   "shadow",
       "targetTurnEnd": 0.40,
-      "upBlendStart": 0.0,
-      "upBlendEnd": 1.0,
-      "upBlendTurnStart": 0.40,
       "tEclipseStart": -1.450,
       "tEclipseEnd":   -1.120,
       "showSpaceCones": true
@@ -36,8 +33,6 @@ window.DEFAULT_ROUTE_2027_DATA = {
       "camEnd":   { "lat": 33.5, "lng": 0.0, "radius": 78.0 },
       "targetStart": "shadow",
       "targetEnd":   "shadow",
-      "upBlendStart": 1.0,
-      "upBlendEnd": 1.0,
       "tEclipseStart": -1.120,
       "tEclipseEnd":   -0.680,
       "showSpaceCones": false
@@ -51,8 +46,6 @@ window.DEFAULT_ROUTE_2027_DATA = {
       "camEnd":   { "lat": 28.0, "lng": 18.0, "radius": 95.0 },
       "targetStart": "shadow",
       "targetEnd":   "shadow",
-      "upBlendStart": 1.0,
-      "upBlendEnd": 1.0,
       "tEclipseStart": -0.680,
       "tEclipseEnd":   -0.203,
       "showSpaceCones": false
@@ -66,8 +59,6 @@ window.DEFAULT_ROUTE_2027_DATA = {
       "camEnd":   { "lat": 24.0, "lng": 30.0, "radius": 82.0 },
       "targetStart": "shadow",
       "targetEnd":   "sun",
-      "upBlendStart": 1.0,
-      "upBlendEnd": 1.0,
       "tEclipseStart": -0.203,
       "tEclipseEnd":   0.273,
       "showSpaceCones": false
@@ -81,8 +72,6 @@ window.DEFAULT_ROUTE_2027_DATA = {
       "camEnd":   { "lat": 18.0, "lng": 44.0, "radius": 120.0 },
       "targetStart": "sun",
       "targetEnd":   "sun",
-      "upBlendStart": 1.0,
-      "upBlendEnd": 0.0,
       "tEclipseStart": 0.273,
       "tEclipseEnd":   0.750,
       "showSpaceCones": true
@@ -96,8 +85,6 @@ window.DEFAULT_ROUTE_2027_DATA = {
       "camEnd":   { "lat": 10.0, "lng": 65.0, "radius": 240.0 },
       "targetStart": "sun",
       "targetEnd":   "earth",
-      "upBlendStart": 0.0,
-      "upBlendEnd": 0.0,
       "tEclipseStart": 0.750,
       "tEclipseEnd":   1.300,
       "showSpaceCones": true

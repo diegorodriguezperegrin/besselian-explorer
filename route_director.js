@@ -586,24 +586,8 @@ var routeIntroTimer = 0.0;
                 camera.position.copy(targetCamPos);
             }
 
-            // 6. Vector UP dinámico: Horizonte terrestre nivelado (visión de cabina de pilotaje) vs Norte cósmico
-            // w = 0.0 -> Polo Norte celeste (0, 1, 0) (estética espacial profunda)
-            // w = 1.0 -> Cenit local de la posición sobre la Tierra (horizonte plano como en cabina de avión)
-            const uWorld = new THREE.Vector3(0, 1, 0);
-            const uZenith = targetCamPos ? targetCamPos.clone().normalize() : uWorld;
-
-            const bStart = (activeScene.upBlendStart != null) ? activeScene.upBlendStart : 0.0;
-            const bEnd = (activeScene.upBlendEnd != null) ? activeScene.upBlendEnd : bStart;
-            const turnStart = (activeScene.upBlendTurnStart != null) ? activeScene.upBlendTurnStart : 0.0;
-
-            let blendEase = 0.0;
-            if (rawT >= turnStart) {
-                const u = (turnStart < 1.0) ? (rawT - turnStart) / (1.0 - turnStart) : 1.0;
-                blendEase = 0.5 * (1.0 - Math.cos(Math.min(1.0, Math.max(0.0, u)) * Math.PI));
-            }
-            const upWeight = Math.min(1.0, Math.max(0.0, bStart + (bEnd - bStart) * blendEase));
-            const curUp = new THREE.Vector3().lerpVectors(uWorld, uZenith, upWeight).normalize();
-            camera.up.copy(curUp);
+            // 6. Vector UP estándar orientado al Norte cósmico (0, 1, 0) para evitar volteos de 180º o singularidad de nadir
+            camera.up.set(0, 1, 0);
 
             // Interpolación de mirada (LookAt) continua sin singularidades ni cruces por el cuerpo de cámara
             const tStart = getTargetVector(activeScene.targetStart, curEclipseT, targetCamPos);
