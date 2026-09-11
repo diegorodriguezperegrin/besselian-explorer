@@ -462,12 +462,19 @@ var routeIntroTimer = 0.0;
                 badgeEl.style.display = 'none';
             }
 
-            // 5. Posicionamiento dinámico de cámara y objetivo visual
+            // 5. Posicionamiento dinámico de cámara y objetivo visual continuo (Plano secuencia C0/C1 sin cortes)
             let targetCamPos = null;
-            let curTarget = null;
 
+            // Interpolación base continua entre camStart y camEnd
+            if (activeScene.camStart && activeScene.camEnd) {
+                const curLat = activeScene.camStart.lat + (activeScene.camEnd.lat - activeScene.camStart.lat) * ease;
+                const curLng = activeScene.camStart.lng + (activeScene.camEnd.lng - activeScene.camStart.lng) * ease;
+                const curRad = activeScene.camStart.radius + (activeScene.camEnd.radius - activeScene.camStart.radius) * ease;
+                targetCamPos = latLngToVector3(curLat, curLng, curRad);
+            }
+
+            // Si la escena solicita perseguir dinámicamente la sombra en vuelo rasante:
             if (activeScene.follow === 'shadow') {
-                // MODO PERSECUCIÓN DE LA SOMBRA (SHADOW CHASE / AVIÓN)
                 const shadowPos = getShadowWorldPosition(curEclipseT);
                 const prevShadowPos = getShadowWorldPosition(curEclipseT - 0.012);
                 let dir = shadowPos.clone().sub(prevShadowPos);
@@ -482,22 +489,25 @@ var routeIntroTimer = 0.0;
                 const earthR = (typeof EARTH_RADIUS !== 'undefined') ? EARTH_RADIUS : 50.0;
                 const totalRadius = earthR + altitude;
 
-                targetCamPos = shadowPos.clone().sub(dir.clone().multiplyScalar(distBehind));
-                targetCamPos.setLength(totalRadius);
+                const chasePos = shadowPos.clone().sub(dir.clone().multiplyScalar(distBehind)).setLength(totalRadius);
 
-                curTarget = shadowPos.clone().add(dir.clone().multiplyScalar(4.0));
-            } else {
-                const curLat = activeScene.camStart.lat + (activeScene.camEnd.lat - activeScene.camStart.lat) * ease;
-                const curLng = activeScene.camStart.lng + (activeScene.camEnd.lng - activeScene.camStart.lng) * ease;
-                const curRad = activeScene.camStart.radius + (activeScene.camEnd.radius - activeScene.camStart.radius) * ease;
-                targetCamPos = latLngToVector3(curLat, curLng, curRad);
-
-                const tStart = getTargetVector(activeScene.targetStart, curEclipseT);
-                const tEnd = getTargetVector(activeScene.targetEnd, curEclipseT);
-                curTarget = new THREE.Vector3().lerpVectors(tStart, tEnd, ease);
+                // Mezcla suave garantizada: entra desde camStart y sale hacia camEnd usando función campana senoidal
+                if (targetCamPos) {
+                    const blend = Math.sin(ease * Math.PI);
+                    targetCamPos.lerp(chasePos, blend);
+                } else {
+                    targetCamPos = chasePos;
+                }
             }
 
-            camera.position.copy(targetCamPos);
+            // Interpolación continua y suave del objetivo de la mirada (LookAt) entre targetStart y targetEnd
+            const tStart = getTargetVector(activeScene.targetStart, curEclipseT);
+            const tEnd = getTargetVector(activeScene.targetEnd, curEclipseT);
+            const curTarget = new THREE.Vector3().lerpVectors(tStart, tEnd, ease);
+
+            if (targetCamPos) {
+                camera.position.copy(targetCamPos);
+            }
             if (controls) {
                 controls.target.copy(curTarget);
             }
