@@ -494,32 +494,25 @@ var routeIntroTimer = 0.0;
                 const curLng = activeScene.camStart.lng + (activeScene.camEnd.lng - activeScene.camStart.lng) * ease;
                 const curRad = activeScene.camStart.radius + (activeScene.camEnd.radius - activeScene.camStart.radius) * ease;
                 targetCamPos = latLngToVector3(curLat, curLng, curRad);
-            }
 
-            // Si la escena solicita perseguir dinámicamente la sombra en vuelo rasante:
-            if (activeScene.follow === 'shadow') {
-                const shadowPos = getShadowWorldPosition(curEclipseT);
-                const prevShadowPos = getShadowWorldPosition(curEclipseT - 0.012);
-                let dir = shadowPos.clone().sub(prevShadowPos);
-                if (dir.lengthSq() > 0.0001) {
-                    dir.normalize();
-                } else {
-                    dir = new THREE.Vector3(1, 0, 0);
-                }
+                // Si la escena solicita perseguir dinámicamente la sombra en vuelo rasante:
+                if (activeScene.follow === 'shadow') {
+                    const shadowPos = getShadowWorldPosition(curEclipseT);
+                    const prevShadowPos = getShadowWorldPosition(curEclipseT - 0.012);
+                    let dir = shadowPos.clone().sub(prevShadowPos);
+                    if (dir.lengthSq() > 0.0001) {
+                        dir.normalize();
+                    } else {
+                        dir = new THREE.Vector3(1, 0, 0);
+                    }
 
-                const distBehind = activeScene.distBehind != null ? activeScene.distBehind : 16.0;
-                const altitude = activeScene.altitude != null ? activeScene.altitude : 24.0;
-                const earthR = (typeof EARTH_RADIUS !== 'undefined') ? EARTH_RADIUS : 50.0;
-                const totalRadius = earthR + altitude;
+                    const distBehind = activeScene.distBehind != null ? activeScene.distBehind : 16.0;
+                    // El radio de persecución sigue estrictamente curRad (altitud decreciente uniforme)
+                    const chasePos = shadowPos.clone().sub(dir.clone().multiplyScalar(distBehind)).setLength(curRad);
 
-                const chasePos = shadowPos.clone().sub(dir.clone().multiplyScalar(distBehind)).setLength(totalRadius);
-
-                // Mezcla suave garantizada: entra desde camStart y sale hacia camEnd usando función campana senoidal
-                if (targetCamPos) {
                     const blend = Math.sin(ease * Math.PI);
                     targetCamPos.lerp(chasePos, blend);
-                } else {
-                    targetCamPos = chasePos;
+                    targetCamPos.setLength(curRad); // Garantía matemática contra rebotes y flecha de cuerda
                 }
             }
 
@@ -542,6 +535,17 @@ var routeIntroTimer = 0.0;
                 const dirStart = dStart > 0.0001 ? vStart.multiplyScalar(1 / dStart) : new THREE.Vector3(0, 0, -1);
                 const dirEnd = dEnd > 0.0001 ? vEnd.multiplyScalar(1 / dEnd) : new THREE.Vector3(0, 0, -1);
 
+                // Soporte para giro anticipado de mirada en la escena (targetTurnStart / targetTurnEnd):
+                // Permite girar hacia la Tierra antes de que la sombra cruce el Atlántico
+                const turnStart = (activeScene.targetTurnStart != null) ? activeScene.targetTurnStart : 0.0;
+                const turnEnd = (activeScene.targetTurnEnd != null) ? activeScene.targetTurnEnd : 1.0;
+                let lookEase = ease;
+                if (turnStart !== 0.0 || turnEnd !== 1.0) {
+                    const clampedTurnEnd = Math.max(turnStart + 0.001, turnEnd);
+                    const turnRaw = Math.min(1.0, Math.max(0.0, (rawT - turnStart) / (clampedTurnEnd - turnStart)));
+                    lookEase = 0.5 * (1.0 - Math.cos(turnRaw * Math.PI));
+                }
+
                 // Interpolación angular esférica exacta (Fórmula de Rodrigues en SO(3)):
                 // Sin singularidades, sin cambios bruscos de eje y con velocidad angular perfectamente uniforme
                 const dot = Math.max(-1.0, Math.min(1.0, dirStart.dot(dirEnd)));
@@ -560,7 +564,7 @@ var routeIntroTimer = 0.0;
                         rotAxis = new THREE.Vector3().crossVectors(targetCamPos, new THREE.Vector3(0, 1, 0)).normalize();
                         if (rotAxis.lengthSq() < 0.0001) rotAxis = new THREE.Vector3(1, 0, 0);
                     }
-                    curDir = dirStart.clone().applyAxisAngle(rotAxis, totalAngle * ease);
+                    curDir = dirStart.clone().applyAxisAngle(rotAxis, totalAngle * lookEase);
                 }
 
                 // El target visual se proyecta al frente a distancia fija (evita colisión o paso por el sensor)
@@ -600,6 +604,8 @@ if (typeof window !== 'undefined') {
         jumpStep: jumpRouteSceneStep,
         setTime: setRouteTime,
         update: updateCinematicRoute,
+        getShadowWorldPosition: getShadowWorldPosition,
+        getTargetVector: getTargetVector,
         get isActive() { return isRouteActive; },
         get isPlaying() { return isRoutePlaying; },
         get isIntro() { return routeIntroTimer > 0; }
