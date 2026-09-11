@@ -589,6 +589,7 @@ var SUN_DIST = 149598.0;      // Distancia Tierra-Sol (1 UA): 149.597.870 km
                 shininess: 15
             });
 
+            const EARTH_TEX_4K = 'earth_topo_4096.jpg';
             const EARTH_TEX_LOCAL = 'earth_topo_2048.jpg';
             const EARTH_TEX_CDN = 'https://cdn.jsdelivr.net/gh/diegorodriguezperegrin/besselian-explorer@main/earth_topo_2048.jpg';
 
@@ -600,8 +601,10 @@ var SUN_DIST = 149598.0;      // Distancia Tierra-Sol (1 UA): 149.597.870 km
                 requestRender3D();
             }
 
-            earthTexLoader.load(EARTH_TEX_LOCAL, applyEarthTexture, undefined, function() {
-                earthTexLoader.load(EARTH_TEX_CDN, applyEarthTexture);
+            earthTexLoader.load(EARTH_TEX_4K, applyEarthTexture, undefined, function() {
+                earthTexLoader.load(EARTH_TEX_LOCAL, applyEarthTexture, undefined, function() {
+                    earthTexLoader.load(EARTH_TEX_CDN, applyEarthTexture);
+                });
             });
 
             earthGroup = new THREE.Group();
