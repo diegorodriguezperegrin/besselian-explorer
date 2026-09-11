@@ -16,70 +16,99 @@ var routeIntroTimer = 0.0;
         // MOTOR CINEMÁTICO: DIRECTOR MULTIRUTA
         // =========================================================================
 
-        // Catálogo global de rutas cinematográficas indexadas por año/id
+        // Genera la clave unívoca canónica para un eclipse: YYYY_MM_DD
+        function getEclipseRouteKey(eclipse) {
+            if (!eclipse) return null;
+            if (typeof eclipse === 'string') {
+                return eclipse.replace(/-/g, '_');
+            }
+            if (typeof eclipse === 'number') {
+                return String(eclipse);
+            }
+            const y = eclipse.year;
+            if (y == null) return null;
+            const m = String(eclipse.month || 1).padStart(2, '0');
+            const d = String(eclipse.day || 1).padStart(2, '0');
+            return `${y}_${m}_${d}`;
+        }
+
+        // Catálogo global de rutas cinematográficas indexadas por fecha canónica (YYYY_MM_DD) y cat_no
         window.ECLIPSE_ROUTES = window.ECLIPSE_ROUTES || {};
 
         function registerEclipseRoute(routeData) {
-            if (!routeData || !routeData.year) return;
+            if (!routeData) return;
             window.ECLIPSE_ROUTES = window.ECLIPSE_ROUTES || {};
-            window.ECLIPSE_ROUTES[routeData.year] = routeData;
+            const key = getEclipseRouteKey(routeData);
+            if (key) {
+                window.ECLIPSE_ROUTES[key] = routeData;
+            }
             if (routeData.id) {
                 window.ECLIPSE_ROUTES[routeData.id] = routeData;
             }
+            if (routeData.cat_no != null) {
+                window.ECLIPSE_ROUTES[routeData.cat_no] = routeData;
+            }
         }
 
-        function getRouteForEclipse(eclipseOrYear) {
-            if (!eclipseOrYear) return null;
-            const year = (typeof eclipseOrYear === 'object') ? eclipseOrYear.year : eclipseOrYear;
-            if (window.ECLIPSE_ROUTES && window.ECLIPSE_ROUTES[year]) {
-                return window.ECLIPSE_ROUTES[year];
+        function getRouteForEclipse(eclipseOrKey) {
+            if (!eclipseOrKey) return null;
+            if (typeof eclipseOrKey === 'object') {
+                const key = getEclipseRouteKey(eclipseOrKey);
+                if (key && window.ECLIPSE_ROUTES && window.ECLIPSE_ROUTES[key]) {
+                    return window.ECLIPSE_ROUTES[key];
+                }
+                if (eclipseOrKey.cat_no != null && window.ECLIPSE_ROUTES && window.ECLIPSE_ROUTES[eclipseOrKey.cat_no]) {
+                    return window.ECLIPSE_ROUTES[eclipseOrKey.cat_no];
+                }
+                if (eclipseOrKey.id && window.ECLIPSE_ROUTES && window.ECLIPSE_ROUTES[eclipseOrKey.id]) {
+                    return window.ECLIPSE_ROUTES[eclipseOrKey.id];
+                }
+                return null;
             }
-            if (window.ECLIPSE_ROUTES && window.ECLIPSE_ROUTES[String(year)]) {
-                return window.ECLIPSE_ROUTES[String(year)];
+            const strKey = String(eclipseOrKey).replace(/-/g, '_');
+            if (window.ECLIPSE_ROUTES && window.ECLIPSE_ROUTES[strKey]) {
+                return window.ECLIPSE_ROUTES[strKey];
             }
-            if (year === 2027 && window.DEFAULT_ROUTE_2027_DATA) {
-                return window.DEFAULT_ROUTE_2027_DATA;
+            if (window.ECLIPSE_ROUTES && window.ECLIPSE_ROUTES[eclipseOrKey]) {
+                return window.ECLIPSE_ROUTES[eclipseOrKey];
             }
             return null;
         }
 
-        function hasRouteForEclipse(eclipseOrYear) {
-            return !!getRouteForEclipse(eclipseOrYear);
+        function hasRouteForEclipse(eclipseOrKey) {
+            return !!getRouteForEclipse(eclipseOrKey);
         }
 
         function getCurrentRoute() {
             if (currentRouteData) return currentRouteData;
-            const year = (typeof currentEclipse !== 'undefined' && currentEclipse) ? currentEclipse.year : 2027;
-            return getRouteForEclipse(year) || getRouteForEclipse(2027) || window.DEFAULT_ROUTE_2027_DATA || null;
+            const ec = (typeof currentEclipse !== 'undefined') ? currentEclipse : null;
+            return getRouteForEclipse(ec) || null;
         }
 
-        // El Director lee los datos de la ruta desde el catálogo, script cargado o fallback a JSON
-        async function loadRouteData(target = 'route_eclipse_2027.json') {
-            if (typeof target === 'number' || (typeof target === 'string' && !target.includes('.'))) {
+        // El Director lee los datos de la ruta desde el catálogo o archivo
+        async function loadRouteData(target) {
+            if (target) {
                 const found = getRouteForEclipse(target);
                 if (found) {
                     currentRouteData = found;
                     return currentRouteData;
                 }
             }
-            if (currentRouteData) return currentRouteData;
-            const activeYear = (typeof currentEclipse !== 'undefined' && currentEclipse) ? currentEclipse.year : 2027;
-            const foundActive = getRouteForEclipse(activeYear);
+            const ec = (typeof currentEclipse !== 'undefined') ? currentEclipse : null;
+            const foundActive = getRouteForEclipse(ec);
             if (foundActive) {
                 currentRouteData = foundActive;
                 return currentRouteData;
             }
-            if (window.DEFAULT_ROUTE_2027_DATA) {
-                currentRouteData = window.DEFAULT_ROUTE_2027_DATA;
-                return currentRouteData;
+            if (typeof target === 'string' && target.includes('.')) {
+                try {
+                    const response = await fetch(target);
+                    if (response.ok) {
+                        currentRouteData = await response.json();
+                        return currentRouteData;
+                    }
+                } catch (err) {}
             }
-            try {
-                const response = await fetch(target);
-                if (response.ok) {
-                    currentRouteData = await response.json();
-                    return currentRouteData;
-                }
-            } catch (err) {}
             return currentRouteData;
         }
 
@@ -236,32 +265,34 @@ var routeIntroTimer = 0.0;
 
         // variables de ruta globales
 
-        async function startCinematicRoute(targetYearOrData) {
+        async function startCinematicRoute(targetEclipseOrData) {
             let route = null;
-            if (targetYearOrData && typeof targetYearOrData === 'object' && targetYearOrData.scenes) {
-                route = targetYearOrData;
-            } else if (targetYearOrData) {
-                route = getRouteForEclipse(targetYearOrData);
+            if (targetEclipseOrData && typeof targetEclipseOrData === 'object' && targetEclipseOrData.scenes) {
+                route = targetEclipseOrData;
+            } else if (targetEclipseOrData) {
+                route = getRouteForEclipse(targetEclipseOrData);
             } else {
-                const activeYear = (typeof currentEclipse !== 'undefined' && currentEclipse) ? currentEclipse.year : 2027;
-                route = getRouteForEclipse(activeYear);
-                if (!route) {
-                    route = getRouteForEclipse(2027) || await loadRouteData('route_eclipse_2027.json');
-                }
+                const ec = (typeof currentEclipse !== 'undefined') ? currentEclipse : null;
+                route = getRouteForEclipse(ec);
             }
 
             if (!route) {
-                console.warn('[Director] No se encontraron datos de la ruta.');
+                console.warn('[Director] No se encontraron datos de la ruta para el eclipse seleccionado.');
                 return;
             }
 
             currentRouteData = route;
 
-            const targetYear = route.year;
-            if (targetYear && (!currentEclipse || currentEclipse.year !== targetYear)) {
-                const ecTarget = (typeof PRESET_ECLIPSES !== 'undefined' ? PRESET_ECLIPSES.find(e => e.year === targetYear) : null);
-                if (ecTarget && typeof selectEclipse === 'function') {
-                    selectEclipse(ecTarget, false);
+            // Sincronizar el eclipse seleccionado si no coincide con la ruta
+            if (typeof selectEclipse === 'function' && typeof PRESET_ECLIPSES !== 'undefined') {
+                const routeKey = getEclipseRouteKey(route);
+                const currentKey = getEclipseRouteKey(currentEclipse);
+                const matchCat = (route.cat_no != null && currentEclipse?.cat_no !== route.cat_no);
+                if (matchCat || (routeKey && currentKey !== routeKey)) {
+                    const ecTarget = PRESET_ECLIPSES.find(e => (route.cat_no != null && e.cat_no === route.cat_no) || getEclipseRouteKey(e) === routeKey);
+                    if (ecTarget) {
+                        selectEclipse(ecTarget, false);
+                    }
                 }
             }
 
@@ -374,15 +405,16 @@ var routeIntroTimer = 0.0;
             const btnRoute = (typeof getDOM === 'function' ? getDOM('btn-mode-route') : document.getElementById('btn-mode-route'));
             if (!btnRoute) return;
             const ec = eclipse || (typeof currentEclipse !== 'undefined' ? currentEclipse : null);
-            const hasRoute = !!getRouteForEclipse(ec?.year);
-            const route = hasRoute ? getRouteForEclipse(ec?.year) : null;
+            const hasRoute = !!getRouteForEclipse(ec);
+            const route = hasRoute ? getRouteForEclipse(ec) : null;
+            const dateStr = ec ? `${ec.day || ''}/${ec.month || ''}/${ec.year || ''}` : '--';
 
             if (hasRoute) {
                 btnRoute.disabled = false;
                 btnRoute.classList.remove('disabled');
                 btnRoute.style.opacity = '';
                 btnRoute.style.cursor = 'pointer';
-                btnRoute.title = route?.title ? `Vuelo virtual cinemático: ${route.title}` : `Vuelo virtual cinemático: Eclipse ${ec?.year}`;
+                btnRoute.title = route?.title ? `Vuelo virtual cinemático: ${route.title}` : `Vuelo virtual cinemático: Eclipse ${dateStr}`;
 
                 // Si el usuario ya estaba en modo ruta y cambia de eclipse con ruta disponible, cambiar de vuelo
                 if (typeof currentActiveView !== 'undefined' && currentActiveView === 'route' && isRouteActive) {
@@ -395,7 +427,7 @@ var routeIntroTimer = 0.0;
                 btnRoute.classList.add('disabled');
                 btnRoute.style.opacity = '0.4';
                 btnRoute.style.cursor = 'not-allowed';
-                btnRoute.title = `Ruta cinemática no disponible para el eclipse de ${ec?.year || '--'}`;
+                btnRoute.title = `Ruta cinemática no disponible para el eclipse del ${dateStr}`;
 
                 // Si estaba en modo ruta y se selecciona un eclipse sin ruta disponible, regresar a la vista 3D orbital
                 if (typeof currentActiveView !== 'undefined' && currentActiveView === 'route') {
@@ -825,6 +857,7 @@ if (typeof window !== 'undefined') {
     window.updateCinematicRoute = updateCinematicRoute;
     window.routeIntroTimer = routeIntroTimer;
     window.registerEclipseRoute = registerEclipseRoute;
+    window.getEclipseRouteKey = getEclipseRouteKey;
     window.getRouteForEclipse = getRouteForEclipse;
     window.hasRouteForEclipse = hasRouteForEclipse;
     window.updateRouteButtonState = updateRouteButtonState;
@@ -840,6 +873,7 @@ if (typeof window !== 'undefined') {
         getShadowWorldPosition: getShadowWorldPosition,
         getTargetVector: getTargetVector,
         registerRoute: registerEclipseRoute,
+        getRouteKey: getEclipseRouteKey,
         getRoute: getRouteForEclipse,
         hasRoute: hasRouteForEclipse,
         updateButtonState: updateRouteButtonState,

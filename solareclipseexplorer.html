@@ -35,7 +35,7 @@
     <!-- Texturas Globales Base64 de la Tierra (Carga Offline 100% libre de CORS) -->
     <script src="textures_data.js"></script>
     <script src="observer_locations.js"></script>
-    <script src="route_eclipse_2027.js"></script>
+    <script src="route_eclipse_2027_08_02.js"></script>
     <!-- FontAwesome icons (CDN con Fallback local offline) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha384-iw3OoTErCYJJB9mCa8LNS2hbsQ7M3C0EpIsO/H5+EGAkPGc6rk+V8i04oW/K5xq0" crossorigin="anonymous" onerror="this.onerror=null;this.href='vendor/fontawesome/css/all.min.css';">
     <!-- Tokens de diseño compartidos -->
@@ -1621,8 +1621,8 @@
             const routeHud = getDOM('route-cinematic-hud');
 
             if (mode === 'route') {
-                if (typeof hasRouteForEclipse === 'function' && currentEclipse && !hasRouteForEclipse(currentEclipse.year)) {
-                    console.warn(`[Modo Ruta] No hay ruta cinematográfica definida para el eclipse de ${currentEclipse.year}`);
+                if (typeof hasRouteForEclipse === 'function' && currentEclipse && !hasRouteForEclipse(currentEclipse)) {
+                    console.warn(`[Modo Ruta] No hay ruta cinematográfica definida para el eclipse seleccionado.`);
                     return;
                 }
                 btn3D?.classList.remove('active');

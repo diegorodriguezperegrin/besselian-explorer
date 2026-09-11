@@ -3,10 +3,13 @@
 // Plano secuencia continuo sin cortes ni teletransportes
 // =========================================================================
 window.ECLIPSE_ROUTES = window.ECLIPSE_ROUTES || {};
-window.ECLIPSE_ROUTES[2027] = {
-  "id": "eclipse_2027",
+window.ECLIPSE_ROUTES["2027_08_02"] = {
+  "id": "eclipse_2027_08_02",
   "title": "Gran Eclipse Total del 2 de Agosto de 2027",
+  "date": "2027-08-02",
   "year": 2027,
+  "month": 8,
+  "day": 2,
   "cat_no": 9568,
   "totalDurationSec": 75.0,
   "introDuration": 4.0,
@@ -106,5 +109,6 @@ window.ECLIPSE_ROUTES[2027] = {
   ]
 };
 
-// Retrocompatibilidad con referencias directas existentes
-window.DEFAULT_ROUTE_2027_DATA = window.ECLIPSE_ROUTES[2027];
+// Indexación canónica adicional por número de catálogo NASA
+window.ECLIPSE_ROUTES[9568] = window.ECLIPSE_ROUTES["2027_08_02"];
+
