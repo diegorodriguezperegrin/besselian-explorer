@@ -586,16 +586,14 @@ var routeIntroTimer = 0.0;
                 camera.position.copy(targetCamPos);
             }
 
-            // 6. Vector UP estándar orientado al Norte cósmico (0, 1, 0) para evitar volteos de 180º o singularidad de nadir
-            camera.up.set(0, 1, 0);
-
             // Interpolación de mirada (LookAt) continua sin singularidades ni cruces por el cuerpo de cámara
             const tStart = getTargetVector(activeScene.targetStart, curEclipseT, targetCamPos);
             const tEnd = getTargetVector(activeScene.targetEnd, curEclipseT, targetCamPos);
+            let curDir;
 
             if (activeScene.targetStart === activeScene.targetEnd || !targetCamPos) {
-                if (controls) controls.target.copy(tStart);
-                camera.lookAt(tStart);
+                const vStart = tStart.clone().sub(targetCamPos);
+                curDir = vStart.lengthSq() > 0.0001 ? vStart.normalize() : new THREE.Vector3(0, 0, -1);
             } else {
                 const vStart = tStart.clone().sub(targetCamPos);
                 const vEnd = tEnd.clone().sub(targetCamPos);
@@ -618,7 +616,6 @@ var routeIntroTimer = 0.0;
                 // Sin singularidades, sin cambios bruscos de eje y con velocidad angular perfectamente uniforme
                 const dot = Math.max(-1.0, Math.min(1.0, dirStart.dot(dirEnd)));
                 const totalAngle = Math.acos(dot);
-                let curDir;
 
                 if (totalAngle < 0.0001) {
                     curDir = dirStart.clone();
@@ -634,14 +631,52 @@ var routeIntroTimer = 0.0;
                     }
                     curDir = dirStart.clone().applyAxisAngle(rotAxis, totalAngle * lookEase);
                 }
-
-                // El target visual se proyecta al frente a distancia fija (evita colisión o paso por el sensor)
-                const curTarget = targetCamPos.clone().add(curDir.multiplyScalar(100.0));
-                if (controls) {
-                    controls.target.copy(curTarget);
-                }
-                camera.lookAt(curTarget);
             }
+
+            // Orientación del sensor: Horizonte terrestre nivelado (visión desde cabina de pilotaje) vs Norte cósmico
+            const rCam = targetCamPos ? targetCamPos.clone().normalize() : new THREE.Vector3(0, 1, 0);
+            const crossLevel = new THREE.Vector3().crossVectors(curDir, rCam);
+            let yLevel;
+            if (crossLevel.lengthSq() > 0.0001) {
+                const xLevel = crossLevel.normalize();
+                yLevel = new THREE.Vector3().crossVectors(xLevel, curDir).normalize();
+            } else {
+                yLevel = new THREE.Vector3(0, 1, 0);
+            }
+
+            // Vector UP del mundo (Norte cósmico) proyectado en el sensor
+            const uWorld = new THREE.Vector3(0, 1, 0);
+            const zCam = curDir.clone().negate();
+            const crossWorld = new THREE.Vector3().crossVectors(uWorld, zCam);
+            let yWorld;
+            if (crossWorld.lengthSq() > 0.0001) {
+                const xWorld = crossWorld.normalize();
+                yWorld = new THREE.Vector3().crossVectors(zCam, xWorld).normalize();
+            } else {
+                yWorld = yLevel;
+            }
+
+            // Mezcla suave (0.0 = Norte cósmico en espacio profundo, 1.0 = Horizonte terrestre nivelado al 100%)
+            const bStart = (activeScene.horizonBlendStart != null) ? activeScene.horizonBlendStart : 0.0;
+            const bEnd = (activeScene.horizonBlendEnd != null) ? activeScene.horizonBlendEnd : bStart;
+            const turnStart = (activeScene.horizonBlendTurnStart != null) ? activeScene.horizonBlendTurnStart : 0.0;
+
+            let blendEase = 0.0;
+            if (rawT >= turnStart) {
+                const u = (turnStart < 1.0) ? (rawT - turnStart) / (1.0 - turnStart) : 1.0;
+                blendEase = 0.5 * (1.0 - Math.cos(Math.min(1.0, Math.max(0.0, u)) * Math.PI));
+            }
+            const w = Math.min(1.0, Math.max(0.0, bStart + (bEnd - bStart) * blendEase));
+
+            const curUp = new THREE.Vector3().lerpVectors(yWorld, yLevel, w).normalize();
+            camera.up.copy(curUp);
+
+            // El target visual se proyecta al frente a distancia fija (evita colisión o paso por el sensor)
+            const curTarget = targetCamPos.clone().add(curDir.multiplyScalar(100.0));
+            if (controls) {
+                controls.target.copy(curTarget);
+            }
+            camera.lookAt(curTarget);
 
             requestRender();
         }
