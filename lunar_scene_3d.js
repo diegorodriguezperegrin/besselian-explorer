@@ -589,13 +589,20 @@ var SUN_DIST = 149598.0;      // Distancia Tierra-Sol (1 UA): 149.597.870 km
                 shininess: 15
             });
 
-            const earthSrc = (typeof ORIGINAL_EARTH_BASE64 !== 'undefined') ? ORIGINAL_EARTH_BASE64 : 'earth_topo_2048.jpg';
-            const earthTexture = new THREE.TextureLoader().load(earthSrc, function(tex) {
-                tex.needsUpdate = true;
+            const EARTH_TEX_LOCAL = 'earth_topo_2048.jpg';
+            const EARTH_TEX_CDN = 'https://cdn.jsdelivr.net/gh/diegorodriguezperegrin/besselian-explorer@main/earth_topo_2048.jpg';
+
+            const earthTexLoader = new THREE.TextureLoader();
+            function applyEarthTexture(texture) {
+                texture.needsUpdate = true;
+                earthMat.map = texture;
                 earthMat.needsUpdate = true;
                 requestRender3D();
+            }
+
+            earthTexLoader.load(EARTH_TEX_LOCAL, applyEarthTexture, undefined, function() {
+                earthTexLoader.load(EARTH_TEX_CDN, applyEarthTexture);
             });
-            earthMat.map = earthTexture;
 
             earthGroup = new THREE.Group();
             earthMesh3D = new THREE.Mesh(earthGeo, earthMat);

@@ -603,13 +603,20 @@ var observerMarkerGroup3D = null;
             shininess: 12
         });
 
-        const earthSrc = (typeof ORIGINAL_EARTH_BASE64 !== 'undefined') ? ORIGINAL_EARTH_BASE64 : 'earth_topo_2048.jpg';
-        const earthMap = new THREE.TextureLoader().load(earthSrc, function(texture) {
+        const EARTH_TEX_LOCAL = 'earth_topo_2048.jpg';
+        const EARTH_TEX_CDN = 'https://cdn.jsdelivr.net/gh/diegorodriguezperegrin/besselian-explorer@main/earth_topo_2048.jpg';
+
+        const earthTexLoader = new THREE.TextureLoader();
+        function applyEarthTexture(texture) {
             texture.needsUpdate = true;
+            earthMaterial.map = texture;
             earthMaterial.needsUpdate = true;
             requestRender();
+        }
+
+        earthTexLoader.load(EARTH_TEX_LOCAL, applyEarthTexture, undefined, function() {
+            earthTexLoader.load(EARTH_TEX_CDN, applyEarthTexture);
         });
-        earthMaterial.map = earthMap;
 
         var earthGroup = new THREE.Group();
         var earthMesh = new THREE.Mesh(earthGeometry, earthMaterial);
