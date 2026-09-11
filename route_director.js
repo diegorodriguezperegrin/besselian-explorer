@@ -103,6 +103,11 @@ var routeIntroTimer = 0.0;
             const routeHud = (typeof getDOM === 'function' ? getDOM('route-cinematic-hud') : document.getElementById('route-cinematic-hud'));
             if (routeHud) routeHud.style.display = 'none';
 
+            const dockBadge = (typeof getDOM === 'function' ? getDOM('player-phase-label') : document.getElementById('player-phase-label'));
+            if (dockBadge) {
+                dockBadge.style.display = '';
+            }
+
             const slider = (typeof getDOM === 'function' ? getDOM('time-slider') : document.getElementById('time-slider'));
             if (slider && typeof currentEclipse !== 'undefined' && currentEclipse) {
                 slider.min = currentEclipse.tmin != null ? currentEclipse.tmin : -2.5;
@@ -184,16 +189,11 @@ var routeIntroTimer = 0.0;
                     badge.innerText = 'PAUSA';
                 }
             }
-            // Sincronizar el badge del reproductor inferior (fases universales para cualquier ruta)
+            // En modo ruta se oculta el badge del reproductor inferior (no duplicar información con el minutaje)
             const dockBadge = (typeof getDOM === 'function' ? getDOM('player-phase-label') : document.getElementById('player-phase-label'));
             if (dockBadge && typeof currentActiveView !== 'undefined' && currentActiveView === 'route') {
-                dockBadge.className = active ? 'player-phase-badge tot' : 'player-phase-badge';
-                dockBadge.style.display = 'inline-flex';
-                if (active) {
-                    dockBadge.innerHTML = '<span style="color: #fca5a5;"><span class="phase-dot total"></span>En vuelo</span>';
-                } else {
-                    dockBadge.innerHTML = '<span style="color: #fde047;"><span class="phase-dot" style="background:#eab308; box-shadow:0 0 6px rgba(234,179,8,0.6);"></span>En pausa</span>';
-                }
+                dockBadge.style.display = 'none';
+                dockBadge.innerHTML = '';
             }
         }
 
@@ -243,10 +243,8 @@ var routeIntroTimer = 0.0;
             }
 
             if (routeCurrentTime >= route.totalDurationSec) {
-                routeCurrentTime = route.totalDurationSec;
-                isRoutePlaying = false;
-                updateRoutePlayPauseIcon();
-                updateRouteBadge(false);
+                restartCinematicRoute();
+                return;
             }
 
             const progressRatio = Math.min(1.0, Math.max(0.0, routeCurrentTime / route.totalDurationSec));
