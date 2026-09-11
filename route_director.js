@@ -13,19 +13,68 @@ var routeIntroTimer = 0.0;
 
         // -------------------------------------------------------------
                 // =========================================================================
-        // MOTOR CINEMÁTICO: MODO RUTA (ECLIPSE 2027)
+        // MOTOR CINEMÁTICO: DIRECTOR MULTIRUTA
         // =========================================================================
-                // currentRouteData declarada arriba
 
-        // El Director lee los datos de la ruta desde route_eclipse_2027.js (o fallback a JSON)
-        async function loadRouteData(urlOrPath = 'route_eclipse_2027.json') {
+        // Catálogo global de rutas cinematográficas indexadas por año/id
+        window.ECLIPSE_ROUTES = window.ECLIPSE_ROUTES || {};
+
+        function registerEclipseRoute(routeData) {
+            if (!routeData || !routeData.year) return;
+            window.ECLIPSE_ROUTES = window.ECLIPSE_ROUTES || {};
+            window.ECLIPSE_ROUTES[routeData.year] = routeData;
+            if (routeData.id) {
+                window.ECLIPSE_ROUTES[routeData.id] = routeData;
+            }
+        }
+
+        function getRouteForEclipse(eclipseOrYear) {
+            if (!eclipseOrYear) return null;
+            const year = (typeof eclipseOrYear === 'object') ? eclipseOrYear.year : eclipseOrYear;
+            if (window.ECLIPSE_ROUTES && window.ECLIPSE_ROUTES[year]) {
+                return window.ECLIPSE_ROUTES[year];
+            }
+            if (window.ECLIPSE_ROUTES && window.ECLIPSE_ROUTES[String(year)]) {
+                return window.ECLIPSE_ROUTES[String(year)];
+            }
+            if (year === 2027 && window.DEFAULT_ROUTE_2027_DATA) {
+                return window.DEFAULT_ROUTE_2027_DATA;
+            }
+            return null;
+        }
+
+        function hasRouteForEclipse(eclipseOrYear) {
+            return !!getRouteForEclipse(eclipseOrYear);
+        }
+
+        function getCurrentRoute() {
             if (currentRouteData) return currentRouteData;
+            const year = (typeof currentEclipse !== 'undefined' && currentEclipse) ? currentEclipse.year : 2027;
+            return getRouteForEclipse(year) || getRouteForEclipse(2027) || window.DEFAULT_ROUTE_2027_DATA || null;
+        }
+
+        // El Director lee los datos de la ruta desde el catálogo, script cargado o fallback a JSON
+        async function loadRouteData(target = 'route_eclipse_2027.json') {
+            if (typeof target === 'number' || (typeof target === 'string' && !target.includes('.'))) {
+                const found = getRouteForEclipse(target);
+                if (found) {
+                    currentRouteData = found;
+                    return currentRouteData;
+                }
+            }
+            if (currentRouteData) return currentRouteData;
+            const activeYear = (typeof currentEclipse !== 'undefined' && currentEclipse) ? currentEclipse.year : 2027;
+            const foundActive = getRouteForEclipse(activeYear);
+            if (foundActive) {
+                currentRouteData = foundActive;
+                return currentRouteData;
+            }
             if (window.DEFAULT_ROUTE_2027_DATA) {
                 currentRouteData = window.DEFAULT_ROUTE_2027_DATA;
                 return currentRouteData;
             }
             try {
-                const response = await fetch(urlOrPath);
+                const response = await fetch(target);
                 if (response.ok) {
                     currentRouteData = await response.json();
                     return currentRouteData;
@@ -187,12 +236,26 @@ var routeIntroTimer = 0.0;
 
         // variables de ruta globales
 
-        async function startCinematicRoute() {
-            const route = await loadRouteData('route_eclipse_2027.json');
+        async function startCinematicRoute(targetYearOrData) {
+            let route = null;
+            if (targetYearOrData && typeof targetYearOrData === 'object' && targetYearOrData.scenes) {
+                route = targetYearOrData;
+            } else if (targetYearOrData) {
+                route = getRouteForEclipse(targetYearOrData);
+            } else {
+                const activeYear = (typeof currentEclipse !== 'undefined' && currentEclipse) ? currentEclipse.year : 2027;
+                route = getRouteForEclipse(activeYear);
+                if (!route) {
+                    route = getRouteForEclipse(2027) || await loadRouteData('route_eclipse_2027.json');
+                }
+            }
+
             if (!route) {
-                console.error('[Director] No se encontraron datos de la ruta.');
+                console.warn('[Director] No se encontraron datos de la ruta.');
                 return;
             }
+
+            currentRouteData = route;
 
             const targetYear = route.year;
             if (targetYear && (!currentEclipse || currentEclipse.year !== targetYear)) {
@@ -213,6 +276,7 @@ var routeIntroTimer = 0.0;
             isRoutePlaying = false;
             routeCurrentTime = 0.0;
             routeIntroTimer = (route.introDuration != null) ? route.introDuration : 4.0;
+            routeCameraSpline = buildRouteCameraSpline(route);
             if (controls) controls.enabled = false;
 
             // Guardar preferencia previa de conos volumétricos
@@ -306,6 +370,42 @@ var routeIntroTimer = 0.0;
             }
         }
 
+        function updateRouteButtonState(eclipse) {
+            const btnRoute = (typeof getDOM === 'function' ? getDOM('btn-mode-route') : document.getElementById('btn-mode-route'));
+            if (!btnRoute) return;
+            const ec = eclipse || (typeof currentEclipse !== 'undefined' ? currentEclipse : null);
+            const hasRoute = !!getRouteForEclipse(ec?.year);
+            const route = hasRoute ? getRouteForEclipse(ec?.year) : null;
+
+            if (hasRoute) {
+                btnRoute.disabled = false;
+                btnRoute.classList.remove('disabled');
+                btnRoute.style.opacity = '';
+                btnRoute.style.cursor = 'pointer';
+                btnRoute.title = route?.title ? `Vuelo virtual cinemático: ${route.title}` : `Vuelo virtual cinemático: Eclipse ${ec?.year}`;
+
+                // Si el usuario ya estaba en modo ruta y cambia de eclipse con ruta disponible, cambiar de vuelo
+                if (typeof currentActiveView !== 'undefined' && currentActiveView === 'route' && isRouteActive) {
+                    if (currentRouteData !== route) {
+                        startCinematicRoute(route);
+                    }
+                }
+            } else {
+                btnRoute.disabled = true;
+                btnRoute.classList.add('disabled');
+                btnRoute.style.opacity = '0.4';
+                btnRoute.style.cursor = 'not-allowed';
+                btnRoute.title = `Ruta cinemática no disponible para el eclipse de ${ec?.year || '--'}`;
+
+                // Si estaba en modo ruta y se selecciona un eclipse sin ruta disponible, regresar a la vista 3D orbital
+                if (typeof currentActiveView !== 'undefined' && currentActiveView === 'route') {
+                    if (typeof switchMainView === 'function') {
+                        switchMainView('3d');
+                    }
+                }
+            }
+        }
+
         function toggleRoutePlay() {
             if (!isRouteActive) return;
             if (routeIntroTimer > 0) {
@@ -322,7 +422,7 @@ var routeIntroTimer = 0.0;
         }
 
         function restartCinematicRoute() {
-            const route = currentRouteData || window.DEFAULT_ROUTE_2027_DATA;
+            const route = getCurrentRoute();
             routeCurrentTime = 0.0;
             routeIntroTimer = (route && route.introDuration != null) ? route.introDuration : 4.0;
             isRoutePlaying = false;
@@ -374,7 +474,7 @@ var routeIntroTimer = 0.0;
 
         function jumpRouteSceneStep(dir) {
             routeIntroTimer = 0;
-            const route = currentRouteData || window.DEFAULT_ROUTE_2027_DATA;
+            const route = getCurrentRoute();
             if (!route || !route.scenes || route.scenes.length === 0) return;
             
             let curIdx = 0;
@@ -392,7 +492,7 @@ var routeIntroTimer = 0.0;
         }
 
         function setRouteTime(t) {
-            const route = currentRouteData || window.DEFAULT_ROUTE_2027_DATA;
+            const route = getCurrentRoute();
             if (!route) return;
             if (t > 0) routeIntroTimer = 0;
             routeCurrentTime = Math.max(0, Math.min(route.totalDurationSec, t));
@@ -495,7 +595,7 @@ var routeIntroTimer = 0.0;
         function updateCinematicRoute(delta) {
             if (!isRouteActive) return;
 
-            const route = currentRouteData || window.DEFAULT_ROUTE_2027_DATA; if (!route) return;
+            const route = getCurrentRoute(); if (!route) return;
 
             // Manejo de la presentación inicial (4 segundos en pausa mostrando solo el título)
             if (routeIntroTimer > 0) {
@@ -724,6 +824,11 @@ if (typeof window !== 'undefined') {
     window.updateRouteBadge = updateRouteBadge;
     window.updateCinematicRoute = updateCinematicRoute;
     window.routeIntroTimer = routeIntroTimer;
+    window.registerEclipseRoute = registerEclipseRoute;
+    window.getRouteForEclipse = getRouteForEclipse;
+    window.hasRouteForEclipse = hasRouteForEclipse;
+    window.updateRouteButtonState = updateRouteButtonState;
+    window.getCurrentRoute = getCurrentRoute;
     window.RouteDirector = {
         start: startCinematicRoute,
         stop: stopCinematicRoute,
@@ -734,6 +839,11 @@ if (typeof window !== 'undefined') {
         update: updateCinematicRoute,
         getShadowWorldPosition: getShadowWorldPosition,
         getTargetVector: getTargetVector,
+        registerRoute: registerEclipseRoute,
+        getRoute: getRouteForEclipse,
+        hasRoute: hasRouteForEclipse,
+        updateButtonState: updateRouteButtonState,
+        getCurrentRoute: getCurrentRoute,
         get isActive() { return isRouteActive; },
         get isPlaying() { return isRoutePlaying; },
         get isIntro() { return routeIntroTimer > 0; }

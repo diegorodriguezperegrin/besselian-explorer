@@ -1621,6 +1621,10 @@
             const routeHud = getDOM('route-cinematic-hud');
 
             if (mode === 'route') {
+                if (typeof hasRouteForEclipse === 'function' && currentEclipse && !hasRouteForEclipse(currentEclipse.year)) {
+                    console.warn(`[Modo Ruta] No hay ruta cinematográfica definida para el eclipse de ${currentEclipse.year}`);
+                    return;
+                }
                 btn3D?.classList.remove('active');
                 btnTele?.classList.remove('active');
                 btnRoute?.classList.add('active');
@@ -3306,6 +3310,10 @@
                 const maxLat = eclipse.lat_dd_ge || 0;
                 const maxLng = eclipse.lng_dd_ge || 0;
                 recenterEarth(maxLat, maxLng);
+            }
+
+            if (typeof updateRouteButtonState === 'function') {
+                updateRouteButtonState(eclipse);
             }
         }
 

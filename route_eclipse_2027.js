@@ -2,7 +2,8 @@
 // RUTA CINEMÁTICA: GRAN ECLIPSE TOTAL DEL 2 DE AGOSTO DE 2027
 // Plano secuencia continuo sin cortes ni teletransportes
 // =========================================================================
-window.DEFAULT_ROUTE_2027_DATA = {
+window.ECLIPSE_ROUTES = window.ECLIPSE_ROUTES || {};
+window.ECLIPSE_ROUTES[2027] = {
   "id": "eclipse_2027",
   "title": "Gran Eclipse Total del 2 de Agosto de 2027",
   "year": 2027,
@@ -104,3 +105,6 @@ window.DEFAULT_ROUTE_2027_DATA = {
     }
   ]
 };
+
+// Retrocompatibilidad con referencias directas existentes
+window.DEFAULT_ROUTE_2027_DATA = window.ECLIPSE_ROUTES[2027];
