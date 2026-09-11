@@ -231,6 +231,12 @@ var routeIntroTimer = 0.0;
                 if (el) el.style.display = 'none';
             });
 
+            // Ocultar rótulos y marcador geográfico durante la ruta
+            if (typeof observerMarkerGroup3D !== 'undefined' && observerMarkerGroup3D) {
+                observerMarkerGroup3D.visible = false;
+                if (observerMarkerGroup3D._routeLabelSprite) observerMarkerGroup3D._routeLabelSprite.visible = false;
+            }
+
             updateRoutePlayPauseIcon();
             updateRouteBadge(false);
             if (typeof updateRecenterBtnState === 'function') updateRecenterBtnState();
@@ -242,6 +248,9 @@ var routeIntroTimer = 0.0;
             isRouteActive = false;
             isRoutePlaying = false;
             routeIntroTimer = 0.0;
+            if (typeof camera !== 'undefined' && camera && camera.up) {
+                camera.up.set(0, 1, 0);
+            }
             if (typeof controls !== 'undefined' && controls) {
                 controls.enabled = true;
             }
@@ -251,8 +260,14 @@ var routeIntroTimer = 0.0;
             const routeBadgeEl = (typeof getDOM === 'function' ? getDOM('route-scene-badge') : document.getElementById('route-scene-badge'));
             if (routeBadgeEl) routeBadgeEl.style.display = 'none';
 
-            if (typeof observerMarkerGroup3D !== 'undefined' && observerMarkerGroup3D && observerMarkerGroup3D._routeLabelSprite) {
-                observerMarkerGroup3D._routeLabelSprite.visible = false;
+            if (typeof observerMarkerGroup3D !== 'undefined' && observerMarkerGroup3D) {
+                if (observerMarkerGroup3D._routeLabelSprite) {
+                    observerMarkerGroup3D._routeLabelSprite.visible = false;
+                }
+                const chkObs = (typeof getDOM === 'function' ? getDOM('chk-show-observer') : document.getElementById('chk-show-observer'));
+                if (chkObs) {
+                    observerMarkerGroup3D.visible = chkObs.checked;
+                }
             }
 
             // Restaurar conos volumétricos a la preferencia previa del usuario
@@ -528,8 +543,13 @@ var routeIntroTimer = 0.0;
                 if (chkCones) chkCones.checked = activeScene.showSpaceCones;
             }
 
-            // 3. Marcador geográfico y rótulo 3D flotante sobre la ubicación en la Tierra (Punto D - Opción 1)
-            updateRoute3DLocationLabel(activeScene.observerLocation);
+            // 3. Marcador geográfico y rótulo 3D (eliminados por el momento según solicitud del usuario)
+            if (typeof observerMarkerGroup3D !== 'undefined' && observerMarkerGroup3D) {
+                observerMarkerGroup3D.visible = false;
+                if (observerMarkerGroup3D._routeLabelSprite) {
+                    observerMarkerGroup3D._routeLabelSprite.visible = false;
+                }
+            }
 
             // 4. Textos flotantes del HUD (Presentación inicial limpia de 4s y estética documental sin pastillas)
             const isIntro = (routeIntroTimer > 0) || (routeCurrentTime === 0 && !isRoutePlaying && route.title);
@@ -565,6 +585,25 @@ var routeIntroTimer = 0.0;
             if (targetCamPos) {
                 camera.position.copy(targetCamPos);
             }
+
+            // 6. Vector UP dinámico: Horizonte terrestre nivelado (visión de cabina de pilotaje) vs Norte cósmico
+            // w = 0.0 -> Polo Norte celeste (0, 1, 0) (estética espacial profunda)
+            // w = 1.0 -> Cenit local de la posición sobre la Tierra (horizonte plano como en cabina de avión)
+            const uWorld = new THREE.Vector3(0, 1, 0);
+            const uZenith = targetCamPos ? targetCamPos.clone().normalize() : uWorld;
+
+            const bStart = (activeScene.upBlendStart != null) ? activeScene.upBlendStart : 0.0;
+            const bEnd = (activeScene.upBlendEnd != null) ? activeScene.upBlendEnd : bStart;
+            const turnStart = (activeScene.upBlendTurnStart != null) ? activeScene.upBlendTurnStart : 0.0;
+
+            let blendEase = 0.0;
+            if (rawT >= turnStart) {
+                const u = (turnStart < 1.0) ? (rawT - turnStart) / (1.0 - turnStart) : 1.0;
+                blendEase = 0.5 * (1.0 - Math.cos(Math.min(1.0, Math.max(0.0, u)) * Math.PI));
+            }
+            const upWeight = Math.min(1.0, Math.max(0.0, bStart + (bEnd - bStart) * blendEase));
+            const curUp = new THREE.Vector3().lerpVectors(uWorld, uZenith, upWeight).normalize();
+            camera.up.copy(curUp);
 
             // Interpolación de mirada (LookAt) continua sin singularidades ni cruces por el cuerpo de cámara
             const tStart = getTargetVector(activeScene.targetStart, curEclipseT, targetCamPos);
