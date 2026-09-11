@@ -77,6 +77,92 @@ var routeIntroTimer = 0.0;
             return new THREE.Vector3(tg.x || 0, tg.y || 0, tg.z || 0);
         }
 
+        // Rótulo 3D flotante sobre el pin geográfico del observador en la Tierra
+        function updateRoute3DLocationLabel(locationObj) {
+            if (typeof observerMarkerGroup3D === 'undefined' || !observerMarkerGroup3D) return;
+
+            if (!locationObj) {
+                if (observerMarkerGroup3D._routeLabelSprite) {
+                    observerMarkerGroup3D._routeLabelSprite.visible = false;
+                }
+                return;
+            }
+
+            const earthR = (typeof EARTH_RADIUS !== 'undefined') ? EARTH_RADIUS : 50.0;
+            observerMarkerGroup3D.position.copy(latLngToVector3(locationObj.lat, locationObj.lon, earthR * 1.004));
+            observerMarkerGroup3D.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), latLngToVector3(locationObj.lat, locationObj.lon, 1.0).normalize());
+            observerMarkerGroup3D.visible = true;
+
+            const labelText = locationObj.name || locationObj.label;
+            if (!labelText) {
+                if (observerMarkerGroup3D._routeLabelSprite) observerMarkerGroup3D._routeLabelSprite.visible = false;
+                return;
+            }
+
+            if (!observerMarkerGroup3D._routeLabelSprite) {
+                const canvas = document.createElement('canvas');
+                canvas.width = 512;
+                canvas.height = 128;
+                const texture = new THREE.CanvasTexture(canvas);
+                const mat = new THREE.SpriteMaterial({
+                    map: texture,
+                    transparent: true,
+                    depthTest: false,
+                    depthWrite: false
+                });
+                const sprite = new THREE.Sprite(mat);
+                sprite.scale.set(7.5, 1.875, 1);
+                sprite.position.set(0, 1.5, 0);
+                observerMarkerGroup3D.add(sprite);
+                observerMarkerGroup3D._routeLabelSprite = sprite;
+                observerMarkerGroup3D._routeLabelCanvas = canvas;
+                observerMarkerGroup3D._routeLabelTexture = texture;
+                observerMarkerGroup3D._lastLabelText = '';
+            }
+
+            const sprite = observerMarkerGroup3D._routeLabelSprite;
+            sprite.visible = true;
+
+            if (observerMarkerGroup3D._lastLabelText !== labelText) {
+                observerMarkerGroup3D._lastLabelText = labelText;
+                const canvas = observerMarkerGroup3D._routeLabelCanvas;
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                ctx.font = '700 36px "Outfit", "Plus Jakarta Sans", -apple-system, sans-serif';
+                const textWidth = ctx.measureText(labelText).width;
+                const padX = 26;
+                const boxW = Math.min(490, Math.max(160, textWidth + padX * 2));
+                const boxH = 74;
+                const boxX = (512 - boxW) / 2;
+                const boxY = (128 - boxH) / 2;
+                const r = 20;
+
+                ctx.fillStyle = 'rgba(11, 19, 38, 0.88)';
+                ctx.strokeStyle = 'rgba(56, 189, 248, 0.9)';
+                ctx.lineWidth = 4;
+                ctx.shadowColor = 'rgba(56, 189, 248, 0.6)';
+                ctx.shadowBlur = 14;
+
+                ctx.beginPath();
+                if (typeof ctx.roundRect === 'function') {
+                    ctx.roundRect(boxX, boxY, boxW, boxH, r);
+                } else {
+                    ctx.rect(boxX, boxY, boxW, boxH);
+                }
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.shadowBlur = 0;
+                ctx.fillStyle = '#f8fafc';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(labelText, 256, 64);
+
+                observerMarkerGroup3D._routeLabelTexture.needsUpdate = true;
+            }
+        }
+
         // variables de ruta globales
 
         async function startCinematicRoute() {
@@ -142,6 +228,10 @@ var routeIntroTimer = 0.0;
 
             const routeBadgeEl = (typeof getDOM === 'function' ? getDOM('route-scene-badge') : document.getElementById('route-scene-badge'));
             if (routeBadgeEl) routeBadgeEl.style.display = 'none';
+
+            if (typeof observerMarkerGroup3D !== 'undefined' && observerMarkerGroup3D && observerMarkerGroup3D._routeLabelSprite) {
+                observerMarkerGroup3D._routeLabelSprite.visible = false;
+            }
 
             // Restaurar conos volumétricos a la preferencia previa del usuario
             if (window._savedRouteSpaceConesPref != null) {
@@ -350,20 +440,13 @@ var routeIntroTimer = 0.0;
                 if (chkCones) chkCones.checked = activeScene.showSpaceCones;
             }
 
-            // 3. Marcador geográfico de observador destacado en escena (Punto D)
-            if (activeScene.observerLocation && typeof observerMarkerGroup3D !== 'undefined' && observerMarkerGroup3D) {
-                const loc = activeScene.observerLocation;
-                const earthR = (typeof EARTH_RADIUS !== 'undefined') ? EARTH_RADIUS : 50.0;
-                observerMarkerGroup3D.position.copy(latLngToVector3(loc.lat, loc.lon, earthR * 1.004));
-                observerMarkerGroup3D.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), latLngToVector3(loc.lat, loc.lon, 1.0).normalize());
-                observerMarkerGroup3D.visible = true;
-            }
+            // 3. Marcador geográfico y rótulo 3D flotante sobre la ubicación en la Tierra (Punto D - Opción 1)
+            updateRoute3DLocationLabel(activeScene.observerLocation);
 
-            // 4. Textos flotantes del HUD (Presentación inicial limpia durante los 4s, y badges temáticos por escena)
+            // 4. Textos flotantes del HUD (Presentación inicial limpia de 4s y estética documental sin pastillas)
             const isIntro = (routeIntroTimer > 0) || (routeCurrentTime === 0 && !isRoutePlaying && route.title);
             const targetTitle = isIntro ? (route.title || '') : (activeScene.title || '');
             const targetDesc = isIntro ? '' : (activeScene.desc || '');
-            const targetBadge = isIntro ? '' : (activeScene.badge || '');
 
             const titleEl = (typeof getDOM === 'function' ? getDOM('route-scene-title') : document.getElementById('route-scene-title'));
             const descEl = (typeof getDOM === 'function' ? getDOM('route-scene-desc') : document.getElementById('route-scene-desc'));
@@ -376,12 +459,7 @@ var routeIntroTimer = 0.0;
                 descEl.textContent = targetDesc;
             }
             if (badgeEl) {
-                if (targetBadge) {
-                    if (badgeEl.textContent !== targetBadge) badgeEl.textContent = targetBadge;
-                    badgeEl.style.display = 'inline-block';
-                } else {
-                    badgeEl.style.display = 'none';
-                }
+                badgeEl.style.display = 'none';
             }
 
             // 5. Posicionamiento dinámico de cámara y objetivo visual
