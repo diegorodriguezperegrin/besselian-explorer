@@ -385,6 +385,73 @@ var routeIntroTimer = 0.0;
             if (typeof requestRender === 'function') requestRender();
         }
 
+        var routeCameraSpline = null;
+
+        function buildRouteCameraSpline(routeData) {
+            if (!routeData || !routeData.scenes || routeData.scenes.length === 0) return null;
+            const scenes = routeData.scenes;
+            const keyframes = [];
+            keyframes.push({
+                time: scenes[0].timeStart,
+                pos: latLngToVector3(scenes[0].camStart.lat, scenes[0].camStart.lng, scenes[0].camStart.radius)
+            });
+            for (let i = 0; i < scenes.length; i++) {
+                const sc = scenes[i];
+                keyframes.push({
+                    time: sc.timeStart + sc.duration,
+                    pos: latLngToVector3(sc.camEnd.lat, sc.camEnd.lng, sc.camEnd.radius)
+                });
+            }
+
+            const velocities = [];
+            for (let i = 0; i < keyframes.length; i++) {
+                if (i === 0) {
+                    const dt = keyframes[1].time - keyframes[0].time;
+                    velocities.push(keyframes[1].pos.clone().sub(keyframes[0].pos).multiplyScalar(1 / (dt || 1)));
+                } else if (i === keyframes.length - 1) {
+                    const dt = keyframes[i].time - keyframes[i - 1].time;
+                    velocities.push(keyframes[i].pos.clone().sub(keyframes[i - 1].pos).multiplyScalar(1 / (dt || 1)));
+                } else {
+                    const dt = keyframes[i + 1].time - keyframes[i - 1].time;
+                    velocities.push(keyframes[i + 1].pos.clone().sub(keyframes[i - 1].pos).multiplyScalar(1 / (dt || 1)));
+                }
+            }
+
+            return { keyframes, velocities, _routeId: routeData.id || 'default' };
+        }
+
+        function getSplineCameraPosition(t, splineData) {
+            if (!splineData || !splineData.keyframes) return null;
+            const kfs = splineData.keyframes;
+            const vels = splineData.velocities;
+            if (t <= kfs[0].time) return kfs[0].pos.clone();
+            if (t >= kfs[kfs.length - 1].time) return kfs[kfs.length - 1].pos.clone();
+
+            for (let i = 0; i < kfs.length - 1; i++) {
+                const t0 = kfs[i].time;
+                const t1 = kfs[i + 1].time;
+                if (t >= t0 && t <= t1) {
+                    const dt = t1 - t0;
+                    const u = dt > 0 ? (t - t0) / dt : 0;
+                    const u2 = u * u;
+                    const u3 = u2 * u;
+
+                    const h00 = 2 * u3 - 3 * u2 + 1;
+                    const h10 = u3 - 2 * u2 + u;
+                    const h01 = -2 * u3 + 3 * u2;
+                    const h11 = u3 - u2;
+
+                    const res = new THREE.Vector3();
+                    res.addScaledVector(kfs[i].pos, h00);
+                    res.addScaledVector(vels[i], h10 * dt);
+                    res.addScaledVector(kfs[i + 1].pos, h01);
+                    res.addScaledVector(vels[i + 1], h11 * dt);
+                    return res;
+                }
+            }
+            return kfs[kfs.length - 1].pos.clone();
+        }
+
         function updateCinematicRoute(delta) {
             if (!isRouteActive) return;
 
@@ -441,12 +508,10 @@ var routeIntroTimer = 0.0;
                 }
             }
 
-            const rawT = Math.min(1.0, Math.max(0.0, (routeCurrentTime - activeScene.timeStart) / activeScene.duration));
-            // Atenuación senoidal suave (Cosine Easing): velocidad angular y lineal uniforme sin tirones
-            const ease = 0.5 * (1.0 - Math.cos(rawT * Math.PI));
+            const rawT = Math.min(1.0, Math.max(0.0, (routeCurrentTime - activeScene.timeStart) / (activeScene.duration || 1.0)));
 
-            // 1. Sombra y tiempo astronómico del eclipse (calcular antes de la cámara para que los cuerpos y la Tierra estén en su posición física)
-            const curEclipseT = activeScene.tEclipseStart + (activeScene.tEclipseEnd - activeScene.tEclipseStart) * ease;
+            // 1. Sombra y tiempo astronómico del eclipse: velocidad simulada estrictamente constante a lo largo de toda la ruta
+            const curEclipseT = activeScene.tEclipseStart + (activeScene.tEclipseEnd - activeScene.tEclipseStart) * rawT;
             simCurrentT = curEclipseT;
             if (timeSlider && !(window.isSliderInteracting) && typeof currentActiveView !== 'undefined' && currentActiveView === 'route') {
                 timeSlider.value = curEclipseT;
@@ -485,35 +550,16 @@ var routeIntroTimer = 0.0;
                 badgeEl.style.display = 'none';
             }
 
-            // 5. Posicionamiento dinámico de cámara y objetivo visual continuo (Plano secuencia C0/C1 sin cortes)
-            let targetCamPos = null;
-
-            // Interpolación base continua entre camStart y camEnd
-            if (activeScene.camStart && activeScene.camEnd) {
-                const curLat = activeScene.camStart.lat + (activeScene.camEnd.lat - activeScene.camStart.lat) * ease;
-                const curLng = activeScene.camStart.lng + (activeScene.camEnd.lng - activeScene.camStart.lng) * ease;
-                const curRad = activeScene.camStart.radius + (activeScene.camEnd.radius - activeScene.camStart.radius) * ease;
+            // 5. Posicionamiento dinámico de cámara continuo tipo Spline (vuelo ininterrumpido sin paradas ni frenadas en empalmes)
+            if (!routeCameraSpline || routeCameraSpline._routeId !== (route.id || 'default')) {
+                routeCameraSpline = buildRouteCameraSpline(route);
+            }
+            let targetCamPos = routeCameraSpline ? getSplineCameraPosition(routeCurrentTime, routeCameraSpline) : null;
+            if (!targetCamPos && activeScene.camStart && activeScene.camEnd) {
+                const curLat = activeScene.camStart.lat + (activeScene.camEnd.lat - activeScene.camStart.lat) * rawT;
+                const curLng = activeScene.camStart.lng + (activeScene.camEnd.lng - activeScene.camStart.lng) * rawT;
+                const curRad = activeScene.camStart.radius + (activeScene.camEnd.radius - activeScene.camStart.radius) * rawT;
                 targetCamPos = latLngToVector3(curLat, curLng, curRad);
-
-                // Si la escena solicita perseguir dinámicamente la sombra en vuelo rasante:
-                if (activeScene.follow === 'shadow') {
-                    const shadowPos = getShadowWorldPosition(curEclipseT);
-                    const prevShadowPos = getShadowWorldPosition(curEclipseT - 0.012);
-                    let dir = shadowPos.clone().sub(prevShadowPos);
-                    if (dir.lengthSq() > 0.0001) {
-                        dir.normalize();
-                    } else {
-                        dir = new THREE.Vector3(1, 0, 0);
-                    }
-
-                    const distBehind = activeScene.distBehind != null ? activeScene.distBehind : 16.0;
-                    // El radio de persecución sigue estrictamente curRad (altitud decreciente uniforme)
-                    const chasePos = shadowPos.clone().sub(dir.clone().multiplyScalar(distBehind)).setLength(curRad);
-
-                    const blend = Math.sin(ease * Math.PI);
-                    targetCamPos.lerp(chasePos, blend);
-                    targetCamPos.setLength(curRad); // Garantía matemática contra rebotes y flecha de cuerda
-                }
             }
 
             if (targetCamPos) {
@@ -535,11 +581,10 @@ var routeIntroTimer = 0.0;
                 const dirStart = dStart > 0.0001 ? vStart.multiplyScalar(1 / dStart) : new THREE.Vector3(0, 0, -1);
                 const dirEnd = dEnd > 0.0001 ? vEnd.multiplyScalar(1 / dEnd) : new THREE.Vector3(0, 0, -1);
 
-                // Soporte para giro anticipado de mirada en la escena (targetTurnStart / targetTurnEnd):
-                // Permite girar hacia la Tierra antes de que la sombra cruce el Atlántico
+                // Soporte para giro suave de mirada en transiciones (targetTurnStart / targetTurnEnd):
                 const turnStart = (activeScene.targetTurnStart != null) ? activeScene.targetTurnStart : 0.0;
                 const turnEnd = (activeScene.targetTurnEnd != null) ? activeScene.targetTurnEnd : 1.0;
-                let lookEase = ease;
+                let lookEase = 0.5 * (1.0 - Math.cos(rawT * Math.PI));
                 if (turnStart !== 0.0 || turnEnd !== 1.0) {
                     const clampedTurnEnd = Math.max(turnStart + 0.001, turnEnd);
                     const turnRaw = Math.min(1.0, Math.max(0.0, (rawT - turnStart) / (clampedTurnEnd - turnStart)));
