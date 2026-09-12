@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comparativa Visual: Tierra Fotográfica vs. Vectorial · Cosmos Mataró</title>
+    
+    <!-- Fuentes tipográficas -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Three.js y OrbitControls (Offline / Local Fallback) -->
+    <script src="vendor/three.min.js" onerror="this.onerror=null;this.src='https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';"></script>
+    <script src="vendor/OrbitControls.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js';"></script>
+    
+    <!-- Datos vectoriales de costas terrestres (Natural Earth 110m) -->
+    <script src="land_110m_data.js"></script>
+
+    <style>
+        :root {
+            --bg-space: #070a13;
+            --panel-bg: rgba(13, 20, 36, 0.88);
+            --panel-border: rgba(56, 189, 248, 0.25);
+            --accent-blue: #38bdf8;
+            --accent-amber: #f59e0b;
+            --accent-green: #10b981;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body {
+            background: var(--bg-space);
+            color: var(--text-main);
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        /* Barra Superior de Control */
+        header {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 64px;
+            background: rgba(7, 10, 19, 0.85);
+            backdrop-filter: blur(14px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            z-index: 50;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-badge {
+            background: linear-gradient(135deg, #0284c7, #2563eb);
+            color: white;
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            padding: 4px 8px;
+            border-radius: 6px;
+        }
+
+        .brand h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: #f8fafc;
+            letter-spacing: -0.01em;
+        }
+
+        .brand span {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            font-weight: 400;
+        }
+
+        /* Controles de Vista */
+        .controls-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .btn-group {
+            display: flex;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 8px;
+            padding: 2px;
+        }
+
+        .btn-toggle {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 0.82rem;
+            font-weight: 500;
+            padding: 6px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-toggle.active {
+            background: var(--accent-blue);
+            color: #030712;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(56, 189, 248, 0.3);
+        }
+
+        .btn-action {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #f8fafc;
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-size: 0.82rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-action:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: var(--accent-blue);
+        }
+
+        /* Contenedores 3D en pantalla dividida */
+        #viewport-wrapper {
+            position: absolute;
+            top: 64px;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            width: 100%;
+            height: calc(100vh - 64px);
+        }
+
+        .viewport-half {
+            flex: 1;
+            position: relative;
+            height: 100%;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+            background: radial-gradient(circle at center, #0c1426 0%, #050811 100%);
+        }
+
+        .viewport-half:last-child {
+            border-right: none;
+        }
+
+        .viewport-half canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Tarjetas de Información Flotantes */
+        .info-card {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: 12px;
+            padding: 16px 20px;
+            backdrop-filter: blur(16px);
+            box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6);
+            pointer-events: auto;
+            max-width: 320px;
+            z-index: 10;
+        }
+
+        .info-card h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.05rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .info-card .tag {
+            font-size: 0.68rem;
+            font-weight: 600;
+            padding: 2px 7px;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+
+        .tag-photo {
+            background: rgba(56, 189, 248, 0.18);
+            color: #38bdf8;
+            border: 1px solid rgba(56, 189, 248, 0.4);
+        }
+
+        .tag-vector {
+            background: rgba(16, 185, 129, 0.18);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.4);
+        }
+
+        .info-desc {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            line-height: 1.4;
+            margin: 8px 0 12px 0;
+        }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            font-size: 0.78rem;
+        }
+
+        .stat-box {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 6px;
+            padding: 6px 10px;
+        }
+
+        .stat-label {
+            color: var(--text-muted);
+            font-size: 0.7rem;
+            margin-bottom: 2px;
+        }
+
+        .stat-val {
+            font-weight: 700;
+            color: #f8fafc;
+        }
+
+        /* Selector de Estilo Vectorial */
+        .vector-options {
+            margin-top: 12px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .color-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.75rem;
+        }
+
+        .color-pills {
+            display: flex;
+            gap: 6px;
+        }
+
+        .color-dot {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: transform 0.15s;
+        }
+
+        .color-dot:hover {
+            transform: scale(1.15);
+        }
+
+        .color-dot.active {
+            border-color: #ffffff;
+            box-shadow: 0 0 8px currentColor;
+        }
+
+        .sync-badge {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(13, 20, 36, 0.90);
+            border: 1px solid rgba(56, 189, 248, 0.35);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.76rem;
+            color: #e2e8f0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+            z-index: 30;
+            pointer-events: none;
+        }
+
+        .sync-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #10b981;
+            box-shadow: 0 0 8px #10b981;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="brand">
+            <span class="brand-badge">Cosmos Mataró</span>
+            <h1>Laboratorio de Visualización Terrestre</h1>
+            <span>· Comparativa lado a lado</span>
+        </div>
+
+        <div class="controls-toolbar">
+            <div class="btn-group">
+                <button class="btn-toggle active" id="btn-mode-split" onclick="setViewMode('split')">Pantalla Dividida (50/50)</button>
+                <button class="btn-toggle" id="btn-mode-photo" onclick="setViewMode('photo')">Solo Foto NASA</button>
+                <button class="btn-toggle" id="btn-mode-vector" onclick="setViewMode('vector')">Solo Vectorial</button>
+            </div>
+
+            <button class="btn-action" onclick="resetViews()">Restablecer Cámara</button>
+        </div>
+    </header>
+
+    <main id="viewport-wrapper">
+        <!-- VISTA A: FOTOGRÁFICA NASA -->
+        <section class="viewport-half" id="container-photo">
+            <div class="info-card">
+                <h2>Textura Fotográfica <span class="tag tag-photo">NASA 2K</span></h2>
+                <p class="info-desc">Mapeo de bits equirrectangular NASA Blue Marble Topography. Muestra relieve montañoso, desiertos, vegetación y profundidad marina.</p>
+                <div class="stat-grid">
+                    <div class="stat-box">
+                        <div class="stat-label">Peso de descarga</div>
+                        <div class="stat-val">238 KB</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Memoria VRAM (GPU)</div>
+                        <div class="stat-val">8,4 MB</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Resolución</div>
+                        <div class="stat-val">2048 × 1024 px</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Zoom máximo</div>
+                        <div class="stat-val">Píxel visible</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- VISTA B: VECTORIAL TÉCNICA -->
+        <section class="viewport-half" id="container-vector">
+            <div class="info-card">
+                <h2>Alternativa Vectorial <span class="tag tag-vector">Natural Earth</span></h2>
+                <p class="info-desc">Líneas de costa matemáticas oficiales (escala 1:110m). Estética de telemetría orbital y centro de control aeroespacial.</p>
+                <div class="stat-grid">
+                    <div class="stat-box">
+                        <div class="stat-label">Peso de descarga</div>
+                        <div class="stat-val" style="color: #10b981;">55 KB (-77%)</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Memoria VRAM (GPU)</div>
+                        <div class="stat-val" style="color: #10b981;">0 MB (Líneas 3D)</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Resolución</div>
+                        <div class="stat-val" style="color: #38bdf8;">Infinita (Vector)</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Zoom máximo</div>
+                        <div class="stat-val">100% Nítido</div>
+                    </div>
+                </div>
+
+                <div class="vector-options">
+                    <div class="color-row">
+                        <span style="color: var(--text-muted);">Color de costa:</span>
+                        <div class="color-pills">
+                            <div class="color-dot active" style="background: #38bdf8;" onclick="setVectorColor(0x38bdf8, this)"></div>
+                            <div class="color-dot" style="background: #10b981;" onclick="setVectorColor(0x10b981, this)"></div>
+                            <div class="color-dot" style="background: #f59e0b;" onclick="setVectorColor(0xf59e0b, this)"></div>
+                            <div class="color-dot" style="background: #ffffff;" onclick="setVectorColor(0xffffff, this)"></div>
+                        </div>
+                    </div>
+
+                    <div class="color-row">
+                        <label style="color: var(--text-muted); cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                            <input type="checkbox" id="chk-graticule" checked onchange="toggleGraticule(this.checked)">
+                            Red de Meridianos / Paralelos
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div class="sync-badge">
+        <span class="sync-dot"></span>
+        Cámaras sincronizadas: rota o acerca en cualquier pantalla y ambas responderán a la vez.
+    </div>
+
+    <script>
+        const EARTH_RADIUS = 50.0;
+        let activeMode = 'split';
+
+        function latLngToVec3(lat, lon, radius = EARTH_RADIUS) {
+            const phi = (90 - lat) * (Math.PI / 180);
+            const theta = (lon + 180) * (Math.PI / 180);
+            const x = -(radius * Math.sin(phi) * Math.cos(theta));
+            const z = (radius * Math.sin(phi) * Math.sin(theta));
+            const y = (radius * Math.cos(phi));
+            return new THREE.Vector3(x, y, z);
+        }
+
+        // =========================================================================
+        // ESCENA 1: FOTOGRÁFICA NASA
+        // =========================================================================
+        const containerPhoto = document.getElementById('container-photo');
+        const scenePhoto = new THREE.Scene();
+        const cameraPhoto = new THREE.PerspectiveCamera(45, containerPhoto.clientWidth / containerPhoto.clientHeight, 1, 5000);
+        cameraPhoto.position.copy(latLngToVec3(25.5, 33.2, 210));
+
+        const rendererPhoto = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        rendererPhoto.setSize(containerPhoto.clientWidth, containerPhoto.clientHeight);
+        rendererPhoto.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        containerPhoto.appendChild(rendererPhoto.domElement);
+
+        const controlsPhoto = new THREE.OrbitControls(cameraPhoto, rendererPhoto.domElement);
+        controlsPhoto.enableDamping = true;
+        controlsPhoto.dampingFactor = 0.05;
+        controlsPhoto.rotateSpeed = 0.8;
+        controlsPhoto.minDistance = 60;
+        controlsPhoto.maxDistance = 600;
+
+        // Iluminación idéntica a Solar Eclipse Explorer
+        const ambLightPhoto = new THREE.AmbientLight(0x101a26, 0.40);
+        scenePhoto.add(ambLightPhoto);
+        const dirLightPhoto = new THREE.DirectionalLight(0xfff5ea, 1.8);
+        dirLightPhoto.position.set(150, 100, 250);
+        scenePhoto.add(dirLightPhoto);
+
+        // Esfera Terrestre Fotográfica
+        const earthGeoPhoto = new THREE.SphereGeometry(EARTH_RADIUS, 96, 96);
+        const earthMatPhoto = new THREE.MeshPhongMaterial({
+            color: 0xffffff,
+            specular: new THREE.Color(0x222222),
+            shininess: 12
+        });
+        const earthMeshPhoto = new THREE.Mesh(earthGeoPhoto, earthMatPhoto);
+        scenePhoto.add(earthMeshPhoto);
+
+        // Carga de Textura Fotográfica con fallback robusto
+        const texLoader = new THREE.TextureLoader();
+        texLoader.setCrossOrigin('anonymous');
+        const isLocalFile = window.location.protocol === 'file:';
+        const photoSrcLocal = 'earth_topo_2048.jpg';
+        const photoSrcCDN = 'https://cdn.jsdelivr.net/gh/diegorodriguezperegrin/besselian-explorer@main/earth_topo_2048.jpg';
+
+        texLoader.load(isLocalFile ? photoSrcCDN : photoSrcLocal, (tex) => {
+            tex.needsUpdate = true;
+            earthMatPhoto.map = tex;
+            earthMatPhoto.needsUpdate = true;
+        }, undefined, () => {
+            texLoader.load(photoSrcCDN, (tex) => {
+                tex.needsUpdate = true;
+                earthMatPhoto.map = tex;
+                earthMatPhoto.needsUpdate = true;
+            });
+        });
+
+        // Atmósfera brillante
+        const atmoGeoPhoto = new THREE.SphereGeometry(EARTH_RADIUS * 1.018, 64, 64);
+        const atmoMatPhoto = new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.15, side: THREE.BackSide });
+        scenePhoto.add(new THREE.Mesh(atmoGeoPhoto, atmoMatPhoto));
+
+        // =========================================================================
+        // ESCENA 2: VECTORIAL TÉCNICA
+        // =========================================================================
+        const containerVector = document.getElementById('container-vector');
+        const sceneVector = new THREE.Scene();
+        const cameraVector = new THREE.PerspectiveCamera(45, containerVector.clientWidth / containerVector.clientHeight, 1, 5000);
+        cameraVector.position.copy(cameraPhoto.position);
+
+        const rendererVector = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        rendererVector.setSize(containerVector.clientWidth, containerVector.clientHeight);
+        rendererVector.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        containerVector.appendChild(rendererVector.domElement);
+
+        const controlsVector = new THREE.OrbitControls(cameraVector, rendererVector.domElement);
+        controlsVector.enableDamping = true;
+        controlsVector.dampingFactor = 0.05;
+        controlsVector.rotateSpeed = 0.8;
+        controlsVector.minDistance = 60;
+        controlsVector.maxDistance = 600;
+
+        // Iluminación Vectorial Técnica
+        const ambLightVector = new THREE.AmbientLight(0x101a26, 0.40);
+        sceneVector.add(ambLightVector);
+        const dirLightVector = new THREE.DirectionalLight(0xfff5ea, 1.8);
+        dirLightVector.position.set(150, 100, 250);
+        sceneVector.add(dirLightVector);
+
+        // Esfera Oceánica Lisa en Azul Marino Profundo Espacial
+        const oceanGeo = new THREE.SphereGeometry(EARTH_RADIUS * 0.999, 96, 96);
+        const oceanMat = new THREE.MeshPhongMaterial({
+            color: 0x081326,
+            emissive: 0x040813,
+            specular: 0x1e3a5f,
+            shininess: 25
+        });
+        const oceanMesh = new THREE.Mesh(oceanGeo, oceanMat);
+        sceneVector.add(oceanMesh);
+
+        // Material de Líneas de Costa Vectoriales
+        let vectorLineMaterial = new THREE.LineBasicMaterial({
+            color: 0x38bdf8,
+            transparent: true,
+            opacity: 0.88,
+            linewidth: 1
+        });
+
+        // Grupo de costas
+        const coastlinesGroup = new THREE.Group();
+        sceneVector.add(coastlinesGroup);
+
+        // Decodificar arcos TopoJSON a líneas 3D
+        function buildVectorCoastlines() {
+            if (typeof TOPO_LAND_110M === 'undefined' || !TOPO_LAND_110M.arcs) return;
+            const topo = TOPO_LAND_110M;
+            const scale = topo.transform.scale;
+            const translate = topo.transform.translate;
+
+            topo.arcs.forEach(arc => {
+                let x = 0, y = 0;
+                const points = [];
+                arc.forEach(pt => {
+                    x += pt[0];
+                    y += pt[1];
+                    const lon = x * scale[0] + translate[0];
+                    const lat = y * scale[1] + translate[1];
+                    points.push(latLngToVec3(lat, lon, EARTH_RADIUS * 1.001));
+                });
+                if (points.length > 1) {
+                    const geo = new THREE.BufferGeometry().setFromPoints(points);
+                    const line = new THREE.Line(geo, vectorLineMaterial);
+                    coastlinesGroup.add(line);
+                }
+            });
+        }
+        buildVectorCoastlines();
+
+        // Red de Meridianos y Paralelos (Graticule)
+        const graticuleGroup = new THREE.Group();
+        function buildGraticule() {
+            const gratMat = new THREE.LineBasicMaterial({ color: 0x1e3a8a, transparent: true, opacity: 0.35 });
+            const eqMat = new THREE.LineBasicMaterial({ color: 0xf59e0b, transparent: true, opacity: 0.50 }); // Ecuador en ámbar
+
+            // Paralelos cada 30°
+            for (let lat = -60; lat <= 60; lat += 30) {
+                const pts = [];
+                for (let lon = -180; lon <= 180; lon += 5) {
+                    pts.push(latLngToVec3(lat, lon, EARTH_RADIUS * 1.0005));
+                }
+                const geo = new THREE.BufferGeometry().setFromPoints(pts);
+                graticuleGroup.add(new THREE.Line(geo, lat === 0 ? eqMat : gratMat));
+            }
+
+            // Meridianos cada 30°
+            for (let lon = -180; lon < 180; lon += 30) {
+                const pts = [];
+                for (let lat = -85; lat <= 85; lat += 5) {
+                    pts.push(latLngToVec3(lat, lon, EARTH_RADIUS * 1.0005));
+                }
+                const geo = new THREE.BufferGeometry().setFromPoints(pts);
+                graticuleGroup.add(new THREE.Line(geo, gratMat));
+            }
+            sceneVector.add(graticuleGroup);
+        }
+        buildGraticule();
+
+        // Atmósfera brillante en la versión vectorial
+        const atmoGeoVector = new THREE.SphereGeometry(EARTH_RADIUS * 1.018, 64, 64);
+        const atmoMatVector = new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.15, side: THREE.BackSide });
+        sceneVector.add(new THREE.Mesh(atmoGeoVector, atmoMatVector));
+
+        // =========================================================================
+        // TRAYECTORIA DEL ECLIPSE TOTAL (2 AGOSTO 2027) EN AMBOS GLOBOS
+        // =========================================================================
+        const ECLIPSE_POINTS_2027 = [
+            [-10.0, 35.0], [5.0, 36.0], [10.0, 34.5], [20.0, 30.0],
+            [30.0, 26.0], [35.0, 24.0], [45.0, 20.0], [55.0, 16.0], [70.0, 10.0]
+        ];
+
+        function addEclipsePathTo(scene) {
+            const pts = ECLIPSE_POINTS_2027.map(p => latLngToVec3(p[1], p[0], EARTH_RADIUS * 1.004));
+            const curve = new THREE.CatmullRomCurve3(pts);
+            const tubeGeo = new THREE.TubeGeometry(curve, 64, 0.25, 8, false);
+            const tubeMat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
+            scene.add(new THREE.Mesh(tubeGeo, tubeMat));
+
+            // Marcador de Máxima Duración (Luxor, Egipto)
+            const maxPt = latLngToVec3(25.5, 33.2, EARTH_RADIUS * 1.005);
+            const pinGeo = new THREE.SphereGeometry(0.6, 16, 16);
+            const pinMat = new THREE.MeshBasicMaterial({ color: 0xfacc15 });
+            const pinMesh = new THREE.Mesh(pinGeo, pinMat);
+            pinMesh.position.copy(maxPt);
+            scene.add(pinMesh);
+        }
+        addEclipsePathTo(scenePhoto);
+        addEclipsePathTo(sceneVector);
+
+        // =========================================================================
+        // SINCRONIZACIÓN BI-DIRECCIONAL DE CÁMARAS Y CONTROLES
+        // =========================================================================
+        let isSyncing = false;
+
+        function syncControls(source, target, sourceCam, targetCam) {
+            if (isSyncing) return;
+            isSyncing = true;
+            targetCam.position.copy(sourceCam.position);
+            targetCam.rotation.copy(sourceCam.rotation);
+            target.target.copy(source.target);
+            target.update();
+            isSyncing = false;
+        }
+
+        controlsPhoto.addEventListener('change', () => {
+            syncControls(controlsPhoto, controlsVector, cameraPhoto, cameraVector);
+        });
+
+        controlsVector.addEventListener('change', () => {
+            syncControls(controlsVector, controlsPhoto, cameraVector, cameraPhoto);
+        });
+
+        // =========================================================================
+        // INTERACCIONES Y MODOS DE VISUALIZACIÓN
+        // =========================================================================
+        function setViewMode(mode) {
+            activeMode = mode;
+            document.querySelectorAll('.btn-toggle').forEach(b => b.classList.remove('active'));
+
+            if (mode === 'split') {
+                document.getElementById('btn-mode-split').classList.add('active');
+                containerPhoto.style.display = 'block';
+                containerVector.style.display = 'block';
+            } else if (mode === 'photo') {
+                document.getElementById('btn-mode-photo').classList.add('active');
+                containerPhoto.style.display = 'block';
+                containerVector.style.display = 'none';
+            } else if (mode === 'vector') {
+                document.getElementById('btn-mode-vector').classList.add('active');
+                containerPhoto.style.display = 'none';
+                containerVector.style.display = 'block';
+            }
+            onWindowResize();
+        }
+
+        function setVectorColor(colorHex, el) {
+            vectorLineMaterial.color.setHex(colorHex);
+            document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('active'));
+            if (el) el.classList.add('active');
+        }
+
+        function toggleGraticule(visible) {
+            graticuleGroup.visible = visible;
+        }
+
+        function resetViews() {
+            const targetPos = latLngToVec3(25.5, 33.2, 210);
+            cameraPhoto.position.copy(targetPos);
+            cameraVector.position.copy(targetPos);
+            controlsPhoto.target.set(0, 0, 0);
+            controlsVector.target.set(0, 0, 0);
+            controlsPhoto.update();
+            controlsVector.update();
+        }
+
+        function onWindowResize() {
+            if (containerPhoto.style.display !== 'none') {
+                cameraPhoto.aspect = containerPhoto.clientWidth / containerPhoto.clientHeight;
+                cameraPhoto.updateProjectionMatrix();
+                rendererPhoto.setSize(containerPhoto.clientWidth, containerPhoto.clientHeight);
+            }
+            if (containerVector.style.display !== 'none') {
+                cameraVector.aspect = containerVector.clientWidth / containerVector.clientHeight;
+                cameraVector.updateProjectionMatrix();
+                rendererVector.setSize(containerVector.clientWidth, containerVector.clientHeight);
+            }
+        }
+        window.addEventListener('resize', onWindowResize);
+
+        // Bucle de renderizado
+        function animate() {
+            requestAnimationFrame(animate);
+            controlsPhoto.update();
+            controlsVector.update();
+
+            if (containerPhoto.style.display !== 'none') {
+                rendererPhoto.render(scenePhoto, cameraPhoto);
+            }
+            if (containerVector.style.display !== 'none') {
+                rendererVector.render(sceneVector, cameraVector);
+            }
+        }
+        animate();
+    </script>
+</body>
+</html>
