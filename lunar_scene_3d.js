@@ -657,14 +657,7 @@ var SUN_DIST = 149598.0;      // Distancia Tierra-Sol (1 UA): 149.597.870 km
                 requestRender3D();
             }
 
-            // 1. Carga inmediata de base64 local en memoria (0 latencia de red)
-            if (typeof ORIGINAL_EARTH_BASE64 !== 'undefined' && ORIGINAL_EARTH_BASE64) {
-                earthTexLoader.load(ORIGINAL_EARTH_BASE64, function(texture) {
-                    applyEarthTexture(texture, false);
-                });
-            }
-
-            // 2. Carga y actualización progresiva a alta resolución 4K (con fallbacks robustos)
+            // Carga y actualización progresiva a alta resolución 4K (con fallbacks robustos)
             earthTexLoader.load(EARTH_TEX_4K, function(texture) {
                 applyEarthTexture(texture, true);
             }, undefined, function() {
@@ -837,7 +830,7 @@ var SUN_DIST = 149598.0;      // Distancia Tierra-Sol (1 UA): 149.597.870 km
             };
 
             const texLoader = new THREE.TextureLoader();
-            const moonSrc = (typeof MOON_TOPO_BASE64 !== 'undefined') ? MOON_TOPO_BASE64 : 'moon_topo_2048.jpg';
+            const moonSrc = 'moon_topo_2048.jpg';
             const moonTexture3D = texLoader.load(moonSrc, function(tex) {
                 tex.needsUpdate = true;
                 if (moonMat) {

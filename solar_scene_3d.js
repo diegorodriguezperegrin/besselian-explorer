@@ -670,14 +670,7 @@ var observerMarkerGroup3D = null;
             requestRender();
         }
 
-        // 1. Carga inmediata de base64 local en memoria (0 latencia de red)
-        if (typeof ORIGINAL_EARTH_BASE64 !== 'undefined' && ORIGINAL_EARTH_BASE64) {
-            earthTexLoader.load(ORIGINAL_EARTH_BASE64, function(texture) {
-                applyEarthTexture(texture, false);
-            });
-        }
-
-        // 2. Carga y actualización progresiva a alta resolución 4K (con fallbacks robustos)
+        // Carga y actualización progresiva a alta resolución 4K (con fallbacks robustos)
         earthTexLoader.load(EARTH_TEX_4K, function(texture) {
             applyEarthTexture(texture, true);
         }, undefined, function() {

@@ -42,7 +42,7 @@ var SUN_DIST = window.SUN_DIST || 149598.0;
             getPreRenderedMoonDisk();
             if (typeof currentActiveView !== 'undefined' && currentActiveView === 'telescopic') renderTelescopicView();
         };
-        moonImg.src = (typeof REALISTIC_MOON_BASE64 !== 'undefined') ? REALISTIC_MOON_BASE64 : 'realistic_moon.png';
+        moonImg.src = 'realistic_moon.png';
 
         // Variables de Vista Telescópica 2D (Fijada en Posición Local Altacimutal)
         const telescopicOrientation = 'altaz'; // Siempre local desde Mataró (Cenit arriba)
