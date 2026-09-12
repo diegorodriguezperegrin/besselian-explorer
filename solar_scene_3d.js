@@ -897,8 +897,11 @@ var observerMarkerGroup3D = null;
             side: THREE.FrontSide
         });
 
-        // Esfera superpuesta del shader de sombra (renderizada entre la superficie y las líneas cartográficas)
-        var shadowOverlayGeometry = new THREE.SphereGeometry(EARTH_RADIUS * 1.0012, 96, 96);
+        // Cota microscópica rasante para que la sombra y las líneas no floten ni sufran error de paralaje
+        const GROUND_OVERLAY_RADIUS = EARTH_RADIUS * 1.0003;
+
+        // Esfera superpuesta del shader de sombra (renderizada pegada a la superficie)
+        var shadowOverlayGeometry = new THREE.SphereGeometry(GROUND_OVERLAY_RADIUS, 96, 96);
         var shadowOverlayMesh = new THREE.Mesh(shadowOverlayGeometry, shadowShaderMaterial);
         shadowOverlayMesh.renderOrder = 20;
         scene.add(shadowOverlayMesh);
@@ -1115,7 +1118,7 @@ var observerMarkerGroup3D = null;
             }
         }
 
-        function createSegmentedLine(coordList, colorHex, radius = EARTH_RADIUS * 1.0028, linewidth = 1, opacity = 1.0) {
+        function createSegmentedLine(coordList, colorHex, radius = GROUND_OVERLAY_RADIUS, linewidth = 1, opacity = 1.0) {
             const segmentPoints = [];
             const maxSegmentDist3D = 6.0; // Distancia máxima en unidades 3D (~750 km) para descartar saltos artificiales
 
@@ -1221,7 +1224,7 @@ var observerMarkerGroup3D = null;
             // 1. Trayectoria / Línea Central (Naranja #f97316)
             const showCenterLine = getDOM('chk-show-center-line')?.checked !== false;
             if (data.centerCoords && data.centerCoords.length > 1 && showCenterLine) {
-                pathLine = createSegmentedLine(data.centerCoords, 0xf97316, EARTH_RADIUS * 1.0028, 3);
+                pathLine = createSegmentedLine(data.centerCoords, 0xf97316, GROUND_OVERLAY_RADIUS, 3);
                 if (pathLine) earthGroup.add(pathLine);
             }
 
@@ -1232,12 +1235,12 @@ var observerMarkerGroup3D = null;
 
             if (isCentral && showTotalityBand !== false) {
                 if (data.totNorthCoords && data.totNorthCoords.length > 1) {
-                    totalityNorthLine = createSegmentedLine(data.totNorthCoords, 0xef4444, EARTH_RADIUS * 1.0028, 2);
+                    totalityNorthLine = createSegmentedLine(data.totNorthCoords, 0xef4444, GROUND_OVERLAY_RADIUS, 2);
                     if (totalityNorthLine) earthGroup.add(totalityNorthLine);
                 }
 
                 if (data.totSouthCoords && data.totSouthCoords.length > 1) {
-                    totalitySouthLine = createSegmentedLine(data.totSouthCoords, 0xef4444, EARTH_RADIUS * 1.0028, 2);
+                    totalitySouthLine = createSegmentedLine(data.totSouthCoords, 0xef4444, GROUND_OVERLAY_RADIUS, 2);
                     if (totalitySouthLine) earthGroup.add(totalitySouthLine);
                 }
             }
@@ -1251,11 +1254,11 @@ var observerMarkerGroup3D = null;
 
                 data.isoLines.forEach(iso => {
                     if (iso.isoNorthCoords && iso.isoNorthCoords.length > 1) {
-                        const lineN = createSegmentedLine(iso.isoNorthCoords, 0xeab308, EARTH_RADIUS * 1.0028, 1, 0.70);
+                        const lineN = createSegmentedLine(iso.isoNorthCoords, 0xeab308, GROUND_OVERLAY_RADIUS, 1, 0.70);
                         if (lineN) isomagnitudesGroup.add(lineN);
                     }
                     if (iso.isoSouthCoords && iso.isoSouthCoords.length > 1) {
-                        const lineS = createSegmentedLine(iso.isoSouthCoords, 0xeab308, EARTH_RADIUS * 1.0028, 1, 0.70);
+                        const lineS = createSegmentedLine(iso.isoSouthCoords, 0xeab308, GROUND_OVERLAY_RADIUS, 1, 0.70);
                         if (lineS) isomagnitudesGroup.add(lineS);
                     }
 
@@ -1263,7 +1266,7 @@ var observerMarkerGroup3D = null;
                         if (iso.midPtN) {
                             const spriteN = createTextSprite(iso.magText, '#000000', '#ffffff', 0.65);
                             if (spriteN) {
-                                const posN = latLngToVector3(iso.midPtN.lat, iso.midPtN.lng, EARTH_RADIUS * 1.010);
+                                const posN = latLngToVector3(iso.midPtN.lat, iso.midPtN.lng, EARTH_RADIUS * 1.0012);
                                 spriteN.position.copy(posN);
                                 isomagnitudesGroup.add(spriteN);
                             }
@@ -1271,7 +1274,7 @@ var observerMarkerGroup3D = null;
                         if (iso.midPtS) {
                             const spriteS = createTextSprite(iso.magText, '#000000', '#ffffff', 0.65);
                             if (spriteS) {
-                                const posS = latLngToVector3(iso.midPtS.lat, iso.midPtS.lng, EARTH_RADIUS * 1.010);
+                                const posS = latLngToVector3(iso.midPtS.lat, iso.midPtS.lng, EARTH_RADIUS * 1.0012);
                                 spriteS.position.copy(posS);
                                 isomagnitudesGroup.add(spriteS);
                             }
@@ -1281,19 +1284,19 @@ var observerMarkerGroup3D = null;
 
                 // Renderizar Lóbulo de Amanecer (Naranja #f97316)
                 if (data.sunriseLoop && data.sunriseLoop.length > 1) {
-                    const lineSunriseTerm = createSegmentedLine(data.sunriseLoop, 0xf97316, EARTH_RADIUS * 1.0028, 2);
+                    const lineSunriseTerm = createSegmentedLine(data.sunriseLoop, 0xf97316, GROUND_OVERLAY_RADIUS, 2);
                     if (lineSunriseTerm) isomagnitudesGroup.add(lineSunriseTerm);
                 }
 
                 // Renderizar Lóbulo de Atardecer (Naranja #f97316)
                 if (data.sunsetLoop && data.sunsetLoop.length > 1) {
-                    const lineSunsetTerm = createSegmentedLine(data.sunsetLoop, 0xf97316, EARTH_RADIUS * 1.0028, 2);
+                    const lineSunsetTerm = createSegmentedLine(data.sunsetLoop, 0xf97316, GROUND_OVERLAY_RADIUS, 2);
                     if (lineSunsetTerm) isomagnitudesGroup.add(lineSunsetTerm);
                 }
 
                 // Curva de Máximo Eclipse en Horizonte (Espenak analítica Cian #38bdf8)
                 if (data.fullEspenakLoop && data.fullEspenakLoop.length > 1) {
-                    const lineEspenakMax = createSegmentedLine(data.fullEspenakLoop, 0x38bdf8, EARTH_RADIUS * 1.0028, 3);
+                    const lineEspenakMax = createSegmentedLine(data.fullEspenakLoop, 0x38bdf8, GROUND_OVERLAY_RADIUS, 3);
                     if (lineEspenakMax) isomagnitudesGroup.add(lineEspenakMax);
                 }
 
@@ -1307,13 +1310,13 @@ var observerMarkerGroup3D = null;
 
                 data.utLines.forEach(utLine => {
                     if (utLine.pts && utLine.pts.length > 1) {
-                        const utLineMesh = createSegmentedLine(utLine.pts, 0x10b981, EARTH_RADIUS * 1.0028, 1, 0.70);
+                        const utLineMesh = createSegmentedLine(utLine.pts, 0x10b981, GROUND_OVERLAY_RADIUS, 1, 0.70);
                         if (utLineMesh) utLinesGroup.add(utLineMesh);
 
                         if (showLabels && utLine.labelPt) {
                             const textSprite = createTextSprite(utLine.labelText, '#000000', '#ffffff', 0.75);
                             if (textSprite) {
-                                const spritePos = latLngToVector3(utLine.labelPt.lat, utLine.labelPt.lng, EARTH_RADIUS * 1.018);
+                                const spritePos = latLngToVector3(utLine.labelPt.lat, utLine.labelPt.lng, EARTH_RADIUS * 1.0015);
                                 textSprite.position.copy(spritePos);
                                 utLinesGroup.add(textSprite);
                             }
@@ -1392,7 +1395,7 @@ var observerMarkerGroup3D = null;
                 const showSubsolar = getDOM('chk-show-subsolar')?.checked ?? true;
                 subsolarMarkerGroup.visible = showSubsolar;
                 if (showSubsolar) {
-                    const pos = wCanon.clone().multiplyScalar(EARTH_RADIUS * 1.0026);
+                    const pos = wCanon.clone().multiplyScalar(GROUND_OVERLAY_RADIUS);
                     subsolarMarkerGroup.position.copy(pos);
                     subsolarMarkerGroup.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), wCanon);
                 }
@@ -1411,7 +1414,7 @@ var observerMarkerGroup3D = null;
                         .addScaledVector(wCanon, MOON_DIST_RADII)
                         .normalize();
 
-                    const pos = moonVecGeocentric.clone().multiplyScalar(EARTH_RADIUS * 1.0026);
+                    const pos = moonVecGeocentric.clone().multiplyScalar(GROUND_OVERLAY_RADIUS);
                     sublunarMarkerGroup.position.copy(pos);
                     sublunarMarkerGroup.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), moonVecGeocentric);
                 }
