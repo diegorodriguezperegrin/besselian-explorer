@@ -77,13 +77,6 @@
             z-index: 26;
         }
 
-        /* Insignia de estado del catálogo CSV */
-        #csv-status-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-        }
-
         /* Selector de Modo de Búsqueda (Año vs Saros vs Ubicación) */
         .search-mode-tabs {
             display: flex;
@@ -393,9 +386,9 @@
             <div class="preset-chip" data-cat="9569">26 Ene 2028 (Anular España)</div>
         </div>
 
-        <div class="section-title section-title-between">
+        <div class="section-title search-title-header">
             <span><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i> Buscar</span>
-            <span id="csv-status-badge" style="color: var(--text-secondary); font-weight: 600; text-transform: none; letter-spacing: 0; cursor: help;" title="Five Millennium Catalog of Solar Eclipses (-1999 a +3000) · Fred Espenak &amp; Jean Meeus (NASA GSFC)">
+            <span id="csv-status-badge" style="color: var(--text-secondary);" title="Five Millennium Catalog of Solar Eclipses (-1999 a +3000) · Fred Espenak &amp; Jean Meeus (NASA GSFC)">
                 <i class="fa-solid fa-circle-notch fa-spin" aria-hidden="true"></i> Cargando...
             </span>
         </div>
@@ -2530,7 +2523,7 @@
         function updateCatalogBadge() {
             const badge = getDOM('csv-status-badge');
             if (badge) {
-                badge.innerHTML = `<i class="fa-solid fa-check-circle"></i> ${eclipseData.length.toLocaleString()} eclipses (-1999 a 3000)`;
+                badge.innerHTML = `<i class="fa-solid fa-circle-check"></i> ${eclipseData.length.toLocaleString()} eclipses (-1999 a 3000)`;
                 badge.style.color = 'var(--accent-green)';
                 badge.title = 'Five Millennium Catalog of Solar Eclipses (-1999 a +3000) · Fred Espenak & Jean Meeus (NASA GSFC)';
                 badge.style.cursor = 'help';

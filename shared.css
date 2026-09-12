@@ -305,6 +305,45 @@ body.is-dragging-panel * {
     gap: 8px;
 }
 
+/* Cabecera del buscador general y badge de catálogo unificado en LEE y SEE */
+.search-title-header {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+    width: 100%;
+}
+
+.search-title-header > span:first-child {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#csv-status-badge,
+#catalog-status-badge {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.72rem;
+    font-family: var(--font-mono);
+    font-weight: 600;
+    text-transform: none;
+    letter-spacing: 0;
+    white-space: nowrap;
+    cursor: help;
+}
+
+#csv-status-badge i,
+#catalog-status-badge i {
+    color: var(--accent-blue) !important;
+    font-size: 0.82rem;
+    width: auto;
+    margin-right: 2px;
+}
+
 
 /* =========================================================================
    BARRA SUPERIOR Y BOTONES DE REABRIR
