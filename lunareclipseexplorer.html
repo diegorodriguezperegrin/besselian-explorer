@@ -300,8 +300,9 @@
             }
         }
     </style>
-</head>
 <body>
+    <!-- Precarga nativa decodificada en paralelo para renderizado instantáneo sin boceto en fotograma 1 -->
+    <img id="preload-earth-topo" src="earth_topo_2048.jpg" style="display:none;" alt="" decoding="async">
 
     <!-- Capa de Viewports (3D Espacial y 2D Telescópico) -->
     <main id="viewports-container">

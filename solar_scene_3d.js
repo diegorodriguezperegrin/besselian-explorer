@@ -596,60 +596,18 @@ var observerMarkerGroup3D = null;
         // Crear Esfera de la Tierra
         var earthGeometry = new THREE.SphereGeometry(EARTH_RADIUS, 96, 96);
 
-        // Textura base inmediata para eliminar cualquier flash blanco durante la carga
-        function createEarthPlaceholderTexture() {
-            const canvas = document.createElement('canvas');
-            canvas.width = 128;
-            canvas.height = 64;
-            const ctx = canvas.getContext('2d');
-            if (!ctx) return new THREE.Texture();
-
-            // Fondo oceánico profundo realista
-            const oceanGrad = ctx.createLinearGradient(0, 0, 0, 64);
-            oceanGrad.addColorStop(0, '#102238');
-            oceanGrad.addColorStop(0.5, '#0b192c');
-            oceanGrad.addColorStop(1, '#102238');
-            ctx.fillStyle = oceanGrad;
-            ctx.fillRect(0, 0, 128, 64);
-
-            // Casquetes polares
-            ctx.fillStyle = 'rgba(215, 230, 245, 0.65)';
-            ctx.fillRect(0, 0, 128, 4);
-            ctx.fillRect(0, 60, 128, 4);
-
-            // Masas continentales esquemáticas en tonos verdes y tierra naturales
-            ctx.fillStyle = 'rgba(42, 68, 48, 0.7)';
-            // Eurasia / África
-            ctx.beginPath();
-            ctx.ellipse(68, 25, 20, 12, 0, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.beginPath();
-            ctx.ellipse(65, 40, 12, 14, 0, 0, Math.PI * 2);
-            ctx.fill();
-            // Américas
-            ctx.beginPath();
-            ctx.ellipse(30, 24, 12, 11, -0.3, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.beginPath();
-            ctx.ellipse(36, 45, 9, 14, 0.3, 0, Math.PI * 2);
-            ctx.fill();
-            // Australia
-            ctx.beginPath();
-            ctx.ellipse(98, 46, 8, 6, 0, 0, Math.PI * 2);
-            ctx.fill();
-
-            const tex = new THREE.CanvasTexture(canvas);
-            tex.needsUpdate = true;
-            return tex;
-        }
-
-        // Textura terrestre (inicializada con textura oceánica inmediata para evitar destello blanco)
         var earthMaterial = new THREE.MeshPhongMaterial({
-            map: createEarthPlaceholderTexture(),
             color: 0xffffff,
             specular: new THREE.Color(0x222222),
             shininess: 12
         });
+
+        var earthGroup = new THREE.Group();
+        var earthMesh = new THREE.Mesh(earthGeometry, earthMaterial);
+        // Ocultar inicialmente: no se muestra hasta que la textura real fotográfica de la NASA esté lista
+        earthMesh.visible = false;
+        earthGroup.add(earthMesh);
+        scene.add(earthGroup);
 
         const EARTH_TEX_4K = 'earth_topo_4096.jpg';
         const EARTH_TEX_LOCAL = 'earth_topo_2048.jpg';
@@ -667,10 +625,24 @@ var observerMarkerGroup3D = null;
             }
             earthMaterial.map = texture;
             earthMaterial.needsUpdate = true;
+            earthMesh.visible = true; // Mostrar la Tierra directamente con la foto real de la NASA (sin boceto)
             requestRender();
         }
 
-        // Carga y actualización progresiva a alta resolución 4K (con fallbacks robustos)
+        // 1. Detección inmediata de imagen 2K precargada en el HTML (disponible en fotograma 1)
+        const preloadEarthImg = document.getElementById('preload-earth-topo');
+        if (preloadEarthImg && preloadEarthImg.complete && preloadEarthImg.naturalWidth > 0) {
+            const initialTexture = new THREE.Texture(preloadEarthImg);
+            applyEarthTexture(initialTexture, false);
+        } else if (preloadEarthImg) {
+            preloadEarthImg.onload = function() {
+                if (!isEarthTex4kLoaded && (!earthMaterial.map || !earthMesh.visible)) {
+                    applyEarthTexture(new THREE.Texture(preloadEarthImg), false);
+                }
+            };
+        }
+
+        // 2. Carga y actualización progresiva a alta resolución 4K (con fallbacks robustos)
         earthTexLoader.load(EARTH_TEX_4K, function(texture) {
             applyEarthTexture(texture, true);
         }, undefined, function() {
@@ -682,11 +654,6 @@ var observerMarkerGroup3D = null;
                 });
             });
         });
-
-        var earthGroup = new THREE.Group();
-        var earthMesh = new THREE.Mesh(earthGeometry, earthMaterial);
-        earthGroup.add(earthMesh);
-        scene.add(earthGroup);
 
         // Marcador 3D del Observador sobre la superficie terrestre
         function createObserverMarker3D() {
