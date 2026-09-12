@@ -596,7 +596,7 @@ var observerMarkerGroup3D = null;
         }
 
         // Crear Esfera de la Tierra
-        var earthGeometry = new THREE.SphereGeometry(EARTH_RADIUS, 96, 96);
+        var earthGeometry = new THREE.SphereGeometry(EARTH_RADIUS, 128, 128);
 
         var earthMaterial = new THREE.MeshPhongMaterial({
             color: 0xffffff,
@@ -819,6 +819,9 @@ var observerMarkerGroup3D = null;
         var shadowShaderMaterial = new THREE.ShaderMaterial({
             transparent: true,
             depthWrite: false,
+            polygonOffset: true,
+            polygonOffsetFactor: -1,
+            polygonOffsetUnits: -2,
             uniforms: {
                 uSunDir: { value: new THREE.Vector3(0, 0, 1) },
                 uVx: { value: new THREE.Vector3(1, 0, 0) },
@@ -897,11 +900,11 @@ var observerMarkerGroup3D = null;
             side: THREE.FrontSide
         });
 
-        // Cota microscópica rasante para que la sombra y las líneas no floten ni sufran error de paralaje
-        const GROUND_OVERLAY_RADIUS = EARTH_RADIUS * 1.0003;
+        // Cota microscópica rasante compartida para sombra y líneas sin conflicto de facetas ni paralaje
+        const GROUND_OVERLAY_RADIUS = EARTH_RADIUS * 1.0012;
 
         // Esfera superpuesta del shader de sombra (renderizada pegada a la superficie)
-        var shadowOverlayGeometry = new THREE.SphereGeometry(GROUND_OVERLAY_RADIUS, 96, 96);
+        var shadowOverlayGeometry = new THREE.SphereGeometry(GROUND_OVERLAY_RADIUS, 128, 128);
         var shadowOverlayMesh = new THREE.Mesh(shadowOverlayGeometry, shadowShaderMaterial);
         shadowOverlayMesh.renderOrder = 20;
         scene.add(shadowOverlayMesh);
@@ -1272,7 +1275,7 @@ var observerMarkerGroup3D = null;
                         if (iso.midPtN) {
                             const spriteN = createTextSprite(iso.magText, '#000000', '#ffffff', 0.65);
                             if (spriteN) {
-                                const posN = latLngToVector3(iso.midPtN.lat, iso.midPtN.lng, EARTH_RADIUS * 1.0012);
+                                const posN = latLngToVector3(iso.midPtN.lat, iso.midPtN.lng, EARTH_RADIUS * 1.0020);
                                 spriteN.position.copy(posN);
                                 isomagnitudesGroup.add(spriteN);
                             }
@@ -1280,7 +1283,7 @@ var observerMarkerGroup3D = null;
                         if (iso.midPtS) {
                             const spriteS = createTextSprite(iso.magText, '#000000', '#ffffff', 0.65);
                             if (spriteS) {
-                                const posS = latLngToVector3(iso.midPtS.lat, iso.midPtS.lng, EARTH_RADIUS * 1.0012);
+                                const posS = latLngToVector3(iso.midPtS.lat, iso.midPtS.lng, EARTH_RADIUS * 1.0020);
                                 spriteS.position.copy(posS);
                                 isomagnitudesGroup.add(spriteS);
                             }
@@ -1322,7 +1325,7 @@ var observerMarkerGroup3D = null;
                         if (showLabels && utLine.labelPt) {
                             const textSprite = createTextSprite(utLine.labelText, '#000000', '#ffffff', 0.75);
                             if (textSprite) {
-                                const spritePos = latLngToVector3(utLine.labelPt.lat, utLine.labelPt.lng, EARTH_RADIUS * 1.0015);
+                                const spritePos = latLngToVector3(utLine.labelPt.lat, utLine.labelPt.lng, EARTH_RADIUS * 1.0025);
                                 textSprite.position.copy(spritePos);
                                 utLinesGroup.add(textSprite);
                             }
