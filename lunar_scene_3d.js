@@ -148,12 +148,14 @@ var SUN_DIST = 149598.0;      // Distancia Tierra-Sol (1 UA): 149.597.870 km
             const material = new THREE.LineBasicMaterial({
                 color: 0xffffff,
                 transparent: true,
-                opacity: 0.15
+                opacity: 0.15,
+                depthWrite: false
             });
             const axisMaterial = new THREE.LineBasicMaterial({
                 color: 0xffffff,
                 transparent: true,
-                opacity: 0.45
+                opacity: 0.45,
+                depthWrite: false
             });
             const EARTH_RADIUS = 6.37;
             const radius = EARTH_RADIUS * 1.002;

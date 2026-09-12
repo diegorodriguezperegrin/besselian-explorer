@@ -1004,14 +1004,16 @@ var observerMarkerGroup3D = null;
             const material = new THREE.LineBasicMaterial({
                 color: 0xffffff,
                 transparent: true,
-                opacity: 0.15
+                opacity: 0.15,
+                depthWrite: false
             });
             const axisMaterial = new THREE.LineBasicMaterial({
                 color: 0xffffff,
                 transparent: true,
-                opacity: 0.45
+                opacity: 0.45,
+                depthWrite: false
             });
-            const radius = EARTH_RADIUS * 1.002;
+            const radius = GROUND_OVERLAY_RADIUS;
 
             // Paralelos (Latitud) cada 15°
             for (let lat = -75; lat <= 75; lat += 15) {
@@ -1021,6 +1023,7 @@ var observerMarkerGroup3D = null;
                 }
                 const geometry = new THREE.BufferGeometry().setFromPoints(points);
                 const line = new THREE.LineLoop(geometry, material);
+                line.renderOrder = 15;
                 group.add(line);
             }
 
@@ -1032,6 +1035,7 @@ var observerMarkerGroup3D = null;
                 }
                 const geometry = new THREE.BufferGeometry().setFromPoints(points);
                 const line = new THREE.Line(geometry, material);
+                line.renderOrder = 15;
                 group.add(line);
             }
 
@@ -1041,22 +1045,23 @@ var observerMarkerGroup3D = null;
                 new THREE.Vector3(0, EARTH_RADIUS * 0.98, 0),
                 new THREE.Vector3(0, EARTH_RADIUS * 1.14, 0),
                 // Polo norte: cruceta superficial
-                new THREE.Vector3(-1.8, EARTH_RADIUS * 1.002, 0),
-                new THREE.Vector3(1.8, EARTH_RADIUS * 1.002, 0),
-                new THREE.Vector3(0, EARTH_RADIUS * 1.002, -1.8),
-                new THREE.Vector3(0, EARTH_RADIUS * 1.002, 1.8),
+                new THREE.Vector3(-1.8, GROUND_OVERLAY_RADIUS, 0),
+                new THREE.Vector3(1.8, GROUND_OVERLAY_RADIUS, 0),
+                new THREE.Vector3(0, GROUND_OVERLAY_RADIUS, -1.8),
+                new THREE.Vector3(0, GROUND_OVERLAY_RADIUS, 1.8),
 
                 // Polo sur: segmento axial que sobresale del globo
                 new THREE.Vector3(0, -EARTH_RADIUS * 0.98, 0),
                 new THREE.Vector3(0, -EARTH_RADIUS * 1.14, 0),
                 // Polo sur: cruceta superficial
-                new THREE.Vector3(-1.8, -EARTH_RADIUS * 1.002, 0),
-                new THREE.Vector3(1.8, -EARTH_RADIUS * 1.002, 0),
-                new THREE.Vector3(0, -EARTH_RADIUS * 1.002, -1.8),
-                new THREE.Vector3(0, -EARTH_RADIUS * 1.002, 1.8)
+                new THREE.Vector3(-1.8, -GROUND_OVERLAY_RADIUS, 0),
+                new THREE.Vector3(1.8, -GROUND_OVERLAY_RADIUS, 0),
+                new THREE.Vector3(0, -GROUND_OVERLAY_RADIUS, -1.8),
+                new THREE.Vector3(0, -GROUND_OVERLAY_RADIUS, 1.8)
             ];
             const earthAxisGeo = new THREE.BufferGeometry().setFromPoints(earthAxisPoints);
             const earthAxisLines = new THREE.LineSegments(earthAxisGeo, axisMaterial);
+            earthAxisLines.renderOrder = 15;
             group.add(earthAxisLines);
 
             return group;
@@ -1067,7 +1072,8 @@ var observerMarkerGroup3D = null;
             const axisMaterial = new THREE.LineBasicMaterial({
                 color: 0xffffff,
                 transparent: true,
-                opacity: 0.45
+                opacity: 0.45,
+                depthWrite: false
             });
 
             // Eje polar lunar: marcas en polo norte y polo sur (segmento axial y cruceta de polo)
