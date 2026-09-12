@@ -414,6 +414,8 @@ var SUN_DIST = 149598.0;      // Distancia Tierra-Sol (1 UA): 149.597.870 km
             renderer3D.setSize(w, h);
             renderer3D.setPixelRatio(window.devicePixelRatio || 1);
             renderer3D.shadowMap.enabled = true;
+            renderer3D.domElement.style.opacity = '0';
+            renderer3D.domElement.style.transition = 'opacity 0.18s ease-out';
             container.appendChild(renderer3D.domElement);
 
             controls3D = new THREE.OrbitControls(camera3D, renderer3D.domElement);
@@ -592,55 +594,62 @@ var SUN_DIST = 149598.0;      // Distancia Tierra-Sol (1 UA): 149.597.870 km
 
             earthGroup = new THREE.Group();
             earthMesh3D = new THREE.Mesh(earthGeo, earthMat);
-            // Ocultar inicialmente: no se muestra hasta que la textura real fotográfica de la NASA esté lista
             earthMesh3D.visible = false;
             earthGroup.add(earthMesh3D);
 
-            const EARTH_TEX_4K = 'earth_topo_4096.jpg';
             const EARTH_TEX_LOCAL = 'earth_topo_2048.jpg';
             const EARTH_TEX_CDN = 'https://cdn.jsdelivr.net/gh/diegorodriguezperegrin/besselian-explorer@main/earth_topo_2048.jpg';
 
             const earthTexLoader = new THREE.TextureLoader();
-            let isEarthTex4kLoaded = false;
+            let isEarthTexLoaded = false;
 
-            function applyEarthTexture(texture, is4k) {
-                if (!texture || isEarthTex4kLoaded) return;
-                if (is4k) isEarthTex4kLoaded = true;
+            function revealScene3D() {
+                if (renderer3D && renderer3D.domElement) {
+                    renderer3D.domElement.style.opacity = '1';
+                }
+                requestRender3D();
+            }
+
+            function applyEarthTexture(texture) {
+                if (!texture || isEarthTexLoaded) return;
+                isEarthTexLoaded = true;
                 texture.needsUpdate = true;
                 if (earthMat.map && earthMat.map !== texture && earthMat.map.dispose) {
                     earthMat.map.dispose();
                 }
                 earthMat.map = texture;
                 earthMat.needsUpdate = true;
-                earthMesh3D.visible = true; // Mostrar la Tierra directamente con la foto real de la NASA (sin boceto)
-                requestRender3D();
+                earthMesh3D.visible = true;
+                revealScene3D();
             }
 
-            // 1. Detección inmediata de imagen 2K precargada en el HTML (disponible en fotograma 1)
+            // Carga y decodificación sincronizada de la textura 2K
             const preloadEarthImg = document.getElementById('preload-earth-topo');
             if (preloadEarthImg && preloadEarthImg.complete && preloadEarthImg.naturalWidth > 0) {
                 const initialTexture = new THREE.Texture(preloadEarthImg);
-                applyEarthTexture(initialTexture, false);
+                applyEarthTexture(initialTexture);
             } else if (preloadEarthImg) {
-                preloadEarthImg.onload = function() {
-                    if (!isEarthTex4kLoaded && (!earthMat.map || !earthMesh3D.visible)) {
-                        applyEarthTexture(new THREE.Texture(preloadEarthImg), false);
-                    }
-                };
+                if (preloadEarthImg.decode) {
+                    preloadEarthImg.decode().then(() => {
+                        applyEarthTexture(new THREE.Texture(preloadEarthImg));
+                    }).catch(() => {
+                        earthTexLoader.load(EARTH_TEX_LOCAL, applyEarthTexture, undefined, () => {
+                            earthTexLoader.load(EARTH_TEX_CDN, applyEarthTexture);
+                        });
+                    });
+                } else {
+                    preloadEarthImg.onload = function() {
+                        applyEarthTexture(new THREE.Texture(preloadEarthImg));
+                    };
+                }
+            } else {
+                earthTexLoader.load(EARTH_TEX_LOCAL, applyEarthTexture, undefined, () => {
+                    earthTexLoader.load(EARTH_TEX_CDN, applyEarthTexture);
+                });
             }
 
-            // 2. Carga y actualización progresiva a alta resolución 4K (con fallbacks robustos)
-            earthTexLoader.load(EARTH_TEX_4K, function(texture) {
-                applyEarthTexture(texture, true);
-            }, undefined, function() {
-                earthTexLoader.load(EARTH_TEX_LOCAL, function(texture) {
-                    applyEarthTexture(texture, false);
-                }, undefined, function() {
-                    earthTexLoader.load(EARTH_TEX_CDN, function(texture) {
-                        applyEarthTexture(texture, false);
-                    });
-                });
-            });
+            // Failsafe: asegurar visibilidad de la escena tras 350ms en cualquier circunstancia de red
+            setTimeout(revealScene3D, 350);
 
             // Atmósfera brillante estilo Besselian
             const atmosphereGeometry = new THREE.SphereGeometry(EARTH_RADIUS * 1.018, 128, 128);

@@ -35,6 +35,8 @@ var observerMarkerGroup3D = null;
         var renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.domElement.style.opacity = '0';
+        renderer.domElement.style.transition = 'opacity 0.18s ease-out';
         container.appendChild(renderer.domElement);
 
         var focusedBody = null; // 'moon' | 'node' | 'earth' | 'sun' | null
@@ -604,56 +606,63 @@ var observerMarkerGroup3D = null;
 
         var earthGroup = new THREE.Group();
         var earthMesh = new THREE.Mesh(earthGeometry, earthMaterial);
-        // Ocultar inicialmente: no se muestra hasta que la textura real fotográfica de la NASA esté lista
         earthMesh.visible = false;
         earthGroup.add(earthMesh);
         scene.add(earthGroup);
 
-        const EARTH_TEX_4K = 'earth_topo_4096.jpg';
         const EARTH_TEX_LOCAL = 'earth_topo_2048.jpg';
         const EARTH_TEX_CDN = 'https://cdn.jsdelivr.net/gh/diegorodriguezperegrin/besselian-explorer@main/earth_topo_2048.jpg';
 
         const earthTexLoader = new THREE.TextureLoader();
-        var isEarthTex4kLoaded = false;
+        var isEarthTexLoaded = false;
 
-        function applyEarthTexture(texture, is4k) {
-            if (!texture || isEarthTex4kLoaded) return;
-            if (is4k) isEarthTex4kLoaded = true;
+        function revealScene() {
+            if (renderer && renderer.domElement) {
+                renderer.domElement.style.opacity = '1';
+            }
+            requestRender();
+        }
+
+        function applyEarthTexture(texture) {
+            if (!texture || isEarthTexLoaded) return;
+            isEarthTexLoaded = true;
             texture.needsUpdate = true;
             if (earthMaterial.map && earthMaterial.map !== texture && earthMaterial.map.dispose) {
                 earthMaterial.map.dispose();
             }
             earthMaterial.map = texture;
             earthMaterial.needsUpdate = true;
-            earthMesh.visible = true; // Mostrar la Tierra directamente con la foto real de la NASA (sin boceto)
-            requestRender();
+            earthMesh.visible = true;
+            revealScene();
         }
 
-        // 1. Detección inmediata de imagen 2K precargada en el HTML (disponible en fotograma 1)
+        // Carga y decodificación sincronizada de la textura 2K
         const preloadEarthImg = document.getElementById('preload-earth-topo');
         if (preloadEarthImg && preloadEarthImg.complete && preloadEarthImg.naturalWidth > 0) {
             const initialTexture = new THREE.Texture(preloadEarthImg);
-            applyEarthTexture(initialTexture, false);
+            applyEarthTexture(initialTexture);
         } else if (preloadEarthImg) {
-            preloadEarthImg.onload = function() {
-                if (!isEarthTex4kLoaded && (!earthMaterial.map || !earthMesh.visible)) {
-                    applyEarthTexture(new THREE.Texture(preloadEarthImg), false);
-                }
-            };
+            if (preloadEarthImg.decode) {
+                preloadEarthImg.decode().then(() => {
+                    applyEarthTexture(new THREE.Texture(preloadEarthImg));
+                }).catch(() => {
+                    earthTexLoader.load(EARTH_TEX_LOCAL, applyEarthTexture, undefined, () => {
+                        earthTexLoader.load(EARTH_TEX_CDN, applyEarthTexture);
+                    });
+                });
+            } else {
+                preloadEarthImg.onload = function() {
+                    applyEarthTexture(new THREE.Texture(preloadEarthImg));
+                };
+            }
+        } else {
+            earthTexLoader.load(EARTH_TEX_LOCAL, applyEarthTexture, undefined, () => {
+                earthTexLoader.load(EARTH_TEX_CDN, applyEarthTexture);
+            });
         }
 
-        // 2. Carga y actualización progresiva a alta resolución 4K (con fallbacks robustos)
-        earthTexLoader.load(EARTH_TEX_4K, function(texture) {
-            applyEarthTexture(texture, true);
-        }, undefined, function() {
-            earthTexLoader.load(EARTH_TEX_LOCAL, function(texture) {
-                applyEarthTexture(texture, false);
-            }, undefined, function() {
-                earthTexLoader.load(EARTH_TEX_CDN, function(texture) {
-                    applyEarthTexture(texture, false);
-                });
-            });
-        });
+        // Failsafe: asegurar visibilidad de la escena tras 350ms en cualquier circunstancia de red
+        setTimeout(revealScene, 350);
 
         // Marcador 3D del Observador sobre la superficie terrestre
         function createObserverMarker3D() {
