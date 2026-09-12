@@ -583,7 +583,56 @@ var SUN_DIST = 149598.0;      // Distancia Tierra-Sol (1 UA): 149.597.870 km
 
             // Esfera de la Tierra (Modelo de alta resolución NASA 2048x1024 + Atmósfera)
             const earthGeo = new THREE.SphereGeometry(EARTH_RADIUS, 128, 128);
+
+            // Textura base inmediata para eliminar cualquier flash blanco durante la carga
+            function createEarthPlaceholderTexture() {
+                const canvas = document.createElement('canvas');
+                canvas.width = 128;
+                canvas.height = 64;
+                const ctx = canvas.getContext('2d');
+                if (!ctx) return new THREE.Texture();
+
+                // Fondo oceánico profundo realista
+                const oceanGrad = ctx.createLinearGradient(0, 0, 0, 64);
+                oceanGrad.addColorStop(0, '#102238');
+                oceanGrad.addColorStop(0.5, '#0b192c');
+                oceanGrad.addColorStop(1, '#102238');
+                ctx.fillStyle = oceanGrad;
+                ctx.fillRect(0, 0, 128, 64);
+
+                // Casquetes polares
+                ctx.fillStyle = 'rgba(215, 230, 245, 0.65)';
+                ctx.fillRect(0, 0, 128, 4);
+                ctx.fillRect(0, 60, 128, 4);
+
+                // Masas continentales esquemáticas en tonos verdes y tierra naturales
+                ctx.fillStyle = 'rgba(42, 68, 48, 0.7)';
+                // Eurasia / África
+                ctx.beginPath();
+                ctx.ellipse(68, 25, 20, 12, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.ellipse(65, 40, 12, 14, 0, 0, Math.PI * 2);
+                ctx.fill();
+                // Américas
+                ctx.beginPath();
+                ctx.ellipse(30, 24, 12, 11, -0.3, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.ellipse(36, 45, 9, 14, 0.3, 0, Math.PI * 2);
+                ctx.fill();
+                // Australia
+                ctx.beginPath();
+                ctx.ellipse(98, 46, 8, 6, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                const tex = new THREE.CanvasTexture(canvas);
+                tex.needsUpdate = true;
+                return tex;
+            }
+
             const earthMat = new THREE.MeshPhongMaterial({
+                map: createEarthPlaceholderTexture(),
                 color: 0xffffff,
                 specular: new THREE.Color(0x222222),
                 shininess: 15
@@ -594,16 +643,37 @@ var SUN_DIST = 149598.0;      // Distancia Tierra-Sol (1 UA): 149.597.870 km
             const EARTH_TEX_CDN = 'https://cdn.jsdelivr.net/gh/diegorodriguezperegrin/besselian-explorer@main/earth_topo_2048.jpg';
 
             const earthTexLoader = new THREE.TextureLoader();
-            function applyEarthTexture(texture) {
+            let isEarthTex4kLoaded = false;
+
+            function applyEarthTexture(texture, is4k) {
+                if (!texture || isEarthTex4kLoaded) return;
+                if (is4k) isEarthTex4kLoaded = true;
                 texture.needsUpdate = true;
+                if (earthMat.map && earthMat.map !== texture && earthMat.map.dispose) {
+                    earthMat.map.dispose();
+                }
                 earthMat.map = texture;
                 earthMat.needsUpdate = true;
                 requestRender3D();
             }
 
-            earthTexLoader.load(EARTH_TEX_4K, applyEarthTexture, undefined, function() {
-                earthTexLoader.load(EARTH_TEX_LOCAL, applyEarthTexture, undefined, function() {
-                    earthTexLoader.load(EARTH_TEX_CDN, applyEarthTexture);
+            // 1. Carga inmediata de base64 local en memoria (0 latencia de red)
+            if (typeof ORIGINAL_EARTH_BASE64 !== 'undefined' && ORIGINAL_EARTH_BASE64) {
+                earthTexLoader.load(ORIGINAL_EARTH_BASE64, function(texture) {
+                    applyEarthTexture(texture, false);
+                });
+            }
+
+            // 2. Carga y actualización progresiva a alta resolución 4K (con fallbacks robustos)
+            earthTexLoader.load(EARTH_TEX_4K, function(texture) {
+                applyEarthTexture(texture, true);
+            }, undefined, function() {
+                earthTexLoader.load(EARTH_TEX_LOCAL, function(texture) {
+                    applyEarthTexture(texture, false);
+                }, undefined, function() {
+                    earthTexLoader.load(EARTH_TEX_CDN, function(texture) {
+                        applyEarthTexture(texture, false);
+                    });
                 });
             });
 
