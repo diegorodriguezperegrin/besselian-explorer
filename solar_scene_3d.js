@@ -1,5 +1,5 @@
 /* =========================================================================
-   COSMOS MATARÓ - MOTOR ESCENA 3D THREE.JS (scene_3d.js)
+   COSMOS MATARÓ - MOTOR ESCENA 3D THREE.JS (solar_scene_3d.js)
    Renderizador WebGL, cámara, iluminación física, órbitas y mallas
    celestes (Sol, Tierra, Luna, atmósfera, conos de sombra y marcadores).
    ========================================================================= */

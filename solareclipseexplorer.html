@@ -845,7 +845,7 @@
     <script src="route_director.js"></script>
     <script src="lunar_limb_engine.js"></script>
     <script src="besselian_engine.js"></script>
-    <script src="scene_3d.js"></script>
+    <script src="solar_scene_3d.js"></script>
     <script src="shared_ui_panels.js"></script>
     <script>
         // RAD y DEG definidos en besselian_engine.js
@@ -877,11 +877,11 @@
         var currentActiveView = '3d'; // '3d' | 'telescopic' | 'route'
         window.currentActiveView = currentActiveView;
         // isRouteActive, isRoutePlaying, routeCurrentTime, currentRouteData definidos en route_director.js
-        // observerMarkerGroup3D definido en scene_3d.js
+        // observerMarkerGroup3D definido en solar_scene_3d.js
         let simCurrentT = 0.0;
         let isSliderInteracting = false;
 
-        // needsRender y requestRender() definidos en scene_3d.js
+        // needsRender y requestRender() definidos en solar_scene_3d.js
 
         // -------------------------------------------------------------
         // ECLIPSES PREDEFINIDOS CON DATOS BESSELIANOS RIGUROSOS
@@ -893,7 +893,7 @@
             { cat_no: 9565, year: 2026, month: 2, day: 17, dt: 75.1, eclipse_type: 'A', saros: 121, gamma: -0.97427, magnitude: 0.96299, lat_ge: '64.7S', lng_ge: '86.8E', lat_dd_ge: -64.71786, lng_dd_ge: 86.7511, central_duration: '02m20s', duration_secs: 139.6, t0: 12, x0: 0.321954, x1: 0.4827224, x2: -0.0000314, x3: -0.00000637, y0: -0.926971, y1: 0.2355394, y2: 0.0001169, y3: -0.00000327, d0: -11.8793, d1: 0.014049, d2: 0.000002, mu0: 356.5144, mu1: 15.00198, mu2: 0, l10: 0.55772, l11: -0.0001181, l20: 0.011524, l21: -0.0001175, tmin: -2.0, tmax: 2.0 },
             { cat_no: 9570, year: 2028, month: 7, day: 22, dt: 76.6, eclipse_type: 'T', saros: 146, gamma: -0.60557, magnitude: 1.05602, lat_ge: '15.6S', lng_ge: '126.7E', lat_dd_ge: -15.57907, lng_dd_ge: 126.72137, central_duration: '05m10s', duration_secs: 309.7, t0: 3, x0: -0.154409, x1: 0.5449892, x2: -0.0000214, x3: -0.00000869, y0: -0.586424, y1: -0.1746085, y2: -0.0001021, y3: 0.00000296, d0: 20.18231, d1: -0.007974, d2: -0.000005, mu0: 223.37868, mu1: 15.00102, mu2: 0, l10: 0.535237, l11: -0.0000859, l20: -0.010846, l21: -0.0000854, tmin: -2.0, tmax: 2.0 }
         ];
-        // [Escena 3D: Three.js setup, cámara, luces, mallas y marcadores] Extraído a scene_3d.js
+        // [Escena 3D: Three.js setup, cámara, luces, mallas y marcadores] Extraído a solar_scene_3d.js
 
         function getTimeZoneFromLon(lon) {
             if (lon == null || isNaN(lon)) return 'UTC';
@@ -3319,7 +3319,7 @@
             }
         }
 
-        // [Escena 3D: renderizado de trayectorias en globo, sombra y recentrado] Extraído a scene_3d.js
+        // [Escena 3D: renderizado de trayectorias en globo, sombra y recentrado] Extraído a solar_scene_3d.js
 
         function handleRecenterClick() {
             if (currentActiveView === 'route') {
