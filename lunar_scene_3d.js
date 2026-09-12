@@ -623,12 +623,14 @@ var SUN_DIST = 149598.0;      // Distancia Tierra-Sol (1 UA): 149.597.870 km
                 revealScene3D();
             }
 
-            // Carga y decodificación sincronizada de la textura 2K
+            const isLocalFile = window.location.protocol === 'file:';
             const preloadEarthImg = document.getElementById('preload-earth-topo');
-            if (preloadEarthImg && preloadEarthImg.complete && preloadEarthImg.naturalWidth > 0) {
+
+            // En protocolo HTTP/HTTPS el archivo local precargado es same-origin y no produce SecurityError en WebGL
+            if (!isLocalFile && preloadEarthImg && preloadEarthImg.complete && preloadEarthImg.naturalWidth > 0) {
                 const initialTexture = new THREE.Texture(preloadEarthImg);
                 applyEarthTexture(initialTexture);
-            } else if (preloadEarthImg) {
+            } else if (!isLocalFile && preloadEarthImg) {
                 if (preloadEarthImg.decode) {
                     preloadEarthImg.decode().then(() => {
                         applyEarthTexture(new THREE.Texture(preloadEarthImg));
@@ -643,7 +645,9 @@ var SUN_DIST = 149598.0;      // Distancia Tierra-Sol (1 UA): 149.597.870 km
                     };
                 }
             } else {
-                earthTexLoader.load(EARTH_TEX_LOCAL, applyEarthTexture, undefined, () => {
+                // En protocolo file:/// Chromium bloquea imágenes locales en texImage2D; usamos CDN con CORS anónimo
+                earthTexLoader.setCrossOrigin('anonymous');
+                earthTexLoader.load(isLocalFile ? EARTH_TEX_CDN : EARTH_TEX_LOCAL, applyEarthTexture, undefined, () => {
                     earthTexLoader.load(EARTH_TEX_CDN, applyEarthTexture);
                 });
             }
