@@ -204,7 +204,112 @@ const EclipseMap2D = (() => {
     }
 
     /**
-     * Trazar la franja del eclipse (línea central, límites norte/sur, pasillo sombreado)
+     * Interpola el cruce con el antimeridiano (±180°) entre dos puntos
+     */
+    function getAntimeridianInterp(prev, curr) {
+        const deltaLng = curr.lng - prev.lng;
+        if (Math.abs(deltaLng) <= 180) return null;
+        if (deltaLng < -180) {
+            // De Este a Oeste (+180 a -180)
+            const unwrappedCurrLng = curr.lng + 360;
+            const frac = (180 - prev.lng) / (unwrappedCurrLng - prev.lng);
+            const latInt = prev.lat + frac * (curr.lat - prev.lat);
+            return { east: [latInt, 179.9999], west: [latInt, -179.9999] };
+        } else {
+            // De Oeste a Este (-180 a +180)
+            const unwrappedCurrLng = curr.lng - 360;
+            const frac = (-180 - prev.lng) / (unwrappedCurrLng - prev.lng);
+            const latInt = prev.lat + frac * (curr.lat - prev.lat);
+            return { east: [latInt, 179.9999], west: [latInt, -179.9999] };
+        }
+    }
+
+    /**
+     * Divide una lista continua de coordenadas en múltiples segmentos al cruzar el antimeridiano (±180°)
+     * para evitar trazos horizontales espurios en mapas 2D (Leaflet Web Mercator).
+     */
+    function splitCoordsAtAntimeridian(coords) {
+        if (!coords || coords.length === 0) return [];
+        const pts = coords.map(p => Array.isArray(p) ? { lat: p[0], lng: p[1] } : { lat: p.lat, lng: p.lng != null ? p.lng : p.lon });
+        const segments = [];
+        let currentSegment = [];
+
+        for (let i = 0; i < pts.length; i++) {
+            const curr = pts[i];
+            if (currentSegment.length === 0) {
+                currentSegment.push([curr.lat, curr.lng]);
+                continue;
+            }
+
+            const prev = pts[i - 1];
+            const interp = getAntimeridianInterp(prev, curr);
+
+            if (interp) {
+                const deltaLng = curr.lng - prev.lng;
+                if (deltaLng < -180) {
+                    currentSegment.push(interp.east);
+                    segments.push(currentSegment);
+                    currentSegment = [interp.west, [curr.lat, curr.lng]];
+                } else {
+                    currentSegment.push(interp.west);
+                    segments.push(currentSegment);
+                    currentSegment = [interp.east, [curr.lat, curr.lng]];
+                }
+            } else {
+                currentSegment.push([curr.lat, curr.lng]);
+            }
+        }
+
+        if (currentSegment.length > 0) {
+            segments.push(currentSegment);
+        }
+
+        return segments;
+    }
+
+    /**
+     * Construye los polígonos del pasillo de totalidad/anularidad cortados limpiamente en el antimeridiano
+     */
+    function buildCorridorPolygons(northCoords, southCoords) {
+        if (!northCoords || !southCoords || northCoords.length < 2 || southCoords.length < 2) return [];
+        const N = northCoords.map(p => ({ lat: p.lat, lng: p.lng != null ? p.lng : p.lon }));
+        const S = southCoords.map(p => ({ lat: p.lat, lng: p.lng != null ? p.lng : p.lon }));
+        const len = Math.min(N.length, S.length);
+        const polygons = [];
+        let curN = [ [N[0].lat, N[0].lng] ];
+        let curS = [ [S[0].lat, S[0].lng] ];
+
+        for (let i = 0; i < len - 1; i++) {
+            const nCross = getAntimeridianInterp(N[i], N[i+1]);
+            const sCross = getAntimeridianInterp(S[i], S[i+1]);
+
+            if (nCross || sCross) {
+                const nIntEast = nCross ? nCross.east : [N[i].lat, N[i].lng > 0 ? 179.9999 : -179.9999];
+                const nIntWest = nCross ? nCross.west : [N[i+1].lat, N[i+1].lng > 0 ? 179.9999 : -179.9999];
+                const sIntEast = sCross ? sCross.east : [S[i].lat, S[i].lng > 0 ? 179.9999 : -179.9999];
+                const sIntWest = sCross ? sCross.west : [S[i+1].lat, S[i+1].lng > 0 ? 179.9999 : -179.9999];
+
+                curN.push(nIntEast);
+                curS.push(sIntEast);
+                polygons.push([...curN, ...curS.slice().reverse()]);
+
+                curN = [ nIntWest, [N[i+1].lat, N[i+1].lng] ];
+                curS = [ sIntWest, [S[i+1].lat, S[i+1].lng] ];
+            } else {
+                curN.push([N[i+1].lat, N[i+1].lng]);
+                curS.push([S[i+1].lat, S[i+1].lng]);
+            }
+        }
+
+        if (curN.length > 1) {
+            polygons.push([...curN, ...curS.slice().reverse()]);
+        }
+
+        return polygons;
+    }
+
+    /**
+     * Dibuja la franja del eclipse (línea central, límites y sombra de totalidad)
      */
     function renderEclipsePath(eclipse) {
         if (!map || !eclipse) return;
@@ -231,22 +336,24 @@ const EclipseMap2D = (() => {
         const hasNorth = geom.totNorthCoords && geom.totNorthCoords.length > 1;
         const hasSouth = geom.totSouthCoords && geom.totSouthCoords.length > 1;
 
-        // 1. Pasillo sombreado de totalidad/anularidad (Polígono entre límites Norte y Sur)
+        // 1. Pasillo sombreado de totalidad/anularidad (Polígonos cortados limpiamente en el antimeridiano)
         if (hasNorth && hasSouth) {
-            const northLatLngs = geom.totNorthCoords.map(pt => [pt.lat, pt.lng]);
-            const southLatLngs = geom.totSouthCoords.map(pt => [pt.lat, pt.lng]).reverse();
-            const corridorPoly = L.polygon([...northLatLngs, ...southLatLngs], {
-                color: 'transparent',
-                fillColor: fillColor,
-                fillOpacity: 1,
-                interactive: false
+            const corridorPolygons = buildCorridorPolygons(geom.totNorthCoords, geom.totSouthCoords);
+            corridorPolygons.forEach(polyCoords => {
+                const poly = L.polygon(polyCoords, {
+                    color: 'transparent',
+                    fillColor: fillColor,
+                    fillOpacity: 1,
+                    interactive: false
+                });
+                poly.addTo(pathShadeLayer);
             });
-            corridorPoly.addTo(pathShadeLayer);
         }
 
-        // 2. Límite Norte y Sur
+        // 2. Límite Norte y Sur (Multi-polylines si cruzan el antimeridiano)
         if (hasNorth) {
-            const northLine = L.polyline(geom.totNorthCoords.map(pt => [pt.lat, pt.lng]), {
+            const northSegs = splitCoordsAtAntimeridian(geom.totNorthCoords);
+            const northLine = L.polyline(northSegs.length > 1 ? northSegs : northSegs[0], {
                 color: limitColor,
                 weight: 2,
                 opacity: 0.85,
@@ -258,7 +365,8 @@ const EclipseMap2D = (() => {
         }
 
         if (hasSouth) {
-            const southLine = L.polyline(geom.totSouthCoords.map(pt => [pt.lat, pt.lng]), {
+            const southSegs = splitCoordsAtAntimeridian(geom.totSouthCoords);
+            const southLine = L.polyline(southSegs.length > 1 ? southSegs : southSegs[0], {
                 color: limitColor,
                 weight: 2,
                 opacity: 0.85,
@@ -269,9 +377,10 @@ const EclipseMap2D = (() => {
             southLine.addTo(pathLimitsLayer);
         }
 
-        // 3. Línea Central
+        // 3. Línea Central (Multi-polyline si cruza el antimeridiano)
         if (hasCentral) {
-            const centerLine = L.polyline(geom.centerCoords.map(pt => [pt.lat, pt.lng]), {
+            const centerSegs = splitCoordsAtAntimeridian(geom.centerCoords);
+            const centerLine = L.polyline(centerSegs.length > 1 ? centerSegs : centerSegs[0], {
                 color: primaryColor,
                 weight: 3.5,
                 opacity: 0.95,
@@ -1008,6 +1117,33 @@ const EclipseMap2D = (() => {
         if (pathShadeLayer) pathShadeLayer.eachLayer(l => grp.addLayer(l));
         const bounds = grp.getBounds();
         if (bounds.isValid()) {
+            const spanLng = bounds.getEast() - bounds.getWest();
+            if (spanLng > 300 && pathCenterLineLayer) {
+                let maxSubBounds = null;
+                let maxPoints = 0;
+                pathCenterLineLayer.eachLayer(layer => {
+                    if (layer.getLatLngs) {
+                        const lls = layer.getLatLngs();
+                        if (Array.isArray(lls) && lls.length > 0) {
+                            if (Array.isArray(lls[0])) {
+                                lls.forEach(sub => {
+                                    if (sub.length > maxPoints) {
+                                        maxPoints = sub.length;
+                                        maxSubBounds = L.latLngBounds(sub);
+                                    }
+                                });
+                            } else if (lls.length > maxPoints) {
+                                maxPoints = lls.length;
+                                maxSubBounds = L.latLngBounds(lls);
+                            }
+                        }
+                    }
+                });
+                if (maxSubBounds && maxSubBounds.isValid()) {
+                    map.fitBounds(maxSubBounds, { padding: [70, 70], maxZoom: 6 });
+                    return;
+                }
+            }
             map.fitBounds(bounds, { padding: [70, 70], maxZoom: 6 });
         }
     }
@@ -1063,6 +1199,7 @@ const EclipseMap2D = (() => {
         switchBasemap,
         toggleLayer,
         renderEclipsePath,
+        drawEclipsePath: renderEclipsePath,
         setObserverMarker,
         setAsActiveObserver,
         selectSearchResult,
