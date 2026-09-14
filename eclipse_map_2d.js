@@ -473,7 +473,7 @@ const EclipseMap2D = (() => {
 
         // Si autoSetObserver está activo, actualizar la app global y el marcador de inmediato
         if (autoSetObserver && typeof updateObserverPosition === 'function') {
-            const defaultName = locationName || `${normLat >= 0 ? normLat.toFixed(3) + '°N' : Math.abs(normLat).toFixed(3) + '°S'} ${normLng >= 0 ? normLng.toFixed(3) + '°E' : Math.abs(normLng).toFixed(3) + '°O'}`;
+            const defaultName = locationName || `${Math.abs(normLat).toFixed(4)}° ${normLat >= 0 ? 'N' : 'S'} · ${Math.abs(normLng).toFixed(4)}° ${normLng >= 0 ? 'E' : 'O'}`;
             if (typeof clearObserverExtremeMode === 'function') {
                 clearObserverExtremeMode();
             }
@@ -632,7 +632,7 @@ const EclipseMap2D = (() => {
      * Fija la coordenada como observador de la aplicación global
      */
     function setAsActiveObserver(lat, lon, name = null) {
-        const finalName = name || `${lat >= 0 ? lat.toFixed(3) + '°N' : Math.abs(lat).toFixed(3) + '°S'} ${lon >= 0 ? lon.toFixed(3) + '°E' : Math.abs(lon).toFixed(3) + '°O'}`;
+        const finalName = name || `${Math.abs(lat).toFixed(4)}° ${lat >= 0 ? 'N' : 'S'} · ${Math.abs(lon).toFixed(4)}° ${lon >= 0 ? 'E' : 'O'}`;
         if (typeof clearObserverExtremeMode === 'function') {
             clearObserverExtremeMode();
         }

@@ -19,10 +19,10 @@ function _getDOM(id) {
             return `${deg}° ${String(min).padStart(2, '0')}' ${String(sec).padStart(2, '0')}" ${dir}`;
         }
 
-        function formatLatLonString(lat, lon, precision = 2) {
+        function formatLatLonString(lat, lon, precision = 4) {
             const latDir = lat >= 0 ? 'N' : 'S';
             const lonDir = lon >= 0 ? 'E' : 'O';
-            return `${Math.abs(lat).toFixed(precision)}°${latDir} ${Math.abs(lon).toFixed(precision)}°${lonDir}`;
+            return `${Math.abs(lat).toFixed(precision)}° ${latDir} · ${Math.abs(lon).toFixed(precision)}° ${lonDir}`;
         }
 
 

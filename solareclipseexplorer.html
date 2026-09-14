@@ -573,7 +573,7 @@
         </div>
         <div style="display: flex; gap: 8px; align-items: center;">
             <div class="custom-combobox-container" id="observer-combobox-container" style="position: relative; flex: 1; min-width: 0;">
-                <input type="text" class="search-select custom-combobox-input" id="observer-location-input" placeholder="Buscar municipio o coordenadas..." value="Mataró (Cosmos Mataró, ES)" style="width: 100%; height: 32px; box-sizing: border-box; padding: 0 32px 0 12px; font-family: var(--font-body, system-ui); font-size: 0.78rem; font-weight: 400; background-color: #0f172a; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 10px; color: #f8fafc; cursor: text; outline: none; text-overflow: ellipsis;" autocomplete="off" onfocus="openObserverDropdown(); this.select();" oninput="filterObserverDropdown(this.value, true)" onkeydown="onObserverInputKeyDown(event)">
+                <input type="text" class="search-select custom-combobox-input" id="observer-location-input" placeholder="Buscar municipio o coordenadas..." value="Mataró (Cosmos Mataró, ES)" style="width: 100%; height: 32px; box-sizing: border-box; padding: 0 32px 0 12px; font-family: var(--font-mono, monospace); font-size: 0.80rem; font-weight: 400; background-color: #0f172a; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 10px; color: #f8fafc; cursor: text; outline: none; text-overflow: ellipsis;" autocomplete="off" onfocus="openObserverDropdown(); this.select();" oninput="filterObserverDropdown(this.value, true)" onkeydown="onObserverInputKeyDown(event)">
                 <span style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; color: #94a3b8; font-size: 0.72rem;"><i class="fa-solid fa-chevron-down"></i></span>
                 
                 <!-- Desplegable Filtrable Flotante Estilizado Adaptativo -->
@@ -1557,7 +1557,7 @@
         function inspectGlobeLocation(lat, lon, locationName = null, autoSetObserver = false, localPoint = null) {
             if (autoSetObserver) {
                 clearObserverExtremeMode();
-                const coordsStr = formatLatLonString(lat, lon, 2);
+                const coordsStr = formatLatLonString(lat, lon, 4);
                 updateObserverPosition(lat, lon, locationName || coordsStr, null);
             }
 
@@ -3614,13 +3614,13 @@
             return val;
         }
 
-        function formatLatLonString(lat, lon, precision = 1) {
+        function formatLatLonString(lat, lon, precision = 4) {
             const latVal = typeof lat === 'number' ? lat : parseCoordinateStr(lat);
             const lonVal = typeof lon === 'number' ? lon : parseCoordinateStr(lon);
             if (latVal == null || lonVal == null || isNaN(latVal) || isNaN(lonVal)) return '--';
             const latDir = latVal >= 0 ? 'N' : 'S';
             const lonDir = lonVal >= 0 ? 'E' : 'O';
-            return `${Math.abs(latVal).toFixed(precision)}°${latDir} ${Math.abs(lonVal).toFixed(precision)}°${lonDir}`;
+            return `${Math.abs(latVal).toFixed(precision)}° ${latDir} · ${Math.abs(lonVal).toFixed(precision)}° ${lonDir}`;
         }
 
         // -------------------------------------------------------------
