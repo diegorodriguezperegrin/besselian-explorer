@@ -1487,6 +1487,12 @@ END:VCALENDAR`;
 
         function switchMainView(view) {
             currentActiveView = view;
+            window.currentActiveView = view;
+            if (document.body) {
+                document.body.setAttribute('data-view-mode', view);
+                document.body.classList.remove('view-3d', 'view-telescopic');
+                document.body.classList.add('view-' + view);
+            }
             document.querySelectorAll('.view-mode-selector .mode-btn').forEach(b => {
                 if (b.id && b.id.startsWith('btn-mode-')) b.classList.remove('active');
             });

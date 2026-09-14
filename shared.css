@@ -1253,6 +1253,13 @@ input:focus, select:focus {
     color: #fca5a5;
 }
 
+/* La barra de búsqueda flotante NO debe aparecer ni en MODO Telescopio ni en MODO Ruta */
+body[data-view-mode="telescopic"] .floating-top-search-container,
+body[data-view-mode="route"] .floating-top-search-container,
+body.view-telescopic .floating-top-search-container,
+body.view-route .floating-top-search-container {
+    display: none !important;
+}
 
 /* =========================================================================
    RESPONSIVE BASE (MOVIL Y TABLET <= 900PX)

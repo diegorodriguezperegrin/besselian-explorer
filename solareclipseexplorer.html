@@ -1989,6 +1989,11 @@
         function switchMainView(mode) {
             currentActiveView = mode;
             window.currentActiveView = mode;
+            if (document.body) {
+                document.body.setAttribute('data-view-mode', mode);
+                document.body.classList.remove('view-3d', 'view-map', 'view-telescopic', 'view-route');
+                document.body.classList.add('view-' + mode);
+            }
             const btn3D = getDOM('btn-mode-3d');
             const btnMap = getDOM('btn-mode-map');
             const btnTele = getDOM('btn-mode-telescopic');
@@ -2071,7 +2076,17 @@
                 requestRender();
             }
             const search3D = getDOM('space-3d-search-container');
-            if (search3D) search3D.style.display = (mode === '3d') ? 'flex' : 'none';
+            const searchMap = getDOM('map-search-container');
+            if (mode === 'telescopic' || mode === 'route') {
+                if (search3D) search3D.style.setProperty('display', 'none', 'important');
+                if (searchMap) searchMap.style.setProperty('display', 'none', 'important');
+            } else if (mode === '3d') {
+                if (searchMap) searchMap.style.setProperty('display', 'none', 'important');
+                if (search3D) search3D.style.display = 'flex';
+            } else if (mode === 'map') {
+                if (search3D) search3D.style.setProperty('display', 'none', 'important');
+                if (searchMap) searchMap.style.display = 'flex';
+            }
 
             const popupEl = getDOM('globe-3d-popup');
             if (mode === '3d') {

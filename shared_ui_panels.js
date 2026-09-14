@@ -38,18 +38,43 @@ function updateTopNavButtonsState() {
             if (btnDock) { btnDock.style.display = dockOpen ? 'none' : 'inline-flex'; btnDock.classList.remove('active-nav'); }
             if (btnLimb) { btnLimb.style.display = (showLimbBtn && !limbOpen) ? 'inline-flex' : 'none'; btnLimb.classList.remove('active-nav'); }
 
+            const activeView = (typeof currentActiveView !== 'undefined') ? currentActiveView : (window.currentActiveView || '3d');
             const isSmall = window.innerWidth <= 900;
             const anyPanelOpen = (sideOpen || setOpen || limbOpen);
 
             if (typeof document !== 'undefined' && document.body) {
                 document.body.classList.toggle('panel-open-mobile', isSmall && anyPanelOpen);
-                document.querySelectorAll('.floating-top-search-container').forEach(el => {
-                    if (isSmall && anyPanelOpen) {
-                        el.style.setProperty('display', 'none', 'important');
-                    } else {
-                        el.style.removeProperty('display');
+                document.body.setAttribute('data-view-mode', activeView);
+                document.body.classList.remove('view-3d', 'view-map', 'view-telescopic', 'view-route');
+                document.body.classList.add('view-' + activeView);
+
+                const search3D = getDOM('space-3d-search-container');
+                const searchMap = getDOM('map-search-container');
+
+                if (activeView === 'telescopic' || activeView === 'route') {
+                    if (search3D) search3D.style.setProperty('display', 'none', 'important');
+                    if (searchMap) searchMap.style.setProperty('display', 'none', 'important');
+                } else if (activeView === '3d') {
+                    if (searchMap) searchMap.style.setProperty('display', 'none', 'important');
+                    if (search3D) {
+                        if (isSmall && anyPanelOpen) {
+                            search3D.style.setProperty('display', 'none', 'important');
+                        } else {
+                            search3D.style.removeProperty('display');
+                            search3D.style.display = 'flex';
+                        }
                     }
-                });
+                } else if (activeView === 'map') {
+                    if (search3D) search3D.style.setProperty('display', 'none', 'important');
+                    if (searchMap) {
+                        if (isSmall && anyPanelOpen) {
+                            searchMap.style.setProperty('display', 'none', 'important');
+                        } else {
+                            searchMap.style.removeProperty('display');
+                            searchMap.style.display = 'flex';
+                        }
+                    }
+                }
             }
 
             if (navBar) {
