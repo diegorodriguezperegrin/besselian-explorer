@@ -146,6 +146,7 @@
             justify-content: space-between;
             gap: 6px;
             width: 100%;
+            margin-bottom: 8px;
         }
 
         .stepper-btn {
@@ -450,6 +451,23 @@
             </div>
         </div>
 
+        <!-- Orbital Stepper: Navegación de 1 Saros (18a 11d) y Exeligmos (3 Saros = 54a 1m) -->
+        <div class="saros-stepper-row" id="saros-stepper-container">
+            <button class="stepper-btn exeligmos" id="btn-prev-exeligmos" title="Salto Exeligmos: -3 Saros (-54 años, 1 mes)" aria-label="Salto anterior de Exeligmos (54 años)">
+                <i class="fa-solid fa-angles-left" aria-hidden="true"></i><span>-54a</span>
+            </button>
+            <button class="stepper-btn" id="btn-prev-saros" title="Salto Saros anterior: -1 Saros (-18 años, 11 días)" aria-label="Salto anterior de Saros (18 años)">
+                <i class="fa-solid fa-angle-left" aria-hidden="true"></i><span>-18a</span>
+            </button>
+            <span style="font-size: 0.72rem; color: var(--text-secondary); font-weight: 500; font-family: var(--font-mono); text-align: center; flex-shrink: 0; min-width: 52px;" id="stepper-seq-info" title="Número de secuencia / Total de eclipses de la serie">38 / 71</span>
+            <button class="stepper-btn" id="btn-next-saros" title="Salto Saros siguiente: +1 Saros (+18 años, 11 días)" aria-label="Salto siguiente de Saros (18 años)">
+                <span>+18a</span><i class="fa-solid fa-angle-right" aria-hidden="true"></i>
+            </button>
+            <button class="stepper-btn exeligmos" id="btn-next-exeligmos" title="Salto Exeligmos: +3 Saros (+54 años, 1 mes)" aria-label="Salto siguiente de Exeligmos (54 años)">
+                <span>+54a</span><i class="fa-solid fa-angles-right" aria-hidden="true"></i>
+            </button>
+        </div>
+
         <div class="eclipse-card" id="eclipse-details">
             <div class="stat-row" id="card-long-type-row" style="margin-bottom: 2px;">
                 <span id="card-long-type-text" class="stat-val" style="font-weight: 400; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Eclipse total central</span>
@@ -514,23 +532,6 @@
                     <span class="stat-lbl">Catálogo</span>
                     <span class="stat-val" id="card-cat-no">#9568</span>
                 </div>
-            </div>
-
-            <!-- Orbital Stepper: Navegación de 1 Saros (18a 11d) y Exeligmos (3 Saros = 54a 1m) -->
-            <div class="saros-stepper-row" id="saros-stepper-container">
-                <button class="stepper-btn exeligmos" id="btn-prev-exeligmos" title="Salto Exeligmos: -3 Saros (-54 años, 1 mes)" aria-label="Salto anterior de Exeligmos (54 años)">
-                    <i class="fa-solid fa-angles-left" aria-hidden="true"></i><span>-54a</span>
-                </button>
-                <button class="stepper-btn" id="btn-prev-saros" title="Salto Saros anterior: -1 Saros (-18 años, 11 días)" aria-label="Salto anterior de Saros (18 años)">
-                    <i class="fa-solid fa-angle-left" aria-hidden="true"></i><span>-18a</span>
-                </button>
-                <span style="font-size: 0.72rem; color: var(--text-secondary); font-weight: 500; font-family: var(--font-mono); text-align: center; flex-shrink: 0; min-width: 52px;" id="stepper-seq-info" title="Número de secuencia / Total de eclipses de la serie">38 / 71</span>
-                <button class="stepper-btn" id="btn-next-saros" title="Salto Saros siguiente: +1 Saros (+18 años, 11 días)" aria-label="Salto siguiente de Saros (18 años)">
-                    <span>+18a</span><i class="fa-solid fa-angle-right" aria-hidden="true"></i>
-                </button>
-                <button class="stepper-btn exeligmos" id="btn-next-exeligmos" title="Salto Exeligmos: +3 Saros (+54 años, 1 mes)" aria-label="Salto siguiente de Exeligmos (54 años)">
-                    <span>+54a</span><i class="fa-solid fa-angles-right" aria-hidden="true"></i>
-                </button>
             </div>
         </div>
 
