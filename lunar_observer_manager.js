@@ -372,7 +372,7 @@ function _getDOM(id) {
 
             updateObserverHeaderTz();
             if (currentEclipse) {
-                renderMataroCircumstances();
+                renderLocalLunarCircumstances();
             }
             updateTimeUI();
             if (currentActiveView === 'telescopic') renderTelescopicView();

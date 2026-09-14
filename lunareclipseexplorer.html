@@ -119,13 +119,13 @@
         }
 
         /* Visibilidad lunar */
-        .mataro-vis-tag,
-        .mataro-vis-tag.vis-total,
-        .mataro-vis-tag.vis-partial,
-        .mataro-vis-tag.vis-full,
-        .mataro-vis-tag.vis-rise,
-        .mataro-vis-tag.vis-set,
-        .mataro-vis-tag.vis-none {
+        .vis-badge-tag,
+        .vis-badge-tag.vis-total,
+        .vis-badge-tag.vis-partial,
+        .vis-badge-tag.vis-full,
+        .vis-badge-tag.vis-rise,
+        .vis-badge-tag.vis-set,
+        .vis-badge-tag.vis-none {
             font-family: var(--font-mono);
             font-size: 0.75rem;
             font-weight: 400;
@@ -302,7 +302,7 @@
         <div class="viewport-layer" id="layer-telescopic">
             <canvas id="canvas-telescopic"></canvas>
             <div class="telescope-hud" id="telescope-hud">
-                <div class="hud-pill altaz" id="hud-pill-orient">Vista Local (Mataró · Cenit arriba)</div>
+                <div class="hud-pill altaz" id="hud-pill-orient">Vista Local (Cenit arriba)</div>
                 <div class="hud-pill altaz" id="hud-pill-coords" style="display: flex;">Alt: -- · Az: --</div>
             </div>
         </div>
@@ -510,11 +510,11 @@
             <span><i class="fa-solid fa-eye"></i> Visibilidad Local</span>
             <button onclick="exportSelectedEclipseToICal()" style="background: none; border: none; color: var(--accent-blue); font-size: 0.72rem; cursor: pointer; text-decoration: underline;"><i class="fa-solid fa-calendar-plus" aria-hidden="true"></i> iCal</button>
         </div>
-        <div class="mataro-card" style="margin-top: 0;">
-            <div class="mataro-badge-header">
-                <span class="mataro-vis-tag vis-full" id="mataro-vis-badge">Visible al orto</span>
+        <div class="observer-card" style="margin-top: 0;">
+            <div class="observer-badge-header">
+                <span class="vis-badge-tag vis-full" id="observer-vis-badge">Visible al orto</span>
             </div>
-            <table class="contacts-table" id="mataro-contacts-table">
+            <table class="contacts-table" id="observer-contacts-table">
                 <colgroup>
                     <col style="width: 17%;">
                     <col style="width: 37%;">
@@ -524,7 +524,7 @@
                 <thead>
                     <tr><th>Fase</th><th id="th-local-time">Hora (UTC+2)</th><th>Altitud</th><th>Azimut</th></tr>
                 </thead>
-                <tbody id="mataro-contacts-tbody">
+                <tbody id="observer-contacts-tbody">
                     <!-- Rellenado dinámicamente -->
                 </tbody>
             </table>
@@ -728,7 +728,7 @@
             const format = (d) => `${d.getUTCFullYear()}${pad(d.getUTCMonth()+1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}00Z`;
 
             const summary = `🌕 Eclipse Lunar ${ec.typeLabel} - ${currentObserver.name}`;
-            const desc = `Eclipse Lunar ${ec.typeLabel} (Saros ${ec.saros}, Gamma ${ec.gamma.toFixed(2)}). Máximo: ${ec.timeTD} TD. Visibilidad en ${currentObserver.name}: ${document.getElementById('mataro-vis-badge')?.textContent || ''}.`;
+            const desc = `Eclipse Lunar ${ec.typeLabel} (Saros ${ec.saros}, Gamma ${ec.gamma.toFixed(2)}). Máximo: ${ec.timeTD} TD. Visibilidad en ${currentObserver.name}: ${document.getElementById('observer-vis-badge')?.textContent || ''}.`;
 
             const icsData = `BEGIN:VCALENDAR
 VERSION:2.0
@@ -953,7 +953,7 @@ END:VCALENDAR`;
             positionTimelineMarker('marker-u4', ec.u4Ms);
             positionTimelineMarker('marker-p4', ec.p4Ms);
 
-            renderMataroCircumstances();
+            renderLocalLunarCircumstances();
             update3DEclipseGeometry();
 
             teleZoom = 1.0; telePanX = 0; telePanY = 0;
@@ -982,10 +982,10 @@ END:VCALENDAR`;
             return `${String(m).padStart(2, '0')}m ${String(s).padStart(4, '0')}s`;
         }
 
-        function renderMataroCircumstances() {
+        function renderLocalLunarCircumstances() {
             const ec = currentEclipse;
             if (!ec) return;
-            const tbody = document.getElementById('mataro-contacts-tbody');
+            const tbody = document.getElementById('observer-contacts-tbody');
             const thTime = document.getElementById('th-local-time');
             if (!tbody) return;
 
@@ -1048,25 +1048,30 @@ END:VCALENDAR`;
 
             tbody.innerHTML = rowsHtml;
 
-            const badge = document.getElementById('mataro-vis-badge');
+            const badge = document.getElementById('observer-vis-badge');
             if (badge) {
                 if (visibleCount === contacts.length) {
-                    badge.className = 'mataro-vis-tag vis-full';
+                    badge.className = 'vis-badge-tag vis-full';
                     badge.textContent = 'Visible completo';
                 } else if (visibleCount > 0) {
                     const firstCoords = getMoonHorizontalCoords(ec.zenLat, ec.zenLon, contacts[0].ms, ec.maxMs, currentObserver.lat, currentObserver.lon);
                     if (firstCoords.alt <= 0) {
-                        badge.className = 'mataro-vis-tag vis-rise';
+                        badge.className = 'vis-badge-tag vis-rise';
                         badge.textContent = 'Visible al orto';
                     } else {
-                        badge.className = 'mataro-vis-tag vis-set';
+                        badge.className = 'vis-badge-tag vis-set';
                         badge.textContent = 'Visible al ocaso';
                     }
                 } else {
-                    badge.className = 'mataro-vis-tag vis-none';
+                    badge.className = 'vis-badge-tag vis-none';
                     badge.textContent = 'No visible';
                 }
             }
+        }
+        const renderMataroCircumstances = renderLocalLunarCircumstances;
+        if (typeof window !== 'undefined') {
+            window.renderLocalLunarCircumstances = renderLocalLunarCircumstances;
+            window.renderMataroCircumstances = renderLocalLunarCircumstances;
         }
 
         // [Motor de Vista Telescópica 2D Canvas] Extraído a lunar_telescopic.js
@@ -1207,7 +1212,7 @@ END:VCALENDAR`;
             }
             phaseLabel.innerHTML = phaseHtml;
 
-            document.querySelectorAll('#mataro-contacts-tbody tr').forEach(r => r.classList.remove('active'));
+            document.querySelectorAll('#observer-contacts-tbody tr').forEach(r => r.classList.remove('active'));
             ['P1', 'U1', 'U2', 'MÁX', 'U3', 'U4', 'P4'].forEach(k => {
                 const targetMs = k === 'MÁX' ? currentEclipse.maxMs : currentEclipse[`${k.toLowerCase()}Ms`];
                 if (targetMs && Math.abs(simCurrentTimeMs - targetMs) < 120000) {

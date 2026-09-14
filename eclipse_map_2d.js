@@ -597,8 +597,8 @@ const EclipseMap2D = (() => {
                     <span class="popup-coords-val">${latStr} · ${lonStr}</span>
                 </div>
 
-                <div class="mataro-badge-header">
-                    <span class="mataro-vis-tag ${badgeClass}">${badgeText}</span>
+                <div class="observer-badge-header">
+                    <span class="vis-badge-tag ${badgeClass}">${badgeText}</span>
                 </div>
 
                 <table class="contacts-table" style="width: 100%; border-collapse: collapse; font-size: 0.76rem; font-family: var(--font-mono, monospace); table-layout: fixed;">
@@ -771,7 +771,7 @@ const EclipseMap2D = (() => {
                     color: #94a3b8 !important;
                     transition: color 0.25s ease;
                 }
-                .nasa-popup-inner.is-preview-obs .mataro-vis-tag {
+                .nasa-popup-inner.is-preview-obs .vis-badge-tag {
                     color: #94a3b8 !important;
                     transition: color 0.25s ease;
                 }
@@ -791,7 +791,7 @@ const EclipseMap2D = (() => {
                     color: #f8fafc !important;
                     transition: color 0.25s ease;
                 }
-                .nasa-popup-inner.is-active-obs .mataro-vis-tag {
+                .nasa-popup-inner.is-active-obs .vis-badge-tag {
                     color: #f8fafc !important;
                     transition: color 0.25s ease;
                 }

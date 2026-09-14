@@ -250,12 +250,12 @@
         }
 
         /* Tag de visibilidad local de circunstancias */
-        .mataro-vis-tag,
-        .mataro-vis-tag.vis-total,
-        .mataro-vis-tag.vis-annular,
-        .mataro-vis-tag.vis-hybrid,
-        .mataro-vis-tag.vis-partial,
-        .mataro-vis-tag.vis-none {
+        .vis-badge-tag,
+        .vis-badge-tag.vis-total,
+        .vis-badge-tag.vis-annular,
+        .vis-badge-tag.vis-hybrid,
+        .vis-badge-tag.vis-partial,
+        .vis-badge-tag.vis-none {
             font-family: var(--font-mono);
             font-size: 0.75rem;
             font-weight: 400;
@@ -349,7 +349,7 @@
         <div class="viewport-layer" id="layer-telescopic">
             <canvas id="canvas-telescopic"></canvas>
             <div class="telescope-hud" id="telescope-hud">
-                <div class="hud-pill altaz" id="hud-pill-orient">Mataró · Altazimutal</div>
+                <div class="hud-pill altaz" id="hud-pill-orient">Vista Local · Altazimutal</div>
                 <div class="hud-pill altaz" id="hud-pill-coords" style="display: flex;">Alt: -- · Az: --</div>
                 <div class="hud-pill altaz" id="hud-pill-bead" style="display: none;"></div>
             </div>
@@ -573,7 +573,7 @@
         </div>
         <div style="display: flex; gap: 8px; align-items: center;">
             <div class="custom-combobox-container" id="observer-combobox-container" style="position: relative; flex: 1; min-width: 0;">
-                <input type="text" class="search-select custom-combobox-input" id="observer-location-input" placeholder="Buscar municipio o coordenadas..." value="Mataró (Cosmos Mataró, ES)" style="width: 100%; height: 32px; box-sizing: border-box; padding: 0 32px 0 12px; font-family: var(--font-mono, monospace); font-size: 0.80rem; font-weight: 400; background-color: #0f172a; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 10px; color: #f8fafc; cursor: text; outline: none; text-overflow: ellipsis;" autocomplete="off" onfocus="openObserverDropdown(); this.select();" oninput="filterObserverDropdown(this.value, true)" onkeydown="onObserverInputKeyDown(event)">
+                <input type="text" class="search-select custom-combobox-input" id="observer-location-input" placeholder="Buscar municipio o coordenadas..." value="" style="width: 100%; height: 32px; box-sizing: border-box; padding: 0 32px 0 12px; font-family: var(--font-mono, monospace); font-size: 0.80rem; font-weight: 400; background-color: #0f172a; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 10px; color: #f8fafc; cursor: text; outline: none; text-overflow: ellipsis;" autocomplete="off" onfocus="openObserverDropdown(); this.select();" oninput="filterObserverDropdown(this.value, true)" onkeydown="onObserverInputKeyDown(event)">
                 <span style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; color: #94a3b8; font-size: 0.72rem;"><i class="fa-solid fa-chevron-down"></i></span>
                 
                 <!-- Desplegable Filtrable Flotante Estilizado Adaptativo -->
@@ -595,19 +595,19 @@
             <span><i class="fa-solid fa-eye"></i> Visibilidad Local</span>
             <button onclick="exportSelectedEclipseToICal()" style="background: none; border: none; color: var(--accent-blue); font-size: 0.72rem; cursor: pointer; text-decoration: underline;"><i class="fa-solid fa-calendar-plus"></i> iCal</button>
         </div>
-        <div class="mataro-card" style="margin-top: 0;">
+        <div class="observer-card" style="margin-top: 0;">
             <!-- Coordenadas del Observador y Zona Horaria (formato idéntico a tarjeta flotante) -->
             <div style="font-size: 0.74rem; font-family: var(--font-mono); margin-bottom: 4px; display: flex; justify-content: space-between; align-items: center;">
                 <div style="display: flex; align-items: center; gap: 5px;">
                     <i class="fa-solid fa-location-crosshairs" style="color: var(--accent-blue, #38bdf8); font-size: 0.70rem;"></i>
-                    <span id="observer-header-subtitle" style="color: #f8fafc; font-weight: 400;">41° 32' 58" N · 2° 26' 53" E</span>
+                    <span id="observer-header-subtitle" style="color: #f8fafc; font-weight: 400;">--</span>
                 </div>
-                <span id="observer-header-tz" style="color: #f8fafc; font-weight: 600;">UTC+2</span>
+                <span id="observer-header-tz" style="color: #f8fafc; font-weight: 600;">--</span>
             </div>
-            <div class="mataro-badge-header">
-                <span class="mataro-vis-tag vis-total" id="mataro-vis-badge">TOTAL</span>
+            <div class="observer-badge-header">
+                <span class="vis-badge-tag vis-total" id="observer-vis-badge">TOTAL</span>
             </div>
-            <table class="contacts-table" id="mataro-contacts-table">
+            <table class="contacts-table" id="observer-contacts-table">
                 <colgroup>
                     <col style="width: 17%;">
                     <col style="width: 37%;">
@@ -617,7 +617,7 @@
                 <thead>
                     <tr><th>Fase</th><th id="th-local-time">Hora (UTC+2)</th><th>Altitud</th><th>Azimut</th></tr>
                 </thead>
-                <tbody id="mataro-contacts-tbody">
+                <tbody id="observer-contacts-tbody">
                     <!-- Filas pobladas dinámicamente -->
                 </tbody>
             </table>
@@ -1806,8 +1806,8 @@
         let activeContactRowId = null;
 
         function renderLocalSolarCircumstances() {
-            const tbody = getDOM('mataro-contacts-tbody');
-            const badge = getDOM('mataro-vis-badge');
+            const tbody = getDOM('observer-contacts-tbody');
+            const badge = getDOM('observer-vis-badge');
             const thTime = getDOM('th-local-time');
             if (!tbody || !currentEclipse) return;
             activeContactRowId = null;
@@ -1861,7 +1861,7 @@
                 `;
                 tbody.innerHTML = notVisHtml;
                 if (badge) {
-                    badge.className = 'mataro-vis-tag vis-none';
+                    badge.className = 'vis-badge-tag vis-none';
                     badge.textContent = 'No Visible';
                 }
                 return;
@@ -1957,18 +1957,18 @@
             if (badge) {
                 if (res.isTotal) {
                     const durSec = (res.c3 && res.c2) ? Math.round((res.c3.t - res.c2.t) * 3600) : 0;
-                    badge.className = 'mataro-vis-tag vis-total';
+                    badge.className = 'vis-badge-tag vis-total';
                     badge.textContent = `TOTAL (${Math.floor(durSec/60)}m ${String(durSec%60).padStart(2,'0')}s)`;
                 } else if (res.isAnnular) {
                     const durSec = (res.c3 && res.c2) ? Math.round((res.c3.t - res.c2.t) * 3600) : 0;
-                    badge.className = 'mataro-vis-tag vis-annular';
+                    badge.className = 'vis-badge-tag vis-annular';
                     badge.textContent = `ANULAR (${Math.floor(durSec/60)}m ${String(durSec%60).padStart(2,'0')}s)`;
                 } else if (res.maxParams.alt > 0) {
-                    badge.className = 'mataro-vis-tag vis-partial';
+                    badge.className = 'vis-badge-tag vis-partial';
                     badge.textContent = `PARCIAL (Mag. ${(res.maxMag * 100).toFixed(1)}% · Ocul. ${(res.maxObs * 100).toFixed(1)}%)`;
                     badge.title = `Magnitud lineal del diámetro: ${(res.maxMag * 100).toFixed(1)}% · Ocultación de área: ${(res.maxObs * 100).toFixed(1)}%`;
                 } else {
-                    badge.className = 'mataro-vis-tag vis-none';
+                    badge.className = 'vis-badge-tag vis-none';
                     badge.textContent = `BAJO EL HORIZONTE`;
                 }
             }
