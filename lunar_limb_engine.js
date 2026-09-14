@@ -224,10 +224,10 @@ function _getDOM(id) {
                 const c3Sign = c3SecOffset >= 0 ? '+' : '';
                 const c3Color = c3SecOffset >= 0 ? '#86efac' : '#fca5a5';
 
-                if (c2El) c2El.innerHTML = `<span style="color: var(--accent-blue); font-weight: 400; min-width: 38px;">C2'</span> <span style="color: #f8fafc; min-width: 68px;">${c2Str}</span> <span style="color: ${c2Color}; font-size: 0.72rem; font-weight: 400;">(${c2Sign}${c2SecOffset.toFixed(1)}s)</span>`;
-                if (p2El) p2El.innerHTML = `<span style="color: var(--accent-blue); font-weight: 400; min-width: 26px; text-align: left;">P2'</span> <span style="color: #f8fafc; min-width: 48px; text-align: right;">${p2Deg.toFixed(1)}°</span>`;
-                if (c3El) c3El.innerHTML = `<span style="color: var(--accent-blue); font-weight: 400; min-width: 38px;">C3'</span> <span style="color: #f8fafc; min-width: 68px;">${c3Str}</span> <span style="color: ${c3Color}; font-size: 0.72rem; font-weight: 400;">(${c3Sign}${c3SecOffset.toFixed(1)}s)</span>`;
-                if (p3El) p3El.innerHTML = `<span style="color: var(--accent-blue); font-weight: 400; min-width: 26px; text-align: left;">P3'</span> <span style="color: #f8fafc; min-width: 48px; text-align: right;">${p3Deg.toFixed(1)}°</span>`;
+                if (c2El) c2El.innerHTML = `<span class="limb-row-key" style="color: #f8fafc; font-weight: 600; min-width: 38px;">C2'</span> <span style="color: #f8fafc; min-width: 68px;">${c2Str}</span> <span style="color: ${c2Color}; font-size: 0.72rem; font-weight: 400;">(${c2Sign}${c2SecOffset.toFixed(1)}s)</span>`;
+                if (p2El) p2El.innerHTML = `<span class="limb-row-key" style="color: #f8fafc; font-weight: 600; min-width: 26px; text-align: left;">P2'</span> <span style="color: #f8fafc; min-width: 48px; text-align: right;">${p2Deg.toFixed(1)}°</span>`;
+                if (c3El) c3El.innerHTML = `<span class="limb-row-key" style="color: #f8fafc; font-weight: 600; min-width: 38px;">C3'</span> <span style="color: #f8fafc; min-width: 68px;">${c3Str}</span> <span style="color: ${c3Color}; font-size: 0.72rem; font-weight: 400;">(${c3Sign}${c3SecOffset.toFixed(1)}s)</span>`;
+                if (p3El) p3El.innerHTML = `<span class="limb-row-key" style="color: #f8fafc; font-weight: 600; min-width: 26px; text-align: left;">P3'</span> <span style="color: #f8fafc; min-width: 48px; text-align: right;">${p3Deg.toFixed(1)}°</span>`;
 
                 if (durEl) {
                     const rawDurSec = (c3RawH - c2RawH) * 3600;
@@ -236,7 +236,7 @@ function _getDOM(id) {
                     const s = (durSec % 60).toFixed(1);
                     const durSign = durSecOffset >= 0 ? '+' : '';
                     const durColor = durSecOffset >= 0 ? '#86efac' : '#fca5a5';
-                    durEl.innerHTML = `<span style="color: var(--accent-blue); font-weight: 400; min-width: 38px;">Dur.</span> <span style="color: #f8fafc; min-width: 68px;">${m}m${s}s</span> <span style="color: ${durColor}; font-size: 0.72rem; font-weight: 400;">(${durSign}${durSecOffset.toFixed(1)}s)</span>`;
+                    durEl.innerHTML = `<span class="limb-row-key" style="color: #f8fafc; font-weight: 600; min-width: 38px;">Dur.</span> <span style="color: #f8fafc; min-width: 68px;">${m}m ${s}s</span> <span style="color: ${durColor}; font-size: 0.72rem; font-weight: 400;">(${durSign}${durSecOffset.toFixed(1)}s)</span>`;
                 }
             } else if (circ && circ.c1 && circ.c4) {
                 const dtHours = (currentEclipse.dt || 0) / 3600;
@@ -246,11 +246,11 @@ function _getDOM(id) {
                 const c1LocalH = ((t0 + circ.c1.t - dtHours + tzOffset) % 24 + 24) % 24;
                 const c4LocalH = ((t0 + circ.c4.t - dtHours + tzOffset) % 24 + 24) % 24;
 
-                if (c2El) c2El.innerHTML = `<span style="color: var(--accent-blue); font-weight: 400; min-width: 38px;">C1'</span> <span style="color: #f8fafc; min-width: 68px;">${formatDecimalHoursToHms(c1LocalH)}</span>`;
-                if (p2El) p2El.innerHTML = `<span style="color: var(--accent-blue); font-weight: 400; min-width: 26px; text-align: left;">P1'</span> <span style="color: #f8fafc; min-width: 48px; text-align: right;">${(circ.p1Deg != null ? circ.p1Deg.toFixed(1) : '--')}°</span>`;
-                if (c3El) c3El.innerHTML = `<span style="color: var(--accent-blue); font-weight: 400; min-width: 38px;">C4'</span> <span style="color: #f8fafc; min-width: 68px;">${formatDecimalHoursToHms(c4LocalH)}</span>`;
-                if (p3El) p3El.innerHTML = `<span style="color: var(--accent-blue); font-weight: 400; min-width: 26px; text-align: left;">P4'</span> <span style="color: #f8fafc; min-width: 48px; text-align: right;">${(circ.p4Deg != null ? circ.p4Deg.toFixed(1) : '--')}°</span>`;
-                if (durEl) durEl.innerHTML = `<span style="color: var(--accent-blue); font-weight: 400; min-width: 38px;">Mag.</span> <span style="color: #f8fafc; min-width: 68px;">${(circ.maxMag * 100).toFixed(1)}%</span>`;
+                if (c2El) c2El.innerHTML = `<span class="limb-row-key" style="color: #f8fafc; font-weight: 600; min-width: 38px;">C1'</span> <span style="color: #f8fafc; min-width: 68px;">${formatDecimalHoursToHms(c1LocalH)}</span>`;
+                if (p2El) p2El.innerHTML = `<span class="limb-row-key" style="color: #f8fafc; font-weight: 600; min-width: 26px; text-align: left;">P1'</span> <span style="color: #f8fafc; min-width: 48px; text-align: right;">${(circ.p1Deg != null ? circ.p1Deg.toFixed(1) : '--')}°</span>`;
+                if (c3El) c3El.innerHTML = `<span class="limb-row-key" style="color: #f8fafc; font-weight: 600; min-width: 38px;">C4'</span> <span style="color: #f8fafc; min-width: 68px;">${formatDecimalHoursToHms(c4LocalH)}</span>`;
+                if (p3El) p3El.innerHTML = `<span class="limb-row-key" style="color: #f8fafc; font-weight: 600; min-width: 26px; text-align: left;">P4'</span> <span style="color: #f8fafc; min-width: 48px; text-align: right;">${(circ.p4Deg != null ? circ.p4Deg.toFixed(1) : '--')}°</span>`;
+                if (durEl) durEl.innerHTML = `<span class="limb-row-key" style="color: #f8fafc; font-weight: 600; min-width: 38px;">Mag.</span> <span style="color: #f8fafc; min-width: 68px;">${(circ.maxMag * 100).toFixed(1)}%</span>`;
             }
 
         }

@@ -33,7 +33,9 @@
     <!-- Matriz Altimétrica Discreta LOLA LRO (720 puntos / 0.5°) -->
     <script src="lunar_limb_lola_data.js"></script>
     <script src="observer_locations.js"></script>
+    <script src="route_eclipse_2026_08_12.js"></script>
     <script src="route_eclipse_2027_08_02.js"></script>
+    <script src="route_eclipse_2028_01_26.js"></script>
     <!-- FontAwesome icons (CDN con Fallback local offline) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha384-iw3OoTErCYJJB9mCa8LNS2hbsQ7M3C0EpIsO/H5+EGAkPGc6rk+V8i04oW/K5xq0" crossorigin="anonymous" onerror="this.onerror=null;this.href='vendor/fontawesome/css/all.min.css';">
     <!-- Tokens de diseño compartidos -->
@@ -141,6 +143,7 @@
         .saros-stepper-row {
             display: flex;
             align-items: center;
+            justify-content: space-between;
             gap: 6px;
             width: 100%;
         }
@@ -149,16 +152,21 @@
             background: rgba(255, 255, 255, 0.06);
             border: 1px solid var(--border-color);
             color: var(--text-primary);
-            width: 32px;
+            flex: 1;
+            min-width: 0;
             height: 30px;
             border-radius: 8px;
             cursor: pointer;
-            display: flex;
+            display: inline-flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.78rem;
+            font-size: 0.72rem;
+            font-weight: 600;
+            font-family: var(--font-heading);
+            padding: 0 4px;
+            gap: 3px;
             transition: var(--transition-smooth);
-            flex-shrink: 0;
+            white-space: nowrap;
         }
 
         .stepper-btn:hover:not(:disabled) {
@@ -170,15 +178,6 @@
         .stepper-btn:disabled {
             opacity: 0.25;
             cursor: not-allowed;
-        }
-
-        .stepper-btn.exeligmos {
-            width: auto;
-            padding: 0 8px;
-            font-size: 0.72rem;
-            font-weight: 600;
-            font-family: var(--font-heading);
-            gap: 3px;
         }
 
         .stepper-btn.exeligmos:hover:not(:disabled) {
@@ -304,6 +303,20 @@
             -webkit-appearance: none;
             margin: 0;
         }
+
+        .space-3d-search-result-item {
+            padding: 7px 12px;
+            cursor: pointer;
+            color: #f8fafc;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            transition: background 0.15s ease;
+        }
+        .space-3d-search-result-item:hover {
+            background: rgba(56, 189, 248, 0.18) !important;
+        }
     </style>
 <body>
     <!-- Precarga nativa decodificada en paralelo para renderizado instantáneo sin boceto en fotograma 1 -->
@@ -325,20 +338,35 @@
                 <div class="hud-pill altaz" id="hud-pill-bead" style="display: none;"></div>
             </div>
         </div>
+
+        <!-- 3. Vista de Mapa 2D Interactivo (Leaflet) -->
+        <div class="viewport-layer" id="layer-map" style="display: none; width: 100%; height: 100%; position: absolute; inset: 0;">
+            <div id="leaflet-map-container" style="width: 100%; height: 100%;"></div>
+        </div>
     </main>
 
-    <!-- Banner Flotante para Modo Selección en el Globo 3D -->
-    <div id="globe-picking-banner" style="display: none; position: absolute; top: 18px; left: 50%; transform: translateX(-50%); z-index: 100; align-items: center; gap: 12px; background: rgba(11, 19, 41, 0.95); border: 1px solid var(--accent-blue); padding: 7px 14px; border-radius: 16px; box-shadow: 0 10px 32px rgba(0,0,0,0.85); backdrop-filter: blur(16px); pointer-events: auto; max-width: calc(100vw - 30px); box-sizing: border-box;">
-        <div style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: #f8fafc; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-            <i class="fa-solid fa-location-dot" style="color: var(--accent-blue); font-size: 0.95rem; flex-shrink: 0;" aria-hidden="true"></i>
-            <span>Toca en la Tierra: <strong id="globe-picking-coords-text" style="color: var(--accent-blue);">--</strong></span>
+    <!-- Buscador Superior Flotante en Modo 3D (Idéntico y unificado con Modo Mapa) -->
+    <div id="space-3d-search-container" style="display: flex; position: absolute; top: 16px; left: 50%; transform: translateX(-50%); align-items: center; justify-content: center; pointer-events: auto; max-width: calc(100vw - 32px); width: max-content; z-index: 100;">
+        <div style="position: relative; width: 340px; max-width: calc(100vw - 32px);">
+            <div style="display: flex; align-items: center; background: rgba(11, 19, 41, 0.92); backdrop-filter: blur(16px); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 10px; height: 35px; padding: 0 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.65);">
+                <i class="fa-solid fa-magnifying-glass" style="color: #38bdf8; font-size: 0.78rem; margin-right: 8px;"></i>
+                <input type="text" id="space-3d-search-input" placeholder="Buscar municipio o coordenadas..." autocomplete="off" style="width: 100%; background: transparent; border: none; outline: none; color: #f8fafc; font-size: 0.78rem; font-family: var(--font-body, system-ui);">
+                <button type="button" id="space-3d-search-clear" style="display: none; background: none; border: none; color: #94a3b8; cursor: pointer; padding: 0 4px; font-size: 0.78rem;" title="Limpiar"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <!-- Dropdown de resultados de autocompletado en 3D -->
+            <div id="space-3d-search-dropdown" style="display: none; position: absolute; top: calc(100% + 4px); left: 0; width: 100%; background: rgba(11, 19, 41, 0.96); backdrop-filter: blur(16px); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 10px; box-shadow: 0 12px 28px rgba(0,0,0,0.85); max-height: 230px; overflow-y: auto; font-size: 0.78rem; padding: 4px 0; z-index: 1005;">
+            </div>
         </div>
-        <button class="primary-btn" onclick="confirmGlobePicking()" style="height: 32px; padding: 0 13px; font-size: 0.76rem; border-radius: 10px; background: var(--accent-blue); color: #020617; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; border: none; flex-shrink: 0;" aria-label="Confirmar ubicación seleccionada">
-            <i class="fa-solid fa-check" aria-hidden="true"></i> Listo
-        </button>
-        <button class="ctrl-btn" onclick="cancelGlobePicking()" style="height: 32px; width: 32px; padding: 0; font-size: 0.80rem; border-radius: 10px; flex-shrink: 0;" title="Cancelar (Escape)" aria-label="Cancelar selección de ubicación">
-            <i class="fa-solid fa-xmark" aria-hidden="true"></i>
-        </button>
+    </div>
+
+    <!-- Popup Flotante Interactivo 3D Estilo NASA (Idéntico a Modo Mapa y a la cápsula de circunstancias locales) -->
+    <div id="globe-3d-popup" style="display: none; position: absolute; z-index: 520; pointer-events: auto; transform: translate(-50%, -100%); margin-top: -14px;">
+        <div class="globe-3d-popup-card" style="background: linear-gradient(135deg, rgba(14, 165, 233, 0.08), rgba(249, 115, 22, 0.06)), rgba(11, 19, 41, 0.96); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 12px; box-shadow: 0 12px 36px rgba(0,0,0,0.75); padding: 8px 10px; position: relative; width: 320px; box-sizing: border-box;">
+            <button type="button" onclick="closeGlobe3DPopup()" style="position: absolute; top: 8px; right: 8px; background: none; border: none; color: #94a3b8; font-size: 0.85rem; cursor: pointer; padding: 2px 6px; z-index: 20;" title="Cerrar"><i class="fa-solid fa-xmark"></i></button>
+            <div id="globe-3d-popup-content"></div>
+        </div>
+        <!-- Puntero / Flecha inferior hacia el marcador -->
+        <div style="position: absolute; bottom: -7px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 8px solid transparent; border-right: 8px solid transparent; border-top: 8px solid rgba(11, 19, 41, 0.96);"></div>
     </div>
 
     <!-- Texto flotante cinematográfico para el Modo Ruta (sin fondo ni borde, estilo documental con text-shadow) -->
@@ -446,7 +474,7 @@
                 </div>
                 <div class="stat-row">
                     <span class="stat-lbl">Duración</span>
-                    <span class="stat-val" id="card-duration">06m23s</span>
+                    <span class="stat-val" id="card-duration">06m 23s</span>
                 </div>
                 <div class="stat-row">
                     <span class="stat-lbl">Franja</span>
@@ -491,17 +519,17 @@
             <!-- Orbital Stepper: Navegación de 1 Saros (18a 11d) y Exeligmos (3 Saros = 54a 1m) -->
             <div class="saros-stepper-row" id="saros-stepper-container">
                 <button class="stepper-btn exeligmos" id="btn-prev-exeligmos" title="Salto Exeligmos: -3 Saros (-54 años, 1 mes)" aria-label="Salto anterior de Exeligmos (54 años)">
-                    <i class="fa-solid fa-angles-left" aria-hidden="true"></i> -54a
+                    <i class="fa-solid fa-angles-left" aria-hidden="true"></i><span>-54a</span>
                 </button>
                 <button class="stepper-btn" id="btn-prev-saros" title="Salto Saros anterior: -1 Saros (-18 años, 11 días)" aria-label="Salto anterior de Saros (18 años)">
-                    <i class="fa-solid fa-angle-left" aria-hidden="true"></i> -18a
+                    <i class="fa-solid fa-angle-left" aria-hidden="true"></i><span>-18a</span>
                 </button>
-                <span style="font-size:0.72rem; color:var(--text-secondary); font-weight:400;" id="stepper-seq-info" title="Número de secuencia / Total de eclipses de la serie">38 / 71</span>
+                <span style="font-size: 0.72rem; color: var(--text-secondary); font-weight: 500; font-family: var(--font-mono); text-align: center; flex-shrink: 0; min-width: 52px;" id="stepper-seq-info" title="Número de secuencia / Total de eclipses de la serie">38 / 71</span>
                 <button class="stepper-btn" id="btn-next-saros" title="Salto Saros siguiente: +1 Saros (+18 años, 11 días)" aria-label="Salto siguiente de Saros (18 años)">
-                    +18a <i class="fa-solid fa-angle-right" aria-hidden="true"></i>
+                    <span>+18a</span><i class="fa-solid fa-angle-right" aria-hidden="true"></i>
                 </button>
                 <button class="stepper-btn exeligmos" id="btn-next-exeligmos" title="Salto Exeligmos: +3 Saros (+54 años, 1 mes)" aria-label="Salto siguiente de Exeligmos (54 años)">
-                    +54a <i class="fa-solid fa-angles-right" aria-hidden="true"></i>
+                    <span>+54a</span><i class="fa-solid fa-angles-right" aria-hidden="true"></i>
                 </button>
             </div>
         </div>
@@ -520,16 +548,16 @@
         </div>
 
         <!-- 1. Selector de Ubicación del Observador -->
-        <div class="section-title" style="display: flex; justify-content: space-between; align-items: flex-start;">
-            <span><i class="fa-solid fa-location-dot" aria-hidden="true"></i> Ubicación</span>
-            <div class="view-mode-selector" style="margin-bottom: 0; padding: 1px; gap: 2px;">
-                <button type="button" class="mode-btn" id="btn-obs-ge" onclick="switchObserverExtreme('GE')" style="padding: 2px 8px; font-size: 0.70rem; height: 20px;" title="Mayor Eclipse (GE): Mínima distancia del eje de sombra al centro de la Tierra">GE</button>
-                <button type="button" class="mode-btn" id="btn-obs-gd" onclick="switchObserverExtreme('GD')" style="padding: 2px 8px; font-size: 0.70rem; height: 20px;" title="Máxima Duración (GD): Punto de mayor duración de la fase central">GD</button>
+        <div class="section-title" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0;">
+            <span style="display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;"><i class="fa-solid fa-location-dot" aria-hidden="true"></i> Ubicación</span>
+            <div class="view-mode-selector" style="width: auto; flex-shrink: 0; margin-bottom: 0; height: 15px; box-sizing: border-box; padding: 0 1px; gap: 2px;">
+                <button type="button" class="mode-btn" id="btn-obs-ge" onclick="switchObserverExtreme('GE')" style="flex: initial; min-width: 22px; padding: 0 4px; font-size: 0.58rem; height: 13px; line-height: 13px; border-radius: 4px;" title="Mayor Eclipse (GE): Mínima distancia del eje de sombra al centro de la Tierra">GE</button>
+                <button type="button" class="mode-btn" id="btn-obs-gd" onclick="switchObserverExtreme('GD')" style="flex: initial; min-width: 22px; padding: 0 4px; font-size: 0.58rem; height: 13px; line-height: 13px; border-radius: 4px;" title="Máxima Duración (GD): Punto de mayor duración de la fase central">GD</button>
             </div>
         </div>
         <div style="display: flex; gap: 8px; align-items: center;">
             <div class="custom-combobox-container" id="observer-combobox-container" style="position: relative; flex: 1; min-width: 0;">
-                <input type="text" class="search-select custom-combobox-input" id="observer-location-input" placeholder="Buscar o elegir ciudad..." value="Mataró (Cosmos Mataró, ES)" style="width: 100%; height: 32px; box-sizing: border-box; padding: 0 32px 0 12px; font-family: var(--font-mono); font-size: 0.80rem; font-weight: 400; background-color: #0f172a; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 10px; color: #f8fafc; cursor: text; outline: none; text-overflow: ellipsis;" autocomplete="off" onfocus="openObserverDropdown(); this.select();" oninput="filterObserverDropdown(this.value, true)" onkeydown="onObserverInputKeyDown(event)">
+                <input type="text" class="search-select custom-combobox-input" id="observer-location-input" placeholder="Buscar ciudad o coordenadas..." value="Mataró (Cosmos Mataró, ES)" style="width: 100%; height: 32px; box-sizing: border-box; padding: 0 32px 0 12px; font-family: var(--font-mono); font-size: 0.80rem; font-weight: 400; background-color: #0f172a; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 10px; color: #f8fafc; cursor: text; outline: none; text-overflow: ellipsis;" autocomplete="off" onfocus="openObserverDropdown(); this.select();" oninput="filterObserverDropdown(this.value, true)" onkeydown="onObserverInputKeyDown(event)">
                 <span style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; color: #94a3b8; font-size: 0.72rem;"><i class="fa-solid fa-chevron-down"></i></span>
                 
                 <!-- Desplegable Filtrable Flotante Estilizado Adaptativo -->
@@ -538,42 +566,12 @@
                 </div>
             </div>
             
-            <!-- Pulsador Único Segmentado de 3 Posiciones: [ 🌍 Marcar | 🎛️ Ajustar | 🎯 GPS ] -->
+            <!-- Herramienta de Ubicación GPS -->
             <div class="location-tools-group" id="location-tools-group">
-                <button type="button" class="location-tool-btn" id="btn-pick-on-globe" onclick="toggleGlobePickingMode(true)" title="Marcar en el globo terráqueo 3D" aria-label="Seleccionar ubicación en el globo">
-                    <i class="fa-solid fa-earth-americas"></i>
-                </button>
-                <button type="button" class="location-tool-btn" id="btn-toggle-custom-coords" onclick="toggleCustomCoords()" title="Introducir coordenadas" aria-label="Introducir coordenadas personalizadas">
-                    <i class="fa-solid fa-sliders"></i>
-                </button>
                 <button type="button" class="location-tool-btn" id="btn-observer-gps" onclick="detectUserLocation()" title="Detectar mi ubicación actual (GPS)" aria-label="Usar GPS del dispositivo">
                     <i class="fa-solid fa-crosshairs"></i>
                 </button>
             </div>
-        </div>
-        
-        <!-- Inputs para Coordenadas Personalizadas -->
-        <div id="observer-custom-coords" style="display: none; gap: 6px; align-items: center;">
-            <div style="flex: 1; display: flex; align-items: center; background: rgba(0,0,0,0.3); border: 1px solid rgba(56,189,248,0.25); border-radius: 6px; padding: 0 6px;">
-                <span style="font-size: 0.68rem; color: var(--text-secondary); margin-right: 4px; font-family: var(--font-mono);">Lat:</span>
-                <input type="number" id="custom-obs-lat" min="-90" max="90" step="0.01" value="41.54" aria-label="Latitud del observador" style="width: 100%; background: transparent; border: none; color: #fff; font-family: var(--font-mono); font-size: 0.75rem; padding: 4px 0;" oninput="onCustomCoordsChange()">
-            </div>
-            <div style="flex: 1; display: flex; align-items: center; background: rgba(0,0,0,0.3); border: 1px solid rgba(56,189,248,0.25); border-radius: 6px; padding: 0 6px;">
-                <span style="font-size: 0.68rem; color: var(--text-secondary); margin-right: 4px; font-family: var(--font-mono);">Lon:</span>
-                <input type="number" id="custom-obs-lon" min="-180" max="180" step="0.01" value="2.44" aria-label="Longitud del observador" style="width: 100%; background: transparent; border: none; color: #fff; font-family: var(--font-mono); font-size: 0.75rem; padding: 4px 0;" oninput="onCustomCoordsChange()">
-            </div>
-            <button class="ctrl-btn" onclick="toggleGlobePickingMode(true)" title="Marcar en el globo 3D" style="height: 28px; padding: 0 8px; font-size: 0.72rem; gap: 4px; border-radius: 6px; flex-shrink: 0;">
-                <i class="fa-solid fa-earth-americas"></i>
-            </button>
-        </div>
-
-        <!-- Indicador de la Ubicación Seleccionada Activa y Zona Horaria -->
-        <div style="margin-top: 2px; margin-bottom: 2px; font-size: 0.74rem; color: #f8fafc; font-family: var(--font-mono); display: flex; justify-content: space-between; align-items: center; padding: 0 16px;">
-            <div style="display: flex; align-items: center; gap: 6px;">
-                <i class="fa-solid fa-location-crosshairs" style="font-size: 0.72rem; color: var(--accent-blue);"></i>
-                <span id="observer-header-subtitle" style="font-family: var(--font-mono); font-size: 0.75rem; color: #f8fafc; font-weight: 400; letter-spacing: 0;">41° 32' 58" N  2° 26' 53" E</span>
-            </div>
-            <span id="observer-header-tz" style="font-family: var(--font-mono); font-size: 0.72rem; color: #f8fafc; font-weight: 600;">UTC+2</span>
         </div>
 
         <!-- 2. Visibilidad y Fases Locales -->
@@ -582,6 +580,14 @@
             <button onclick="exportSelectedEclipseToICal()" style="background: none; border: none; color: var(--accent-blue); font-size: 0.72rem; cursor: pointer; text-decoration: underline;"><i class="fa-solid fa-calendar-plus"></i> iCal</button>
         </div>
         <div class="mataro-card" style="margin-top: 0;">
+            <!-- Coordenadas del Observador y Zona Horaria (formato idéntico a tarjeta flotante) -->
+            <div style="font-size: 0.74rem; font-family: var(--font-mono); margin-bottom: 4px; display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 5px;">
+                    <i class="fa-solid fa-location-crosshairs" style="color: var(--accent-blue, #38bdf8); font-size: 0.70rem;"></i>
+                    <span id="observer-header-subtitle" style="color: #f8fafc; font-weight: 400;">41° 32' 58" N · 2° 26' 53" E</span>
+                </div>
+                <span id="observer-header-tz" style="color: #f8fafc; font-weight: 600;">UTC+2</span>
+            </div>
             <div class="mataro-badge-header">
                 <span class="mataro-vis-tag vis-total" id="mataro-vis-badge">TOTAL</span>
             </div>
@@ -607,7 +613,10 @@
         </div>
         <div class="view-mode-selector">
             <button class="mode-btn active" id="btn-mode-3d" onclick="switchMainView('3d')" title="Vista orbital 3D en el espacio">
-                <i class="fa-solid fa-cube"></i> Espacio 3D
+                <i class="fa-solid fa-cube"></i> 3D
+            </button>
+            <button class="mode-btn" id="btn-mode-map" onclick="switchMainView('map')" title="Mapa 2D interactivo y franja de totalidad estilo NASA">
+                <i class="fa-solid fa-map"></i> Mapa
             </button>
             <button class="mode-btn" id="btn-mode-telescopic" onclick="switchMainView('telescopic')" title="Vista telescópica local (Observador)">
                 <i class="fa-solid fa-circle-dot"></i> Telescopio
@@ -646,6 +655,14 @@
 
                 <!-- Contenedor Desplegable de Opciones Secundarias en Espacio 3D -->
                 <div class="more-layers-container" id="more-layers-container">
+                    <label class="checkbox-row" id="lbl-show-celestial-sphere">
+                        <input type="checkbox" id="chk-show-celestial-sphere" checked>
+                        <span>Esfera celeste y estrellas</span>
+                    </label>
+                    <label class="checkbox-row" id="lbl-show-constellations" style="padding-left: 24px; transition: var(--transition-smooth);">
+                        <input type="checkbox" id="chk-show-constellations" checked>
+                        <span>Líneas de constelaciones</span>
+                    </label>
                     <label class="checkbox-row" id="lbl-show-nodes">
                         <input type="checkbox" id="chk-show-nodes" checked>
                         <span>Nodos de la órbita</span>
@@ -738,6 +755,29 @@
                     </label>
                 </div>
             </div>
+
+            <!-- GRUPO 3: CONTROLES PARA MODO MAPA 2D -->
+            <div id="layers-group-map" style="display: none; flex-direction: column; gap: 0.45rem;">
+                <div style="font-size: 0.72rem; color: var(--text-secondary); margin-bottom: 2px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Estilo de mapa</div>
+                <div style="display: flex; gap: 4px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: 8px; padding: 2px;">
+                    <button type="button" class="mini-toggle-btn map-basemap-side-btn active" data-basemap="dark" onclick="EclipseMap2D.switchBasemap('dark')" style="flex: 1; text-align: center;">Oscuro</button>
+                    <button type="button" class="mini-toggle-btn map-basemap-side-btn" data-basemap="streets" onclick="EclipseMap2D.switchBasemap('streets')" style="flex: 1; text-align: center;">Callejero</button>
+                    <button type="button" class="mini-toggle-btn map-basemap-side-btn" data-basemap="satellite" onclick="EclipseMap2D.switchBasemap('satellite')" style="flex: 1; text-align: center;">Satélite</button>
+                </div>
+                <div style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 6px; margin-bottom: 2px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Capas del eclipse</div>
+                <label class="checkbox-row" id="lbl-map-center-line">
+                    <input type="checkbox" id="chk-map-center-line" checked onchange="EclipseMap2D.toggleLayer('centerLine', this.checked)">
+                    <span>Línea central</span>
+                </label>
+                <label class="checkbox-row" id="lbl-map-limits">
+                    <input type="checkbox" id="chk-map-limits" checked onchange="EclipseMap2D.toggleLayer('limits', this.checked)">
+                    <span>Límites norte / sur</span>
+                </label>
+                <label class="checkbox-row" id="lbl-map-path-shade">
+                    <input type="checkbox" id="chk-map-path-shade" checked onchange="EclipseMap2D.toggleLayer('shade', this.checked)">
+                    <span>Franja de totalidad / anularidad</span>
+                </label>
+            </div>
         </div>
     </div>
 
@@ -745,7 +785,7 @@
     <div class="settings-panel collapsed" id="lunar-limb-panel" role="region" aria-label="Panel del Perfil del Limbo">
         <div class="panel-header">
             <h2>Perfil del limbo</h2>
-            <div class="panel-toggle" id="btn-toggle-limb" onclick="toggleLunarLimbPanel(false)" role="button" tabindex="0" title="Minimizar panel" aria-label="Minimizar panel del perfil del limbo"><i class="fa-solid fa-chevron-left" aria-hidden="true"></i></div>
+            <div class="panel-toggle" id="btn-toggle-limb" onclick="toggleLunarLimbPanel(false)" role="button" tabindex="0" title="Cerrar panel" aria-label="Cerrar panel del perfil del limbo"><i class="fa-solid fa-xmark" aria-hidden="true"></i></div>
         </div>
 
         <!-- Bloque Libración Lunar -->
@@ -765,23 +805,23 @@
 
         <!-- Datos de Contacto y Telemetría Científica estilo Eclipse Calculator 2.0 (interlineado idéntico a tabla de contactos) -->
         <div style="background: rgba(0,0,0,0.45); padding: 8px 10px; border-radius: 10px; border: 1px solid rgba(56, 189, 248, 0.18); display: flex; flex-direction: column;">
-            <div style="display: flex; justify-content: space-between; align-items: center; height: 18px; min-height: 18px; max-height: 18px; line-height: 17px; font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-secondary); border-bottom: 1px solid rgba(255,255,255,0.04); padding: 0 4px; box-sizing: border-box;">
+            <div style="display: flex; justify-content: space-between; align-items: center; height: 18px; min-height: 18px; max-height: 18px; line-height: 17px; font-family: var(--font-mono); font-size: 0.72rem; color: var(--accent-blue, #38bdf8); font-weight: 500; border-bottom: 1px solid rgba(255,255,255,0.04); padding: 0 4px; box-sizing: border-box;">
                 <div style="display: flex; align-items: center; gap: 6px;">
-                    <span style="min-width: 38px;">Fase</span>
-                    <span id="limb-time-header-label">Hora (UT1)</span>
+                    <span style="min-width: 38px; color: var(--accent-blue, #38bdf8); font-weight: 500;">Fase</span>
+                    <span id="limb-time-header-label" style="color: var(--accent-blue, #38bdf8); font-weight: 500;">Hora (UT1)</span>
                 </div>
-                <span style="text-align: right;">Ángulo polar</span>
+                <span style="text-align: right; color: var(--accent-blue, #38bdf8); font-weight: 500;">Ángulo polar</span>
             </div>
-            <div style="display: flex; justify-content: space-between; align-items: center; height: 18px; min-height: 18px; max-height: 18px; line-height: 17px; font-family: var(--font-mono); font-size: 0.76rem; border-bottom: 1px solid rgba(255,255,255,0.04); padding: 0 4px; box-sizing: border-box;">
-                <div id="limb-c2-text" style="display: flex; align-items: center; gap: 6px; white-space: nowrap;"><span style="color: var(--accent-blue); font-weight: 400; min-width: 38px;">C2'</span> <span style="color: #f8fafc; min-width: 68px;">--:--:--</span></div>
-                <div id="limb-p2-text" style="display: flex; align-items: center; justify-content: flex-end; gap: 6px; white-space: nowrap;"><span style="color: var(--accent-blue); font-weight: 400; min-width: 26px; text-align: left;">P2'</span> <span style="color: #f8fafc; min-width: 48px; text-align: right;">--</span></div>
+            <div class="limb-timetable-row" style="display: flex; justify-content: space-between; align-items: center; height: 18px; min-height: 18px; max-height: 18px; line-height: 17px; font-family: var(--font-mono); font-size: 0.76rem; border-bottom: 1px solid rgba(255,255,255,0.04); padding: 0 4px; box-sizing: border-box; cursor: pointer; border-radius: 4px;">
+                <div id="limb-c2-text" style="display: flex; align-items: center; gap: 6px; white-space: nowrap;"><span class="limb-row-key" style="color: #f8fafc; font-weight: 600; min-width: 38px;">C2'</span> <span style="color: #f8fafc; min-width: 68px;">--:--:--</span></div>
+                <div id="limb-p2-text" style="display: flex; align-items: center; justify-content: flex-end; gap: 6px; white-space: nowrap;"><span class="limb-row-key" style="color: #f8fafc; font-weight: 600; min-width: 26px; text-align: left;">P2'</span> <span style="color: #f8fafc; min-width: 48px; text-align: right;">--</span></div>
             </div>
-            <div style="display: flex; justify-content: space-between; align-items: center; height: 18px; min-height: 18px; max-height: 18px; line-height: 17px; font-family: var(--font-mono); font-size: 0.76rem; border-bottom: 1px solid rgba(255,255,255,0.04); padding: 0 4px; box-sizing: border-box;">
-                <div id="limb-c3-text" style="display: flex; align-items: center; gap: 6px; white-space: nowrap;"><span style="color: var(--accent-blue); font-weight: 400; min-width: 38px;">C3'</span> <span style="color: #f8fafc; min-width: 68px;">--:--:--</span></div>
-                <div id="limb-p3-text" style="display: flex; align-items: center; justify-content: flex-end; gap: 6px; white-space: nowrap;"><span style="color: var(--accent-blue); font-weight: 400; min-width: 26px; text-align: left;">P3'</span> <span style="color: #f8fafc; min-width: 48px; text-align: right;">--</span></div>
+            <div class="limb-timetable-row" style="display: flex; justify-content: space-between; align-items: center; height: 18px; min-height: 18px; max-height: 18px; line-height: 17px; font-family: var(--font-mono); font-size: 0.76rem; border-bottom: 1px solid rgba(255,255,255,0.04); padding: 0 4px; box-sizing: border-box; cursor: pointer; border-radius: 4px;">
+                <div id="limb-c3-text" style="display: flex; align-items: center; gap: 6px; white-space: nowrap;"><span class="limb-row-key" style="color: #f8fafc; font-weight: 600; min-width: 38px;">C3'</span> <span style="color: #f8fafc; min-width: 68px;">--:--:--</span></div>
+                <div id="limb-p3-text" style="display: flex; align-items: center; justify-content: flex-end; gap: 6px; white-space: nowrap;"><span class="limb-row-key" style="color: #f8fafc; font-weight: 600; min-width: 26px; text-align: left;">P3'</span> <span style="color: #f8fafc; min-width: 48px; text-align: right;">--</span></div>
             </div>
-            <div style="display: flex; justify-content: space-between; align-items: center; height: 18px; min-height: 18px; max-height: 18px; line-height: 17px; font-family: var(--font-mono); font-size: 0.76rem; padding: 0 4px; box-sizing: border-box;">
-                <div id="limb-duration-text" style="display: flex; align-items: center; gap: 6px; white-space: nowrap;"><span style="color: var(--accent-blue); font-weight: 400; min-width: 38px;">Dur.</span> <span style="color: #f8fafc; min-width: 68px;">--</span></div>
+            <div class="limb-timetable-row" style="display: flex; justify-content: space-between; align-items: center; height: 18px; min-height: 18px; max-height: 18px; line-height: 17px; font-family: var(--font-mono); font-size: 0.76rem; padding: 0 4px; box-sizing: border-box; cursor: pointer; border-radius: 4px;">
+                <div id="limb-duration-text" style="display: flex; align-items: center; gap: 6px; white-space: nowrap;"><span class="limb-row-key" style="color: #f8fafc; font-weight: 600; min-width: 38px;">Dur.</span> <span style="color: #f8fafc; min-width: 68px;">--</span></div>
                 <div></div>
             </div>
         </div>
@@ -837,7 +877,9 @@
     <script src="route_director.js"></script>
     <script src="lunar_limb_engine.js"></script>
     <script src="besselian_engine.js"></script>
+    <script src="celestial_sphere_3d.js"></script>
     <script src="solar_scene_3d.js"></script>
+    <script src="eclipse_map_2d.js"></script>
     <script src="shared_ui_panels.js"></script>
     <script>
         // RAD y DEG definidos en besselian_engine.js
@@ -1061,7 +1103,7 @@
         function updateObserverPosition(lat, lon, name, tz) {
             currentObserver.lat = lat;
             currentObserver.lon = lon;
-            const dmsCoordsStr = `${formatCoordDms(lat, true)}  ${formatCoordDms(lon, false)}`;
+            const dmsCoordsStr = `${formatCoordDms(lat, true)} · ${formatCoordDms(lon, false)}`;
             currentObserver.name = (name && name !== 'Personalizado') ? name : dmsCoordsStr;
             currentObserver.tz = tz || getTimeZoneFromLon(lon);
 
@@ -1069,11 +1111,6 @@
                 observerMarkerGroup3D.position.copy(latLngToVector3(lat, lon, EARTH_RADIUS * 1.004));
                 observerMarkerGroup3D.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), latLngToVector3(lat, lon, 1.0).normalize());
             }
-
-            const latIn = getDOM('custom-obs-lat');
-            const lonIn = getDOM('custom-obs-lon');
-            if (latIn && document.activeElement !== latIn) latIn.value = lat;
-            if (lonIn && document.activeElement !== lonIn) lonIn.value = lon;
 
             const locInput = getDOM('observer-location-input');
             if (locInput && document.activeElement !== locInput) {
@@ -1093,6 +1130,9 @@
                     renderTelescopicView();
                 }
                 updateShadowAtTime(simCurrentT);
+            }
+            if (typeof EclipseMap2D !== 'undefined' && EclipseMap2D.isLoaded) {
+                EclipseMap2D.setObserverMarker(lat, lon, currentObserver.name);
             }
             if (typeof searchMode !== 'undefined' && searchMode === 'location') {
                 const cVal = (typeof currentSelectedCentury !== 'undefined' && currentSelectedCentury) ? currentSelectedCentury : (typeof getCenturyFromYear === 'function' ? getCenturyFromYear(currentEclipse?.year || 2027) : 21);
@@ -1119,13 +1159,116 @@
             activeDropdownIndex = -1;
         }
 
+        /**
+         * Parsea coordenadas en múltiples formatos:
+         * 1) Decimal: "41.54, 2.44", "41.54 -2.44", "-12.5; 45.6"
+         * 2) Decimal con hemisferio: "41.495°N 2.379°E", "41.54N, 2.44E", "2.379E, 41.495N"
+         * 3) DMS: "41° 29' 43" N, 2° 22' 45" E", "41 29 43 N 2 22 45 E"
+         */
+        function parseCoordinatesInput(str) {
+            if (!str || typeof str !== 'string') return null;
+            const s = str.trim();
+            if (!s) return null;
+
+            // 1. Decimal simple
+            const decSimple = s.match(/^\s*([+-]?\d+(?:\.\d+)?)\s*[,;\s]\s*([+-]?\d+(?:\.\d+)?)\s*$/);
+            if (decSimple) {
+                const lat = parseFloat(decSimple[1]);
+                const lon = parseFloat(decSimple[2]);
+                if (!isNaN(lat) && !isNaN(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180) {
+                    return { lat, lon };
+                }
+            }
+
+            // 2. Decimal con hemisferios (Lat, Lon)
+            const decHemi1 = s.match(/^\s*([+-]?\d+(?:\.\d+)?)\s*°?\s*([NSns])\s*[,;\s]\s*([+-]?\d+(?:\.\d+)?)\s*°?\s*([EWewOo])\s*$/);
+            if (decHemi1) {
+                let lat = parseFloat(decHemi1[1]);
+                if (/s/i.test(decHemi1[2])) lat = -Math.abs(lat);
+                let lon = parseFloat(decHemi1[3]);
+                if (/w|o/i.test(decHemi1[4])) lon = -Math.abs(lon);
+                if (!isNaN(lat) && !isNaN(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180) {
+                    return { lat, lon };
+                }
+            }
+
+            // 2b. Decimal con hemisferios invertido (Lon, Lat)
+            const decHemi2 = s.match(/^\s*([+-]?\d+(?:\.\d+)?)\s*°?\s*([EWewOo])\s*[,;\s]\s*([+-]?\d+(?:\.\d+)?)\s*°?\s*([NSns])\s*$/);
+            if (decHemi2) {
+                let lon = parseFloat(decHemi2[1]);
+                if (/w|o/i.test(decHemi2[2])) lon = -Math.abs(lon);
+                let lat = parseFloat(decHemi2[3]);
+                if (/s/i.test(decHemi2[4])) lat = -Math.abs(lat);
+                if (!isNaN(lat) && !isNaN(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180) {
+                    return { lat, lon };
+                }
+            }
+
+            // 3. DMS estándar: 41° 29' 43" N, 2° 22' 45" E
+            const dms1 = s.match(/^\s*(\d{1,2})[°\s]+(\d{1,2})['\s]+(?:(\d+(?:\.\d+)?)["]?\s*)?([NSns])\s*[,;\s]\s*(\d{1,3})[°\s]+(\d{1,2})['\s]+(?:(\d+(?:\.\d+)?)["]?\s*)?([EWewOo])\s*$/);
+            if (dms1) {
+                let lat = parseFloat(dms1[1]) + parseFloat(dms1[2]) / 60 + (dms1[3] ? parseFloat(dms1[3]) / 3600 : 0);
+                if (/s/i.test(dms1[4])) lat = -lat;
+                let lon = parseFloat(dms1[5]) + parseFloat(dms1[6]) / 60 + (dms1[7] ? parseFloat(dms1[7]) / 3600 : 0);
+                if (/w|o/i.test(dms1[8])) lon = -lon;
+                if (!isNaN(lat) && !isNaN(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180) {
+                    return { lat, lon };
+                }
+            }
+
+            // 3b. DMS invertido
+            const dms2 = s.match(/^\s*(\d{1,3})[°\s]+(\d{1,2})['\s]+(?:(\d+(?:\.\d+)?)["]?\s*)?([EWewOo])\s*[,;\s]\s*(\d{1,2})[°\s]+(\d{1,2})['\s]+(?:(\d+(?:\.\d+)?)["]?\s*)?([NSns])\s*$/);
+            if (dms2) {
+                let lon = parseFloat(dms2[1]) + parseFloat(dms2[2]) / 60 + (dms2[3] ? parseFloat(dms2[3]) / 3600 : 0);
+                if (/w|o/i.test(dms2[4])) lon = -lon;
+                let lat = parseFloat(dms2[5]) + parseFloat(dms2[6]) / 60 + (dms2[7] ? parseFloat(dms2[7]) / 3600 : 0);
+                if (/s/i.test(dms2[8])) lat = -lat;
+                if (!isNaN(lat) && !isNaN(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180) {
+                    return { lat, lon };
+                }
+            }
+
+            return null;
+        }
+        window.parseCoordinatesInput = parseCoordinatesInput;
+
         function filterObserverDropdown(query = '', showMenu = true) {
             const menu = getDOM('observer-dropdown-menu');
             if (!menu) return;
             menu.innerHTML = '';
             menu.style.display = showMenu ? 'block' : 'none';
 
-            const cleanQuery = (query || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+            const trimmed = (query || '').trim();
+            const cleanQuery = trimmed.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+            // 1. Si el texto son coordenadas directas, sugerir salto inmediato arriba del todo
+            const parsedCoords = parseCoordinatesInput(trimmed);
+            if (parsedCoords) {
+                const coordItem = document.createElement('div');
+                coordItem.className = 'dropdown-option-item';
+                coordItem.style.padding = '6px 10px';
+                coordItem.style.fontFamily = 'var(--font-mono)';
+                coordItem.style.fontSize = '0.78rem';
+                coordItem.style.color = '#38bdf8';
+                coordItem.style.fontWeight = '600';
+                coordItem.style.cursor = 'pointer';
+                coordItem.style.borderRadius = '6px';
+                coordItem.style.background = 'rgba(56, 189, 248, 0.15)';
+                coordItem.style.border = '1px solid rgba(56, 189, 248, 0.35)';
+                coordItem.style.marginBottom = '4px';
+                coordItem.style.display = 'flex';
+                coordItem.style.alignItems = 'center';
+                coordItem.style.gap = '8px';
+                coordItem.innerHTML = `<i class="fa-solid fa-location-crosshairs" style="color: #38bdf8; font-size: 0.82rem;"></i><span>Fijar coordenadas: <strong>${parsedCoords.lat.toFixed(4)}°, ${parsedCoords.lon.toFixed(4)}°</strong></span>`;
+                coordItem.onclick = (e) => {
+                    e.stopPropagation();
+                    const dmsStr = `${formatCoordDms(parsedCoords.lat, true)} ${formatCoordDms(parsedCoords.lon, false)}`;
+                    closeObserverDropdown();
+                    clearObserverExtremeMode();
+                    updateObserverPosition(parsedCoords.lat, parsedCoords.lon, dmsStr, null);
+                };
+                menu.appendChild(coordItem);
+            }
 
             let matches = OBSERVER_PRESETS.filter(p => {
                 if (!cleanQuery) return true;
@@ -1141,12 +1284,15 @@
             }
 
             if (matches.length === 0) {
-                const noResult = document.createElement('div');
-                noResult.style.padding = '8px 12px';
-                noResult.style.fontSize = '0.78rem';
-                noResult.style.color = '#94a3b8';
-                noResult.textContent = 'Sin coincidencias. Pulsa 🎛️ para fijar Lat/Lon.';
-                menu.appendChild(noResult);
+                if (!parsedCoords) {
+                    const noResult = document.createElement('div');
+                    noResult.style.padding = '8px 12px';
+                    noResult.style.fontSize = '0.74rem';
+                    noResult.style.color = '#94a3b8';
+                    noResult.style.lineHeight = '1.4';
+                    noResult.innerHTML = 'Sin coincidencias en el catálogo.<br><span style="color: #64748b; font-size: 0.70rem;">Introduce coordenadas (ej: 41.54, 2.44) o pulsa <i class="fa-solid fa-earth-americas" style="color:#38bdf8;"></i> / <i class="fa-solid fa-crosshairs" style="color:#38bdf8;"></i>.</span>';
+                    menu.appendChild(noResult);
+                }
                 return;
             }
 
@@ -1236,6 +1382,15 @@
                 highlightDropdownItem(items, activeDropdownIndex);
             } else if (e.key === 'Enter') {
                 e.preventDefault();
+                const input = getDOM('observer-location-input');
+                const parsedCoords = input ? parseCoordinatesInput(input.value) : null;
+                if (parsedCoords) {
+                    const dmsStr = `${formatCoordDms(parsedCoords.lat, true)} ${formatCoordDms(parsedCoords.lon, false)}`;
+                    closeObserverDropdown();
+                    clearObserverExtremeMode();
+                    updateObserverPosition(parsedCoords.lat, parsedCoords.lon, dmsStr, null);
+                    return;
+                }
                 if (activeDropdownIndex >= 0 && activeDropdownIndex < items.length) {
                     items[activeDropdownIndex].click();
                 } else if (items.length > 0) {
@@ -1268,35 +1423,8 @@
             }
         });
 
-        // --- HERRAMIENTAS DE UBICACIÓN (COORDENADAS PERSONALIZADAS Y GPS) ---
-        function toggleCustomCoords() {
-            const panel = getDOM('observer-custom-coords');
-            const btn = getDOM('btn-toggle-custom-coords');
-            if (!panel) return;
-            const isHidden = panel.style.display === 'none' || panel.style.display === '';
-            panel.style.display = isHidden ? 'flex' : 'none';
-            if (btn) {
-                if (isHidden) btn.classList.add('active');
-                else btn.classList.remove('active');
-            }
-        }
-
+        // --- HERRAMIENTAS DE UBICACIÓN (GPS Y GLOBO 3D) ---
         let gpsRequestId = 0;
-
-        function onCustomCoordsChange() {
-            gpsRequestId++;
-            let latVal = parseFloat(getDOM('custom-obs-lat')?.value);
-            let lonVal = parseFloat(getDOM('custom-obs-lon')?.value);
-            if (isNaN(latVal)) latVal = 0;
-            if (isNaN(lonVal)) lonVal = 0;
-            latVal = Math.max(-90, Math.min(90, latVal));
-            lonVal = Math.max(-180, Math.min(180, lonVal));
-
-            clearObserverExtremeMode();
-
-            const coordsStr = formatLatLonString(latVal, lonVal, 2);
-            updateObserverPosition(latVal, lonVal, coordsStr, null);
-        }
 
         function detectUserLocation() {
             const btn = getDOM('btn-observer-gps');
@@ -1333,77 +1461,317 @@
             );
         }
 
-        // --- SELECCIÓN DIRECTA EN EL GLOBO TERRÁQUEO 3D (GLOBE PICKING) ---
-        let isGlobePickingMode = false;
-        let pickedLatLon = null;
+        // --- SELECCIÓN Y BÚSQUEDA DIRECTA EN EL GLOBO TERRÁQUEO 3D (UNIFICADA CON MAPA) ---
+        let activeGlobePopupPoint = null;
+        let lastInspectedLocation3D = null;
+        let isGlobePopupOpen = false;
+
+        function closeGlobe3DPopup() {
+            isGlobePopupOpen = false;
+            activeGlobePopupPoint = null;
+            lastInspectedLocation3D = null;
+            if (typeof EclipseMap2D !== 'undefined' && typeof EclipseMap2D.clearInspectedLocation === 'function') {
+                EclipseMap2D.clearInspectedLocation();
+            }
+            const popupEl = getDOM('globe-3d-popup');
+            if (popupEl) {
+                popupEl.style.display = 'none';
+                popupEl.style.visibility = 'hidden';
+            }
+        }
+        window.closeGlobe3DPopup = closeGlobe3DPopup;
+
+        function showGlobe3DPopup(lat, lon, locationName = null) {
+            const popupEl = getDOM('globe-3d-popup');
+            const contentEl = getDOM('globe-3d-popup-content');
+            if (!popupEl || !contentEl) return;
+
+            const circ = (currentEclipse && typeof calculateLocalSolarCircumstances === 'function')
+                ? calculateLocalSolarCircumstances(currentEclipse, lat, lon)
+                : null;
+
+            if (typeof EclipseMap2D !== 'undefined' && typeof EclipseMap2D.buildNasaPopupHtml === 'function') {
+                contentEl.innerHTML = EclipseMap2D.buildNasaPopupHtml(lat, lon, circ, locationName, currentEclipse);
+            } else if (typeof buildNasaPopupHtml === 'function') {
+                contentEl.innerHTML = buildNasaPopupHtml(lat, lon, circ, locationName, currentEclipse);
+            }
+
+            isGlobePopupOpen = true;
+            popupEl.style.display = 'block';
+            popupEl.style.visibility = 'visible';
+            updateGlobe3DPopupPosition();
+            requestRender();
+        }
+        window.showGlobe3DPopup = showGlobe3DPopup;
+
+        function updateGlobe3DPopupPosition() {
+            const popupEl = getDOM('globe-3d-popup');
+            if (!popupEl || popupEl.style.display === 'none' || !activeGlobePopupPoint || !earthMesh || !camera) {
+                return;
+            }
+
+            // Convertir punto local a coordenadas de mundo
+            const worldPos = activeGlobePopupPoint.clone();
+            earthMesh.localToWorld(worldPos);
+
+            // Comprobar si el punto está de espaldas a la cámara (horizon culling)
+            const earthCenter = new THREE.Vector3();
+            earthMesh.getWorldPosition(earthCenter);
+            const surfaceNormal = worldPos.clone().sub(earthCenter).normalize();
+            const toCamera = camera.position.clone().sub(worldPos).normalize();
+            const dot = surfaceNormal.dot(toCamera);
+
+            // Proyectar a coordenadas de pantalla
+            const proj = worldPos.clone().project(camera);
+
+            if (proj.z > 1.0 || dot <= 0.05) {
+                popupEl.style.visibility = 'hidden';
+                return;
+            }
+
+            popupEl.style.visibility = 'visible';
+            const screenX = (proj.x * 0.5 + 0.5) * window.innerWidth;
+            const screenY = (-(proj.y * 0.5) + 0.5) * window.innerHeight;
+
+            popupEl.style.left = `${Math.round(screenX)}px`;
+            popupEl.style.top = `${Math.round(screenY)}px`;
+        }
+        window.updateGlobe3DPopupPosition = updateGlobe3DPopupPosition;
+
+        function inspectGlobeLocation(lat, lon, locationName = null, autoSetObserver = false, localPoint = null) {
+            if (autoSetObserver) {
+                clearObserverExtremeMode();
+                const coordsStr = formatLatLonString(lat, lon, 2);
+                updateObserverPosition(lat, lon, locationName || coordsStr, null);
+            }
+
+            if (!localPoint && typeof latLngToVector3 === 'function') {
+                localPoint = latLngToVector3(lat, lon, EARTH_RADIUS * 1.004);
+            }
+            activeGlobePopupPoint = localPoint ? localPoint.clone() : null;
+            lastInspectedLocation3D = { lat, lon, locationName };
+            isGlobePopupOpen = true;
+
+            showGlobe3DPopup(lat, lon, locationName);
+        }
+        window.inspectGlobeLocation = inspectGlobeLocation;
 
         function toggleGlobePickingMode(enable) {
-            if (enable) startGlobePickingMode();
-            else cancelGlobePicking();
-        }
-
-        function startGlobePickingMode() {
-            isGlobePickingMode = true;
-            const banner = getDOM('globe-picking-banner');
-            const btnPick = getDOM('btn-pick-on-globe');
-            if (banner) banner.style.display = 'flex';
-            if (btnPick) btnPick.classList.add('active');
-
             if (currentActiveView !== '3d') {
                 switchMainView('3d');
             }
-
-            const textEl = getDOM('globe-picking-coords-text');
-            if (textEl) textEl.textContent = formatLatLonString(currentObserver.lat, currentObserver.lon, 2);
-            pickedLatLon = { lat: currentObserver.lat, lon: currentObserver.lon };
-        }
-
-        function handleGlobePickingClick(clientX, clientY) {
-            const raycaster = new THREE.Raycaster();
-            const mouse = new THREE.Vector2(
-                (clientX / window.innerWidth) * 2 - 1,
-                -(clientY / window.innerHeight) * 2 + 1
-            );
-            raycaster.setFromCamera(mouse, camera);
-
-            const intersects = raycaster.intersectObject(earthMesh, false);
-            if (intersects.length > 0) {
-                const hit = intersects[0];
-                const localPoint = hit.point.clone();
-                if (earthMesh) earthMesh.worldToLocal(localPoint);
-                const coords = vector3ToLatLng(localPoint);
-                pickedLatLon = coords;
-
-                const coordsStr = formatLatLonString(coords.lat, coords.lon, 2);
-                const textEl = getDOM('globe-picking-coords-text');
-                if (textEl) textEl.textContent = coordsStr;
-
-                clearObserverExtremeMode();
-
-                updateObserverPosition(coords.lat, coords.lon, coordsStr, null);
+            if (currentObserver && currentObserver.lat != null && currentObserver.lon != null) {
+                if (typeof recenterEarth === 'function') {
+                    recenterEarth(currentObserver.lat, currentObserver.lon);
+                }
+                inspectGlobeLocation(currentObserver.lat, currentObserver.lon, currentObserver.name || null, false);
             }
+            const sInput = getDOM('space-3d-search-input');
+            if (sInput) sInput.focus();
         }
+        window.toggleGlobePickingMode = toggleGlobePickingMode;
 
-        function confirmGlobePicking() {
-            if (pickedLatLon) {
-                const coordsStr = formatLatLonString(pickedLatLon.lat, pickedLatLon.lon, 2);
-                clearObserverExtremeMode();
-                updateObserverPosition(pickedLatLon.lat, pickedLatLon.lon, coordsStr, null);
+        function setupSpace3DSearchListeners() {
+            const input = getDOM('space-3d-search-input');
+            const clearBtn = getDOM('space-3d-search-clear');
+            const dropdown = getDOM('space-3d-search-dropdown');
+            const container = getDOM('space-3d-search-container');
+            if (!input || !dropdown) return;
+
+            if (container) {
+                container.addEventListener('pointerdown', (e) => e.stopPropagation());
+                container.addEventListener('wheel', (e) => e.stopPropagation(), { passive: true });
             }
-            endGlobePickingUI();
+            const popupEl = getDOM('globe-3d-popup');
+            if (popupEl) {
+                popupEl.addEventListener('pointerdown', (e) => e.stopPropagation());
+                popupEl.addEventListener('wheel', (e) => e.stopPropagation(), { passive: true });
+            }
+
+            let debounceTimer = null;
+
+            input.addEventListener('input', (e) => {
+                const val = e.target.value.trim();
+                if (clearBtn) clearBtn.style.display = val.length > 0 ? 'block' : 'none';
+                clearTimeout(debounceTimer);
+
+                if (val.length < 2) {
+                    dropdown.style.display = 'none';
+                    return;
+                }
+
+                // 1. Coordenadas numéricas directas (decimales, hemisferio o DMS)
+                const parsedCoords = (typeof parseCoordinatesInput === 'function')
+                    ? parseCoordinatesInput(val)
+                    : null;
+                if (parsedCoords) {
+                    dropdown.innerHTML = `
+                        <div class="space-3d-search-result-item" onclick="select3DSearchCoords(${parsedCoords.lat}, ${parsedCoords.lon})">
+                            <i class="fa-solid fa-location-dot" style="color: #38bdf8;"></i>
+                            <div>
+                                <div>Ir a coordenadas: <strong>${parsedCoords.lat.toFixed(4)}°, ${parsedCoords.lon.toFixed(4)}°</strong></div>
+                                <div style="font-size: 0.68rem; color: #94a3b8;">Presiona Enter o haz clic para enfocar este punto en el globo</div>
+                            </div>
+                        </div>
+                    `;
+                    dropdown.style.display = 'block';
+                    return;
+                }
+
+                // 2. Presets locales del catálogo
+                const cleanQ = val.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                const catalog = (typeof OBSERVER_PRESETS !== 'undefined' && OBSERVER_PRESETS) ||
+                                (typeof window !== 'undefined' && window.OBSERVER_LOCATIONS_CATALOG) || [];
+                const matchedPresets = catalog.filter(p => {
+                    const pName = (p.name || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                    return pName.includes(cleanQ);
+                }).slice(0, 3);
+
+                // 3. Geocoder Photon con sesgo geográfico
+                debounceTimer = setTimeout(async () => {
+                    try {
+                        const center = (currentObserver && currentObserver.lat != null)
+                            ? { lat: currentObserver.lat, lng: currentObserver.lon }
+                            : { lat: 40.0, lng: -3.5 };
+                        const res = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(val)}&lat=${center.lat}&lon=${center.lng}&limit=12`);
+                        if (!res.ok) {
+                            if (matchedPresets.length > 0) render3DSearchResults([], val, matchedPresets);
+                            return;
+                        }
+                        const data = await res.json();
+                        const rawFeatures = data.features || [];
+
+                        rawFeatures.sort((a, b) => {
+                            const score = f => {
+                                const p = f.properties || {};
+                                let s = 1;
+                                if (p.countrycode === 'ES') s *= 6;
+                                if (['city', 'town', 'municipality', 'administrative'].includes(p.osm_value) || ['city', 'town'].includes(p.type)) s *= 5;
+                                if (p.osm_value === 'isolated_dwelling') s *= 0.2;
+                                return s;
+                            };
+                            const dA = Math.hypot(a.geometry.coordinates[1] - center.lat, a.geometry.coordinates[0] - center.lng) / score(a);
+                            const dB = Math.hypot(b.geometry.coordinates[1] - center.lat, b.geometry.coordinates[0] - center.lng) / score(b);
+                            return dA - dB;
+                        });
+
+                        render3DSearchResults(rawFeatures.slice(0, 6), val, matchedPresets);
+                    } catch(err) {
+                        console.warn('[Espacio 3D] Error en geocoder Photon:', err);
+                        render3DSearchResults([], val, matchedPresets);
+                    }
+                }, 180);
+            });
+
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    const val = input.value.trim();
+                    const parsedCoords = (typeof parseCoordinatesInput === 'function')
+                        ? parseCoordinatesInput(val)
+                        : null;
+                    if (parsedCoords) {
+                        select3DSearchCoords(parsedCoords.lat, parsedCoords.lon);
+                    } else {
+                        const firstItem = dropdown.querySelector('.space-3d-search-result-item');
+                        if (firstItem) firstItem.click();
+                    }
+                } else if (e.key === 'Escape') {
+                    dropdown.style.display = 'none';
+                }
+            });
+
+            if (clearBtn) {
+                clearBtn.addEventListener('click', () => {
+                    input.value = '';
+                    clearBtn.style.display = 'none';
+                    dropdown.style.display = 'none';
+                    input.focus();
+                });
+            }
+
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('#space-3d-search-container')) {
+                    dropdown.style.display = 'none';
+                }
+            });
         }
 
-        function cancelGlobePicking() {
-            endGlobePickingUI();
+        function render3DSearchResults(features, originalQuery, matchedPresets = []) {
+            const dropdown = getDOM('space-3d-search-dropdown');
+            if (!dropdown) return;
+
+            if ((!features || features.length === 0) && matchedPresets.length === 0) {
+                const offlineNotice = (!navigator.onLine)
+                    ? `<div style="font-size: 0.70rem; color: #f59e0b; margin-top: 4px; display: flex; align-items: center; gap: 5px;"><i class="fa-solid fa-triangle-exclamation"></i> Sin conexión: escribe coordenadas (ej: 41.54, 2.44) o una ciudad del catálogo.</div>`
+                    : '';
+                dropdown.innerHTML = `<div style="padding: 8px 12px; color: #94a3b8; font-size: 0.74rem;">No se encontraron localidades para "${originalQuery}"${offlineNotice}</div>`;
+                dropdown.style.display = 'block';
+                return;
+            }
+
+            let html = '';
+
+            matchedPresets.forEach(preset => {
+                const safeName = (preset.name || '').replace(/'/g, "\\'");
+                html += `
+                    <div class="space-3d-search-result-item" onclick="select3DSearchResult(${preset.lat}, ${preset.lon}, '${safeName}')" style="background: rgba(56, 189, 248, 0.08);">
+                        <i class="fa-solid fa-star" style="color: #facc15; font-size: 0.80rem; flex-shrink: 0;"></i>
+                        <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                            <div style="font-weight: 600; color: #f8fafc;">${preset.name}</div>
+                            <div style="font-size: 0.68rem; color: #38bdf8;">Ubicación destacada · ${preset.lat.toFixed(2)}°, ${preset.lon.toFixed(2)}°</div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            (features || []).forEach(f => {
+                const props = f.properties || {};
+                const name = props.name || props.street || originalQuery;
+                const contextParts = [props.city, props.state, props.country].filter(Boolean);
+                const context = contextParts.join(', ') || props.country || '';
+                const lon = f.geometry.coordinates[0];
+                const lat = f.geometry.coordinates[1];
+                const safeName = name.replace(/'/g, "\\'");
+                html += `
+                    <div class="space-3d-search-result-item" onclick="select3DSearchResult(${lat}, ${lon}, '${safeName}')">
+                        <i class="fa-solid fa-location-dot" style="color: #38bdf8; font-size: 0.80rem; flex-shrink: 0;"></i>
+                        <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                            <div style="font-weight: 600; color: #f8fafc;">${name}</div>
+                            <div style="font-size: 0.68rem; color: #94a3b8;">${context}</div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            dropdown.innerHTML = html;
+            dropdown.style.display = 'block';
         }
 
-        function endGlobePickingUI() {
-            isGlobePickingMode = false;
-            const banner = getDOM('globe-picking-banner');
-            const btnPick = getDOM('btn-pick-on-globe');
-            if (banner) banner.style.display = 'none';
-            if (btnPick) btnPick.classList.remove('active');
+        function select3DSearchCoords(lat, lon) {
+            const dropdown = getDOM('space-3d-search-dropdown');
+            const input = getDOM('space-3d-search-input');
+            if (dropdown) dropdown.style.display = 'none';
+            if (input) input.value = `${lat.toFixed(4)}°, ${lon.toFixed(4)}°`;
+
+            if (typeof recenterEarth === 'function') {
+                recenterEarth(lat, lon);
+            }
+            inspectGlobeLocation(lat, lon, null, false);
         }
+        window.select3DSearchCoords = select3DSearchCoords;
+
+        function select3DSearchResult(lat, lon, name) {
+            const dropdown = getDOM('space-3d-search-dropdown');
+            const input = getDOM('space-3d-search-input');
+            if (dropdown) dropdown.style.display = 'none';
+            if (input) input.value = name;
+
+            if (typeof recenterEarth === 'function') {
+                recenterEarth(lat, lon);
+            }
+            inspectGlobeLocation(lat, lon, name, false);
+        }
+        window.select3DSearchResult = select3DSearchResult;
 
         // --- MOTOR MATEMÁTICO BESSELIANO PARA CIRCUNSTANCIAS LOCALES ---
         
@@ -1445,31 +1813,31 @@
             if (!res || !res.isEclipsed || res.maxMag <= 0.001) {
                 let notVisHtml = `
                     <tr class="placeholder-row" style="pointer-events: none; cursor: default;">
-                        <td><strong style="color: var(--accent-blue);">${'C1'}</strong></td>
+                        <td><strong style="color: #f8fafc; font-weight: 600; opacity: 0.5;">${'C1'}</strong></td>
                         <td style="color: var(--text-dim); opacity: 0.35;">--:--:--</td>
                         <td style="color: var(--text-dim); opacity: 0.35;"><span style="visibility: hidden; margin-right: 3px;">↗</span>--</td>
                         <td style="color: var(--text-dim); opacity: 0.35;">--</td>
                     </tr>
                     <tr class="placeholder-row" style="pointer-events: none; cursor: default;">
-                        <td><strong style="color: var(--accent-blue);">${'C2'}</strong></td>
+                        <td><strong style="color: #f8fafc; font-weight: 600; opacity: 0.5;">${'C2'}</strong></td>
                         <td style="color: var(--text-dim); opacity: 0.35;">--:--:--</td>
                         <td style="color: var(--text-dim); opacity: 0.35;"><span style="visibility: hidden; margin-right: 3px;">↗</span>--</td>
                         <td style="color: var(--text-dim); opacity: 0.35;">--</td>
                     </tr>
                     <tr class="placeholder-row" style="pointer-events: none; cursor: default;">
-                        <td><strong style="color: var(--accent-blue);">${'MÁX'}</strong></td>
+                        <td><strong style="color: #f8fafc; font-weight: 600; opacity: 0.5;">${'MÁX'}</strong></td>
                         <td style="color: var(--text-dim); opacity: 0.35;">--:--:--</td>
                         <td style="color: var(--text-dim); opacity: 0.35;"><span style="visibility: hidden; margin-right: 3px;">↗</span>--</td>
                         <td style="color: var(--text-dim); opacity: 0.35;">--</td>
                     </tr>
                     <tr class="placeholder-row" style="pointer-events: none; cursor: default;">
-                        <td><strong style="color: var(--accent-blue);">${'C3'}</strong></td>
+                        <td><strong style="color: #f8fafc; font-weight: 600; opacity: 0.5;">${'C3'}</strong></td>
                         <td style="color: var(--text-dim); opacity: 0.35;">--:--:--</td>
                         <td style="color: var(--text-dim); opacity: 0.35;"><span style="visibility: hidden; margin-right: 3px;">↗</span>--</td>
                         <td style="color: var(--text-dim); opacity: 0.35;">--</td>
                     </tr>
                     <tr class="placeholder-row" style="pointer-events: none; cursor: default;">
-                        <td><strong style="color: var(--accent-blue);">${'C4'}</strong></td>
+                        <td><strong style="color: #f8fafc; font-weight: 600; opacity: 0.5;">${'C4'}</strong></td>
                         <td style="color: var(--text-dim); opacity: 0.35;">--:--:--</td>
                         <td style="color: var(--text-dim); opacity: 0.35;"><span style="visibility: hidden; margin-right: 3px;">↗</span>--</td>
                         <td style="color: var(--text-dim); opacity: 0.35;">--</td>
@@ -1497,7 +1865,7 @@
                 if (!c.data) {
                     rowsHtml += `
                         <tr class="placeholder-row" style="pointer-events: none; cursor: default;">
-                            <td><strong style="color: var(--accent-blue);">${c.key}</strong></td>
+                            <td><strong style="color: #f8fafc; font-weight: 600; opacity: 0.5;">${c.key}</strong></td>
                             <td style="color: var(--text-dim); opacity: 0.35;">--:--:--</td>
                             <td style="color: var(--text-dim); opacity: 0.35;"><span style="visibility: hidden; margin-right: 3px;">↗</span>--</td>
                             <td style="color: var(--text-dim); opacity: 0.35;">--</td>
@@ -1558,7 +1926,7 @@
 
                 rowsHtml += `
                     <tr id="row-contact-${c.key}" onclick="jumpToContact('${c.key}', ${c.data.t})" style="cursor: pointer;" title="Clic para saltar a ${c.key} (${c.name})">
-                        <td><strong style="color: var(--accent-blue);">${c.key}</strong></td>
+                        <td><strong style="color: #f8fafc; font-weight: 600;">${c.key}</strong></td>
                         <td>${localTimeStr}</td>
                         <td style="color: ${textColor}; font-weight: 500;">
                             ${arrowUnicode}${p.alt.toFixed(1)}°
@@ -1601,20 +1969,44 @@
             }
         }
 
-        // --- SELECTOR DE MODO DE VISTA (ESPACIO 3D vs TELESCOPIO) ---
+        // --- SELECTOR DE MODO DE VISTA (ESPACIO 3D vs MAPA vs TELESCOPIO vs RUTA) ---
         function switchMainView(mode) {
             currentActiveView = mode;
             window.currentActiveView = mode;
             const btn3D = getDOM('btn-mode-3d');
+            const btnMap = getDOM('btn-mode-map');
             const btnTele = getDOM('btn-mode-telescopic');
             const btnRoute = getDOM('btn-mode-route');
             const layer3D = getDOM('layer-3d');
+            const layerMap = getDOM('layer-map');
             const layerTele = getDOM('layer-telescopic');
             const group3D = getDOM('layers-group-3d');
             const groupTele = getDOM('layers-group-tele');
+            const groupMap = getDOM('layers-group-map');
             const routeHud = getDOM('route-cinematic-hud');
 
-            if (mode === 'route') {
+            if (mode === 'map') {
+                stopCinematicRoute();
+                btn3D?.classList.remove('active');
+                btnTele?.classList.remove('active');
+                btnRoute?.classList.remove('active');
+                btnMap?.classList.add('active');
+                if (routeHud) routeHud.style.display = 'none';
+                if (layer3D) layer3D.classList.remove('active');
+                if (layerTele) layerTele.classList.remove('active');
+                if (layerMap) {
+                    layerMap.style.display = 'block';
+                    layerMap.classList.add('active');
+                }
+                if (groupTele) groupTele.style.display = 'none';
+                if (group3D) group3D.style.display = 'none';
+                if (groupMap) groupMap.style.display = 'flex';
+                if (typeof EclipseMap2D !== 'undefined') {
+                    EclipseMap2D.show(currentEclipse, currentObserver);
+                }
+            } else if (mode === 'route') {
+                if (typeof EclipseMap2D !== 'undefined') EclipseMap2D.hide();
+                btnMap?.classList.remove('active');
                 if (typeof hasRouteForEclipse === 'function' && currentEclipse && !hasRouteForEclipse(currentEclipse)) {
                     console.warn(`[Modo Ruta] No hay ruta cinematográfica definida para el eclipse seleccionado.`);
                     return;
@@ -1625,10 +2017,13 @@
                 if (layerTele) layerTele.classList.remove('active');
                 if (layer3D) layer3D.classList.add('active');
                 if (groupTele) groupTele.style.display = 'none';
+                if (groupMap) groupMap.style.display = 'none';
                 if (group3D) group3D.style.display = 'flex';
                 if (routeHud) routeHud.style.display = 'flex';
                 startCinematicRoute();
             } else if (mode === 'telescopic') {
+                if (typeof EclipseMap2D !== 'undefined') EclipseMap2D.hide();
+                btnMap?.classList.remove('active');
                 stopCinematicRoute();
                 btn3D?.classList.remove('active');
                 btnRoute?.classList.remove('active');
@@ -1637,6 +2032,7 @@
                 if (layer3D) layer3D.classList.remove('active');
                 if (layerTele) layerTele.classList.add('active');
                 if (group3D) group3D.style.display = 'none';
+                if (groupMap) groupMap.style.display = 'none';
                 if (groupTele) groupTele.style.display = 'flex';
                 if (getDOM('chk-show-lunar-limb')?.checked) {
                     toggleMoreTele(true);
@@ -1644,6 +2040,8 @@
                 resizeTelescopicCanvas();
                 renderTelescopicView();
             } else {
+                if (typeof EclipseMap2D !== 'undefined') EclipseMap2D.hide();
+                btnMap?.classList.remove('active');
                 stopCinematicRoute();
                 btnTele?.classList.remove('active');
                 btnRoute?.classList.remove('active');
@@ -1652,8 +2050,35 @@
                 if (layerTele) layerTele.classList.remove('active');
                 if (layer3D) layer3D.classList.add('active');
                 if (groupTele) groupTele.style.display = 'none';
+                if (groupMap) groupMap.style.display = 'none';
                 if (group3D) group3D.style.display = 'flex';
                 requestRender();
+            }
+            const search3D = getDOM('space-3d-search-container');
+            if (search3D) search3D.style.display = (mode === '3d') ? 'flex' : 'none';
+
+            const popupEl = getDOM('globe-3d-popup');
+            if (mode === '3d') {
+                // Recuperar la ubicación inspeccionada (si venimos de Mapa o de otra vista)
+                const mapLoc = (typeof EclipseMap2D !== 'undefined' && typeof EclipseMap2D.getInspectedLocation === 'function')
+                    ? EclipseMap2D.getInspectedLocation()
+                    : null;
+                const targetLoc = mapLoc || (isGlobePopupOpen ? lastInspectedLocation3D : null);
+                if (targetLoc) {
+                    inspectGlobeLocation(targetLoc.lat, targetLoc.lon, targetLoc.name || targetLoc.locationName, false);
+                }
+            } else {
+                // Si cambiamos a Mapa y había una inspección abierta en 3D, abrirla en Mapa
+                if (mode === 'map' && isGlobePopupOpen && lastInspectedLocation3D) {
+                    if (typeof EclipseMap2D !== 'undefined' && typeof EclipseMap2D.inspectLocation === 'function') {
+                        EclipseMap2D.inspectLocation(lastInspectedLocation3D.lat, lastInspectedLocation3D.lon, lastInspectedLocation3D.locationName, false);
+                    }
+                }
+                // Ocultar temporalmente el elemento 3D sin borrar los datos inspeccionados
+                if (popupEl) {
+                    popupEl.style.display = 'none';
+                    popupEl.style.visibility = 'hidden';
+                }
             }
             updateTopNavButtonsState();
             updateRecenterBtnState();
@@ -2518,6 +2943,10 @@
             ? NASA_SOLAR_ECLIPSES
             : [...PRESET_ECLIPSES];
         let currentEclipse = eclipseData.find(e => e.cat_no === 9568) || PRESET_ECLIPSES[1] || eclipseData[0];
+        window.currentEclipse = currentEclipse;
+        if (typeof EclipseMap2D !== 'undefined' && typeof EclipseMap2D.setEclipse === 'function') {
+            EclipseMap2D.setEclipse(currentEclipse);
+        }
         let isPlaying = false;
 
         function updateCatalogBadge() {
@@ -3183,6 +3612,10 @@
 
         function selectEclipse(eclipse, autoRecenter = false) {
             currentEclipse = eclipse;
+            window.currentEclipse = eclipse;
+            if (typeof EclipseMap2D !== 'undefined' && typeof EclipseMap2D.setEclipse === 'function') {
+                EclipseMap2D.setEclipse(eclipse);
+            }
             if (!eclipse) return;
 
             // Guardar el Delta T canónico de catálogo si no está registrado
@@ -3238,8 +3671,21 @@
 
             const durElem = getDOM('card-duration');
             if (durElem) {
-                 // Assumes formatDurationMmSsTenths exists or fallback
-                durElem.innerText = eclipse.central_duration || (eclipse.duration_secs ? (Math.round(eclipse.duration_secs) + 's') : '--');
+                let durText = '--';
+                if (eclipse.central_duration) {
+                    durText = eclipse.central_duration.replace(/([0-9]+[a-z]+)(?=[0-9]+)/gi, '$1 ');
+                } else if (eclipse.duration_secs) {
+                    const totalS = Math.round(eclipse.duration_secs);
+                    const h = Math.floor(totalS / 3600);
+                    const m = Math.floor((totalS % 3600) / 60);
+                    const s = totalS % 60;
+                    if (h > 0) {
+                        durText = `${String(h).padStart(2, '0')}h ${String(m).padStart(2, '0')}m`;
+                    } else {
+                        durText = `${String(m).padStart(2, '0')}m ${String(s).padStart(2, '0')}s`;
+                    }
+                }
+                durElem.innerText = durText;
             }
 
             const widthElem = getDOM('card-width');
@@ -3309,11 +3755,22 @@
             if (typeof updateRouteButtonState === 'function') {
                 updateRouteButtonState(eclipse);
             }
+
+            if (typeof EclipseMap2D !== 'undefined') {
+                if (typeof EclipseMap2D.setEclipse === 'function') EclipseMap2D.setEclipse(eclipse);
+                if (currentActiveView === 'map' && EclipseMap2D.isLoaded) {
+                    EclipseMap2D.renderEclipsePath(eclipse);
+                }
+            }
         }
 
         // [Escena 3D: renderizado de trayectorias en globo, sombra y recentrado] Extraído a solar_scene_3d.js
 
         function handleRecenterClick() {
+            if (currentActiveView === 'map') {
+                if (typeof EclipseMap2D !== 'undefined') EclipseMap2D.fitEclipse();
+                return;
+            }
             if (currentActiveView === 'route') {
                 if (typeof restartCinematicRoute === 'function') restartCinematicRoute();
                 return;
@@ -3425,44 +3882,81 @@
             requestRender();
         });
 
-        let globePickPointerDownPos = null;
         let spacePointerDownPos = null;
         let spacePointerDownTime = 0;
 
         renderer.domElement.addEventListener('pointerdown', (e) => {
-            if (isGlobePickingMode) {
-                globePickPointerDownPos = { x: e.clientX, y: e.clientY };
-            } else if (e.button === 0 || e.pointerType === 'touch') {
+            if (typeof isRouteActive !== 'undefined' && isRouteActive) {
+                if (isRoutePlaying) {
+                    if (typeof pauseRouteForUserInteraction === 'function') {
+                        pauseRouteForUserInteraction();
+                    }
+                }
+                return;
+            }
+            if (e.button === 0 || e.pointerType === 'touch') {
                 spacePointerDownPos = { x: e.clientX, y: e.clientY };
                 spacePointerDownTime = performance.now();
             }
         });
 
-        renderer.domElement.addEventListener('pointerup', (e) => {
-            if (isGlobePickingMode && globePickPointerDownPos) {
-                const dist = Math.hypot(e.clientX - globePickPointerDownPos.x, e.clientY - globePickPointerDownPos.y);
-                globePickPointerDownPos = null;
-                if (dist < 6) {
-                    handleGlobePickingClick(e.clientX, e.clientY);
+        renderer.domElement.addEventListener('wheel', (e) => {
+            if (typeof isRouteActive !== 'undefined' && isRouteActive && isRoutePlaying) {
+                if (typeof pauseRouteForUserInteraction === 'function') {
+                    pauseRouteForUserInteraction();
                 }
-            } else if (spacePointerDownPos && (e.button === 0 || e.pointerType === 'touch')) {
+            }
+        }, { passive: true });
+
+        renderer.domElement.addEventListener('pointerup', (e) => {
+            if (spacePointerDownPos && (e.button === 0 || e.pointerType === 'touch')) {
                 const dist = Math.hypot(e.clientX - spacePointerDownPos.x, e.clientY - spacePointerDownPos.y);
                 const elapsed = performance.now() - spacePointerDownTime;
                 spacePointerDownPos = null;
                 if (dist < 6 && elapsed < 400) {
-                    handle3DSpaceClick(e.clientX, e.clientY, false);
+                    if (typeof isRouteActive === 'undefined' || !isRouteActive) {
+                        // En Modo 3D: detección de clic directo sobre el globo terráqueo
+                        if (currentActiveView === '3d' && earthMesh) {
+                            const rect = renderer.domElement.getBoundingClientRect();
+                            const mouse = new THREE.Vector2(
+                                ((e.clientX - rect.left) / rect.width) * 2 - 1,
+                                -((e.clientY - rect.top) / rect.height) * 2 + 1
+                            );
+                            const raycaster = new THREE.Raycaster();
+                            raycaster.setFromCamera(mouse, camera);
+                            const intersects = raycaster.intersectObject(earthMesh, false);
+                            if (intersects.length > 0) {
+                                const hit = intersects[0];
+                                const localPoint = hit.point.clone();
+                                earthMesh.worldToLocal(localPoint);
+                                const coords = vector3ToLatLng(localPoint);
+                                const lat = parseFloat(coords.lat.toFixed(4));
+                                const lon = parseFloat(coords.lon.toFixed(4));
+                                inspectGlobeLocation(lat, lon, null, false, localPoint);
+                                return;
+                            } else {
+                                closeGlobe3DPopup();
+                            }
+                        }
+                        handle3DSpaceClick(e.clientX, e.clientY, false);
+                    }
                 }
             }
         });
 
         window.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && isGlobePickingMode) {
-                cancelGlobePicking();
+            if (e.key === 'Escape') {
+                closeGlobe3DPopup();
+                const dd = getDOM('space-3d-search-dropdown');
+                if (dd) dd.style.display = 'none';
             }
         });
 
         getDOM('chk-show-space-cones')?.addEventListener('change', (e) => {
             const vis = e.target.checked;
+            if (typeof setRouteSpaceConesUserPref === 'function') {
+                setRouteSpaceConesUserPref(vis);
+            }
             if (umbraConeMesh3D) umbraConeMesh3D.visible = vis;
             if (penumbraConeMesh3D) penumbraConeMesh3D.visible = vis;
             requestRender();
@@ -3474,6 +3968,34 @@
         });
         getDOM('chk-show-ecliptic')?.addEventListener('change', (e) => {
             if (eclipticPlaneGroup3D) eclipticPlaneGroup3D.visible = e.target.checked;
+            requestRender();
+        });
+        function updateConstellationsCheckboxState() {
+            const chkSphere = getDOM('chk-show-celestial-sphere');
+            const chkConst = getDOM('chk-show-constellations');
+            const lblConst = getDOM('lbl-show-constellations');
+            if (!chkSphere || !chkConst) return;
+            const isSphereActive = chkSphere.checked;
+            chkConst.disabled = !isSphereActive;
+            if (lblConst) {
+                lblConst.classList.toggle('disabled', !isSphereActive);
+                lblConst.style.opacity = isSphereActive ? '1' : '0.4';
+                lblConst.style.pointerEvents = isSphereActive ? 'auto' : 'none';
+            }
+        }
+        updateConstellationsCheckboxState();
+
+        getDOM('chk-show-celestial-sphere')?.addEventListener('change', (e) => {
+            if (typeof celestialSphereGroup3D !== 'undefined' && celestialSphereGroup3D) {
+                celestialSphereGroup3D.visible = e.target.checked;
+            }
+            updateConstellationsCheckboxState();
+            requestRender();
+        });
+        getDOM('chk-show-constellations')?.addEventListener('change', (e) => {
+            if (typeof constellationsGroup3D !== 'undefined' && constellationsGroup3D) {
+                constellationsGroup3D.visible = e.target.checked;
+            }
             requestRender();
         });
 
@@ -3643,6 +4165,12 @@
         let simPlayDirection = 1; // Reproducción siempre hacia adelante
 
         function changeSpeedStep(dir) {
+            if (currentActiveView === 'route') {
+                if (typeof changeRouteSpeedStep === 'function') {
+                    changeRouteSpeedStep(dir);
+                }
+                return;
+            }
             // dir: 1 (aumentar velocidad) o -1 (reducir velocidad)
             const curIdx = SPEED_STEPS.indexOf(simSpeedMultiplier);
             let nextIdx = 1; // Valor por defecto: 1x
@@ -3660,6 +4188,12 @@
         }
 
         function updateSpeedUI() {
+            if (currentActiveView === 'route') {
+                if (typeof updateRouteSpeedUI === 'function') {
+                    updateRouteSpeedUI();
+                    return;
+                }
+            }
             const badge = getDOM('speed-indicator-badge');
             const speedLabel = simSpeedMultiplier === 0.5 ? '1/2' : simSpeedMultiplier;
             if (badge) {
@@ -3867,7 +4401,9 @@
             timeSlider.addEventListener('input', (e) => {
                 isSliderInteracting = true;
                 if (currentActiveView === 'route') {
-                    if (typeof setRouteTime === 'function') setRouteTime(parseFloat(e.target.value));
+                    if (typeof setRouteTimeFromEclipseT === 'function') {
+                        setRouteTimeFromEclipseT(parseFloat(e.target.value));
+                    }
                     return;
                 }
                 simCurrentT = parseFloat(e.target.value);
@@ -3928,6 +4464,14 @@
         filterEclipsesByYear(2027, defaultCat, true);
         switchObserverExtreme('GD', true);
         initTelescopicCanvas();
+        setupSpace3DSearchListeners();
+        if (typeof controls !== 'undefined' && controls && controls.addEventListener) {
+            controls.addEventListener('change', () => {
+                if (currentActiveView === '3d' && activeGlobePopupPoint) {
+                    updateGlobe3DPopupPosition();
+                }
+            });
+        }
         switchMainView('3d');
 
         if (window.innerWidth <= 900) {
@@ -4007,9 +4551,6 @@
                 } else if (simPlayDirection < 0 && simCurrentT < minRange) {
                     simCurrentT = maxRange;
                 }
-                if (!isSliderInteracting && document.activeElement !== timeSlider) {
-                    timeSlider.value = simCurrentT;
-                }
                 updateShadowAtTime(simCurrentT);
                 timeOrSceneChanged = true;
             }
@@ -4045,11 +4586,17 @@
                 timeOrSceneChanged = true;
             }
 
-            const controlsMoved = (controls && !isRouteActive) ? controls.update() : false;
+            const controlsMoved = (controls && (!isRouteActive || !isRoutePlaying)) ? controls.update() : false;
 
             if (timeOrSceneChanged || controlsMoved || needsRender) {
                 if (currentActiveView === '3d' || currentActiveView === 'route') {
+                    if (typeof updateEarthLabelsVisibility === 'function') {
+                        updateEarthLabelsVisibility(camera);
+                    }
                     renderer.render(scene, camera);
+                    if (currentActiveView === '3d' && activeGlobePopupPoint) {
+                        updateGlobe3DPopupPosition();
+                    }
                 }
                 needsRender = false;
             }

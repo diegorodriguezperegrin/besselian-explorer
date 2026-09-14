@@ -21,6 +21,8 @@ function requestRender() {
 }
 
 var observerMarkerGroup3D = null;
+var celestialSphereGroup3D = null;
+var constellationsGroup3D = null;
 
         // -------------------------------------------------------------
         // 1. CONFIGURACIÓN THREE.JS
@@ -104,6 +106,11 @@ var observerMarkerGroup3D = null;
 
             controls.addEventListener('start', () => {
                 cameraTransition = null;
+                if (typeof isRouteActive !== 'undefined' && isRouteActive) {
+                    if (typeof window.isRouteUserInteracting !== 'undefined') {
+                        window.isRouteUserInteracting = true;
+                    }
+                }
             });
             controls.addEventListener('change', () => {
                 needsRender = true;
@@ -512,6 +519,27 @@ var observerMarkerGroup3D = null;
         eclipticPlaneGroup3D = createEclipticPlane3D();
         scene.add(eclipticPlaneGroup3D);
 
+        // Esfera Celeste 3D: Retícula astronómica inercial J2000 y estrellas de referencia
+        try {
+            if (typeof createCelestialSphere3D === 'function') {
+                celestialSphereGroup3D = createCelestialSphere3D(10000);
+                constellationsGroup3D = celestialSphereGroup3D ? (celestialSphereGroup3D.constellationsGroup || null) : null;
+
+                const chkSphere = (typeof getDOM === 'function' ? getDOM('chk-show-celestial-sphere') : document.getElementById('chk-show-celestial-sphere'));
+                const chkConst = (typeof getDOM === 'function' ? getDOM('chk-show-constellations') : document.getElementById('chk-show-constellations'));
+
+                if (celestialSphereGroup3D) {
+                    celestialSphereGroup3D.visible = chkSphere ? chkSphere.checked : true;
+                    scene.add(celestialSphereGroup3D);
+                }
+                if (constellationsGroup3D && chkConst) {
+                    constellationsGroup3D.visible = chkConst.checked;
+                }
+            }
+        } catch (err) {
+            console.error("Error al inicializar esfera celeste 3D:", err);
+        }
+
         // Línea de los Nodos 3D (Eje de intersección entre el plano orbital lunar y el plano eclíptico) en Azul celeste luminoso
         const nodeLineMat = new THREE.LineBasicMaterial({
             color: 0x38bdf8,
@@ -752,11 +780,59 @@ var observerMarkerGroup3D = null;
             const material = new THREE.SpriteMaterial({ 
                 map: texture, 
                 transparent: true, 
-                depthTest: true 
+                depthTest: false,
+                depthWrite: false
             });
             const sprite = new THREE.Sprite(material);
             sprite.scale.set(6.0 * scaleFactor, 1.5 * scaleFactor, 1);
+            sprite.renderOrder = 35;
+            sprite._isEarthLabel = true;
             return sprite;
+        }
+
+        // Detección exacta de oclusión de etiquetas por el horizonte esférico del globo terrestre
+        const _labelWorldPos = new THREE.Vector3();
+        const R_EARTH_OCCLUSION_SQ = EARTH_RADIUS * EARTH_RADIUS * 0.998;
+
+        function isPointOccludedByEarth(worldPos, camPos) {
+            const dx = worldPos.x - camPos.x;
+            const dy = worldPos.y - camPos.y;
+            const dz = worldPos.z - camPos.z;
+            const dLenSq = dx * dx + dy * dy + dz * dz;
+            if (dLenSq < 1e-6) return false;
+
+            // Parámetro t del punto más cercano al centro de la Tierra (0,0,0) a lo largo del segmento camPos -> worldPos
+            const t = -(camPos.x * dx + camPos.y * dy + camPos.z * dz) / dLenSq;
+            if (t <= 0.001 || t >= 0.999) return false;
+
+            const qx = camPos.x + t * dx;
+            const qy = camPos.y + t * dy;
+            const qz = camPos.z + t * dz;
+            return (qx * qx + qy * qy + qz * qz) < R_EARTH_OCCLUSION_SQ;
+        }
+
+        function updateEarthLabelsVisibility(cam) {
+            if (!cam) return;
+            const camPos = cam.position;
+            const updateGroup = (grp) => {
+                if (!grp || !grp.visible) return;
+                for (let i = 0; i < grp.children.length; i++) {
+                    const child = grp.children[i];
+                    if (child.isSprite && child._isEarthLabel) {
+                        child.getWorldPosition(_labelWorldPos);
+                        child.visible = !isPointOccludedByEarth(_labelWorldPos, camPos);
+                    }
+                }
+            };
+            updateGroup(isomagnitudesGroup);
+            updateGroup(utLinesGroup);
+        }
+        window.updateEarthLabelsVisibility = updateEarthLabelsVisibility;
+
+        if (scene) {
+            scene.onBeforeRender = function(renderer, scn, cam) {
+                updateEarthLabelsVisibility(cam);
+            };
         }
 
         // Marcador 3D del Punto Subsolar (☀️ Cenit Solar)
@@ -1129,7 +1205,7 @@ var observerMarkerGroup3D = null;
 
         function createSegmentedLine(coordList, colorHex, radius = GROUND_OVERLAY_RADIUS, linewidth = 1, opacity = 1.0) {
             const segmentPoints = [];
-            const maxSegmentDist3D = 6.0; // Distancia máxima en unidades 3D (~750 km) para descartar saltos artificiales
+            const maxSegmentDist3D = 8.5; // Distancia máxima en unidades 3D (~1080 km) para descartar saltos artificiales (antimeridiano > 25 u)
 
             for (let i = 1; i < coordList.length; i++) {
                 const prev = coordList[i - 1];
@@ -1140,9 +1216,24 @@ var observerMarkerGroup3D = null;
                 const p2 = latLngToVector3(curr.lat, curr.lng, radius);
 
                 // Comprobación geométrica 3D continua (funciona en polos, antimeridiano ±180° y latitudes árticas)
-                if (p1.distanceTo(p2) < maxSegmentDist3D) {
-                    segmentPoints.push(p1);
-                    segmentPoints.push(p2);
+                const d = p1.distanceTo(p2);
+                if (d < maxSegmentDist3D) {
+                    // Si el segmento es largo (en el limbo/horizonte d > 1.5), la cuerda recta se hundiría bajo la superficie de la Tierra (R=50).
+                    // Subdividimos y proyectamos a la esfera para que la curva abrace la superficie sin ser ocultada por el globo.
+                    if (d > 1.5) {
+                        const steps = Math.ceil(d / 1.0);
+                        let prevSub = p1;
+                        for (let s = 1; s <= steps; s++) {
+                            const frac = s / steps;
+                            const currSub = new THREE.Vector3().lerpVectors(p1, p2, frac).normalize().multiplyScalar(radius);
+                            segmentPoints.push(prevSub);
+                            segmentPoints.push(currSub);
+                            prevSub = currSub;
+                        }
+                    } else {
+                        segmentPoints.push(p1);
+                        segmentPoints.push(p2);
+                    }
                 }
             }
 
@@ -1230,26 +1321,34 @@ var observerMarkerGroup3D = null;
 
             const data = precomputeEclipseGeometry(eclipse);
 
-            // 1. Trayectoria / Línea Central (Naranja #f97316)
+            const typeCode = (eclipse.eclipse_type || '').toUpperCase();
+            const isAnnular = typeCode.startsWith('A');
+            const isCentral = !typeCode.startsWith('P');
+
+            // Colores unificados con el modo Mapa 2D (eclipse_map_2d.js):
+            // Línea central: rojo #dc2626 para total, naranja #ea580c para anular
+            const centerLineColor = isAnnular ? 0xea580c : 0xdc2626;
+            // Límites de totalidad/anularidad: azul real #2563eb para total, ámbar #f59e0b para anular
+            const limitColor = isAnnular ? 0xf59e0b : 0x2563eb;
+
+            // 1. Trayectoria / Línea Central
             const showCenterLine = getDOM('chk-show-center-line')?.checked !== false;
             if (data.centerCoords && data.centerCoords.length > 1 && showCenterLine) {
-                pathLine = createSegmentedLine(data.centerCoords, 0xf97316, GROUND_OVERLAY_RADIUS, 3);
+                pathLine = createSegmentedLine(data.centerCoords, centerLineColor, GROUND_OVERLAY_RADIUS, 3);
                 if (pathLine) earthGroup.add(pathLine);
             }
 
-            // 2. Límites Extremos Norte y Sur de Totalidad / Anularidad (Rojo #ef4444)
-            const typeCode = (eclipse.eclipse_type || '').toUpperCase();
-            const isCentral = !typeCode.startsWith('P');
+            // 2. Límites Extremos Norte y Sur de Totalidad / Anularidad
             const showTotalityBand = getDOM('chk-show-totality')?.checked;
 
             if (isCentral && showTotalityBand !== false) {
                 if (data.totNorthCoords && data.totNorthCoords.length > 1) {
-                    totalityNorthLine = createSegmentedLine(data.totNorthCoords, 0xef4444, GROUND_OVERLAY_RADIUS, 2);
+                    totalityNorthLine = createSegmentedLine(data.totNorthCoords, limitColor, GROUND_OVERLAY_RADIUS, 2);
                     if (totalityNorthLine) earthGroup.add(totalityNorthLine);
                 }
 
                 if (data.totSouthCoords && data.totSouthCoords.length > 1) {
-                    totalitySouthLine = createSegmentedLine(data.totSouthCoords, 0xef4444, GROUND_OVERLAY_RADIUS, 2);
+                    totalitySouthLine = createSegmentedLine(data.totSouthCoords, limitColor, GROUND_OVERLAY_RADIUS, 2);
                     if (totalitySouthLine) earthGroup.add(totalitySouthLine);
                 }
             }
@@ -1275,7 +1374,7 @@ var observerMarkerGroup3D = null;
                         if (iso.midPtN) {
                             const spriteN = createTextSprite(iso.magText, '#000000', '#ffffff', 0.65);
                             if (spriteN) {
-                                const posN = latLngToVector3(iso.midPtN.lat, iso.midPtN.lng, EARTH_RADIUS * 1.0020);
+                                const posN = latLngToVector3(iso.midPtN.lat, iso.midPtN.lng, EARTH_RADIUS * 1.0030);
                                 spriteN.position.copy(posN);
                                 isomagnitudesGroup.add(spriteN);
                             }
@@ -1283,7 +1382,7 @@ var observerMarkerGroup3D = null;
                         if (iso.midPtS) {
                             const spriteS = createTextSprite(iso.magText, '#000000', '#ffffff', 0.65);
                             if (spriteS) {
-                                const posS = latLngToVector3(iso.midPtS.lat, iso.midPtS.lng, EARTH_RADIUS * 1.0020);
+                                const posS = latLngToVector3(iso.midPtS.lat, iso.midPtS.lng, EARTH_RADIUS * 1.0030);
                                 spriteS.position.copy(posS);
                                 isomagnitudesGroup.add(spriteS);
                             }
@@ -1325,7 +1424,7 @@ var observerMarkerGroup3D = null;
                         if (showLabels && utLine.labelPt) {
                             const textSprite = createTextSprite(utLine.labelText, '#000000', '#ffffff', 0.75);
                             if (textSprite) {
-                                const spritePos = latLngToVector3(utLine.labelPt.lat, utLine.labelPt.lng, EARTH_RADIUS * 1.0025);
+                                const spritePos = latLngToVector3(utLine.labelPt.lat, utLine.labelPt.lng, EARTH_RADIUS * 1.0030);
                                 textSprite.position.copy(spritePos);
                                 utLinesGroup.add(textSprite);
                             }
@@ -1334,6 +1433,10 @@ var observerMarkerGroup3D = null;
                 });
 
                 earthGroup.add(utLinesGroup);
+            }
+
+            if (typeof updateEarthLabelsVisibility === 'function' && typeof camera !== 'undefined' && camera) {
+                updateEarthLabelsVisibility(camera);
             }
         }
 
@@ -1347,6 +1450,12 @@ var observerMarkerGroup3D = null;
         let _lastUmbRadBottom = -1;
         let _lastPenRadBottom = -1;
         let _lastConeHeight = -1;
+        let _lastUtTotalSec = null;
+        let _lastActiveExtremeMode = null;
+        let _lastPhaseHtml = null;
+        let _lastSliderVal = -999999;
+        let _lastOrbitEclipseCat = null;
+        let _sceneActiveContactRowId = null;
 
         function updateShadowAtTime(t) {
             if (!currentEclipse) return;
@@ -1528,11 +1637,16 @@ var observerMarkerGroup3D = null;
             // Vector unitario tangente orbital en el sentido de traslación lunar (Oeste a Este)
             const uTangent = new THREE.Vector3().crossVectors(normOrbit, uNode).normalize();
 
+            const isEclipseGeometryDirty = (_lastOrbitEclipseCat !== e.cat_no);
+            if (isEclipseGeometryDirty) {
+                _lastOrbitEclipseCat = e.cat_no;
+            }
+
             // Actualizar Órbita Lunar 3D inercial fija atravesando físicamente el plano eclíptico en el nodo uNode
             if (moonOrbitLine3D) {
                 const showOrbit = getDOM('chk-show-moon-orbit')?.checked ?? true;
                 moonOrbitLine3D.visible = showOrbit;
-                if (showOrbit) {
+                if (showOrbit && isEclipseGeometryDirty) {
                     const pts = [];
                     const segments = 360;
                     for (let i = 0; i <= segments; i++) {
@@ -1550,7 +1664,7 @@ var observerMarkerGroup3D = null;
             // 4c. Línea de los Nodos 3D inercial fija
             if (nodeLine3D) {
                 nodeLine3D.visible = showNodes;
-                if (showNodes) {
+                if (showNodes && isEclipseGeometryDirty) {
                     const NODE_R = 4500.0;
                     const nodePts = [
                         uNode.clone().multiplyScalar(-NODE_R),
@@ -1584,23 +1698,28 @@ var observerMarkerGroup3D = null;
 
                     const showLimitLabels = showLimits && (getDOM('chk-show-limits-labels')?.checked ?? false);
 
-                    markers.ticks.forEach((item, idx) => {
-                        const angleRad = item.def.deg * Math.PI / 180;
-                        const pos = new THREE.Vector3()
-                            .addScaledVector(uNode, MOON_DIST * Math.cos(angleRad))
-                            .addScaledVector(uTangent, MOON_DIST * Math.sin(angleRad));
+                    if (isEclipseGeometryDirty) {
+                        markers.ticks.forEach((item, idx) => {
+                            const angleRad = item.def.deg * Math.PI / 180;
+                            const pos = new THREE.Vector3()
+                                .addScaledVector(uNode, MOON_DIST * Math.cos(angleRad))
+                                .addScaledVector(uTangent, MOON_DIST * Math.sin(angleRad));
 
-                        // Línea corta perpendicular al plano orbital
-                        const tickPts = [
-                            pos.clone().addScaledVector(normOrbit, -item.def.tickLen),
-                            pos.clone().addScaledVector(normOrbit, item.def.tickLen)
-                        ];
-                        item.line.geometry.setFromPoints(tickPts);
-                        item.line.geometry.computeBoundingSphere();
+                            // Línea corta perpendicular al plano orbital
+                            const tickPts = [
+                                pos.clone().addScaledVector(normOrbit, -item.def.tickLen),
+                                pos.clone().addScaledVector(normOrbit, item.def.tickLen)
+                            ];
+                            item.line.geometry.setFromPoints(tickPts);
+                            item.line.geometry.computeBoundingSphere();
 
-                        // Posicionar rótulo flotante legible y sincronizar visibilidad
-                        const spriteObj = markers.sprites[idx];
-                        spriteObj.sprite.position.copy(pos).addScaledVector(normOrbit, item.def.tickLen + 35.0);
+                            // Posicionar rótulo flotante legible
+                            const spriteObj = markers.sprites[idx];
+                            spriteObj.sprite.position.copy(pos).addScaledVector(normOrbit, item.def.tickLen + 35.0);
+                        });
+                    }
+
+                    markers.sprites.forEach(spriteObj => {
                         spriteObj.sprite.visible = showLimitLabels;
                     });
                 }
@@ -1681,62 +1800,77 @@ var observerMarkerGroup3D = null;
             shadowShaderMaterial.uniforms.uL2.value = l2;
             shadowShaderMaterial.uniformsNeedUpdate = true;
 
-            // Etiquetas de tiempo en el dock del reproductor
+            // Etiquetas de tiempo en el dock del reproductor (optimizado con dirty checking de segundo)
             const dtHours = (e.dt || 0) / 3600;
             const utDecHour = (e.t0 || 12) + t - dtHours;
-            const year = e.year || 2026;
-            const month = (e.month || 8) - 1;
-            const day = e.day || 12;
-            const baseMidnightUtc = Date.UTC(year, month, day, 0, 0, 0);
-            const utDateObj = new Date(baseMidnightUtc + Math.round(utDecHour * 3600 * 1000));
-            
-            const utH = utDateObj.getUTCHours();
-            const utM = utDateObj.getUTCMinutes();
-            const utS = utDateObj.getUTCSeconds();
-            const utTimeStr = `${String(utH).padStart(2,'0')}:${String(utM).padStart(2,'0')}:${String(utS).padStart(2,'0')}`;
+            const utTotalSec = Math.round(utDecHour * 3600);
+            const isExtreme = (typeof activeExtremeMode !== 'undefined' && Boolean(activeExtremeMode));
 
-            if (!_elPlayerTimeLocalLabel) _elPlayerTimeLocalLabel = getDOM('player-time-local-label');
-            if (!_elPlayerTimeUtcLabel) _elPlayerTimeUtcLabel = getDOM('player-time-utc-label');
-            if (!_elTimeUtcText) _elTimeUtcText = getDOM('time-utc-text');
-            if (!_elTimeLocalText) _elTimeLocalText = getDOM('time-local-text');
+            if (_lastUtTotalSec !== utTotalSec || _lastActiveExtremeMode !== isExtreme) {
+                _lastUtTotalSec = utTotalSec;
+                _lastActiveExtremeMode = isExtreme;
 
-            if (activeExtremeMode) {
-                if (_elPlayerTimeLocalLabel) _elPlayerTimeLocalLabel.textContent = 'UT1';
-                if (_elPlayerTimeUtcLabel) _elPlayerTimeUtcLabel.textContent = 'TT';
-                if (_elTimeLocalText) _elTimeLocalText.textContent = utTimeStr;
+                const year = e.year || 2026;
+                const month = (e.month || 8) - 1;
+                const day = e.day || 12;
+                const baseMidnightUtc = Date.UTC(year, month, day, 0, 0, 0);
+                const utDateObj = new Date(baseMidnightUtc + utTotalSec * 1000);
 
-                const ttDecHour = (e.t0 || 12) + t;
-                const ttDateObj = new Date(baseMidnightUtc + Math.round(ttDecHour * 3600 * 1000));
-                const ttH = ttDateObj.getUTCHours();
-                const ttM = ttDateObj.getUTCMinutes();
-                const ttS = ttDateObj.getUTCSeconds();
-                if (_elTimeUtcText) {
-                    _elTimeUtcText.textContent = `${String(ttH).padStart(2,'0')}:${String(ttM).padStart(2,'0')}:${String(ttS).padStart(2,'0')}`;
-                }
-            } else {
-                if (_elPlayerTimeLocalLabel) _elPlayerTimeLocalLabel.textContent = 'Obs.';
-                if (_elPlayerTimeUtcLabel) _elPlayerTimeUtcLabel.textContent = 'UTC';
-                if (_elTimeUtcText) {
-                    _elTimeUtcText.textContent = utTimeStr;
-                }
+                const utH = utDateObj.getUTCHours();
+                const utM = utDateObj.getUTCMinutes();
+                const utS = utDateObj.getUTCSeconds();
+                const utTimeStr = `${String(utH).padStart(2,'0')}:${String(utM).padStart(2,'0')}:${String(utS).padStart(2,'0')}`;
 
-                if (_elTimeLocalText && currentObserver) {
-                    const tz = currentObserver.tz || getTimeZoneFromLon(currentObserver.lon || 0);
-                    try {
-                        const localTimeStr = getCachedTimeFormatter(tz).format(utDateObj);
-                        const tzOffsetStr = getUtcOffsetString(tz, utDateObj);
-                        _elTimeLocalText.textContent = `${localTimeStr} ${tzOffsetStr}`;
-                    } catch(err) {
-                        _elTimeLocalText.textContent = `${utTimeStr} UTC`;
+                if (!_elPlayerTimeLocalLabel) _elPlayerTimeLocalLabel = getDOM('player-time-local-label');
+                if (!_elPlayerTimeUtcLabel) _elPlayerTimeUtcLabel = getDOM('player-time-utc-label');
+                if (!_elTimeUtcText) _elTimeUtcText = getDOM('time-utc-text');
+                if (!_elTimeLocalText) _elTimeLocalText = getDOM('time-local-text');
+
+                if (isExtreme) {
+                    if (_elPlayerTimeLocalLabel && _elPlayerTimeLocalLabel.textContent !== 'UT1') _elPlayerTimeLocalLabel.textContent = 'UT1';
+                    if (_elPlayerTimeUtcLabel && _elPlayerTimeUtcLabel.textContent !== 'TT') _elPlayerTimeUtcLabel.textContent = 'TT';
+                    if (_elTimeLocalText && _elTimeLocalText.textContent !== utTimeStr) _elTimeLocalText.textContent = utTimeStr;
+
+                    const ttDecHour = (e.t0 || 12) + t;
+                    const ttDateObj = new Date(baseMidnightUtc + Math.round(ttDecHour * 3600 * 1000));
+                    const ttH = ttDateObj.getUTCHours();
+                    const ttM = ttDateObj.getUTCMinutes();
+                    const ttS = ttDateObj.getUTCSeconds();
+                    const ttTimeStr = `${String(ttH).padStart(2,'0')}:${String(ttM).padStart(2,'0')}:${String(ttS).padStart(2,'0')}`;
+                    if (_elTimeUtcText && _elTimeUtcText.textContent !== ttTimeStr) {
+                        _elTimeUtcText.textContent = ttTimeStr;
+                    }
+                } else {
+                    if (_elPlayerTimeLocalLabel && _elPlayerTimeLocalLabel.textContent !== 'Obs.') _elPlayerTimeLocalLabel.textContent = 'Obs.';
+                    if (_elPlayerTimeUtcLabel && _elPlayerTimeUtcLabel.textContent !== 'UTC') _elPlayerTimeUtcLabel.textContent = 'UTC';
+                    if (_elTimeUtcText && _elTimeUtcText.textContent !== utTimeStr) {
+                        _elTimeUtcText.textContent = utTimeStr;
+                    }
+
+                    if (_elTimeLocalText && currentObserver) {
+                        const tz = currentObserver.tz || getTimeZoneFromLon(currentObserver.lon || 0);
+                        try {
+                            const localTimeStr = getCachedTimeFormatter(tz).format(utDateObj);
+                            const tzOffsetStr = getUtcOffsetString(tz, utDateObj);
+                            const fullLocalStr = `${localTimeStr} ${tzOffsetStr}`;
+                            if (_elTimeLocalText.textContent !== fullLocalStr) {
+                                _elTimeLocalText.textContent = fullLocalStr;
+                            }
+                        } catch(err) {
+                            if (_elTimeLocalText.textContent !== `${utTimeStr} UTC`) {
+                                _elTimeLocalText.textContent = `${utTimeStr} UTC`;
+                            }
+                        }
                     }
                 }
             }
 
-            // Actualizar etiqueta de fase dinámica en la cabecera del reproductor (si no estamos en Modo Ruta)
+            // Actualizar etiqueta de fase dinámica en la cabecera del reproductor (si no estamos en Modo Ruta) con dirty checking
             if (typeof currentActiveView === 'undefined' || currentActiveView !== 'route') {
                 if (!_elPhaseLabel) _elPhaseLabel = getDOM('player-phase-label');
                 if (_elPhaseLabel) {
                     const circ = localCircumstancesCache || (currentObserver && calculateLocalSolarCircumstances(e, currentObserver.lat, currentObserver.lon));
+                    let targetPhaseHtml = '';
 
                     if (circ && circ.c1 && circ.c4) {
                         const t1 = circ.c1.t;
@@ -1749,25 +1883,24 @@ var observerMarkerGroup3D = null;
 
                         if (t >= t1 && t <= t4) {
                             if (!isSunAbove) {
-                                _elPhaseLabel.innerHTML = `<span style="color: #94a3b8;"><span class="phase-dot" style="background:#64748b;"></span>Bajo horizonte</span>`;
+                                targetPhaseHtml = '<span style="color: #94a3b8;"><span class="phase-dot" style="background:#64748b;"></span>Bajo horizonte</span>';
                             } else if (t2 != null && t3 != null && t >= t2 && t <= t3) {
                                 if (circ.isTotal) {
-                                    _elPhaseLabel.innerHTML = `<span style="color: #fca5a5;"><span class="phase-dot total"></span>Totalidad</span>`;
+                                    targetPhaseHtml = '<span style="color: #fca5a5;"><span class="phase-dot total"></span>Totalidad</span>';
                                 } else if (circ.isAnnular) {
-                                    _elPhaseLabel.innerHTML = `<span style="color: #fde047;"><span class="phase-dot" style="background:#eab308; box-shadow:0 0 6px rgba(234,179,8,0.6);"></span>Anularidad</span>`;
+                                    targetPhaseHtml = '<span style="color: #fde047;"><span class="phase-dot" style="background:#eab308; box-shadow:0 0 6px rgba(234,179,8,0.6);"></span>Anularidad</span>';
                                 } else {
-                                    _elPhaseLabel.innerHTML = `<span style="color: #93c5fd;"><span class="phase-dot" style="background:#38bdf8; box-shadow:0 0 5px rgba(56,189,248,0.5);"></span>Parcialidad</span>`;
+                                    targetPhaseHtml = '<span style="color: #93c5fd;"><span class="phase-dot" style="background:#38bdf8; box-shadow:0 0 5px rgba(56,189,248,0.5);"></span>Parcialidad</span>';
                                 }
                             } else if ((t2 != null && t3 != null && ((t >= t1 && t < t2) || (t > t3 && t <= t4))) || (t2 == null && t >= t1 && t <= t4)) {
-                                _elPhaseLabel.innerHTML = `<span style="color: #93c5fd;"><span class="phase-dot" style="background:#38bdf8; box-shadow:0 0 5px rgba(56,189,248,0.5);"></span>Parcialidad</span>`;
-                            } else {
-                                _elPhaseLabel.innerHTML = '';
+                                targetPhaseHtml = '<span style="color: #93c5fd;"><span class="phase-dot" style="background:#38bdf8; box-shadow:0 0 5px rgba(56,189,248,0.5);"></span>Parcialidad</span>';
                             }
-                        } else {
-                            _elPhaseLabel.innerHTML = '';
                         }
-                    } else {
-                        _elPhaseLabel.innerHTML = '';
+                    }
+
+                    if (_lastPhaseHtml !== targetPhaseHtml) {
+                        _lastPhaseHtml = targetPhaseHtml;
+                        _elPhaseLabel.innerHTML = targetPhaseHtml;
                     }
                 }
             }
@@ -1795,26 +1928,30 @@ var observerMarkerGroup3D = null;
                     }
                 }
                 const targetRowId = closestKey ? `row-contact-${closestKey}` : null;
-                if (targetRowId !== activeContactRowId) {
-                    if (activeContactRowId) {
-                        const prevRow = getDOM(activeContactRowId);
+                if (targetRowId !== _sceneActiveContactRowId) {
+                    if (_sceneActiveContactRowId) {
+                        const prevRow = getDOM(_sceneActiveContactRowId);
                         if (prevRow) prevRow.classList.remove('active');
                     }
                     if (targetRowId) {
                         const newRow = getDOM(targetRowId);
                         if (newRow) newRow.classList.add('active');
                     }
-                    activeContactRowId = targetRowId;
+                    _sceneActiveContactRowId = targetRowId;
                 }
-            } else if (activeContactRowId) {
-                const prevRow = getDOM(activeContactRowId);
+            } else if (_sceneActiveContactRowId) {
+                const prevRow = getDOM(_sceneActiveContactRowId);
                 if (prevRow) prevRow.classList.remove('active');
-                activeContactRowId = null;
+                _sceneActiveContactRowId = null;
             }
 
             if (!_elCurrentSlider) _elCurrentSlider = getDOM('time-slider');
-            if (_elCurrentSlider && !isSliderInteracting && document.activeElement !== _elCurrentSlider) {
-                _elCurrentSlider.value = t;
+            const isInteracting = (typeof isSliderInteracting !== 'undefined' && isSliderInteracting);
+            if (_elCurrentSlider && !isInteracting && document.activeElement !== _elCurrentSlider) {
+                if (Math.abs(_lastSliderVal - t) > 0.0002) {
+                    _lastSliderVal = t;
+                    _elCurrentSlider.value = t;
+                }
             }
 
             if (currentActiveView === 'telescopic') {
@@ -1881,6 +2018,8 @@ if (typeof window !== 'undefined') {
     window.penumbraConeMesh3D = penumbraConeMesh3D;
     window.moonOrbitLine3D = moonOrbitLine3D;
     window.eclipticPlaneGroup3D = eclipticPlaneGroup3D;
+    window.celestialSphereGroup3D = celestialSphereGroup3D;
+    window.constellationsGroup3D = constellationsGroup3D;
     window.observerMarkerGroup3D = observerMarkerGroup3D;
     window.subsolarMarkerGroup = subsolarMarkerGroup;
     window.sublunarMarkerGroup = sublunarMarkerGroup;

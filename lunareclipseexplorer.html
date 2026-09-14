@@ -408,7 +408,7 @@
                 </div>
                 <div class="stat-row">
                     <span class="stat-lbl">Duración</span>
-                    <span class="stat-val" id="card-duration">03h18m</span>
+                    <span class="stat-val" id="card-duration">03h 18m</span>
                 </div>
 
                 <!-- Columna 2 (6 elementos) -->
@@ -895,12 +895,32 @@ END:VCALENDAR`;
             
             if (document.getElementById('card-duration')) {
                 const durMin = ec.parDur > 0 ? ec.parDur : ec.penDur;
-                const h = Math.floor(durMin / 60);
-                const m = Math.round(durMin % 60);
-                document.getElementById('card-duration').textContent = h > 0 ? `${String(h).padStart(2, '0')}h${String(m).padStart(2, '0')}m` : `${String(m).padStart(2, '0')}m`;
+                const totalSec = Math.round(durMin * 60);
+                const h = Math.floor(totalSec / 3600);
+                const m = Math.floor((totalSec % 3600) / 60);
+                const s = totalSec % 60;
+                if (h > 0) {
+                    document.getElementById('card-duration').textContent = `${String(h).padStart(2, '0')}h ${String(m).padStart(2, '0')}m`;
+                } else {
+                    document.getElementById('card-duration').textContent = `${String(m).padStart(2, '0')}m ${String(s).padStart(2, '0')}s`;
+                }
             }
             if (document.getElementById('card-pen-mag')) document.getElementById('card-pen-mag').textContent = ec.penMag.toFixed(4);
-            if (document.getElementById('card-tot-dur')) document.getElementById('card-tot-dur').textContent = ec.totDur > 0 ? `${ec.totDur.toFixed(1)}m` : '--';
+            if (document.getElementById('card-tot-dur')) {
+                if (ec.totDur > 0) {
+                    const totalSec = Math.round(ec.totDur * 60);
+                    const h = Math.floor(totalSec / 3600);
+                    const m = Math.floor((totalSec % 3600) / 60);
+                    const s = totalSec % 60;
+                    if (h > 0) {
+                        document.getElementById('card-tot-dur').textContent = `${String(h).padStart(2, '0')}h ${String(m).padStart(2, '0')}m`;
+                    } else {
+                        document.getElementById('card-tot-dur').textContent = `${String(m).padStart(2, '0')}m ${String(s).padStart(2, '0')}s`;
+                    }
+                } else {
+                    document.getElementById('card-tot-dur').textContent = '--';
+                }
+            }
 
             if (document.getElementById('card-time')) {
                 const maxDate = new Date(ec.maxMs);

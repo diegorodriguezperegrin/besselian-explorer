@@ -938,11 +938,11 @@ input:focus, select:focus {
 
 .contacts-table th {
     text-align: left;
-    color: var(--text-secondary);
+    color: var(--accent-blue, #38bdf8);
     padding: 0 4px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.04);
     font-size: 0.72rem;
-    font-weight: 400;
+    font-weight: 500;
     height: 18px;
     max-height: 18px;
     line-height: 17px;
@@ -988,6 +988,22 @@ input:focus, select:focus {
     color: #fff;
 }
 
+.contacts-table tr:hover td strong {
+    color: var(--accent-blue, #38bdf8);
+}
+
+.limb-timetable-row {
+    transition: background 0.15s ease;
+}
+
+.limb-timetable-row:hover {
+    background: rgba(56, 189, 248, 0.12) !important;
+}
+
+.limb-timetable-row:hover .limb-row-key {
+    color: var(--accent-blue, #38bdf8) !important;
+}
+
 .contacts-table tr.placeholder-row:hover td {
     background: transparent;
 }
@@ -996,6 +1012,116 @@ input:focus, select:focus {
     color: var(--accent-blue);
     font-weight: 700;
     background: rgba(56, 189, 248, 0.16);
+}
+
+/* Tarjetas flotantes de circunstancias locales (Mapa 2D y Globo 3D): Idénticas a .mataro-card */
+.nasa-eclipse-popup .leaflet-popup-content-wrapper,
+.globe-3d-popup-card {
+    background: linear-gradient(135deg, rgba(14, 165, 233, 0.08), rgba(249, 115, 22, 0.06)), rgba(11, 19, 41, 0.96) !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+    border: 1px solid rgba(56, 189, 248, 0.25) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.75) !important;
+    padding: 8px 10px !important;
+    width: 320px !important;
+    box-sizing: border-box !important;
+}
+
+.nasa-eclipse-popup .leaflet-popup-content {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    line-height: 1.35 !important;
+}
+
+.nasa-eclipse-popup .leaflet-popup-tip {
+    background: rgba(11, 19, 41, 0.96) !important;
+    border: 1px solid rgba(56, 189, 248, 0.25) !important;
+}
+
+.nasa-eclipse-popup a.leaflet-popup-close-button {
+    color: #94a3b8 !important;
+    padding: 2px 6px !important;
+    top: 8px !important;
+    right: 8px !important;
+    font-size: 14px !important;
+    width: auto !important;
+    height: auto !important;
+    z-index: 20 !important;
+}
+
+.nasa-eclipse-popup a.leaflet-popup-close-button:hover {
+    color: #f8fafc !important;
+}
+
+/* Estados de la tarjeta flotante de circunstancias: Preview (Gris) vs Activo (Blanco) */
+.nasa-popup-inner {
+    transition: all 0.25s ease;
+}
+
+.nasa-popup-inner.is-preview-obs .popup-coords-val {
+    color: #94a3b8 !important;
+    transition: color 0.25s ease;
+}
+
+.nasa-popup-inner.is-preview-obs .mataro-vis-tag {
+    color: #94a3b8 !important;
+    transition: color 0.25s ease;
+}
+
+.nasa-popup-inner.is-preview-obs .contacts-table td {
+    color: #94a3b8 !important;
+    transition: color 0.25s ease;
+}
+
+.nasa-popup-inner.is-preview-obs .contacts-table td strong {
+    color: #94a3b8 !important;
+    transition: color 0.25s ease;
+}
+
+.nasa-popup-inner.is-preview-obs .popup-alt-arrow {
+    color: #94a3b8 !important;
+    transition: color 0.25s ease;
+}
+
+/* Estado activo / fijado: todo en blanco */
+.nasa-popup-inner.is-active-obs .popup-coords-val {
+    color: #f8fafc !important;
+    transition: color 0.25s ease;
+}
+
+.nasa-popup-inner.is-active-obs .mataro-vis-tag {
+    color: #f8fafc !important;
+    transition: color 0.25s ease;
+}
+
+.nasa-popup-inner.is-active-obs .contacts-table td {
+    color: #f8fafc !important;
+    transition: color 0.25s ease;
+}
+
+.nasa-popup-inner.is-active-obs .contacts-table td strong {
+    color: #f8fafc !important;
+    transition: color 0.25s ease;
+}
+
+.nasa-popup-inner.is-active-obs .popup-alt-arrow.arrow-rising {
+    color: #4ade80 !important;
+    transition: color 0.25s ease;
+}
+
+.nasa-popup-inner.is-active-obs .popup-alt-arrow.arrow-setting {
+    color: #f59e0b !important;
+    transition: color 0.25s ease;
+}
+
+/* Filas atenuadas de sustitución para fases no alcanzadas */
+.nasa-popup-inner .contacts-table tr.placeholder-row td,
+.nasa-popup-inner .contacts-table tr.placeholder-row td strong {
+    color: #94a3b8 !important;
+    opacity: 0.35 !important;
 }
 
 .eclipse-card {
