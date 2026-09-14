@@ -49,12 +49,12 @@
     --z-hud: 15;
     --z-card: 22;
     --z-dock: 25;
-    --z-panel: 30;
-    --z-reopen: 35;
-    --z-nav: 40;
-    --z-modal: 50;
-    --z-banner: 100;
-    --z-dropdown: 1000;
+    --z-panel: 1100;
+    --z-reopen: 1150;
+    --z-nav: 1200;
+    --z-modal: 1300;
+    --z-banner: 1400;
+    --z-dropdown: 2000;
 }
 
 /* =========================================================================
@@ -126,7 +126,7 @@ body {
     width: 350px;
     max-height: calc(100vh - 30px);
     max-height: calc(100dvh - 30px);
-    z-index: var(--z-dock);
+    z-index: var(--z-panel);
     background: var(--bg-panel);
     backdrop-filter: blur(16px);
     border: 1px solid var(--border-color);
@@ -1266,6 +1266,7 @@ input:focus, select:focus {
         flex-direction: column;
         align-items: flex-start;
         gap: 8px;
+        z-index: var(--z-nav) !important;
     }
 
     .panel-header {
@@ -1301,11 +1302,31 @@ input:focus, select:focus {
         z-index: var(--z-modal) !important;
     }
 
+    #lunar-limb-panel {
+        width: min(calc(100vw - 30px), 350px) !important;
+        max-width: 350px !important;
+        left: 15px !important;
+        right: auto !important;
+        top: 15px !important;
+        max-height: calc(100vh - 110px) !important;
+        max-height: calc(100dvh - 110px) !important;
+        z-index: var(--z-modal) !important;
+    }
+
     .sidebar-panel.collapsed,
-    .settings-panel.collapsed {
+    .settings-panel.collapsed,
+    #lunar-limb-panel.collapsed {
         transform: translateX(calc(-100% - 30px)) !important;
         opacity: 0 !important;
         pointer-events: none !important;
+    }
+
+    /* Ocultar barra flotante de búsqueda en móvil si hay algún panel lateral abierto */
+    body:has(.sidebar-panel:not(.collapsed)) .floating-top-search-container,
+    body:has(.settings-panel:not(.collapsed)) .floating-top-search-container,
+    body:has(#lunar-limb-panel:not(.collapsed)) .floating-top-search-container,
+    body.panel-open-mobile .floating-top-search-container {
+        display: none !important;
     }
 
     .playback-dock {

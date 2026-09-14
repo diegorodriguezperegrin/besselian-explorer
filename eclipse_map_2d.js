@@ -839,7 +839,7 @@ const EclipseMap2D = (() => {
 
         overlay.innerHTML = `
             <!-- BARRA SUPERIOR CENTRADA (Buscador de Dirección y Coordenadas) -->
-            <div style="position: absolute; top: 16px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; justify-content: center; pointer-events: auto; max-width: calc(100vw - 32px); width: max-content; z-index: 510;">
+            <div id="map-search-container" class="floating-top-search-container" style="position: absolute; top: 16px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; justify-content: center; pointer-events: auto; max-width: calc(100vw - 32px); width: max-content; z-index: 500;">
                 <!-- Buscador de Dirección y Coordenadas -->
                 <div style="position: relative; width: 350px; max-width: calc(100vw - 32px);">
                     <div style="display: flex; align-items: center; background: rgba(11, 19, 41, 0.92); backdrop-filter: blur(16px); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 10px; height: 35px; padding: 0 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.65);">

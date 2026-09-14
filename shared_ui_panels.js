@@ -39,6 +39,18 @@ function updateTopNavButtonsState() {
             if (btnLimb) { btnLimb.style.display = (showLimbBtn && !limbOpen) ? 'inline-flex' : 'none'; btnLimb.classList.remove('active-nav'); }
 
             const isSmall = window.innerWidth <= 900;
+            const anyPanelOpen = (sideOpen || setOpen || limbOpen);
+
+            if (typeof document !== 'undefined' && document.body) {
+                document.body.classList.toggle('panel-open-mobile', isSmall && anyPanelOpen);
+                document.querySelectorAll('.floating-top-search-container').forEach(el => {
+                    if (isSmall && anyPanelOpen) {
+                        el.style.setProperty('display', 'none', 'important');
+                    } else {
+                        el.style.removeProperty('display');
+                    }
+                });
+            }
 
             if (navBar) {
                 navBar.style.left = '15px';
@@ -57,7 +69,7 @@ function updateTopNavButtonsState() {
                         btnSide.style.position = 'fixed';
                         btnSide.style.top = '15px';
                         btnSide.style.left = '15px';
-                        btnSide.style.zIndex = '60';
+                        btnSide.style.zIndex = '1350';
                     }
                     const panelBottom = activePanel.offsetTop + activePanel.offsetHeight;
                     navBar.style.top = `${panelBottom + 8}px`;
@@ -76,7 +88,7 @@ function updateTopNavButtonsState() {
         // =========================================================================
         // GESTOR DE VENTANAS FLOTANTES ARRASTRABLES (ESTILO HÍBRIDO ESCRITORIO / MÓVIL)
         // =========================================================================
-        let maxPanelZIndex = 30;
+        let maxPanelZIndex = 1100;
 
         function bringPanelToFront(panel) {
             if (!panel) return;
