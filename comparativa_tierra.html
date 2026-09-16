@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Comparativa Visual: Tierra Fotográfica vs. Vectorial · Cosmos Mataró</title>
+    <title>Comparativa Textura Terrestre: 2K JPG vs 8K WebP · Cosmos Mataró</title>
     
     <!-- Fuentes tipográficas -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -329,18 +329,23 @@
 </head>
 <body>
 
+    <!-- Preload oculto de texturas (sin crossorigin: mismo origen, no necesita CORS) -->
+    <img id="preload-2k"  src="earth_topo_2048.jpg"   style="display:none">
+    <img id="preload-8k"  src="earth_daymap_4k.webp"  style="display:none">
+
+
     <header>
         <div class="brand">
             <span class="brand-badge">Cosmos Mataró</span>
             <h1>Laboratorio de Visualización Terrestre</h1>
-            <span>· Comparativa lado a lado</span>
+            <span>· 2K JPG actual vs. 8K WebP nueva</span>
         </div>
 
         <div class="controls-toolbar">
             <div class="btn-group">
                 <button class="btn-toggle active" id="btn-mode-split" onclick="setViewMode('split')">Pantalla Dividida (50/50)</button>
-                <button class="btn-toggle" id="btn-mode-photo" onclick="setViewMode('photo')">Solo Foto NASA</button>
-                <button class="btn-toggle" id="btn-mode-vector" onclick="setViewMode('vector')">Solo Vectorial</button>
+                <button class="btn-toggle" id="btn-mode-photo" onclick="setViewMode('photo')">Solo 2K JPG (actual)</button>
+                <button class="btn-toggle" id="btn-mode-vector" onclick="setViewMode('vector')">Solo 8K WebP (nueva)</button>
             </div>
 
             <button class="btn-action" onclick="resetViews()">Restablecer Cámara</button>
@@ -348,11 +353,10 @@
     </header>
 
     <main id="viewport-wrapper">
-        <!-- VISTA A: FOTOGRÁFICA NASA -->
         <section class="viewport-half" id="container-photo">
             <div class="info-card">
-                <h2>Textura Fotográfica <span class="tag tag-photo">NASA 2K</span></h2>
-                <p class="info-desc">Mapeo de bits equirrectangular NASA Blue Marble Topography. Muestra relieve montañoso, desiertos, vegetación y profundidad marina.</p>
+                <h2>Textura Actual <span class="tag tag-photo">2K JPG</span></h2>
+                <p class="info-desc">earth_topo_2048.jpg · NASA Blue Marble Topography. Textura en uso actualmente en el explorador de eclipses.</p>
                 <div class="stat-grid">
                     <div class="stat-box">
                         <div class="stat-label">Peso de descarga</div>
@@ -367,53 +371,35 @@
                         <div class="stat-val">2048 × 1024 px</div>
                     </div>
                     <div class="stat-box">
-                        <div class="stat-label">Zoom máximo</div>
-                        <div class="stat-val">Píxel visible</div>
+                        <div class="stat-label">Formato</div>
+                        <div class="stat-val">JPEG</div>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- VISTA B: VECTORIAL TÉCNICA -->
+
+        <!-- VISTA B: 8K WebP NUEVA -->
         <section class="viewport-half" id="container-vector">
             <div class="info-card">
-                <h2>Alternativa Vectorial <span class="tag tag-vector">Natural Earth</span></h2>
-                <p class="info-desc">Líneas de costa matemáticas oficiales (escala 1:110m). Estética de telemetría orbital y centro de control aeroespacial.</p>
+                <h2>Nueva Textura <span class="tag tag-vector">4K WebP</span></h2>
+                <p class="info-desc">earth_daymap_4k.webp · Solar System Scope (datos NASA). 4× más píxeles que la actual, formato WebP optimizado. CC BY 4.0.</p>
                 <div class="stat-grid">
                     <div class="stat-box">
                         <div class="stat-label">Peso de descarga</div>
-                        <div class="stat-val" style="color: #10b981;">55 KB (-77%)</div>
+                        <div class="stat-val" style="color: #10b981;">645 KB</div>
                     </div>
                     <div class="stat-box">
                         <div class="stat-label">Memoria VRAM (GPU)</div>
-                        <div class="stat-val" style="color: #10b981;">0 MB (Líneas 3D)</div>
+                        <div class="stat-val">33 MB</div>
                     </div>
                     <div class="stat-box">
                         <div class="stat-label">Resolución</div>
-                        <div class="stat-val" style="color: #38bdf8;">Infinita (Vector)</div>
+                        <div class="stat-val" style="color: #38bdf8;">4096 × 2048 px</div>
                     </div>
                     <div class="stat-box">
-                        <div class="stat-label">Zoom máximo</div>
-                        <div class="stat-val">100% Nítido</div>
-                    </div>
-                </div>
-
-                <div class="vector-options">
-                    <div class="color-row">
-                        <span style="color: var(--text-muted);">Color de costa:</span>
-                        <div class="color-pills">
-                            <div class="color-dot active" style="background: #38bdf8;" onclick="setVectorColor(0x38bdf8, this)"></div>
-                            <div class="color-dot" style="background: #10b981;" onclick="setVectorColor(0x10b981, this)"></div>
-                            <div class="color-dot" style="background: #f59e0b;" onclick="setVectorColor(0xf59e0b, this)"></div>
-                            <div class="color-dot" style="background: #ffffff;" onclick="setVectorColor(0xffffff, this)"></div>
-                        </div>
-                    </div>
-
-                    <div class="color-row">
-                        <label style="color: var(--text-muted); cursor: pointer; display: flex; align-items: center; gap: 6px;">
-                            <input type="checkbox" id="chk-graticule" checked onchange="toggleGraticule(this.checked)">
-                            Red de Meridianos / Paralelos
-                        </label>
+                        <div class="stat-label">Formato</div>
+                        <div class="stat-val" style="color: #38bdf8;">WebP</div>
                     </div>
                 </div>
             </div>
@@ -475,24 +461,35 @@
         const earthMeshPhoto = new THREE.Mesh(earthGeoPhoto, earthMatPhoto);
         scenePhoto.add(earthMeshPhoto);
 
-        // Carga de Textura Fotográfica con fallback robusto
-        const texLoader = new THREE.TextureLoader();
-        texLoader.setCrossOrigin('anonymous');
-        const isLocalFile = window.location.protocol === 'file:';
-        const photoSrcLocal = 'earth_topo_2048.jpg';
-        const photoSrcCDN = 'https://cdn.jsdelivr.net/gh/diegorodriguezperegrin/besselian-explorer@main/earth_topo_2048.jpg';
+        // Helper robusto: usa <img> precargado sin importar si ya cargó o está cargando
+        function loadTexFromImg(imgEl, fallbackCDN, onReady) {
+            function fromImg() {
+                const t = new THREE.Texture(imgEl);
+                t.needsUpdate = true;
+                onReady(t);
+            }
+            if (!imgEl) {
+                new THREE.TextureLoader().load(fallbackCDN, onReady);
+                return;
+            }
+            if (imgEl.complete && imgEl.naturalWidth > 0) {
+                fromImg();   // Ya en caché
+            } else {
+                imgEl.addEventListener('load', fromImg, { once: true });
+                imgEl.addEventListener('error', () => new THREE.TextureLoader().load(fallbackCDN, onReady), { once: true });
+            }
+        }
 
-        texLoader.load(isLocalFile ? photoSrcCDN : photoSrcLocal, (tex) => {
-            tex.needsUpdate = true;
-            earthMatPhoto.map = tex;
-            earthMatPhoto.needsUpdate = true;
-        }, undefined, () => {
-            texLoader.load(photoSrcCDN, (tex) => {
-                tex.needsUpdate = true;
-                earthMatPhoto.map = tex;
-                earthMatPhoto.needsUpdate = true;
-            });
-        });
+        // Carga de textura 2K
+        const isLocalFile = window.location.protocol === 'file:';
+        const photoSrcCDN = 'https://cdn.jsdelivr.net/gh/diegorodriguezperegrin/besselian-explorer@main/earth_topo_2048.jpg';
+        function applyTex2K(tex) { tex.needsUpdate = true; earthMatPhoto.map = tex; earthMatPhoto.needsUpdate = true; }
+
+        if (isLocalFile) {
+            new THREE.TextureLoader().setCrossOrigin('anonymous').load(photoSrcCDN, applyTex2K);
+        } else {
+            loadTexFromImg(document.getElementById('preload-2k'), photoSrcCDN, applyTex2K);
+        }
 
         // Atmósfera brillante
         const atmoGeoPhoto = new THREE.SphereGeometry(EARTH_RADIUS * 1.018, 64, 64);
@@ -500,7 +497,7 @@
         scenePhoto.add(new THREE.Mesh(atmoGeoPhoto, atmoMatPhoto));
 
         // =========================================================================
-        // ESCENA 2: VECTORIAL TÉCNICA
+        // ESCENA 2: 8K WebP (Solar System Scope)
         // =========================================================================
         const containerVector = document.getElementById('container-vector');
         const sceneVector = new THREE.Scene();
@@ -519,95 +516,38 @@
         controlsVector.minDistance = 60;
         controlsVector.maxDistance = 600;
 
-        // Iluminación Vectorial Técnica
+        // Iluminación idéntica a la escena izquierda
         const ambLightVector = new THREE.AmbientLight(0x101a26, 0.40);
         sceneVector.add(ambLightVector);
         const dirLightVector = new THREE.DirectionalLight(0xfff5ea, 1.8);
         dirLightVector.position.set(150, 100, 250);
         sceneVector.add(dirLightVector);
 
-        // Esfera Oceánica Lisa en Azul Marino Profundo Espacial
-        const oceanGeo = new THREE.SphereGeometry(EARTH_RADIUS * 0.999, 96, 96);
-        const oceanMat = new THREE.MeshPhongMaterial({
-            color: 0x081326,
-            emissive: 0x040813,
-            specular: 0x1e3a5f,
-            shininess: 25
+        // Esfera Terrestre 8K WebP
+        const earthGeoVector = new THREE.SphereGeometry(EARTH_RADIUS, 128, 128);
+        const earthMatVector = new THREE.MeshPhongMaterial({
+            color: 0xffffff,
+            specular: new THREE.Color(0x222222),
+            shininess: 12
         });
-        const oceanMesh = new THREE.Mesh(oceanGeo, oceanMat);
-        sceneVector.add(oceanMesh);
+        const earthMeshVector = new THREE.Mesh(earthGeoVector, earthMatVector);
+        sceneVector.add(earthMeshVector);
 
-        // Material de Líneas de Costa Vectoriales
-        let vectorLineMaterial = new THREE.LineBasicMaterial({
-            color: 0x38bdf8,
-            transparent: true,
-            opacity: 0.88,
-            linewidth: 1
-        });
+        // Carga de textura 8K WebP
+        const webpSrcCDN = 'https://cdn.jsdelivr.net/gh/diegorodriguezperegrin/besselian-explorer@main/earth_daymap_8k.webp';
+        function applyTex8K(tex) { tex.needsUpdate = true; earthMatVector.map = tex; earthMatVector.needsUpdate = true; }
 
-        // Grupo de costas
-        const coastlinesGroup = new THREE.Group();
-        sceneVector.add(coastlinesGroup);
-
-        // Decodificar arcos TopoJSON a líneas 3D
-        function buildVectorCoastlines() {
-            if (typeof TOPO_LAND_110M === 'undefined' || !TOPO_LAND_110M.arcs) return;
-            const topo = TOPO_LAND_110M;
-            const scale = topo.transform.scale;
-            const translate = topo.transform.translate;
-
-            topo.arcs.forEach(arc => {
-                let x = 0, y = 0;
-                const points = [];
-                arc.forEach(pt => {
-                    x += pt[0];
-                    y += pt[1];
-                    const lon = x * scale[0] + translate[0];
-                    const lat = y * scale[1] + translate[1];
-                    points.push(latLngToVec3(lat, lon, EARTH_RADIUS * 1.001));
-                });
-                if (points.length > 1) {
-                    const geo = new THREE.BufferGeometry().setFromPoints(points);
-                    const line = new THREE.Line(geo, vectorLineMaterial);
-                    coastlinesGroup.add(line);
-                }
-            });
+        if (isLocalFile) {
+            new THREE.TextureLoader().setCrossOrigin('anonymous').load(webpSrcCDN, applyTex8K);
+        } else {
+            loadTexFromImg(document.getElementById('preload-8k'), webpSrcCDN, applyTex8K);
         }
-        buildVectorCoastlines();
 
-        // Red de Meridianos y Paralelos (Graticule)
-        const graticuleGroup = new THREE.Group();
-        function buildGraticule() {
-            const gratMat = new THREE.LineBasicMaterial({ color: 0x1e3a8a, transparent: true, opacity: 0.35 });
-            const eqMat = new THREE.LineBasicMaterial({ color: 0xf59e0b, transparent: true, opacity: 0.50 }); // Ecuador en ámbar
-
-            // Paralelos cada 30°
-            for (let lat = -60; lat <= 60; lat += 30) {
-                const pts = [];
-                for (let lon = -180; lon <= 180; lon += 5) {
-                    pts.push(latLngToVec3(lat, lon, EARTH_RADIUS * 1.0005));
-                }
-                const geo = new THREE.BufferGeometry().setFromPoints(pts);
-                graticuleGroup.add(new THREE.Line(geo, lat === 0 ? eqMat : gratMat));
-            }
-
-            // Meridianos cada 30°
-            for (let lon = -180; lon < 180; lon += 30) {
-                const pts = [];
-                for (let lat = -85; lat <= 85; lat += 5) {
-                    pts.push(latLngToVec3(lat, lon, EARTH_RADIUS * 1.0005));
-                }
-                const geo = new THREE.BufferGeometry().setFromPoints(pts);
-                graticuleGroup.add(new THREE.Line(geo, gratMat));
-            }
-            sceneVector.add(graticuleGroup);
-        }
-        buildGraticule();
-
-        // Atmósfera brillante en la versión vectorial
+        // Atmósfera brillante
         const atmoGeoVector = new THREE.SphereGeometry(EARTH_RADIUS * 1.018, 64, 64);
-        const atmoMatVector = new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.15, side: THREE.BackSide });
-        sceneVector.add(new THREE.Mesh(atmoGeoVector, atmoMatVector));
+        const atmoMatAtmos = new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.15, side: THREE.BackSide });
+        sceneVector.add(new THREE.Mesh(atmoGeoVector, atmoMatAtmos));
+
 
         // =========================================================================
         // TRAYECTORIA DEL ECLIPSE TOTAL (2 AGOSTO 2027) EN AMBOS GLOBOS
@@ -681,15 +621,7 @@
             onWindowResize();
         }
 
-        function setVectorColor(colorHex, el) {
-            vectorLineMaterial.color.setHex(colorHex);
-            document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('active'));
-            if (el) el.classList.add('active');
-        }
 
-        function toggleGraticule(visible) {
-            graticuleGroup.visible = visible;
-        }
 
         function resetViews() {
             const targetPos = latLngToVec3(25.5, 33.2, 210);
