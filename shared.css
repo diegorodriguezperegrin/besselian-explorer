@@ -453,6 +453,37 @@ body.is-dragging-panel * {
     box-shadow: 0 0 8px rgba(56, 189, 248, 0.2);
 }
 
+.capsule-action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 25px;
+    padding: 0 7px;
+    border-radius: 6px;
+    border: 1px solid rgba(56, 189, 248, 0.25);
+    background: rgba(255, 255, 255, 0.05);
+    color: #94a3b8;
+    font-size: 0.70rem;
+    font-family: var(--font-mono);
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.capsule-action-btn:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.12);
+    border-color: var(--accent-blue);
+}
+
+.capsule-action-btn.active {
+    background: rgba(56, 189, 248, 0.22);
+    color: var(--accent-blue);
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 8px rgba(56, 189, 248, 0.3);
+}
 
 /* =========================================================================
    CHECKBOXES, INPUTS, SELECTS Y DROPDOWNS
@@ -659,6 +690,7 @@ input:focus, select:focus {
     display: flex;
     align-items: center;
     justify-content: flex-start;
+    gap: 8px;
 }
 
 .playback-dock-bottom-right {
@@ -666,6 +698,82 @@ input:focus, select:focus {
     align-items: center;
     justify-content: flex-end;
     gap: 8px;
+}
+
+/* Indicador Flotante EN VIVO con LED y texto rojo de parpadeo nítido */
+.live-indicator-badge {
+    position: absolute;
+    top: 15px;
+    right: 375px;
+    z-index: var(--z-hud, 40);
+    background: rgba(15, 23, 42, 0.88);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(239, 68, 68, 0.45);
+    border-radius: 20px;
+    padding: 5px 12px;
+    display: none;
+    align-items: center;
+    gap: 7px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5), 0 0 10px rgba(239, 68, 68, 0.2);
+    pointer-events: auto;
+    cursor: pointer;
+    transition: right 0.25s ease, opacity 0.2s ease, border-color 0.2s ease;
+    user-select: none;
+}
+
+.live-indicator-badge.active {
+    display: flex;
+    animation: blinkLiveBadge 2s infinite ease-in-out;
+}
+
+.live-indicator-badge.panel-collapsed {
+    right: 15px;
+}
+
+@keyframes blinkLiveBadge {
+    0%, 100% { border-color: rgba(239, 68, 68, 0.35); box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5), 0 0 8px rgba(239, 68, 68, 0.15); }
+    50% { border-color: rgba(239, 68, 68, 0.75); box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5), 0 0 16px rgba(239, 68, 68, 0.45); }
+}
+
+.live-led {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #ef4444;
+    box-shadow: 0 0 8px #ef4444;
+    flex-shrink: 0;
+    animation: blinkLiveLed 1.2s infinite ease-in-out;
+}
+
+@keyframes blinkLiveLed {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.35; transform: scale(0.85); }
+}
+
+.live-text {
+    font-family: var(--font-heading);
+    font-size: 0.74rem;
+    font-weight: 700;
+    color: #ef4444;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    animation: blinkLiveText 1.2s infinite ease-in-out;
+}
+
+@keyframes blinkLiveText {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+@media (max-width: 900px) {
+    .live-indicator-badge {
+        top: 56px;
+        right: 12px !important;
+        padding: 4px 10px;
+    }
+    .live-text {
+        font-size: 0.70rem;
+    }
 }
 
 .player-phase-badge {
@@ -1253,6 +1361,29 @@ input:focus, select:focus {
     color: #fca5a5;
 }
 
+/* Barra de búsqueda flotante superior (Modos 3D y Mapa) - Ancho sincronizado con el reproductor (460px) */
+.floating-top-search-container {
+    position: absolute;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(calc(100vw - 20px), 460px);
+    max-width: 460px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: auto;
+    z-index: 500;
+}
+
+.floating-top-search-container > div {
+    position: relative;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
 /* La barra de búsqueda flotante NO debe aparecer ni en MODO Telescopio ni en MODO Ruta */
 body[data-view-mode="telescopic"] .floating-top-search-container,
 body[data-view-mode="route"] .floating-top-search-container,
@@ -1334,6 +1465,11 @@ body.view-route .floating-top-search-container {
     body:has(#lunar-limb-panel:not(.collapsed)) .floating-top-search-container,
     body.panel-open-mobile .floating-top-search-container {
         display: none !important;
+    }
+
+    .floating-top-search-container {
+        width: min(calc(100vw - 20px), calc(100dvw - 20px), 460px) !important;
+        max-width: 460px !important;
     }
 
     .playback-dock {

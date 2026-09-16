@@ -905,6 +905,8 @@ var constellationsGroup3D = null;
                 uShadowCenter: { value: new THREE.Vector2(0, 0) },
                 uL1: { value: 0.53 },
                 uL2: { value: 0.008 },
+                uTanF1: { value: 0.0046 },
+                uTanF2: { value: 0.00457 },
                 uShowPenumbra: { value: 0.0 }
             },
             vertexShader: `
@@ -923,6 +925,8 @@ var constellationsGroup3D = null;
                 uniform vec2 uShadowCenter;
                 uniform float uL1;
                 uniform float uL2;
+                uniform float uTanF1;
+                uniform float uTanF2;
                 uniform float uShowPenumbra;
 
                 varying vec3 vLocalPosition;
@@ -942,25 +946,27 @@ var constellationsGroup3D = null;
                     float dy = y_p - uShadowCenter.y;
                     float dist = sqrt(dx * dx + dy * dy);
 
-                    if (dist > uL1) {
+                    // Radios cónicos rigurosos: penumbra y umbra coherente con el trazado de límites
+                    float L1_z = max(0.001, uL1 - z_p * uTanF1);
+                    float L2_z = max(0.0001, abs(uL2));
+
+                    if (dist > L1_z) {
                         discard; // Fuera de la penumbra
                     }
 
-                    float absL2 = abs(uL2);
-
                     // 3. Gradiente penumbral físico difuso continuo
-                    float normDist = clamp((dist - absL2) / max(0.0001, uL1 - absL2), 0.0, 1.0);
+                    float normDist = clamp((dist - L2_z) / max(0.0001, L1_z - L2_z), 0.0, 1.0);
                     float factor = 1.0 - normDist;
                     // Atenuación suave difusa
                     float penAlpha = pow(factor, 1.35) * 0.88;
                     vec3 penCol = vec3(0.02, 0.04, 0.09);
 
-                    // 4. Núcleo negro de totalidad / anularidad (Umbra)
+                    // 4. Núcleo negro de totalidad / anularidad (Umbra / Antumbra)
                     float alpha = 0.0;
                     vec3 col = penCol;
 
-                    if (dist <= absL2) {
-                        float umbFactor = clamp(1.0 - (dist / max(0.0001, absL2)), 0.0, 1.0);
+                    if (dist <= L2_z) {
+                        float umbFactor = clamp(1.0 - (dist / max(0.0001, L2_z)), 0.0, 1.0);
                         alpha = mix(0.88, 0.98, smoothstep(0.0, 0.25, umbFactor));
                         col = vec3(0.0, 0.0, 0.0);
                     } else if (uShowPenumbra > 0.5) {
@@ -976,13 +982,14 @@ var constellationsGroup3D = null;
             side: THREE.FrontSide
         });
 
-        // Cota microscópica rasante compartida para sombra y líneas sin conflicto de facetas ni paralaje
-        const GROUND_OVERLAY_RADIUS = EARTH_RADIUS * 1.0012;
+        // Cotas microscópicas rasantes: la sombra pegada al globo y las líneas trazadas por encima
+        const SHADOW_OVERLAY_RADIUS = EARTH_RADIUS * 1.0010;
+        const GROUND_OVERLAY_RADIUS = EARTH_RADIUS * 1.0018;
 
-        // Esfera superpuesta del shader de sombra (renderizada pegada a la superficie)
-        var shadowOverlayGeometry = new THREE.SphereGeometry(GROUND_OVERLAY_RADIUS, 128, 128);
+        // Esfera superpuesta del shader de sombra (renderizada pegada a la superficie por debajo de las líneas de la trayectoria)
+        var shadowOverlayGeometry = new THREE.SphereGeometry(SHADOW_OVERLAY_RADIUS, 128, 128);
         var shadowOverlayMesh = new THREE.Mesh(shadowOverlayGeometry, shadowShaderMaterial);
-        shadowOverlayMesh.renderOrder = 20;
+        shadowOverlayMesh.renderOrder = 18;
         scene.add(shadowOverlayMesh);
 
         // Resiliencia ante pérdida transitoria de contexto WebGL en móviles / cambio de pestaña
@@ -1242,12 +1249,16 @@ var constellationsGroup3D = null;
                 const material = new THREE.LineBasicMaterial({ 
                     color: colorHex, 
                     linewidth: linewidth,
-                    transparent: opacity < 1.0,
+                    transparent: true,
                     opacity: opacity,
-                    depthWrite: false
+                    depthWrite: false,
+                    depthTest: true,
+                    polygonOffset: true,
+                    polygonOffsetFactor: -2,
+                    polygonOffsetUnits: -4
                 });
                 const lineSegs = new THREE.LineSegments(geometry, material);
-                lineSegs.renderOrder = 25;
+                lineSegs.renderOrder = 30;
                 return lineSegs;
             }
             return null;
@@ -1335,7 +1346,10 @@ var constellationsGroup3D = null;
             const showCenterLine = getDOM('chk-show-center-line')?.checked !== false;
             if (data.centerCoords && data.centerCoords.length > 1 && showCenterLine) {
                 pathLine = createSegmentedLine(data.centerCoords, centerLineColor, GROUND_OVERLAY_RADIUS, 3);
-                if (pathLine) earthGroup.add(pathLine);
+                if (pathLine) {
+                    pathLine.renderOrder = 35;
+                    earthGroup.add(pathLine);
+                }
             }
 
             // 2. Límites Extremos Norte y Sur de Totalidad / Anularidad
@@ -1471,7 +1485,7 @@ var constellationsGroup3D = null;
             }
 
             const l1 = (e.l10 || 0.54) + (e.l11 || 0)*t; 
-            const l2 = Math.abs((e.l20 || 0.01) + (e.l21 || 0)*t);
+            const l2 = Math.abs((e.l20 || 0.01) + (e.l21 || 0)*t + (e.l22 || 0)*t*t);
 
             // Marco Inercial Canónico del Eclipse (fijado en el instante de referencia t0 = 0)
             const d0Deg = e.d0 || 0;
@@ -1759,10 +1773,10 @@ var constellationsGroup3D = null;
                     const coneDir = centerSurfacePos ? moonPos.clone().sub(centerSurfacePos).normalize() : wCanon.clone();
                     const coneQuat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), coneDir);
 
-                    // 1. Cono de Umbra (Totalidad): converge desde la Luna hasta la mancha negra exacta en la superficie (l2)
-                    const umbRadBottom = Math.max(0.25, Math.abs(l2) * EARTH_RADIUS);
-                    // 2. Cono de Penumbra: haz exterior de semisombra hacia l1
-                    const penRadBottom = Math.max(1.0, l1 * EARTH_RADIUS);
+                    // 1. Cono de Umbra (Totalidad / Anularidad): converge desde la Luna hasta la sección cónica exacta en la superficie
+                    const umbRadBottom = Math.max(0.25, l2 * EARTH_RADIUS);
+                    // 2. Cono de Penumbra: haz exterior de semisombra hacia L1(zeta)
+                    const penRadBottom = Math.max(1.0, Math.max(0.001, l1 - zeta * (e.tan_f1 || 0.0046)) * EARTH_RADIUS);
 
                     const needsGeometryUpdate = (
                         Math.abs(umbRadBottom - _lastUmbRadBottom) > 0.1 ||
@@ -1798,6 +1812,8 @@ var constellationsGroup3D = null;
             shadowShaderMaterial.uniforms.uShadowCenter.value.set(shadowCenterX, shadowCenterY);
             shadowShaderMaterial.uniforms.uL1.value = l1;
             shadowShaderMaterial.uniforms.uL2.value = l2;
+            shadowShaderMaterial.uniforms.uTanF1.value = e.tan_f1 || 0.0046;
+            shadowShaderMaterial.uniforms.uTanF2.value = e.tan_f2 || 0.00457;
             shadowShaderMaterial.uniformsNeedUpdate = true;
 
             // Etiquetas de tiempo en el dock del reproductor (optimizado con dirty checking de segundo)
@@ -1865,43 +1881,51 @@ var constellationsGroup3D = null;
                 }
             }
 
-            // Actualizar etiqueta de fase dinámica en la cabecera del reproductor (si no estamos en Modo Ruta) con dirty checking
-            if (typeof currentActiveView === 'undefined' || currentActiveView !== 'route') {
-                if (!_elPhaseLabel) _elPhaseLabel = getDOM('player-phase-label');
-                if (_elPhaseLabel) {
-                    const circ = localCircumstancesCache || (currentObserver && calculateLocalSolarCircumstances(e, currentObserver.lat, currentObserver.lon));
-                    let targetPhaseHtml = '';
+            // Actualizar etiqueta de fase dinámica en la cabecera del reproductor con dirty checking
+            if (!_elPhaseLabel) _elPhaseLabel = getDOM('player-phase-label');
+            if (_elPhaseLabel) {
+                const circ = localCircumstancesCache || (currentObserver && calculateLocalSolarCircumstances(e, currentObserver.lat, currentObserver.lon));
+                let targetPhaseHtml = '';
 
-                    if (circ && circ.c1 && circ.c4) {
-                        const t1 = circ.c1.t;
-                        const t4 = circ.c4.t;
-                        const t2 = circ.c2 ? circ.c2.t : null;
-                        const t3 = circ.c3 ? circ.c3.t : null;
+                if (window.isLiveMode) {
+                    const now = Date.now();
+                    const timeRange = (typeof getEclipseTimeRangeMs === 'function') ? getEclipseTimeRangeMs(e) : null;
+                    if (timeRange && now < timeRange.startMs) {
+                        targetPhaseHtml = '<span style="color: var(--accent-blue);">⏳ En espera del inicio en vivo</span>';
+                    } else if (timeRange && now > timeRange.endMs) {
+                        targetPhaseHtml = '<span style="color: var(--text-dim);">⏹️ Eclipse finalizado (en pausa)</span>';
+                    }
+                }
 
-                        const pNow = circ.getParamsAtT ? circ.getParamsAtT(t) : null;
-                        const isSunAbove = pNow ? (pNow.alt > -0.5) : true;
+                if (!targetPhaseHtml && circ && circ.c1 && circ.c4) {
+                    const t1 = circ.c1.t;
+                    const t4 = circ.c4.t;
+                    const t2 = circ.c2 ? circ.c2.t : null;
+                    const t3 = circ.c3 ? circ.c3.t : null;
 
-                        if (t >= t1 && t <= t4) {
-                            if (!isSunAbove) {
-                                targetPhaseHtml = '<span style="color: #94a3b8;"><span class="phase-dot" style="background:#64748b;"></span>Bajo horizonte</span>';
-                            } else if (t2 != null && t3 != null && t >= t2 && t <= t3) {
-                                if (circ.isTotal) {
-                                    targetPhaseHtml = '<span style="color: #fca5a5;"><span class="phase-dot total"></span>Totalidad</span>';
-                                } else if (circ.isAnnular) {
-                                    targetPhaseHtml = '<span style="color: #fde047;"><span class="phase-dot" style="background:#eab308; box-shadow:0 0 6px rgba(234,179,8,0.6);"></span>Anularidad</span>';
-                                } else {
-                                    targetPhaseHtml = '<span style="color: #93c5fd;"><span class="phase-dot" style="background:#38bdf8; box-shadow:0 0 5px rgba(56,189,248,0.5);"></span>Parcialidad</span>';
-                                }
-                            } else if ((t2 != null && t3 != null && ((t >= t1 && t < t2) || (t > t3 && t <= t4))) || (t2 == null && t >= t1 && t <= t4)) {
+                    const pNow = circ.getParamsAtT ? circ.getParamsAtT(t) : null;
+                    const isSunAbove = pNow ? (pNow.alt > -0.5) : true;
+
+                    if (t >= t1 && t <= t4) {
+                        if (!isSunAbove) {
+                            targetPhaseHtml = '<span style="color: #94a3b8;"><span class="phase-dot" style="background:#64748b;"></span>Bajo horizonte</span>';
+                        } else if (t2 != null && t3 != null && t >= t2 && t <= t3) {
+                            if (circ.isTotal) {
+                                targetPhaseHtml = '<span style="color: #fca5a5;"><span class="phase-dot total"></span>Totalidad</span>';
+                            } else if (circ.isAnnular) {
+                                targetPhaseHtml = '<span style="color: #fde047;"><span class="phase-dot" style="background:#eab308; box-shadow:0 0 6px rgba(234,179,8,0.6);"></span>Anularidad</span>';
+                            } else {
                                 targetPhaseHtml = '<span style="color: #93c5fd;"><span class="phase-dot" style="background:#38bdf8; box-shadow:0 0 5px rgba(56,189,248,0.5);"></span>Parcialidad</span>';
                             }
+                        } else if ((t2 != null && t3 != null && ((t >= t1 && t < t2) || (t > t3 && t <= t4))) || (t2 == null && t >= t1 && t <= t4)) {
+                            targetPhaseHtml = '<span style="color: #93c5fd;"><span class="phase-dot" style="background:#38bdf8; box-shadow:0 0 5px rgba(56,189,248,0.5);"></span>Parcialidad</span>';
                         }
                     }
+                }
 
-                    if (_lastPhaseHtml !== targetPhaseHtml) {
-                        _lastPhaseHtml = targetPhaseHtml;
-                        _elPhaseLabel.innerHTML = targetPhaseHtml;
-                    }
+                if (_lastPhaseHtml !== targetPhaseHtml) {
+                    _lastPhaseHtml = targetPhaseHtml;
+                    _elPhaseLabel.innerHTML = targetPhaseHtml;
                 }
             }
 
@@ -1956,6 +1980,36 @@ var constellationsGroup3D = null;
 
             if (currentActiveView === 'telescopic') {
                 renderTelescopicView();
+            }
+
+            // Sincronizar sombra con el mapa 2D cuando está activo
+            // Se usan directamente los elementos Besselianos para proyección rigurosa
+            if (currentActiveView === 'map' &&
+                typeof EclipseMap2D !== 'undefined' && EclipseMap2D.isLoaded &&
+                typeof EclipseMap2D.updateShadow === 'function') {
+                const showPen = getDOM('chk-show-shadow')?.checked ?? true;
+                // Declinación del eje de sombra en el instante actual
+                const dRad = ((e.d0 || 0) + (e.d1 || 0)*t + (e.d2 || 0)*t*t) * Math.PI / 180;
+                // Ángulo horario con mu2 y corrección Delta T
+                let muDeg2D = (e.mu0 || 0) + (e.mu1 || 0)*t + (e.mu2 || 0)*t*t;
+                if (e.dt) muDeg2D -= getEarthRotationAngleDeg(e.dt);
+                const muRad = muDeg2D * Math.PI / 180;
+                // Radios penumbrales/umbrales SIN abs para corrección ζ·tan_f
+                const l1_2d = (e.l10 || 0.54) + (e.l11 || 0)*t + (e.l12 || 0)*t*t;
+                const l2_2d = (e.l20 || 0.01) + (e.l21 || 0)*t + (e.l22 || 0)*t*t;
+                EclipseMap2D.updateShadow({
+                    t: t,
+                    eclipse: e,
+                    x: x,
+                    y: y,
+                    l1: l1_2d,
+                    l2: l2_2d,
+                    dRad: dRad,
+                    muRad: muRad,
+                    tanF1: e.tan_f1 || 0.0046,
+                    tanF2: e.tan_f2 || 0.00457,
+                    showPenumbra: showPen
+                });
             }
 
             needsRender = true;

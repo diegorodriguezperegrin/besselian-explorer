@@ -433,7 +433,7 @@ var DEG = 180 / Math.PI;
             const r0_sq = x0 * x0 + y0 * y0;
             const rMin_sq = Math.max(0, r0_sq - (r0_dot_v * r0_dot_v) / (v2 || 1));
             const rPenumbra = 1.0 + l10;
-            const deltaT = Math.sqrt(Math.max(0, rPenumbra * rPenumbra - rMin_sq)) / v;
+            const deltaT = (Math.sqrt(Math.max(0, rPenumbra * rPenumbra - rMin_sq)) / v) + 0.03;
             return { tClosest, deltaT, v, v2, rMin_sq };
         }
 
@@ -462,18 +462,22 @@ var DEG = 180 / Math.PI;
                 return null;
             }
             let a = prev.t, b = curr.t;
-            let fa = (prev.r2 != null ? prev.r2 : (prev.x * prev.x + prev.y * prev.y)) - 1.0;
+            const evalR2 = (p) => {
+                if (!p) return 2.0;
+                return p.r2 != null ? p.r2 : (p.x * p.x + p.y * p.y);
+            };
+            let fa = evalR2(prev) - 1.0;
             for (let k = 0; k < 40; k++) {
                 const m = 0.5 * (a + b);
                 const p = pointAt(m);
                 if (!p) break;
-                const fm = (p.x * p.x + p.y * p.y) - 1.0;
+                const fm = evalR2(p) - 1.0;
                 if ((fa < 0) === (fm < 0)) { a = m; fa = fm; }
                 else { b = m; }
             }
             const t_mid = 0.5 * (a + b);
             const p_mid = pointAt(t_mid);
-            return p_mid ? { t: t_mid, x: p_mid.x, y: p_mid.y } : null;
+            return p_mid ? { t: t_mid, x: p_mid.x, y: p_mid.y, r2: p_mid.r2 } : null;
         }
 
         // Cache global para precomputar toda la geometría polinomial e integración numérica una sola vez por eclipse
@@ -482,6 +486,10 @@ var DEG = 180 / Math.PI;
             centerCoords: [],
             totNorthCoords: [],
             totSouthCoords: [],
+            corridorPolygons: [],
+            corridorLoop: [],
+            sunsetArc: [],
+            sunriseArc: [],
             isoLines: [],
             sunriseLoop: [],
             sunsetLoop: [],
@@ -503,7 +511,16 @@ var DEG = 180 / Math.PI;
             const dt = 0.004; // 250 divisiones por hora (~14 segundos de paso, máxima resolución)
             const numSteps = Math.ceil((tLoopMax - tLoopMin) / dt);
 
-            // Helper para calcular cualquier trayectoria con intersección exacta en el borde (r2 = 1.0)
+            // Función de distancia al elipsoide WGS84 para evaluar discriminante real (r1^2 <= 1.0)
+            const getR1Sq = (t_val, px, py) => {
+                const d = ((eclipse.d0 || 0) + (eclipse.d1 || 0)*t_val + (eclipse.d2 || 0)*t_val*t_val) * Math.PI / 180;
+                const cosD = Math.cos(d);
+                const rho1_sq = 1.0 - 0.006694385 * cosD * cosD;
+                const y1 = py / Math.sqrt(rho1_sq);
+                return px * px + y1 * y1;
+            };
+
+            // Helper para calcular cualquier trayectoria con intersección exacta en el borde del elipsoide (r1_sq = 1.0)
             const computeTrajectoryWithExactBounds = (getPointFn) => {
                 const coords = [];
                 let prev = null;
@@ -516,7 +533,7 @@ var DEG = 180 / Math.PI;
                     const pt = getPointFn(t);
                     if (!pt) continue;
                     pt.t = t;
-                    const r2 = pt.x * pt.x + pt.y * pt.y;
+                    const r2 = pt.r2 != null ? pt.r2 : getR1Sq(t, pt.x, pt.y);
                     pt.r2 = r2;
 
                     if (r2 <= 1.0) {
@@ -545,7 +562,7 @@ var DEG = 180 / Math.PI;
             const centerCoords = computeTrajectoryWithExactBounds(t => {
                 const x = (eclipse.x0 || 0) + (eclipse.x1 || 0)*t + (eclipse.x2 || 0)*t*t + (eclipse.x3 || 0)*t*t*t;
                 const y = (eclipse.y0 || 0) + (eclipse.y1 || 0)*t + (eclipse.y2 || 0)*t*t + (eclipse.y3 || 0)*t*t*t;
-                return { x, y, r2: x*x + y*y, t };
+                return { x, y, r2: getR1Sq(t, x, y), t };
             });
 
             // 2. Límites Extremos Norte y Sur de Totalidad / Anularidad (Rojo)
@@ -562,9 +579,9 @@ var DEG = 180 / Math.PI;
                     const dy = (eclipse.y1 || 0) + 2*(eclipse.y2 || 0)*t + 3*(eclipse.y3 || 0)*t*t;
                     const l2 = Math.abs((eclipse.l20 || 0.008) + (eclipse.l21 || 0)*t);
                     if (l2 <= 0.0001) return null;
-                    const vlen = Math.sqrt(dx*dx + dy*dy) || 1;
+                    const vlen = Math.hypot(dx, dy) || 1;
                     const px = x + l2 * (-dy / vlen), py = y + l2 * (dx / vlen);
-                    return { x: px, y: py, r2: px*px + py*py, t };
+                    return { x: px, y: py, r2: getR1Sq(t, px, py), t };
                 });
 
                 totSouthCoords = computeTrajectoryWithExactBounds(t => {
@@ -574,10 +591,35 @@ var DEG = 180 / Math.PI;
                     const dy = (eclipse.y1 || 0) + 2*(eclipse.y2 || 0)*t + 3*(eclipse.y3 || 0)*t*t;
                     const l2 = Math.abs((eclipse.l20 || 0.008) + (eclipse.l21 || 0)*t);
                     if (l2 <= 0.0001) return null;
-                    const vlen = Math.sqrt(dx*dx + dy*dy) || 1;
+                    const vlen = Math.hypot(dx, dy) || 1;
                     const px = x - l2 * (-dy / vlen), py = y - l2 * (dx / vlen);
-                    return { x: px, y: py, r2: px*px + py*py, t };
+                    return { x: px, y: py, r2: getR1Sq(t, px, py), t };
                 });
+
+                // Filtrado de raíces extremas o saltos espurios en el limbo
+                const filterSpuriousJumps = (coords, maxJumpDeg = 2.5) => {
+                    if (!coords || coords.length <= 2) return coords;
+                    let list = coords.slice();
+                    while (list.length > 2) {
+                        const d01 = Math.hypot(list[0].lat - list[1].lat, (list[0].lng || list[0].lon) - (list[1].lng || list[1].lon));
+                        const d12 = Math.hypot(list[1].lat - list[2].lat, (list[1].lng || list[1].lon) - (list[2].lng || list[2].lon));
+                        if (d01 > maxJumpDeg && d01 > 2.5 * d12) {
+                            list.shift();
+                        } else break;
+                    }
+                    while (list.length > 2) {
+                        const n = list.length;
+                        const dEnd = Math.hypot(list[n-1].lat - list[n-2].lat, (list[n-1].lng || list[n-1].lon) - (list[n-2].lng || list[n-2].lon));
+                        const dPrev = Math.hypot(list[n-2].lat - list[n-3].lat, (list[n-2].lng || list[n-2].lon) - (list[n-3].lng || list[n-3].lon));
+                        if (dEnd > maxJumpDeg && dEnd > 2.5 * dPrev) {
+                            list.pop();
+                        } else break;
+                    }
+                    return list;
+                };
+
+                totNorthCoords = filterSpuriousJumps(totNorthCoords);
+                totSouthCoords = filterSpuriousJumps(totSouthCoords);
             }
 
             // 3. ISOMAGNITUDES Opcionales (Curvas de Magnitud de Eclipse constante)
@@ -940,6 +982,145 @@ var DEG = 180 / Math.PI;
                 }
             }
 
+            // -------------------------------------------------------------
+            // Cierre riguroso del pasillo de totalidad/anularidad (Sunset y Sunrise Arcs)
+            // -------------------------------------------------------------
+            let corridorLoop = [];
+            let corridorPolygons = [];
+            let sunsetArc = [];
+            let sunriseArc = [];
+
+            if (isCentral && totNorthCoords.length > 1 && totSouthCoords.length > 1) {
+                // Cierre limpio y directo del pasillo entre límites Norte y Sur
+                // Une directamente el último punto del límite Norte con el último punto del límite Sur a lo largo del arco terminal,
+                // sin intercalar puntos residuales ni duplicar coordenadas extremas, evitando cualquier pico o deformación.
+                const buildDirectTerminalArc = (pA, pB, numSteps = 4) => {
+                    if (!pA || !pB) return [];
+                    const pAlon = pA.lng != null ? pA.lng : pA.lon;
+                    const pBlon = pB.lng != null ? pB.lng : pB.lon;
+                    let dLng = pBlon - pAlon;
+                    if (dLng > 180) dLng -= 360;
+                    if (dLng < -180) dLng += 360;
+
+                    const arc = [];
+                    for (let i = 0; i <= numSteps; i++) {
+                        const frac = i / numSteps;
+                        let lng = pAlon + frac * dLng;
+                        if (lng > 180) lng -= 360;
+                        if (lng < -180) lng += 360;
+                        arc.push({
+                            lat: pA.lat + frac * (pB.lat - pA.lat),
+                            lng: lng,
+                            lon: lng,
+                            t: (pA.t != null && pB.t != null) ? (pA.t + frac * (pB.t - pA.t)) : null
+                        });
+                    }
+                    return arc;
+                };
+
+                const nFirst = totNorthCoords[0], nLast = totNorthCoords[totNorthCoords.length - 1];
+                const sFirst = totSouthCoords[0], sLast = totSouthCoords[totSouthCoords.length - 1];
+
+                sunsetArc = buildDirectTerminalArc(nLast, sLast);
+                sunriseArc = buildDirectTerminalArc(sFirst, nFirst);
+
+                // Sellar la línea central exactamente contra los arcos de corte terminales
+                if (centerCoords && centerCoords.length >= 2) {
+                    const sunsetMid = sunsetArc[Math.floor(sunsetArc.length / 2)];
+                    if (sunsetMid) {
+                        const lastC = centerCoords[centerCoords.length - 1];
+                        if (Math.hypot(lastC.lat - sunsetMid.lat, (lastC.lng || lastC.lon) - sunsetMid.lng) < 1.5) {
+                            centerCoords[centerCoords.length - 1] = {
+                                lat: sunsetMid.lat,
+                                lng: sunsetMid.lng,
+                                lon: sunsetMid.lng,
+                                t: lastC.t
+                            };
+                        }
+                    }
+                    const sunriseMid = sunriseArc[Math.floor(sunriseArc.length / 2)];
+                    if (sunriseMid) {
+                        const firstC = centerCoords[0];
+                        if (Math.hypot(firstC.lat - sunriseMid.lat, (firstC.lng || firstC.lon) - sunriseMid.lng) < 1.5) {
+                            centerCoords[0] = {
+                                lat: sunriseMid.lat,
+                                lng: sunriseMid.lng,
+                                lon: sunriseMid.lng,
+                                t: firstC.t
+                            };
+                        }
+                    }
+                }
+
+                // Construcción del bucle cerrado continuo sin duplicar vértices de unión
+                const sunsetIntermediates = sunsetArc.length > 2 ? sunsetArc.slice(1, -1) : [];
+                const sunriseIntermediates = sunriseArc.length > 2 ? sunriseArc.slice(1, -1) : [];
+
+                corridorLoop = [
+                    ...totNorthCoords.map(p => ({ lat: p.lat, lng: p.lng != null ? p.lng : p.lon, t: p.t })),
+                    ...sunsetIntermediates.map(p => ({ lat: p.lat, lng: p.lng != null ? p.lng : p.lon, t: p.t })),
+                    ...totSouthCoords.slice().reverse().map(p => ({ lat: p.lat, lng: p.lng != null ? p.lng : p.lon, t: p.t })),
+                    ...sunriseIntermediates.map(p => ({ lat: p.lat, lng: p.lng != null ? p.lng : p.lon, t: p.t }))
+                ];
+
+                // División en el antimeridiano (si cruza ±180°)
+                let hasCrossing = false;
+                for (let i = 0; i < corridorLoop.length; i++) {
+                    const p1 = corridorLoop[i];
+                    const p2 = corridorLoop[(i + 1) % corridorLoop.length];
+                    if (Math.abs(p2.lng - p1.lng) > 180) {
+                        hasCrossing = true;
+                        break;
+                    }
+                }
+
+                if (!hasCrossing) {
+                    corridorPolygons = [corridorLoop.map(p => [p.lat, p.lng])];
+                } else {
+                    const eastSegs = [];
+                    const westSegs = [];
+                    let curEast = [];
+                    let curWest = [];
+
+                    for (let i = 0; i < corridorLoop.length; i++) {
+                        const p1 = corridorLoop[i];
+                        const p2 = corridorLoop[(i + 1) % corridorLoop.length];
+                        const isEast1 = p1.lng >= 0;
+                        if (isEast1) curEast.push([p1.lat, p1.lng]);
+                        else curWest.push([p1.lat, p1.lng]);
+
+                        const dLng = p2.lng - p1.lng;
+                        if (Math.abs(dLng) > 180) {
+                            if (isEast1) {
+                                const frac = (180 - p1.lng) / ((p2.lng + 360) - p1.lng);
+                                const latInt = p1.lat + frac * (p2.lat - p1.lat);
+                                curEast.push([latInt, 179.9999]);
+                                eastSegs.push(curEast);
+                                curEast = [];
+                                curWest.push([latInt, -179.9999]);
+                            } else {
+                                const frac = (-180 - p1.lng) / ((p2.lng - 360) - p1.lng);
+                                const latInt = p1.lat + frac * (p2.lat - p1.lat);
+                                curWest.push([latInt, -179.9999]);
+                                westSegs.push(curWest);
+                                curWest = [];
+                                curEast.push([latInt, 179.9999]);
+                            }
+                        }
+                    }
+                    if (curEast.length > 0) {
+                        if (eastSegs.length > 0) eastSegs[0] = [...curEast, ...eastSegs[0]];
+                        else eastSegs.push(curEast);
+                    }
+                    if (curWest.length > 0) {
+                        if (westSegs.length > 0) westSegs[0] = [...curWest, ...westSegs[0]];
+                        else westSegs.push(curWest);
+                    }
+                    eastSegs.forEach(seg => { if (seg.length >= 3) corridorPolygons.push(seg); });
+                    westSegs.forEach(seg => { if (seg.length >= 3) corridorPolygons.push(seg); });
+                }
+            }
+
             // Líneas de Tiempo Universal (Horas UT) — Ecuación rigurosa de Máximo Eclipse de Bessel/Chauvenet
             // Se trazan las líneas alrededor del Máximo Eclipse (GE) para evitar ramas deformadas en el limbo
             const utLines = [];
@@ -1095,6 +1276,10 @@ var DEG = 180 / Math.PI;
                 centerCoords,
                 totNorthCoords,
                 totSouthCoords,
+                corridorPolygons,
+                corridorLoop,
+                sunsetArc,
+                sunriseArc,
                 isoLines,
                 sunriseLoop,
                 sunsetLoop,
@@ -1103,6 +1288,65 @@ var DEG = 180 / Math.PI;
             };
 
             return cachedEclipseGeometry;
+        }
+
+        function computeUmbraPolygon(eclipse, t) {
+            if (!eclipse) return null;
+            const x = (eclipse.x0 || 0) + (eclipse.x1 || 0)*t + (eclipse.x2 || 0)*t*t + (eclipse.x3 || 0)*t*t*t;
+            const y = (eclipse.y0 || 0) + (eclipse.y1 || 0)*t + (eclipse.y2 || 0)*t*t + (eclipse.y3 || 0)*t*t*t;
+            const l2 = Math.abs((eclipse.l20 || 0.008) + (eclipse.l21 || 0)*t + (eclipse.l22 || 0)*t*t);
+            const tanF2 = eclipse.tan_f2 || 0.00457;
+
+            const d = ((eclipse.d0 || 0) + (eclipse.d1 || 0)*t + (eclipse.d2 || 0)*t*t) * Math.PI / 180;
+            const cosD = Math.cos(d);
+            const rho1_sq = 1.0 - 0.006694385 * cosD * cosD;
+            const rho1 = Math.sqrt(rho1_sq);
+
+            const y1 = y / rho1;
+            const r_center_sq = x*x + y1*y1;
+            const r_center = Math.sqrt(r_center_sq);
+
+            // Si la umbra ha salido completamente de la superficie terrestre en el límite este
+            if (r_center > 1.0 + l2 * 1.8) return null;
+
+            const zeta0 = Math.sqrt(Math.max(0, 1.0 - Math.min(1.0, r_center_sq)));
+            const L2 = Math.max(0.0001, l2);
+
+            const N = 64;
+            const pts = [];
+            let insideCount = 0;
+
+            for (let i = 0; i < N; i++) {
+                const ang = (i / N) * 2 * Math.PI;
+                let px = x + L2 * Math.cos(ang);
+                let py = y + L2 * Math.sin(ang);
+                const py1 = py / rho1;
+                const r1_sq = px*px + py1*py1;
+
+                if (r1_sq <= 1.0) insideCount++;
+
+                // Proyección elíptica pura e intacta sobre el elipsoide terrestre
+                let ll = besselianXYToLatLng(eclipse, t, px, py);
+                if (!ll && r1_sq <= 1.06) {
+                    const s = 1.0 / Math.sqrt(r1_sq);
+                    ll = besselianXYToLatLng(eclipse, t, px * s, (py1 * s) * rho1);
+                }
+
+                if (ll && !isNaN(ll.lat) && !isNaN(ll.lng)) {
+                    pts.push({ lat: ll.lat, lng: ll.lng });
+                }
+            }
+
+            if (insideCount < 1 || pts.length < 3) return null;
+
+            // Unwrapping longitudinal continuo
+            for (let i = 1; i < pts.length; i++) {
+                const dLng = pts[i].lng - pts[i - 1].lng;
+                if (dLng > 180) pts[i].lng -= 360;
+                else if (dLng < -180) pts[i].lng += 360;
+            }
+
+            return pts;
         }
 
 
@@ -1122,6 +1366,7 @@ if (typeof window !== 'undefined') {
     window.getEclipseTimeBounds = getEclipseTimeBounds;
     window.getEdgeIntersection = getEdgeIntersection;
     window.precomputeEclipseGeometry = precomputeEclipseGeometry;
+    window.computeUmbraPolygon = computeUmbraPolygon;
     window.BesselianEngine = {
         RAD,
         DEG,
@@ -1136,6 +1381,7 @@ if (typeof window !== 'undefined') {
         calculateGreatestDurationCoords,
         getEclipseTimeBounds,
         getEdgeIntersection,
-        precomputeEclipseGeometry
+        precomputeEclipseGeometry,
+        computeUmbraPolygon
     };
 }

@@ -7,6 +7,9 @@
     <meta name="description" content="Explorador interactivo de elementos besselianos y trayectorias de eclipses solares históricos y futuros (del -1999 al +3000) por Cosmos Mataró.">
     <meta name="theme-color" content="#060911">
     <meta name="author" content="Cosmos Mataró">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     
     <!-- Open Graph / Facebook / WhatsApp -->
     <meta property="og:type" content="website">
@@ -39,7 +42,7 @@
     <!-- FontAwesome icons (CDN con Fallback local offline) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha384-iw3OoTErCYJJB9mCa8LNS2hbsQ7M3C0EpIsO/H5+EGAkPGc6rk+V8i04oW/K5xq0" crossorigin="anonymous" onerror="this.onerror=null;this.href='vendor/fontawesome/css/all.min.css';">
     <!-- Tokens de diseño compartidos -->
-    <link rel="stylesheet" href="shared.css">
+    <link rel="stylesheet" href="shared.css?v=20260916_v14">
     <!-- Precarga de textura terrestre 2K -->
     <link rel="preload" as="image" href="earth_topo_2048.jpg">
 
@@ -361,13 +364,23 @@
         </div>
     </main>
 
+    <!-- Indicador Flotante "EN VIVO" con LED y texto rojo de parpadeo nítido -->
+    <div id="live-indicator-badge" class="live-indicator-badge" onclick="if(typeof toggleLiveModeCheckbox === 'function') toggleLiveModeCheckbox(false);" role="status" aria-live="polite">
+        <span class="live-led"></span>
+        <span class="live-text">EN VIVO</span>
+    </div>
+
     <!-- Buscador Superior Flotante en Modo 3D (Idéntico y unificado con Modo Mapa) -->
-    <div id="space-3d-search-container" class="floating-top-search-container" style="display: flex; position: absolute; top: 16px; left: 50%; transform: translateX(-50%); align-items: center; justify-content: center; pointer-events: auto; max-width: calc(100vw - 32px); width: max-content; z-index: 500;">
-        <div style="position: relative; width: 350px; max-width: calc(100vw - 32px);">
-            <div style="display: flex; align-items: center; background: rgba(11, 19, 41, 0.92); backdrop-filter: blur(16px); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 10px; height: 35px; padding: 0 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.65);">
-                <i class="fa-solid fa-magnifying-glass" style="color: #38bdf8; font-size: 0.78rem; margin-right: 8px;"></i>
-                <input type="text" id="space-3d-search-input" placeholder="Buscar municipio o coordenadas..." autocomplete="off" style="width: 100%; background: transparent; border: none; outline: none; color: #f8fafc; font-size: 0.78rem; font-family: var(--font-body, system-ui);">
-                <button type="button" id="space-3d-search-clear" style="display: none; background: none; border: none; color: #94a3b8; cursor: pointer; padding: 0 4px; font-size: 0.78rem;" title="Limpiar"><i class="fa-solid fa-xmark"></i></button>
+    <div id="space-3d-search-container" class="floating-top-search-container">
+        <div style="position: relative; width: 100%;">
+            <div style="display: flex; align-items: center; background: rgba(11, 19, 41, 0.92); backdrop-filter: blur(16px); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 10px; height: 35px; padding: 0 6px 0 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.65); gap: 4px;">
+                <i class="fa-solid fa-magnifying-glass" style="color: #38bdf8; font-size: 0.78rem; margin-right: 4px; flex-shrink: 0;"></i>
+                <input type="text" id="space-3d-search-input" placeholder="Buscar municipio o coordenadas..." autocomplete="off" style="flex: 1; min-width: 0; background: transparent; border: none; outline: none; color: #f8fafc; font-size: 0.78rem; font-family: var(--font-body, system-ui);">
+                <button type="button" id="space-3d-search-clear" style="display: none; background: none; border: none; color: #94a3b8; cursor: pointer; padding: 0 4px; font-size: 0.78rem; flex-shrink: 0;" title="Limpiar"><i class="fa-solid fa-xmark"></i></button>
+                <div style="width: 1px; height: 16px; background: rgba(255, 255, 255, 0.15); margin: 0 2px; flex-shrink: 0;"></div>
+                <button type="button" class="capsule-action-btn btn-observer-gps" id="btn-space-gps" onclick="detectUserLocation()" title="Detectar mi ubicación actual (GPS)" aria-label="Usar GPS"><i class="fa-solid fa-location-crosshairs"></i></button>
+                <button type="button" class="capsule-action-btn btn-obs-ge" id="btn-space-ge" onclick="switchObserverExtreme('GE')" title="Mayor Eclipse (GE): Mínima distancia del eje de sombra al centro de la Tierra" aria-label="Mayor Eclipse">GE</button>
+                <button type="button" class="capsule-action-btn btn-obs-gd" id="btn-space-gd" onclick="switchObserverExtreme('GD')" title="Máxima Duración (GD): Punto de mayor duración de la fase central" aria-label="Máxima Duración">GD</button>
             </div>
             <!-- Dropdown de resultados de autocompletado en 3D -->
             <div id="space-3d-search-dropdown" style="display: none; position: absolute; top: calc(100% + 4px); left: 0; width: 100%; background: rgba(11, 19, 41, 0.96); backdrop-filter: blur(16px); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 10px; box-shadow: 0 12px 28px rgba(0,0,0,0.85); max-height: 230px; overflow-y: auto; font-size: 0.78rem; padding: 4px 0; z-index: 1005;">
@@ -562,36 +575,8 @@
             <h2>Visualización</h2>
             <div class="panel-toggle" id="btn-toggle-right" onclick="toggleSettingsPanel(false)" role="button" tabindex="0" title="Minimizar panel" aria-label="Minimizar panel de visualización"><i class="fa-solid fa-chevron-left" aria-hidden="true"></i></div>
         </div>
-
-        <!-- 1. Selector de Ubicación del Observador -->
-        <div class="section-title" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0;">
-            <span style="display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;"><i class="fa-solid fa-location-dot" aria-hidden="true"></i> Ubicación</span>
-            <div class="view-mode-selector" style="width: auto; flex-shrink: 0; margin-bottom: 0; height: 15px; box-sizing: border-box; padding: 0 1px; gap: 2px;">
-                <button type="button" class="mode-btn" id="btn-obs-ge" onclick="switchObserverExtreme('GE')" style="flex: initial; min-width: 22px; padding: 0 4px; font-size: 0.58rem; height: 13px; line-height: 13px; border-radius: 4px;" title="Mayor Eclipse (GE): Mínima distancia del eje de sombra al centro de la Tierra">GE</button>
-                <button type="button" class="mode-btn" id="btn-obs-gd" onclick="switchObserverExtreme('GD')" style="flex: initial; min-width: 22px; padding: 0 4px; font-size: 0.58rem; height: 13px; line-height: 13px; border-radius: 4px;" title="Máxima Duración (GD): Punto de mayor duración de la fase central">GD</button>
-            </div>
-        </div>
-        <div style="display: flex; gap: 8px; align-items: center;">
-            <div class="custom-combobox-container" id="observer-combobox-container" style="position: relative; flex: 1; min-width: 0;">
-                <input type="text" class="search-select custom-combobox-input" id="observer-location-input" placeholder="Buscar municipio o coordenadas..." value="" style="width: 100%; height: 32px; box-sizing: border-box; padding: 0 32px 0 12px; font-family: var(--font-mono, monospace); font-size: 0.80rem; font-weight: 400; background-color: #0f172a; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 10px; color: #f8fafc; cursor: text; outline: none; text-overflow: ellipsis;" autocomplete="off" onfocus="openObserverDropdown(); this.select();" oninput="filterObserverDropdown(this.value, true)" onkeydown="onObserverInputKeyDown(event)">
-                <span style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; color: #94a3b8; font-size: 0.72rem;"><i class="fa-solid fa-chevron-down"></i></span>
-                
-                <!-- Desplegable Filtrable Flotante Estilizado Adaptativo -->
-                <div id="observer-dropdown-menu" class="custom-dropdown-menu" style="display: none; position: absolute; top: calc(100% + 4px); left: 0; min-width: 100%; width: max-content; max-width: calc(100% + 116px); box-sizing: border-box; max-height: 230px; overflow-y: auto; background: #0b1329; border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 10px; box-shadow: 0 12px 30px rgba(0,0,0,0.85); z-index: 1000; padding: 4px; font-family: var(--font-mono);">
-                    <!-- Poblado dinámicamente -->
-                </div>
-            </div>
-            
-            <!-- Herramienta de Ubicación GPS -->
-            <div class="location-tools-group" id="location-tools-group">
-                <button type="button" class="location-tool-btn" id="btn-observer-gps" onclick="detectUserLocation()" title="Detectar mi ubicación actual (GPS)" aria-label="Usar GPS del dispositivo">
-                    <i class="fa-solid fa-crosshairs"></i>
-                </button>
-            </div>
-        </div>
-
-        <!-- 2. Visibilidad y Fases Locales -->
-        <div class="section-title section-title-between">
+        <!-- Visibilidad y Fases Locales -->
+        <div class="section-title section-title-between" style="margin-top: 4px;">
             <span><i class="fa-solid fa-eye"></i> Visibilidad Local</span>
             <button onclick="exportSelectedEclipseToICal()" style="background: none; border: none; color: var(--accent-blue); font-size: 0.72rem; cursor: pointer; text-decoration: underline;"><i class="fa-solid fa-calendar-plus"></i> iCal</button>
         </div>
@@ -872,7 +857,11 @@
         <!-- Fila Inferior: Indicador de velocidad, Botonera Centrada compacta y Recentrado -->
         <div class="playback-dock-bottom">
             <div class="playback-dock-bottom-left">
-                <span id="speed-indicator-badge" style="font-family: var(--font-mono); font-size: 0.78rem; color: var(--accent-blue); font-weight: 600; padding: 0 4px; min-width: 34px; display: inline-block;">1x</span>
+                <span id="speed-indicator-badge" style="font-family: var(--font-mono); font-size: 0.78rem; color: var(--accent-blue); font-weight: 600; padding: 0 4px; width: 44px; display: inline-block; text-align: center;">1x</span>
+                <label class="checkbox-row" style="margin: 0; font-size: 0.74rem; white-space: nowrap; gap: 5px;" title="Sincronizar simulación en tiempo real con el reloj de la máquina">
+                    <input type="checkbox" id="chk-live-mode" onchange="toggleLiveModeCheckbox(this.checked)">
+                    <span>En vivo</span>
+                </label>
             </div>
             <div class="player-ctrls-compact">
                 <button class="ctrl-btn" id="btn-rewind" onclick="changeSpeedStep(-1)" title="Reducir velocidad (1/2x a 1200x)" aria-label="Reducir velocidad"><i class="fa-solid fa-backward" aria-hidden="true"></i></button>
@@ -889,14 +878,14 @@
         </div>
     </aside>
 
-    <script src="baily_activity_log.js"></script>
-    <script src="route_director.js"></script>
-    <script src="lunar_limb_engine.js"></script>
-    <script src="besselian_engine.js"></script>
-    <script src="celestial_sphere_3d.js"></script>
-    <script src="solar_scene_3d.js"></script>
-    <script src="eclipse_map_2d.js"></script>
-    <script src="shared_ui_panels.js"></script>
+    <script src="baily_activity_log.js?v=20260916_v14"></script>
+    <script src="route_director.js?v=20260916_v14"></script>
+    <script src="lunar_limb_engine.js?v=20260916_v14"></script>
+    <script src="besselian_engine.js?v=20260916_v14"></script>
+    <script src="celestial_sphere_3d.js?v=20260916_v14"></script>
+    <script src="solar_scene_3d.js?v=20260916_v14"></script>
+    <script src="eclipse_map_2d.js?v=20260916_v14"></script>
+    <script src="shared_ui_panels.js?v=20260916_v14"></script>
     <script>
         // RAD y DEG definidos en besselian_engine.js
 
@@ -937,7 +926,7 @@
         // ECLIPSES PREDEFINIDOS CON DATOS BESSELIANOS RIGUROSOS
         // -------------------------------------------------------------
         const PRESET_ECLIPSES = [
-            { cat_no: 9566, year: 2026, month: 8, day: 12, dt: 75.4, eclipse_type: 'T', saros: 126, gamma: 0.89774, magnitude: 1.03863, lat_ge: '65.2N', lng_ge: '25.2W', lat_dd_ge: 65.225, lng_dd_ge: -25.22833, central_duration: '02m18s', duration_secs: 138.2, t0: 18, x0: 0.475514, x1: 0.5189249, x2: -0.0000773, x3: -0.00000804, y0: 0.771183, y1: -0.230168, y2: -0.0001246, y3: 0.00000377, d0: 14.79667, d1: -0.012065, d2: -0.000003, mu0: 88.74779, mu1: 15.00309, mu2: 0, l10: 0.537955, l11: 0.0000939, l20: -0.008142, l21: 0.0000935, tmin: -1.2, tmax: 0.75 },
+            { cat_no: 9566, year: 2026, month: 8, day: 12, dt: 75.4, eclipse_type: 'T', saros: 126, gamma: 0.89774, magnitude: 1.03863, lat_ge: '65.2N', lng_ge: '25.2W', lat_dd_ge: 65.225, lng_dd_ge: -25.22833, central_duration: '02m18s', duration_secs: 138.2, t0: 18, x0: 0.475514, x1: 0.5189249, x2: -0.0000773, x3: -0.00000804, y0: 0.771183, y1: -0.230168, y2: -0.0001246, y3: 0.00000377, d0: 14.79667, d1: -0.012065, d2: -0.000003, mu0: 88.74779, mu1: 15.00309, mu2: 0, l10: 0.537955, l11: 0.0000939, l20: -0.008142, l21: 0.0000935, tmin: -1.2, tmax: 0.78 },
             { cat_no: 9568, year: 2027, month: 8, day: 2, dt: 76.0, eclipse_type: 'T', saros: 136, gamma: 0.14209, magnitude: 1.07903, lat_ge: '25.5N', lng_ge: '33.2E', lat_dd_ge: 25.5025, lng_dd_ge: 33.17139, central_duration: '06m23s', duration_secs: 382.6, t0: 10, x0: -0.019772, x1: 0.5447123, x2: -0.0000446, x3: -0.00000922, y0: 0.160061, y1: -0.2111582, y2: -0.0001217, y3: 0.00000376, d0: 17.76247, d1: -0.010181, d2: -0.000004, mu0: 328.42255, mu1: 15.0021, mu2: 0, l10: 0.530596, l11: 0.0000138, l20: -0.015464, l21: 0.0000137, tmin: -2.0, tmax: 2.0 },
             { cat_no: 9569, year: 2028, month: 1, day: 26, dt: 76.3, eclipse_type: 'A', saros: 141, gamma: 0.39015, magnitude: 0.92079, lat_ge: '3.0N', lng_ge: '51.5W', lat_dd_ge: 2.96039, lng_dd_ge: -51.54608, central_duration: '10m27s', duration_secs: 627.1, t0: 15, x0: -0.205283, x1: 0.474257, x2: -0.000039, x3: -0.00000527, y0: 0.34028, y1: 0.1738587, y2: 0.0000968, y3: -0.00000209, d0: -18.728251, d1: 0.010074, d2: 0.000005, mu0: 41.89128, mu1: 14.99896, mu2: 0, l10: 0.574117, l11: 0.000042, l20: 0.02784, l21: 0.0000418, tmin: -2.0, tmax: 2.0 },
             { cat_no: 9565, year: 2026, month: 2, day: 17, dt: 75.1, eclipse_type: 'A', saros: 121, gamma: -0.97427, magnitude: 0.96299, lat_ge: '64.7S', lng_ge: '86.8E', lat_dd_ge: -64.71786, lng_dd_ge: 86.7511, central_duration: '02m20s', duration_secs: 139.6, t0: 12, x0: 0.321954, x1: 0.4827224, x2: -0.0000314, x3: -0.00000637, y0: -0.926971, y1: 0.2355394, y2: 0.0001169, y3: -0.00000327, d0: -11.8793, d1: 0.014049, d2: 0.000002, mu0: 356.5144, mu1: 15.00198, mu2: 0, l10: 0.55772, l11: -0.0001181, l20: 0.011524, l21: -0.0001175, tmin: -2.0, tmax: 2.0 },
@@ -1039,8 +1028,8 @@
 
         function clearObserverExtremeMode() {
             activeExtremeMode = null;
-            getDOM('btn-obs-ge')?.classList.remove('active');
-            getDOM('btn-obs-gd')?.classList.remove('active');
+            document.querySelectorAll('.btn-obs-ge').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.btn-obs-gd').forEach(b => b.classList.remove('active'));
         }
 
         // [calculateGreatestEclipseCoords, calculateGreatestDurationCoords] Extraído a besselian_engine.js
@@ -1065,10 +1054,8 @@
             }
 
             activeExtremeMode = type;
-            const btnGE = getDOM('btn-obs-ge');
-            const btnGD = getDOM('btn-obs-gd');
-            if (btnGE) btnGE.classList.toggle('active', type === 'GE');
-            if (btnGD) btnGD.classList.toggle('active', type === 'GD');
+            document.querySelectorAll('.btn-obs-ge').forEach(b => b.classList.toggle('active', type === 'GE'));
+            document.querySelectorAll('.btn-obs-gd').forEach(b => b.classList.toggle('active', type === 'GD'));
 
             let targetLat = 0, targetLon = 0, targetName = '', targetT = null;
 
@@ -1128,9 +1115,13 @@
                 observerMarkerGroup3D.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), latLngToVector3(lat, lon, 1.0).normalize());
             }
 
-            const locInput = getDOM('observer-location-input');
-            if (locInput && document.activeElement !== locInput) {
-                locInput.value = currentObserver.name;
+            const locInput3D = getDOM('space-3d-search-input');
+            if (locInput3D && document.activeElement !== locInput3D) {
+                locInput3D.value = currentObserver.name;
+            }
+            const locInputMap = getDOM('map-search-input');
+            if (locInputMap && document.activeElement !== locInputMap) {
+                locInputMap.value = currentObserver.name;
             }
 
             const subtitleEl = getDOM('observer-header-subtitle');
@@ -1443,12 +1434,12 @@
         let gpsRequestId = 0;
 
         function detectUserLocation() {
-            const btn = getDOM('btn-observer-gps');
-            if (btn) btn.classList.add('active');
+            const gpsBtns = document.querySelectorAll('.btn-observer-gps');
+            gpsBtns.forEach(btn => btn.classList.add('active'));
 
             if (!navigator.geolocation) {
                 alert('La geolocalización no está soportada por este navegador.');
-                if (btn) btn.classList.remove('active');
+                gpsBtns.forEach(btn => btn.classList.remove('active'));
                 return;
             }
 
@@ -1457,7 +1448,7 @@
             navigator.geolocation.getCurrentPosition(
                 (pos) => {
                     if (currentReqId !== gpsRequestId) return;
-                    if (btn) btn.classList.remove('active');
+                    gpsBtns.forEach(btn => btn.classList.remove('active'));
                     const lat = parseFloat(pos.coords.latitude.toFixed(2));
                     const lon = parseFloat(pos.coords.longitude.toFixed(2));
                     const userTz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Madrid';
@@ -1469,7 +1460,7 @@
                 },
                 (err) => {
                     if (currentReqId !== gpsRequestId) return;
-                    if (btn) btn.classList.remove('active');
+                    gpsBtns.forEach(btn => btn.classList.remove('active'));
                     console.warn('[GPS] Error obteniendo geolocalización:', err.message);
                     alert('No se pudo obtener la ubicación GPS: ' + err.message);
                 },
@@ -2083,9 +2074,18 @@
             } else if (mode === '3d') {
                 if (searchMap) searchMap.style.setProperty('display', 'none', 'important');
                 if (search3D) search3D.style.display = 'flex';
+                const inp3D = getDOM('space-3d-search-input');
+                if (inp3D && currentObserver && currentObserver.name) inp3D.value = currentObserver.name;
             } else if (mode === 'map') {
                 if (search3D) search3D.style.setProperty('display', 'none', 'important');
                 if (searchMap) searchMap.style.display = 'flex';
+                const inpMap = getDOM('map-search-input');
+                if (inpMap && currentObserver && currentObserver.name) inpMap.value = currentObserver.name;
+            }
+
+            if (typeof activeExtremeMode !== 'undefined') {
+                document.querySelectorAll('.btn-obs-ge').forEach(b => b.classList.toggle('active', activeExtremeMode === 'GE'));
+                document.querySelectorAll('.btn-obs-gd').forEach(b => b.classList.toggle('active', activeExtremeMode === 'GD'));
             }
 
             const popupEl = getDOM('globe-3d-popup');
@@ -3751,7 +3751,9 @@
 
             const slider = getDOM('time-slider');
             const minT = parseFloat((tClosest - deltaT - 0.1).toFixed(2));
-            const maxT = parseFloat((tClosest + deltaT + 0.1).toFixed(2));
+            const catMaxT = eclipse.tmax != null ? (eclipse.tmax + 0.03) : null;
+            const computedMaxT = tClosest + deltaT + 0.1 + 0.03;
+            const maxT = parseFloat((catMaxT != null ? Math.max(computedMaxT, catMaxT) : computedMaxT).toFixed(2));
             slider.min = minT;
             slider.max = maxT;
             
@@ -3793,13 +3795,17 @@
                     EclipseMap2D.renderEclipsePath(eclipse);
                 }
             }
+
+            if (isLiveMode) {
+                checkLiveClockSync();
+                updateLiveBadgeState();
+            }
         }
 
         // [Escena 3D: renderizado de trayectorias en globo, sombra y recentrado] Extraído a solar_scene_3d.js
 
         function handleRecenterClick() {
             if (currentActiveView === 'map') {
-                if (typeof EclipseMap2D !== 'undefined') EclipseMap2D.fitEclipse();
                 return;
             }
             if (currentActiveView === 'route') {
@@ -3812,11 +3818,11 @@
             }
             if (isPlaying) {
                 if (isPlaybackCentered) {
-                    // Desactivar: la cámara pasa a quedar orientada fija en el espacio, viendo la Tierra rotar
+                    // Desactivar: la cámara pasa a quedar fija en el espacio, viendo la Tierra rotar
                     isPlaybackCentered = false;
                     playbackCenteredPref = false;
                 } else {
-                    // Activar: vuelve a dejar la superficie de la Tierra quieta
+                    // Activar: vuelve a dejar la superficie de la Tierra quieta (la cámara corota)
                     isPlaybackCentered = true;
                     playbackCenteredPref = true;
                     if (focusedBody === 'moon') {
@@ -3826,8 +3832,9 @@
                 }
                 updateRecenterBtnState();
             } else {
-                // Cuando el reproductor esté en PAUSE, tiene la misma funcionalidad de ahora
+                // Cuando el reproductor esté en PAUSA: centrar eclipse y permanecer siempre no pulsado
                 recenterEclipseGE();
+                updateRecenterBtnState();
             }
         }
         window.handleRecenterClick = handleRecenterClick;
@@ -3873,6 +3880,11 @@
         function updateRecenterBtnState() {
             const btn = getDOM('btn-recenter');
             if (!btn) return;
+            if (currentActiveView === 'map') {
+                btn.style.display = 'none';
+                return;
+            }
+            btn.style.display = '';
             if (currentActiveView === 'route') {
                 btn.innerHTML = '<i class="fa-solid fa-rotate-left" aria-hidden="true"></i>';
                 btn.title = 'Rebobinar película al inicio';
@@ -3880,31 +3892,36 @@
                 btn.classList.add('active');
                 return;
             }
-            btn.innerHTML = '<i class="fa-solid fa-crosshairs" aria-hidden="true"></i>';
             if (currentActiveView === 'telescopic') {
+                btn.innerHTML = '<i class="fa-solid fa-crosshairs" aria-hidden="true"></i>';
                 btn.classList.remove('active');
                 const circ = localCircumstancesCache || (currentEclipse && currentObserver ? calculateLocalSolarCircumstances(currentEclipse, currentObserver.lat, currentObserver.lon) : null);
                 if (circ && (circ.isTotal || circ.isAnnular) && circ.c2 && circ.c2.t != null) {
-                    btn.title = circ.isTotal ? 'Ir a C2 − 30 s (Perlas de Baily a 1x)' : 'Ir a C2 − 30 s (Anillo a 1x)';
+                    btn.title = circ.isTotal ? 'Ir a C2 -30s (Perlas de Baily a 1x)' : 'Ir a C2 -30s (Anillo a 1x)';
                 } else {
-                    btn.title = 'Ir a Máx − 30 s (a 1x)';
+                    btn.title = 'Ir a Máx -30s (a 1x)';
                 }
-            } else {
-                if (isPlaying) {
-                    if (isPlaybackCentered) {
-                        btn.title = 'Liberar rotación';
-                        btn.setAttribute('aria-label', 'Liberar rotación');
-                        btn.classList.add('active');
-                    } else {
-                        btn.title = 'Detener rotación';
-                        btn.setAttribute('aria-label', 'Detener rotación');
-                        btn.classList.remove('active');
-                    }
+                btn.setAttribute('aria-label', btn.title);
+                return;
+            }
+            // Vista 3D (Espacio / Globo 3D)
+            if (isPlaying) {
+                // Icono representativo de rotación del globo terrestre (globo terráqueo con flecha orbital de rotación)
+                btn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:block;"><circle cx="12" cy="12" r="5.5"></circle><line x1="6.5" y1="12" x2="17.5" y2="12"></line><ellipse cx="12" cy="12" rx="2.5" ry="5.5"></ellipse><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path><polyline points="23 4 23 10 17 10"></polyline></svg>';
+                if (isPlaybackCentered) {
+                    btn.title = 'Rotación de la Tierra fijada (pulsar para rotar la Tierra)';
+                    btn.setAttribute('aria-label', 'Rotación de la Tierra fijada (pulsar para rotar la Tierra)');
+                    btn.classList.add('active');
                 } else {
-                    btn.title = 'Centrar eclipse';
-                    btn.setAttribute('aria-label', 'Centrar eclipse');
+                    btn.title = 'Tierra en rotación (pulsar para fijar rotación)';
+                    btn.setAttribute('aria-label', 'Tierra en rotación (pulsar para fijar rotación)');
                     btn.classList.remove('active');
                 }
+            } else {
+                btn.innerHTML = '<i class="fa-solid fa-crosshairs" aria-hidden="true"></i>';
+                btn.title = 'Centrar eclipse';
+                btn.setAttribute('aria-label', 'Centrar eclipse');
+                btn.classList.remove('active');
             }
         }
 
@@ -4202,6 +4219,11 @@
                 }
                 return;
             }
+            if (isLiveMode) {
+                isLiveMode = false;
+                window.isLiveMode = false;
+                updateLiveBadgeState();
+            }
             // dir: 1 (aumentar velocidad) o -1 (reducir velocidad)
             const curIdx = SPEED_STEPS.indexOf(simSpeedMultiplier);
             let nextIdx = 1; // Valor por defecto: 1x
@@ -4248,6 +4270,11 @@
                 return;
             }
             if (!currentEclipse) return;
+            if (isLiveMode) {
+                isLiveMode = false;
+                window.isLiveMode = false;
+                updateLiveBadgeState();
+            }
             const moments = [];
             if (localCircumstancesCache && localCircumstancesCache.isEclipsed) {
                 if (localCircumstancesCache.c1) moments.push({ key: 'C1', t: localCircumstancesCache.c1.t });
@@ -4285,9 +4312,148 @@
         window.jumpContactStep = jumpContactStep;
 
         function setSimSpeed(speed) {
+            if (speed === 'live') {
+                toggleLiveModeCheckbox(true);
+                return;
+            }
+            if (isLiveMode) {
+                isLiveMode = false;
+                window.isLiveMode = false;
+                updateLiveBadgeState();
+            }
             simSpeedMultiplier = parseFloat(speed) || 1.0;
             updateSpeedUI();
         }
+
+        // =========================================================================
+        // MODO EN VIVO (SINCRONIZACIÓN CON EL RELOJ DEL SISTEMA)
+        // =========================================================================
+        let isLiveMode = false;
+        window.isLiveMode = false;
+
+        function getEclipseTimeRangeMs(e = currentEclipse) {
+            if (!e) return null;
+            const year = e.year || 2026;
+            const month = (e.month || 8) - 1;
+            const day = e.day || 12;
+            const baseMidnightUtc = Date.UTC(year, month, day, 0, 0, 0);
+            const dtHours = (e.dt || 0) / 3600;
+            const minT = (e.tmin != null) ? e.tmin : -2.5;
+            const maxT = (e.tmax != null) ? (e.tmax + 0.03) : 2.5;
+
+            const startUtHours = (e.t0 || 12) + minT - dtHours;
+            const endUtHours = (e.t0 || 12) + maxT - dtHours;
+
+            const startMs = baseMidnightUtc + Math.round(startUtHours * 3600 * 1000);
+            const endMs = baseMidnightUtc + Math.round(endUtHours * 3600 * 1000);
+
+            return { startMs, endMs, baseMidnightUtc, dtHours, minT, maxT };
+        }
+        window.getEclipseTimeRangeMs = getEclipseTimeRangeMs;
+
+        function getTFromDate(dateInput, e = currentEclipse) {
+            if (!e) return 0;
+            const range = getEclipseTimeRangeMs(e);
+            if (!range) return 0;
+            const dateMs = (typeof dateInput === 'number') ? dateInput : (dateInput ? dateInput.getTime() : Date.now());
+            const utDecHour = ((dateMs - range.baseMidnightUtc) / 1000) / 3600;
+            const t = utDecHour + range.dtHours - (e.t0 || 12);
+            return t;
+        }
+        window.getTFromDate = getTFromDate;
+
+        function updateLiveBadgeState() {
+            const badge = getDOM('live-indicator-badge');
+            const chkLive = getDOM('chk-live-mode');
+            const playButton = getDOM('btn-play-pause') || getDOM('play-btn');
+            const now = Date.now();
+            const range = (currentEclipse && typeof getEclipseTimeRangeMs === 'function') ? getEclipseTimeRangeMs(currentEclipse) : null;
+            const isActuallyLive = isLiveMode && range && (now >= range.startMs && now <= range.endMs);
+
+            if (chkLive) {
+                chkLive.checked = isLiveMode;
+            }
+
+            if (isActuallyLive) {
+                if (badge) {
+                    badge.classList.add('active');
+                    const panel = getDOM('settings-panel');
+                    if (panel && panel.classList.contains('collapsed')) {
+                        badge.classList.add('panel-collapsed');
+                    } else {
+                        badge.classList.remove('panel-collapsed');
+                    }
+                }
+                if (playButton) playButton.innerHTML = '<i class="fa-solid fa-pause"></i>';
+            } else {
+                if (badge) badge.classList.remove('active');
+                if (isLiveMode && playButton) playButton.innerHTML = '<i class="fa-solid fa-play"></i>';
+            }
+        }
+        window.updateLiveBadgeState = updateLiveBadgeState;
+
+        function checkLiveClockSync() {
+            if (isLiveMode && currentEclipse) {
+                const range = getEclipseTimeRangeMs(currentEclipse);
+                const now = Date.now();
+                const isInside = range && (now >= range.startMs && now <= range.endMs);
+                isPlaying = isInside;
+
+                let targetT;
+                if (isInside) {
+                    targetT = getTFromDate(now, currentEclipse);
+                } else if (range && now < range.startMs) {
+                    targetT = range.minT;
+                } else if (range && now > range.endMs) {
+                    targetT = range.maxT;
+                } else {
+                    targetT = 0;
+                }
+
+                if (Math.abs(targetT - simCurrentT) > 0.00001) {
+                    simCurrentT = targetT;
+                    if (timeSlider) timeSlider.value = targetT;
+                    updateShadowAtTime(targetT);
+                } else {
+                    updateLiveBadgeState();
+                }
+            }
+        }
+        window.checkLiveClockSync = checkLiveClockSync;
+
+        window.addEventListener('focus', checkLiveClockSync);
+        window.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') checkLiveClockSync();
+        });
+        setInterval(checkLiveClockSync, 250);
+
+        function toggleLiveModeCheckbox(isChecked) {
+            if (isChecked) {
+                isLiveMode = true;
+                window.isLiveMode = true;
+                simSpeedMultiplier = 1.0;
+                simPlayDirection = 1;
+                updateSpeedUI();
+                checkLiveClockSync();
+                updateLiveBadgeState();
+            } else {
+                isLiveMode = false;
+                window.isLiveMode = false;
+                const range = getEclipseTimeRangeMs(currentEclipse);
+                if (range && (simCurrentT < range.minT || simCurrentT > range.maxT)) {
+                    simCurrentT = 0.0;
+                }
+                isPlaying = false;
+                const playButton = getDOM('btn-play-pause') || getDOM('play-btn');
+                if (playButton) playButton.innerHTML = '<i class="fa-solid fa-play"></i>';
+                isPlaybackCentered = false;
+                updateRecenterBtnState();
+                updateLiveBadgeState();
+                if (timeSlider) timeSlider.value = simCurrentT;
+                updateShadowAtTime(simCurrentT);
+            }
+        }
+        window.toggleLiveModeCheckbox = toggleLiveModeCheckbox;
 
         function positionDockMarkers(e) {
             if (!e) return;
@@ -4420,7 +4586,14 @@
         const clock = new THREE.Clock();
 
         if (timeSlider) {
-            const startInteract = () => { isSliderInteracting = true; };
+            const startInteract = () => {
+                isSliderInteracting = true;
+                if (isLiveMode) {
+                    isLiveMode = false;
+                    window.isLiveMode = false;
+                    updateLiveBadgeState();
+                }
+            };
             const endInteract = () => { isSliderInteracting = false; };
             timeSlider.addEventListener('pointerdown', startInteract);
             timeSlider.addEventListener('pointerup', endInteract);
@@ -4431,6 +4604,11 @@
             timeSlider.addEventListener('change', endInteract);
             timeSlider.addEventListener('input', (e) => {
                 isSliderInteracting = true;
+                if (isLiveMode) {
+                    isLiveMode = false;
+                    window.isLiveMode = false;
+                    updateLiveBadgeState();
+                }
                 if (currentActiveView === 'route') {
                     if (typeof setRouteTimeFromEclipseT === 'function') {
                         setRouteTimeFromEclipseT(parseFloat(e.target.value));
@@ -4449,9 +4627,10 @@
             if (playButton) playButton.innerHTML = '<i class="fa-solid fa-pause"></i>';
             clock.getDelta();
 
-            // Al reanudar la reproducción, retornar al estado en el que se encontrara mientras estaba en reproducción
+            // Al iniciar o reanudar la reproducción: fijar rotación de la Tierra (aparece como Pulsado)
             if (currentActiveView !== 'telescopic') {
-                isPlaybackCentered = (playbackCenteredPref !== false);
+                isPlaybackCentered = true;
+                playbackCenteredPref = true;
             }
             updateRecenterBtnState();
 
@@ -4472,6 +4651,23 @@
         function toggleSimulation() {
             if (currentActiveView === 'route') {
                 if (typeof toggleRoutePlay === 'function') toggleRoutePlay();
+                return;
+            }
+            if (isLiveMode) {
+                isLiveMode = false;
+                window.isLiveMode = false;
+                const range = getEclipseTimeRangeMs(currentEclipse);
+                if (range && (simCurrentT < range.minT || simCurrentT > range.maxT)) {
+                    simCurrentT = 0.0;
+                }
+                isPlaying = false;
+                const playButton = getDOM('btn-play-pause') || getDOM('play-btn');
+                if (playButton) playButton.innerHTML = '<i class="fa-solid fa-play"></i>';
+                isPlaybackCentered = false;
+                updateRecenterBtnState();
+                updateLiveBadgeState();
+                if (timeSlider) timeSlider.value = simCurrentT;
+                updateShadowAtTime(simCurrentT);
                 return;
             }
             if (isPlaying) {
@@ -4568,22 +4764,42 @@
 
             // 1. Avance continuo y ultrasuave de la simulación temporal con velocidad física real
             if (isPlaying && currentEclipse) {
-                const minRange = parseFloat(timeSlider.min) || (currentEclipse.tmin != null ? currentEclipse.tmin : -2.5);
-                const maxRange = parseFloat(timeSlider.max) || (currentEclipse.tmax != null ? currentEclipse.tmax : 2.5);
-                
-                // 1x = Velocidad real (1 segundo astronómico por segundo de tiempo real)
-                // t está en horas: delta (segundos de reloj) * (simSpeedMultiplier / 3600) horas
-                const deltaHours = delta * (simSpeedMultiplier / 3600.0) * simPlayDirection;
-                simCurrentT += deltaHours;
+                if (isLiveMode) {
+                    const range = getEclipseTimeRangeMs(currentEclipse);
+                    const now = Date.now();
+                    const isInside = range && (now >= range.startMs && now <= range.endMs);
+                    if (isInside) {
+                        const targetT = getTFromDate(now, currentEclipse);
+                        if (Math.abs(targetT - simCurrentT) > 0.00001) {
+                            simCurrentT = targetT;
+                            timeSlider.value = simCurrentT;
+                            updateShadowAtTime(simCurrentT);
+                            timeOrSceneChanged = true;
+                        }
+                    } else {
+                        isPlaying = false;
+                        updateLiveBadgeState();
+                        updateShadowAtTime(simCurrentT);
+                        timeOrSceneChanged = true;
+                    }
+                } else {
+                    const minRange = parseFloat(timeSlider.min) || (currentEclipse.tmin != null ? currentEclipse.tmin : -2.5);
+                    const maxRange = parseFloat(timeSlider.max) || (currentEclipse.tmax != null ? currentEclipse.tmax : 2.5);
+                    
+                    // 1x = Velocidad real (1 segundo astronómico por segundo de tiempo real)
+                    // t está en horas: delta (segundos de reloj) * (simSpeedMultiplier / 3600) horas
+                    const deltaHours = delta * (simSpeedMultiplier / 3600.0) * simPlayDirection;
+                    simCurrentT += deltaHours;
 
-                // Reproducción en bucle continuo
-                if (simPlayDirection > 0 && simCurrentT > maxRange) {
-                    simCurrentT = minRange;
-                } else if (simPlayDirection < 0 && simCurrentT < minRange) {
-                    simCurrentT = maxRange;
+                    // Reproducción en bucle continuo
+                    if (simPlayDirection > 0 && simCurrentT > maxRange) {
+                        simCurrentT = minRange;
+                    } else if (simPlayDirection < 0 && simCurrentT < minRange) {
+                        simCurrentT = maxRange;
+                    }
+                    updateShadowAtTime(simCurrentT);
+                    timeOrSceneChanged = true;
                 }
-                updateShadowAtTime(simCurrentT);
-                timeOrSceneChanged = true;
             }
 
             // 2. Interpolación suave de cámara y target (Rotación esférica orbital a radio constante)

@@ -26,6 +26,12 @@ const EclipseMap2D = (() => {
         shade: true
     };
 
+    // Sombra lunar dinámica — vector nítido (umbra) + canvas offscreen (penumbra opcional)
+    let umbraPolygon = null;           // L.polygon vectorial nítido de totalidad/anularidad
+    let shadowCanvas = null;           // <canvas> de renderizado CPU offscreen para penumbra
+    let shadowOverlay = null;          // L.ImageOverlay superpuesto al mapa para penumbra
+    let _lastShadowKey = null;         // dirty-check para evitar redibujados innecesarios
+
     // URLs de teselas de alta velocidad sin API Key y sin marcas de agua
     const BASEMAP_CONFIGS = {
         dark: {
@@ -101,6 +107,15 @@ const EclipseMap2D = (() => {
     }
 
     /**
+     * Sincroniza el estado visual activo de los botones de estilo de mapa en la interfaz
+     */
+    function syncBasemapButtons(key = activeBasemapKey) {
+        document.querySelectorAll('.map-basemap-btn, .map-basemap-side-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.basemap === key);
+        });
+    }
+
+    /**
      * Inicialización del mapa y montaje de la UI flotante
      */
     async function initMap(containerId = 'leaflet-map-container') {
@@ -125,6 +140,26 @@ const EclipseMap2D = (() => {
         map.getPane('labelsPane').style.zIndex = 350;
         map.getPane('labelsPane').style.pointerEvents = 'none';
 
+        // Crear panel para la sombra penumbral dinámica: entre tiles (200) y franja vectorial (380)
+        map.createPane('shadowPane');
+        map.getPane('shadowPane').style.zIndex = 250;
+        map.getPane('shadowPane').style.pointerEvents = 'none';
+
+        // Panel para el relleno del pasillo de totalidad/anularidad
+        map.createPane('corridorPane');
+        map.getPane('corridorPane').style.zIndex = 380;
+        map.getPane('corridorPane').style.pointerEvents = 'none';
+
+        // Panel para la sombra vectorial móvil de totalidad (por encima del relleno del pasillo)
+        map.createPane('umbraPane');
+        map.getPane('umbraPane').style.zIndex = 410;
+        map.getPane('umbraPane').style.pointerEvents = 'none';
+
+        // Panel para las líneas de límite norte/sur y eje central (por encima de la umbra móvil)
+        map.createPane('corridorLinesPane');
+        map.getPane('corridorLinesPane').style.zIndex = 420;
+        map.getPane('corridorLinesPane').style.pointerEvents = 'none';
+
         // Añadir atribución compacta discreta en la esquina inferior derecha
         L.control.attribution({ position: 'bottomright', prefix: false }).addTo(map);
 
@@ -146,10 +181,15 @@ const EclipseMap2D = (() => {
             }
         });
 
-        // Capa base inicial (Dark Matter por defecto)
-        const savedBasemap = localStorage.getItem('cosmos_eclipse_map_basemap') || 'dark';
-        activeBasemapKey = BASEMAP_CONFIGS[savedBasemap] ? savedBasemap : 'dark';
-        tileLayers[activeBasemapKey].addTo(map);
+        // Capa base inicial (Oscuro por defecto, coherente con el estilo de la app)
+        try {
+            localStorage.removeItem('cosmos_eclipse_map_basemap');
+        } catch (e) {}
+        activeBasemapKey = 'dark';
+        if (tileLayers[activeBasemapKey]) {
+            tileLayers[activeBasemapKey].addTo(map);
+        }
+        syncBasemapButtons(activeBasemapKey);
 
         // Grupos de capas vectoriales
         eclipsePathGroup = L.featureGroup().addTo(map);
@@ -177,12 +217,9 @@ const EclipseMap2D = (() => {
         map.removeLayer(tileLayers[activeBasemapKey]);
         tileLayers[key].addTo(map);
         activeBasemapKey = key;
-        localStorage.setItem('cosmos_eclipse_map_basemap', key);
 
         // Actualizar estado activo en todos los botones (flotante y lateral)
-        document.querySelectorAll('.map-basemap-btn, .map-basemap-side-btn').forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.basemap === key);
-        });
+        syncBasemapButtons(key);
     }
 
     /**
@@ -191,9 +228,30 @@ const EclipseMap2D = (() => {
     function toggleLayer(layerKey, isVisible) {
         layerVisibility[layerKey] = isVisible;
         if (!map) return;
-        if (layerKey === 'shade' && pathShadeLayer) {
-            if (isVisible) pathShadeLayer.addTo(map);
-            else map.removeLayer(pathShadeLayer);
+        if (layerKey === 'shade') {
+            // Franja estática de totalidad/anularidad
+            if (pathShadeLayer) {
+                if (isVisible) pathShadeLayer.addTo(map);
+                else map.removeLayer(pathShadeLayer);
+            }
+            // Sombra dinámica vectorial (umbra)
+            if (umbraPolygon) {
+                if (isVisible) {
+                    if (!map.hasLayer(umbraPolygon)) umbraPolygon.addTo(map);
+                } else {
+                    map.removeLayer(umbraPolygon);
+                }
+            }
+            // Sombra dinámica del canvas overlay (penumbra)
+            if (shadowOverlay) {
+                if (isVisible) {
+                    if (!map.hasLayer(shadowOverlay)) shadowOverlay.addTo(map);
+                } else {
+                    map.removeLayer(shadowOverlay);
+                }
+            }
+            // Forzar redibujado la próxima vez que se reactive
+            if (!isVisible) _lastShadowKey = null;
         } else if (layerKey === 'limits' && pathLimitsLayer) {
             if (isVisible) pathLimitsLayer.addTo(map);
             else map.removeLayer(pathLimitsLayer);
@@ -270,42 +328,283 @@ const EclipseMap2D = (() => {
     /**
      * Construye los polígonos del pasillo de totalidad/anularidad cortados limpiamente en el antimeridiano
      */
-    function buildCorridorPolygons(northCoords, southCoords) {
+    function buildCorridorPolygons(northCoords, southCoords, espenakLoop = null) {
         if (!northCoords || !southCoords || northCoords.length < 2 || southCoords.length < 2) return [];
-        const N = northCoords.map(p => ({ lat: p.lat, lng: p.lng != null ? p.lng : p.lon }));
-        const S = southCoords.map(p => ({ lat: p.lat, lng: p.lng != null ? p.lng : p.lon }));
-        const len = Math.min(N.length, S.length);
-        const polygons = [];
-        let curN = [ [N[0].lat, N[0].lng] ];
-        let curS = [ [S[0].lat, S[0].lng] ];
 
-        for (let i = 0; i < len - 1; i++) {
-            const nCross = getAntimeridianInterp(N[i], N[i+1]);
-            const sCross = getAntimeridianInterp(S[i], S[i+1]);
+        const nFirst = northCoords[0], nLast = northCoords[northCoords.length - 1];
+        const sFirst = southCoords[0], sLast = southCoords[southCoords.length - 1];
 
-            if (nCross || sCross) {
-                const nIntEast = nCross ? nCross.east : [N[i].lat, N[i].lng > 0 ? 179.9999 : -179.9999];
-                const nIntWest = nCross ? nCross.west : [N[i+1].lat, N[i+1].lng > 0 ? 179.9999 : -179.9999];
-                const sIntEast = sCross ? sCross.east : [S[i].lat, S[i].lng > 0 ? 179.9999 : -179.9999];
-                const sIntWest = sCross ? sCross.west : [S[i+1].lat, S[i+1].lng > 0 ? 179.9999 : -179.9999];
+        const buildDirectTerminalArc = (pA, pB, numSteps = 4) => {
+            if (!pA || !pB) return [];
+            const pAlon = pA.lng != null ? pA.lng : pA.lon;
+            const pBlon = pB.lng != null ? pB.lng : pB.lon;
+            let dLng = pBlon - pAlon;
+            if (dLng > 180) dLng -= 360;
+            if (dLng < -180) dLng += 360;
 
-                curN.push(nIntEast);
-                curS.push(sIntEast);
-                polygons.push([...curN, ...curS.slice().reverse()]);
+            const arc = [];
+            for (let i = 0; i <= numSteps; i++) {
+                const frac = i / numSteps;
+                let lng = pAlon + frac * dLng;
+                if (lng > 180) lng -= 360;
+                if (lng < -180) lng += 360;
+                arc.push({
+                    lat: pA.lat + frac * (pB.lat - pA.lat),
+                    lng: lng,
+                    lon: lng,
+                    t: (pA.t != null && pB.t != null) ? (pA.t + frac * (pB.t - pA.t)) : null
+                });
+            }
+            return arc;
+        };
 
-                curN = [ nIntWest, [N[i+1].lat, N[i+1].lng] ];
-                curS = [ sIntWest, [S[i+1].lat, S[i+1].lng] ];
-            } else {
-                curN.push([N[i+1].lat, N[i+1].lng]);
-                curS.push([S[i+1].lat, S[i+1].lng]);
+        const sunsetArc = buildDirectTerminalArc(nLast, sLast);
+        const sunriseArc = buildDirectTerminalArc(sFirst, nFirst);
+
+        const sunsetIntermediates = sunsetArc.length > 2 ? sunsetArc.slice(1, -1) : [];
+        const sunriseIntermediates = sunriseArc.length > 2 ? sunriseArc.slice(1, -1) : [];
+
+        const loop = [
+            ...northCoords.map(p => ({ lat: p.lat, lng: p.lng != null ? p.lng : p.lon })),
+            ...sunsetIntermediates.map(p => ({ lat: p.lat, lng: p.lng != null ? p.lng : p.lon })),
+            ...southCoords.slice().reverse().map(p => ({ lat: p.lat, lng: p.lng != null ? p.lng : p.lon })),
+            ...sunriseIntermediates.map(p => ({ lat: p.lat, lng: p.lng != null ? p.lng : p.lon }))
+        ];
+
+        let hasCrossing = false;
+        for (let i = 0; i < loop.length; i++) {
+            const p1 = loop[i];
+            const p2 = loop[(i + 1) % loop.length];
+            if (Math.abs(p2.lng - p1.lng) > 180) {
+                hasCrossing = true;
+                break;
             }
         }
 
-        if (curN.length > 1) {
-            polygons.push([...curN, ...curS.slice().reverse()]);
+        if (!hasCrossing) {
+            return [loop.map(p => [p.lat, p.lng])];
         }
 
-        return polygons;
+        const eastSegs = [];
+        const westSegs = [];
+        let curEast = [];
+        let curWest = [];
+
+        for (let i = 0; i < loop.length; i++) {
+            const p1 = loop[i];
+            const p2 = loop[(i + 1) % loop.length];
+            const isEast1 = p1.lng >= 0;
+            if (isEast1) curEast.push([p1.lat, p1.lng]);
+            else curWest.push([p1.lat, p1.lng]);
+
+            const dLng = p2.lng - p1.lng;
+            if (Math.abs(dLng) > 180) {
+                if (isEast1) {
+                    const frac = (180 - p1.lng) / ((p2.lng + 360) - p1.lng);
+                    const latInt = p1.lat + frac * (p2.lat - p1.lat);
+                    curEast.push([latInt, 179.9999]);
+                    eastSegs.push(curEast);
+                    curEast = [];
+                    curWest.push([latInt, -179.9999]);
+                } else {
+                    const frac = (-180 - p1.lng) / ((p2.lng - 360) - p1.lng);
+                    const latInt = p1.lat + frac * (p2.lat - p1.lat);
+                    curWest.push([latInt, -179.9999]);
+                    westSegs.push(curWest);
+                    curWest = [];
+                    curEast.push([latInt, 179.9999]);
+                }
+            }
+        }
+        if (curEast.length > 0) {
+            if (eastSegs.length > 0) eastSegs[0] = [...curEast, ...eastSegs[0]];
+            else eastSegs.push(curEast);
+        }
+        if (curWest.length > 0) {
+            if (westSegs.length > 0) westSegs[0] = [...curWest, ...westSegs[0]];
+            else westSegs.push(curWest);
+        }
+
+        const polys = [];
+        eastSegs.forEach(seg => { if (seg.length >= 3) polys.push(seg); });
+        westSegs.forEach(seg => { if (seg.length >= 3) polys.push(seg); });
+        return polys;
+    }
+
+    /**
+     * Renderiza la penumbra lunar en un <canvas> offscreen 512×256 en proyección Web Mercator estricta
+     * (coincidente pixel a pixel con el CRS EPSG:3857 de Leaflet entre ±85.05112878°).
+     * Solo se ejecuta si la opción "Gradiente penumbral" está activada.
+     */
+    function renderShadowCanvas({ x, y, l1, l2, dRad, muRad, tanF1, tanF2 }) {
+        const W = 512, H = 256;
+        if (!shadowCanvas) {
+            shadowCanvas = document.createElement('canvas');
+            shadowCanvas.width = W;
+            shadowCanvas.height = H;
+        }
+        const ctx = shadowCanvas.getContext('2d');
+        const imgData = ctx.createImageData(W, H);
+        const data = imgData.data;
+
+        const sinD = Math.sin(dRad), cosD = Math.cos(dRad);
+        const e2 = 0.006694385; // WGS84
+
+        for (let py = 0; py < H; py++) {
+            // y_merc en [-π, +π] de Norte a Sur (py=0 es lat +85.0511°, py=H-1 es lat -85.0511°)
+            const v = 1.0 - (2.0 * (py + 0.5)) / H;
+            const yMerc = Math.PI * v;
+            const expY = Math.exp(yMerc);
+            const expNegY = 1.0 / expY;
+            const coshY = 0.5 * (expY + expNegY);
+            const sinhY = 0.5 * (expY - expNegY);
+            const sinPhi = sinhY / coshY;
+            const cosPhi = 1.0 / coshY;
+
+            // Coordenadas geocéntricas en el elipsoide WGS84
+            const C = 1.0 / Math.sqrt(1.0 - e2 * sinPhi * sinPhi);
+            const rhoCosPhi = C * cosPhi;
+            const rhoSinPhi = (1.0 - e2) * C * sinPhi;
+
+            for (let px = 0; px < W; px++) {
+                // lon en [-π, +π] de Oeste a Este
+                const lon = (((px + 0.5) / W) * 2.0 - 1.0) * Math.PI;
+
+                // Ángulo horario local del observador: θ = μ + λ
+                const theta = muRad + lon;
+                const sinTheta = Math.sin(theta), cosTheta = Math.cos(theta);
+
+                // Coordenadas Besselianas del observador en el plano fundamental
+                const xi   = rhoCosPhi * sinTheta;
+                const eta  = rhoSinPhi * cosD - rhoCosPhi * sinD * cosTheta;
+                const zeta = rhoSinPhi * sinD + rhoCosPhi * cosD * cosTheta;
+
+                if (zeta <= 0.0) continue;  // Cara nocturna: no hay sombra
+
+                // Corrección de los radios de penumbra y umbra por la altura ζ del observador
+                const L1 = l1 - zeta * tanF1;
+                const L2abs = Math.abs(l2 - zeta * tanF2);
+
+                const dx = xi  - x;
+                const dy = eta - y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+
+                if (dist > L1) continue;  // Fuera de la penumbra exterior
+
+                const idx = (py * W + px) * 4;
+
+                // ---- PENUMBRA (eclipse parcial) ----
+                const norm = Math.max(0.0, dist - L2abs) / Math.max(1e-6, L1 - L2abs);
+                const factor = Math.max(0.0, Math.min(1.0, 1.0 - norm));
+                const alpha = Math.pow(factor, 1.35) * 0.85;
+                data[idx]     = 5;
+                data[idx + 1] = 10;
+                data[idx + 2] = 23;
+                data[idx + 3] = Math.round(alpha * 255) | 0;
+            }
+        }
+        ctx.putImageData(imgData, 0, 0);
+    }
+
+    /**
+     * API pública: recibe los parámetros Besselianos calculados en updateShadowAtTime()
+     * y actualiza el mapa 2D:
+     * 1) Polígono vectorial exacto de la sombra de totalidad/anularidad (L.polygon en umbraPane).
+     * 2) Marcador central de totalidad sobre el eje de la franja.
+     * 3) Gradiente penumbral offscreen en proyección Web Mercator (solo si está activado).
+     */
+    function updateShadow(params) {
+        if (!map) return;
+        const L = window.L;
+        if (!L) return;
+
+        const activeEclipse = params.eclipse || currentEclipse || (typeof window !== 'undefined' && window.currentEclipse) || null;
+        const t = params.t != null ? params.t : (parseFloat(document.getElementById('time-slider')?.value) || 0);
+        const { x, y, l1, l2, dRad, muRad, tanF1, tanF2, showPenumbra } = params;
+
+        // Si la visibilidad de la sombra/franja está desactivada por el usuario
+        if (!layerVisibility.shade) {
+            if (umbraPolygon && map.hasLayer(umbraPolygon)) map.removeLayer(umbraPolygon);
+            if (shadowOverlay && map.hasLayer(shadowOverlay)) map.removeLayer(shadowOverlay);
+            return;
+        }
+
+        // =========================================================================
+        // 1. POLÍGONO VECTORIAL DE TOTALIDAD / ANULARIDAD (Umbra / Antumbra)
+        // =========================================================================
+        if (activeEclipse) {
+            const isAnnular = (activeEclipse.eclipse_type || '').toUpperCase().startsWith('A');
+            const polyFill = isAnnular ? '#261a0d' : '#000000';
+            const polyFillOpacity = isAnnular ? 0.82 : 0.88;
+
+            let polyPoints = null;
+            if (typeof computeUmbraPolygon === 'function') {
+                polyPoints = computeUmbraPolygon(activeEclipse, t);
+            } else if (typeof window !== 'undefined' && typeof window.computeUmbraPolygon === 'function') {
+                polyPoints = window.computeUmbraPolygon(activeEclipse, t);
+            } else if (typeof BesselianEngine !== 'undefined' && typeof BesselianEngine.computeUmbraPolygon === 'function') {
+                polyPoints = BesselianEngine.computeUmbraPolygon(activeEclipse, t);
+            } else if (typeof window !== 'undefined' && window.BesselianEngine && typeof window.BesselianEngine.computeUmbraPolygon === 'function') {
+                polyPoints = window.BesselianEngine.computeUmbraPolygon(activeEclipse, t);
+            }
+
+            if (polyPoints && polyPoints.length >= 3) {
+                const latLngs = polyPoints.map(p => [p.lat, p.lng]);
+                if (!umbraPolygon) {
+                    umbraPolygon = L.polygon(latLngs, {
+                        pane: 'umbraPane',
+                        fillColor: polyFill,
+                        fillOpacity: polyFillOpacity,
+                        stroke: false,
+                        interactive: false,
+                        className: 'eclipse-umbra-polygon'
+                    });
+                    umbraPolygon.addTo(map);
+                } else {
+                    umbraPolygon.setStyle({
+                        fillColor: polyFill,
+                        fillOpacity: polyFillOpacity,
+                        stroke: false
+                    });
+                    umbraPolygon.setLatLngs(latLngs);
+                    if (!map.hasLayer(umbraPolygon)) umbraPolygon.addTo(map);
+                }
+            } else {
+                // La umbra no está tocando la superficie terrestre en este instante
+                if (umbraPolygon && map.hasLayer(umbraPolygon)) map.removeLayer(umbraPolygon);
+            }
+        }
+
+        // =========================================================================
+        // 2. GRADIENTE PENUMBRAL (Solo si la casilla "Gradiente penumbral" está activa)
+        // =========================================================================
+        if (showPenumbra) {
+            const key = `${x.toFixed(4)},${y.toFixed(4)},${l1.toFixed(4)},${l2.toFixed(4)},${dRad.toFixed(5)},${muRad.toFixed(5)}`;
+            if (key !== _lastShadowKey) {
+                _lastShadowKey = key;
+                renderShadowCanvas({ x, y, l1, l2, dRad, muRad, tanF1, tanF2 });
+
+                const dataUrl = shadowCanvas.toDataURL('image/png');
+                const bounds = [[-85.0511287798, -180], [85.0511287798, 180]];
+
+                if (shadowOverlay && map.hasLayer(shadowOverlay)) {
+                    shadowOverlay.setUrl(dataUrl);
+                } else {
+                    if (shadowOverlay) map.removeLayer(shadowOverlay);
+                    shadowOverlay = L.imageOverlay(dataUrl, bounds, {
+                        opacity: 1.0,
+                        interactive: false,
+                        pane: 'shadowPane',
+                        className: 'eclipse-shadow-overlay'
+                    }).addTo(map);
+                }
+            }
+        } else {
+            // Si el gradiente penumbral está apagado, liberar la capa del mapa
+            if (shadowOverlay && map.hasLayer(shadowOverlay)) {
+                map.removeLayer(shadowOverlay);
+            }
+        }
     }
 
     /**
@@ -318,13 +617,22 @@ const EclipseMap2D = (() => {
         if (pathShadeLayer) map.removeLayer(pathShadeLayer);
         if (pathLimitsLayer) map.removeLayer(pathLimitsLayer);
         if (pathCenterLineLayer) map.removeLayer(pathCenterLineLayer);
+        if (umbraPolygon && map.hasLayer(umbraPolygon)) map.removeLayer(umbraPolygon);
+        _lastShadowKey = null;
 
         pathShadeLayer = L.featureGroup();
         pathLimitsLayer = L.featureGroup();
         pathCenterLineLayer = L.featureGroup();
 
-        if (typeof precomputeEclipseGeometry !== 'function') return;
-        const geom = precomputeEclipseGeometry(eclipse);
+        const precomputeFn = (typeof precomputeEclipseGeometry === 'function')
+            ? precomputeEclipseGeometry
+            : (typeof window !== 'undefined' && typeof window.precomputeEclipseGeometry === 'function')
+                ? window.precomputeEclipseGeometry
+                : (typeof BesselianEngine !== 'undefined' && typeof BesselianEngine.precomputeEclipseGeometry === 'function')
+                    ? BesselianEngine.precomputeEclipseGeometry
+                    : null;
+        if (!precomputeFn) return;
+        const geom = precomputeFn(eclipse);
         if (!geom) return;
 
         const isAnnular = (eclipse.eclipse_type || '').toUpperCase().startsWith('A');
@@ -336,11 +644,14 @@ const EclipseMap2D = (() => {
         const hasNorth = geom.totNorthCoords && geom.totNorthCoords.length > 1;
         const hasSouth = geom.totSouthCoords && geom.totSouthCoords.length > 1;
 
-        // 1. Pasillo sombreado de totalidad/anularidad (Polígonos cortados limpiamente en el antimeridiano)
+        // 1. Pasillo sombreado de totalidad/anularidad (Polígonos cerrados en los extremos y cortados limpiamente en el antimeridiano)
         if (hasNorth && hasSouth) {
-            const corridorPolygons = buildCorridorPolygons(geom.totNorthCoords, geom.totSouthCoords);
+            const corridorPolygons = (geom.corridorPolygons && geom.corridorPolygons.length > 0)
+                ? geom.corridorPolygons
+                : buildCorridorPolygons(geom.totNorthCoords, geom.totSouthCoords, geom.fullEspenakLoop);
             corridorPolygons.forEach(polyCoords => {
                 const poly = L.polygon(polyCoords, {
+                    pane: 'corridorPane',
                     color: 'transparent',
                     fillColor: fillColor,
                     fillOpacity: 1,
@@ -354,6 +665,7 @@ const EclipseMap2D = (() => {
         if (hasNorth) {
             const northSegs = splitCoordsAtAntimeridian(geom.totNorthCoords);
             const northLine = L.polyline(northSegs.length > 1 ? northSegs : northSegs[0], {
+                pane: 'corridorLinesPane',
                 color: limitColor,
                 weight: 2,
                 opacity: 0.85,
@@ -367,6 +679,7 @@ const EclipseMap2D = (() => {
         if (hasSouth) {
             const southSegs = splitCoordsAtAntimeridian(geom.totSouthCoords);
             const southLine = L.polyline(southSegs.length > 1 ? southSegs : southSegs[0], {
+                pane: 'corridorLinesPane',
                 color: limitColor,
                 weight: 2,
                 opacity: 0.85,
@@ -381,6 +694,7 @@ const EclipseMap2D = (() => {
         if (hasCentral) {
             const centerSegs = splitCoordsAtAntimeridian(geom.centerCoords);
             const centerLine = L.polyline(centerSegs.length > 1 ? centerSegs : centerSegs[0], {
+                pane: 'corridorLinesPane',
                 color: primaryColor,
                 weight: 3.5,
                 opacity: 0.95,
@@ -838,14 +1152,18 @@ const EclipseMap2D = (() => {
         overlay.style.cssText = 'position: absolute; inset: 0; pointer-events: none; z-index: 500; overflow: hidden;';
 
         overlay.innerHTML = `
-            <!-- BARRA SUPERIOR CENTRADA (Buscador de Dirección y Coordenadas) -->
+            <!-- BARRA SUPERIOR CENTRADA (Buscador de Dirección y Coordenadas con Acciones Rápidas) -->
             <div id="map-search-container" class="floating-top-search-container" style="position: absolute; top: 16px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; justify-content: center; pointer-events: auto; max-width: calc(100vw - 32px); width: max-content; z-index: 500;">
                 <!-- Buscador de Dirección y Coordenadas -->
-                <div style="position: relative; width: 350px; max-width: calc(100vw - 32px);">
-                    <div style="display: flex; align-items: center; background: rgba(11, 19, 41, 0.92); backdrop-filter: blur(16px); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 10px; height: 35px; padding: 0 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.65);">
-                        <i class="fa-solid fa-magnifying-glass" style="color: #38bdf8; font-size: 0.78rem; margin-right: 8px;"></i>
-                        <input type="text" id="map-search-input" placeholder="Buscar municipio o coordenadas..." autocomplete="off" style="width: 100%; background: transparent; border: none; outline: none; color: #f8fafc; font-size: 0.78rem; font-family: var(--font-body, system-ui);">
-                        <button type="button" id="map-search-clear" style="display: none; background: none; border: none; color: #94a3b8; cursor: pointer; padding: 0 4px; font-size: 0.78rem;" title="Limpiar"><i class="fa-solid fa-xmark"></i></button>
+                <div style="position: relative; width: 440px; max-width: calc(100vw - 32px);">
+                    <div style="display: flex; align-items: center; background: rgba(11, 19, 41, 0.92); backdrop-filter: blur(16px); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 10px; height: 35px; padding: 0 6px 0 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.65); gap: 4px;">
+                        <i class="fa-solid fa-magnifying-glass" style="color: #38bdf8; font-size: 0.78rem; margin-right: 4px; flex-shrink: 0;"></i>
+                        <input type="text" id="map-search-input" placeholder="Buscar municipio o coordenadas..." autocomplete="off" style="flex: 1; min-width: 0; background: transparent; border: none; outline: none; color: #f8fafc; font-size: 0.78rem; font-family: var(--font-body, system-ui);">
+                        <button type="button" id="map-search-clear" style="display: none; background: none; border: none; color: #94a3b8; cursor: pointer; padding: 0 4px; font-size: 0.78rem; flex-shrink: 0;" title="Limpiar"><i class="fa-solid fa-xmark"></i></button>
+                        <div style="width: 1px; height: 16px; background: rgba(255, 255, 255, 0.15); margin: 0 2px; flex-shrink: 0;"></div>
+                        <button type="button" class="capsule-action-btn btn-observer-gps" id="btn-map-gps" onclick="detectUserLocation()" title="Detectar mi ubicación actual (GPS)" aria-label="Usar GPS"><i class="fa-solid fa-location-crosshairs"></i></button>
+                        <button type="button" class="capsule-action-btn btn-obs-ge" id="btn-map-ge" onclick="switchObserverExtreme('GE')" title="Mayor Eclipse (GE): Mínima distancia del eje de sombra al centro de la Tierra" aria-label="Mayor Eclipse">GE</button>
+                        <button type="button" class="capsule-action-btn btn-obs-gd" id="btn-map-gd" onclick="switchObserverExtreme('GD')" title="Máxima Duración (GD): Punto de mayor duración de la fase central" aria-label="Máxima Duración">GD</button>
                     </div>
                     <!-- Dropdown de resultados de autocompletado -->
                     <div id="map-search-dropdown" style="display: none; position: absolute; top: calc(100% + 4px); left: 0; width: 100%; background: rgba(11, 19, 41, 0.96); backdrop-filter: blur(16px); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 10px; box-shadow: 0 12px 28px rgba(0,0,0,0.85); max-height: 230px; overflow-y: auto; font-size: 0.78rem; padding: 4px 0; z-index: 1005;">
@@ -867,6 +1185,18 @@ const EclipseMap2D = (() => {
         `;
 
         container.appendChild(overlay);
+
+        // Sincronizar estado inicial de botones GE / GD y nombre del observador
+        if (typeof activeExtremeMode !== 'undefined' && activeExtremeMode) {
+            const geBtn = document.getElementById('btn-map-ge');
+            const gdBtn = document.getElementById('btn-map-gd');
+            if (geBtn) geBtn.classList.toggle('active', activeExtremeMode === 'GE');
+            if (gdBtn) gdBtn.classList.toggle('active', activeExtremeMode === 'GD');
+        }
+        if (typeof currentObserver !== 'undefined' && currentObserver && currentObserver.name) {
+            const mapInp = document.getElementById('map-search-input');
+            if (mapInp) mapInp.value = currentObserver.name;
+        }
 
         // Ajustar posición dinámica de los controles inferiores según estado del panel derecho
         function syncControlsWithRightPanel() {
@@ -1168,6 +1498,8 @@ const EclipseMap2D = (() => {
             await initMap();
         }
 
+        syncBasemapButtons(activeBasemapKey);
+
         if (eclipse) {
             renderEclipsePath(eclipse);
         }
@@ -1178,6 +1510,14 @@ const EclipseMap2D = (() => {
 
         setTimeout(() => {
             if (map) map.invalidateSize();
+            // Forzar redibujado de la sombra al entrar en vista mapa
+            // (el dirty-check bloquearía el primer dibujo si los parámetros no han cambiado)
+            _lastShadowKey = null;
+            if (typeof window.updateShadowAtTime === 'function') {
+                const slider = document.getElementById('time-slider');
+                const tNow = slider ? parseFloat(slider.value) || 0 : 0;
+                window.updateShadowAtTime(tNow);
+            }
         }, 80);
     }
 
@@ -1197,9 +1537,12 @@ const EclipseMap2D = (() => {
         show,
         hide,
         switchBasemap,
+        syncBasemapButtons,
+        getActiveBasemap: () => activeBasemapKey,
         toggleLayer,
         renderEclipsePath,
         drawEclipsePath: renderEclipsePath,
+        updateShadow,
         setObserverMarker,
         setAsActiveObserver,
         selectSearchResult,

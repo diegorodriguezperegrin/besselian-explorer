@@ -718,12 +718,6 @@ function _ensureRouteScratchpadPool() {
                     badge.innerText = 'PAUSA';
                 }
             }
-            // En modo ruta se oculta el badge del reproductor inferior (no duplicar información con el minutaje)
-            const dockBadge = (typeof getDOM === 'function' ? getDOM('player-phase-label') : document.getElementById('player-phase-label'));
-            if (dockBadge && typeof currentActiveView !== 'undefined' && currentActiveView === 'route') {
-                dockBadge.style.display = 'none';
-                dockBadge.innerHTML = '';
-            }
         }
 
         function jumpRouteSceneStep(dir) {

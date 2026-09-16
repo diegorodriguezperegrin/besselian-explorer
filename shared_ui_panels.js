@@ -331,6 +331,7 @@ function updateTopNavButtonsState() {
                 }
             }
             updateTopNavButtonsState();
+            if (typeof updateLiveBadgeState === 'function') updateLiveBadgeState();
         }
 
         function toggleLunarLimbPanel(show = null, fromHistory = false) {
