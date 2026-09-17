@@ -1080,6 +1080,7 @@ var constellationsGroup3D = null;
         var pathLine = null;
         var totalityNorthLine = null;
         var totalitySouthLine = null;
+        var totalityCorridorMesh = null;
         var isomagnitudesGroup = null;
         var graticuleGroup = null;
         var moonPolarAxisGroup = null;
@@ -1264,6 +1265,97 @@ var constellationsGroup3D = null;
             return null;
         }
 
+        function createCorridorRibbonMesh(northCoords, southCoords, colorHex, radius = GROUND_OVERLAY_RADIUS, opacity = 0.18) {
+            if (!northCoords || !southCoords || northCoords.length < 2 || southCoords.length < 2) return null;
+
+            const tMin = Math.max(northCoords[0].t, southCoords[0].t);
+            const tMax = Math.min(northCoords[northCoords.length - 1].t, southCoords[southCoords.length - 1].t);
+            if (tMin >= tMax) return null;
+
+            let northIdx = 0, southIdx = 0;
+            function interpolateAtT(coords, targetT, startIdx) {
+                let i = startIdx;
+                while (i < coords.length - 1 && coords[i + 1].t < targetT) {
+                    i++;
+                }
+                if (i >= coords.length - 1) return { pt: coords[coords.length - 1], nextIdx: i };
+                const p0 = coords[i];
+                const p1 = coords[i + 1];
+                const dtRange = p1.t - p0.t;
+                const frac = dtRange !== 0 ? (targetT - p0.t) / dtRange : 0;
+                const lat0 = p0.lat, lat1 = p1.lat;
+                let lng0 = p0.lng != null ? p0.lng : p0.lon;
+                let lng1 = p1.lng != null ? p1.lng : p1.lon;
+                let dLng = lng1 - lng0;
+                if (dLng > 180) dLng -= 360;
+                if (dLng < -180) dLng += 360;
+                let lng = lng0 + frac * dLng;
+                if (lng > 180) lng -= 360;
+                if (lng < -180) lng += 360;
+                const lat = lat0 + frac * (lat1 - lat0);
+                return { pt: { lat, lng }, nextIdx: i };
+            }
+
+            const steps = 400;
+            const dt = (tMax - tMin) / steps;
+            const positions = [];
+            let prevN = null, prevS = null;
+
+            for (let step = 0; step <= steps; step++) {
+                const t = tMin + step * dt;
+                const resN = interpolateAtT(northCoords, t, northIdx);
+                const resS = interpolateAtT(southCoords, t, southIdx);
+                northIdx = resN.nextIdx;
+                southIdx = resS.nextIdx;
+
+                const vN = latLngToVector3(resN.pt.lat, resN.pt.lng, radius);
+                const vS = latLngToVector3(resS.pt.lat, resS.pt.lng, radius);
+
+                if (prevN && prevS) {
+                    const dN = prevN.distanceTo(vN);
+                    const dS = prevS.distanceTo(vS);
+                    const dCross = vN.distanceTo(vS);
+                    // Comprobación geométrica 3D para evitar puentes espurios o discontinuidades
+                    if (dN < 15.0 && dS < 15.0 && dCross < 25.0) {
+                        // Triángulo 1: prevN -> prevS -> vN
+                        positions.push(prevN.x, prevN.y, prevN.z);
+                        positions.push(prevS.x, prevS.y, prevS.z);
+                        positions.push(vN.x, vN.y, vN.z);
+
+                        // Triángulo 2: prevS -> vS -> vN
+                        positions.push(prevS.x, prevS.y, prevS.z);
+                        positions.push(vS.x, vS.y, vS.z);
+                        positions.push(vN.x, vN.y, vN.z);
+                    }
+                }
+                prevN = vN;
+                prevS = vS;
+            }
+
+            if (positions.length > 0) {
+                const geometry = new THREE.BufferGeometry();
+                geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+                geometry.computeVertexNormals();
+
+                const material = new THREE.MeshBasicMaterial({
+                    color: colorHex,
+                    transparent: true,
+                    opacity: opacity,
+                    side: THREE.DoubleSide,
+                    depthWrite: false,
+                    depthTest: true,
+                    polygonOffset: true,
+                    polygonOffsetFactor: -1,
+                    polygonOffsetUnits: -2
+                });
+
+                const mesh = new THREE.Mesh(geometry, material);
+                mesh.renderOrder = 32;
+                return mesh;
+            }
+            return null;
+        }
+
         // [getEdgeIntersection, cachedEclipseGeometry, precomputeEclipseGeometry] Extraído a besselian_engine.js
 
         function updateMoonOrbit(eclipse) {
@@ -1325,6 +1417,7 @@ var constellationsGroup3D = null;
             if (pathLine) { dispose3DObject(pathLine); pathLine = null; }
             if (totalityNorthLine) { dispose3DObject(totalityNorthLine); totalityNorthLine = null; }
             if (totalitySouthLine) { dispose3DObject(totalitySouthLine); totalitySouthLine = null; }
+            if (totalityCorridorMesh) { dispose3DObject(totalityCorridorMesh); totalityCorridorMesh = null; }
             if (isomagnitudesGroup) { dispose3DObject(isomagnitudesGroup); isomagnitudesGroup = null; }
             if (utLinesGroup) { dispose3DObject(utLinesGroup); utLinesGroup = null; }
 
@@ -1341,6 +1434,8 @@ var constellationsGroup3D = null;
             const centerLineColor = isAnnular ? 0xea580c : 0xdc2626;
             // Límites de totalidad/anularidad: azul real #2563eb para total, ámbar #f59e0b para anular
             const limitColor = isAnnular ? 0xf59e0b : 0x2563eb;
+            // Relleno de pasillo de totalidad/anularidad: naranja translúcido para anular, rojo para total
+            const corridorColor = isAnnular ? 0xea580c : 0xdc2626;
 
             // 1. Trayectoria / Línea Central
             const showCenterLine = getDOM('chk-show-center-line')?.checked !== false;
@@ -1364,6 +1459,18 @@ var constellationsGroup3D = null;
                 if (data.totSouthCoords && data.totSouthCoords.length > 1) {
                     totalitySouthLine = createSegmentedLine(data.totSouthCoords, limitColor, GROUND_OVERLAY_RADIUS, 2);
                     if (totalitySouthLine) earthGroup.add(totalitySouthLine);
+                }
+            }
+
+            // 3. Franja Sombreada de Totalidad / Anularidad
+            const showCorridorShade = getDOM('chk-show-corridor-shade')?.checked !== false;
+            if (isCentral && showCorridorShade) {
+                if (data.totNorthCoords && data.totNorthCoords.length > 1 &&
+                    data.totSouthCoords && data.totSouthCoords.length > 1) {
+                    totalityCorridorMesh = createCorridorRibbonMesh(data.totNorthCoords, data.totSouthCoords, corridorColor, GROUND_OVERLAY_RADIUS, 0.18);
+                    if (totalityCorridorMesh) {
+                        earthGroup.add(totalityCorridorMesh);
+                    }
                 }
             }
 

@@ -686,7 +686,11 @@
                     </label>
                     <label class="checkbox-row" id="lbl-show-totality">
                         <input type="checkbox" id="chk-show-totality" checked>
-                        <span>Franja de totalidad</span>
+                        <span>Límites norte / sur</span>
+                    </label>
+                    <label class="checkbox-row" id="lbl-show-corridor-shade">
+                        <input type="checkbox" id="chk-show-corridor-shade" checked>
+                        <span>Franja de totalidad / anularidad</span>
                     </label>
                     <label class="checkbox-row" id="lbl-show-observer">
                         <input type="checkbox" id="chk-show-observer" checked>
@@ -4132,6 +4136,11 @@
         });
 
         getDOM('chk-show-totality')?.addEventListener('change', () => {
+            if (currentEclipse) drawShadowPath(currentEclipse);
+            requestRender();
+        });
+
+        getDOM('chk-show-corridor-shade')?.addEventListener('change', () => {
             if (currentEclipse) drawShadowPath(currentEclipse);
             requestRender();
         });
