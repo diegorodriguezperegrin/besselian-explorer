@@ -261,6 +261,8 @@ const EclipseMap2D = (() => {
         }
     }
 
+    const MERCATOR_MAX_LAT = 85.05112878;
+
     /**
      * Interpola el cruce con el antimeridiano (±180°) entre dos puntos
      */
@@ -283,52 +285,113 @@ const EclipseMap2D = (() => {
     }
 
     /**
-     * Divide una lista continua de coordenadas en múltiples segmentos al cruzar el antimeridiano (±180°)
-     * para evitar trazos horizontales espurios en mapas 2D (Leaflet Web Mercator).
+     * Divide una lista continua de coordenadas en múltiples segmentos:
+     * 1) Al sobrepasar la latitud límite de Mercator EPSG:3857 (±85.051129°), segmenta sin unir por el polo.
+     * 2) Al detectar cruce/sobrevuelo polar (|lat| > 80° y |Δlng| > 90°), cierra el segmento actual y abre uno nuevo.
+     * 3) Al cruzar el antimeridiano (±180°), divide limpiamente para evitar trazos horizontales espurios en Web Mercator.
      */
     function splitCoordsAtAntimeridian(coords) {
         if (!coords || coords.length === 0) return [];
-        const pts = coords.map(p => Array.isArray(p) ? { lat: p[0], lng: p[1] } : { lat: p.lat, lng: p.lng != null ? p.lng : p.lon });
-        const segments = [];
-        let currentSegment = [];
+        const rawPts = coords.map(p => Array.isArray(p) ? { lat: p[0], lng: p[1] } : { lat: p.lat, lng: p.lng != null ? p.lng : p.lon });
+        
+        // Fase 1: Segmentar por límite estricto de latitud Mercator (EPSG:3857)
+        const latSegments = [];
+        let curLatSeg = [];
 
-        for (let i = 0; i < pts.length; i++) {
-            const curr = pts[i];
-            if (currentSegment.length === 0) {
-                currentSegment.push([curr.lat, curr.lng]);
+        for (let i = 0; i < rawPts.length; i++) {
+            const curr = rawPts[i];
+            const isInside = Math.abs(curr.lat) <= MERCATOR_MAX_LAT;
+
+            if (i === 0) {
+                if (isInside) curLatSeg.push({ lat: curr.lat, lng: curr.lng });
                 continue;
             }
 
-            const prev = pts[i - 1];
-            const interp = getAntimeridianInterp(prev, curr);
+            const prev = rawPts[i - 1];
+            const wasInside = Math.abs(prev.lat) <= MERCATOR_MAX_LAT;
 
-            if (interp) {
-                const deltaLng = curr.lng - prev.lng;
-                if (deltaLng < -180) {
-                    currentSegment.push(interp.east);
-                    segments.push(currentSegment);
-                    currentSegment = [interp.west, [curr.lat, curr.lng]];
-                } else {
-                    currentSegment.push(interp.west);
-                    segments.push(currentSegment);
-                    currentSegment = [interp.east, [curr.lat, curr.lng]];
-                }
-            } else {
-                currentSegment.push([curr.lat, curr.lng]);
+            if (wasInside && isInside) {
+                curLatSeg.push({ lat: curr.lat, lng: curr.lng });
+            } else if (wasInside && !isInside) {
+                // Sale de los límites hacia el polo: interpolar en el límite de Mercator
+                const poleLat = (curr.lat < 0 ? -1 : 1) * MERCATOR_MAX_LAT;
+                const frac = (poleLat - prev.lat) / (curr.lat - prev.lat);
+                let lngInt = prev.lng + frac * (curr.lng - prev.lng);
+                if (lngInt > 180) lngInt -= 360;
+                if (lngInt < -180) lngInt += 360;
+                curLatSeg.push({ lat: poleLat, lng: lngInt });
+                if (curLatSeg.length > 0) latSegments.push(curLatSeg);
+                curLatSeg = [];
+            } else if (!wasInside && isInside) {
+                // Entra de regreso a los límites desde el polo: interpolar en el límite de Mercator
+                const poleLat = (prev.lat < 0 ? -1 : 1) * MERCATOR_MAX_LAT;
+                const frac = (poleLat - prev.lat) / (curr.lat - prev.lat);
+                let lngInt = prev.lng + frac * (curr.lng - prev.lng);
+                if (lngInt > 180) lngInt -= 360;
+                if (lngInt < -180) lngInt += 360;
+                curLatSeg = [{ lat: poleLat, lng: lngInt }, { lat: curr.lat, lng: curr.lng }];
             }
         }
+        if (curLatSeg.length > 0) latSegments.push(curLatSeg);
 
-        if (currentSegment.length > 0) {
-            segments.push(currentSegment);
-        }
+        // Fase 2: Para cada segmento de latitud, detectar saltos polares y cortes en antimeridiano
+        const finalSegments = [];
 
-        return segments;
+        latSegments.forEach(segPts => {
+            if (segPts.length === 0) return;
+            let currentSegment = [];
+
+            for (let i = 0; i < segPts.length; i++) {
+                const curr = segPts[i];
+                if (currentSegment.length === 0) {
+                    currentSegment.push([curr.lat, curr.lng]);
+                    continue;
+                }
+
+                const prev = segPts[i - 1];
+                const dLngRaw = Math.abs(curr.lng - prev.lng);
+                const isPolarJump = (Math.abs(prev.lat) > 80 || Math.abs(curr.lat) > 80) &&
+                                    dLngRaw > 90 && (360 - dLngRaw) > 90;
+
+                if (isPolarJump) {
+                    // Cruce polar: cerrar segmento actual y abrir uno nuevo en el otro extremo
+                    if (currentSegment.length > 0) {
+                        finalSegments.push(currentSegment);
+                    }
+                    currentSegment = [[curr.lat, curr.lng]];
+                    continue;
+                }
+
+                const interp = getAntimeridianInterp(prev, curr);
+                if (interp) {
+                    const deltaLng = curr.lng - prev.lng;
+                    if (deltaLng < -180) {
+                        currentSegment.push(interp.east);
+                        finalSegments.push(currentSegment);
+                        currentSegment = [interp.west, [curr.lat, curr.lng]];
+                    } else {
+                        currentSegment.push(interp.west);
+                        finalSegments.push(currentSegment);
+                        currentSegment = [interp.east, [curr.lat, curr.lng]];
+                    }
+                } else {
+                    currentSegment.push([curr.lat, curr.lng]);
+                }
+            }
+
+            if (currentSegment.length > 0) {
+                finalSegments.push(currentSegment);
+            }
+        });
+
+        return finalSegments;
     }
 
     /**
-     * Construye los polígonos del pasillo de totalidad/anularidad cortados limpiamente en el antimeridiano
+     * Construye un polígono de pasillo cerrado a partir de una sección norte y sur,
+     * recortándolo limpiamente al cruzar el antimeridiano.
      */
-    function buildCorridorPolygons(northCoords, southCoords, espenakLoop = null) {
+    function buildSingleCorridorPolygons(northCoords, southCoords) {
         if (!northCoords || !southCoords || northCoords.length < 2 || southCoords.length < 2) return [];
 
         const nFirst = northCoords[0], nLast = northCoords[northCoords.length - 1];
@@ -429,6 +492,119 @@ const EclipseMap2D = (() => {
         eastSegs.forEach(seg => { if (seg.length >= 3) polys.push(seg); });
         westSegs.forEach(seg => { if (seg.length >= 3) polys.push(seg); });
         return polys;
+    }
+
+    /**
+     * Construye los polígonos de relleno del pasillo de totalidad/anularidad.
+     * En caso de cruce/sobrevuelo polar (|lat| > 80° o corte en ±85.051129°), divide el pasillo
+     * en dos tramos independientes (tramo que desciende/entra al polo y tramo que asciende/sale del polo),
+     * cerrando cada uno contra el borde polar sin cruzarse entre sí (evitando la franja diagonal fantasma
+     * y trazos horizontales sobre el polo).
+     */
+    function buildCorridorPolygons(northCoords, southCoords, espenakLoop = null) {
+        if (!northCoords || !southCoords || northCoords.length < 2 || southCoords.length < 2) return [];
+
+        const hasPolarCrossing = (coords) => {
+            let hasExceed = false;
+            let hasJump = false;
+            let poleSign = -1;
+            for (let i = 0; i < coords.length; i++) {
+                const p = coords[i];
+                if (Math.abs(p.lat) > 85.0) {
+                    hasExceed = true;
+                    poleSign = p.lat < 0 ? -1 : 1;
+                }
+                if (i > 0) {
+                    const prev = coords[i - 1];
+                    const dLng = Math.abs(p.lng != null ? p.lng : p.lon - (prev.lng != null ? prev.lng : prev.lon));
+                    if ((Math.abs(p.lat) > 80 || Math.abs(prev.lat) > 80) && dLng > 90 && (360 - dLng) > 90) {
+                        hasJump = true;
+                        poleSign = (p.lat + prev.lat) < 0 ? -1 : 1;
+                    }
+                }
+            }
+            return { isPolar: hasExceed || hasJump, poleSign };
+        };
+
+        const northPolar = hasPolarCrossing(northCoords);
+        const southPolar = hasPolarCrossing(southCoords);
+
+        if (!northPolar.isPolar && !southPolar.isPolar) {
+            return buildSingleCorridorPolygons(northCoords, southCoords);
+        }
+
+        const poleSign = northPolar.isPolar ? northPolar.poleSign : southPolar.poleSign;
+        const targetPoleLat = poleSign * MERCATOR_MAX_LAT;
+
+        // Función para recortar una línea al entrar o salir del límite polar de Mercator
+        const clipToPoleMercator = (coords) => {
+            const result = [];
+            for (let i = 0; i < coords.length; i++) {
+                const curr = coords[i];
+                const isInside = Math.abs(curr.lat) <= MERCATOR_MAX_LAT;
+                if (i === 0) {
+                    if (isInside) result.push(curr);
+                    continue;
+                }
+                const prev = coords[i - 1];
+                const wasInside = Math.abs(prev.lat) <= MERCATOR_MAX_LAT;
+
+                if (wasInside && isInside) {
+                    // También comprobar salto polar directo
+                    const dLng = Math.abs((curr.lng != null ? curr.lng : curr.lon) - (prev.lng != null ? prev.lng : prev.lon));
+                    if ((Math.abs(curr.lat) > 80 || Math.abs(prev.lat) > 80) && dLng > 90 && (360 - dLng) > 90) {
+                        // Salto polar entre dos puntos: marcar separación
+                        result.push({ lat: targetPoleLat, lng: prev.lng != null ? prev.lng : prev.lon, isPolarBreak: true });
+                        result.push({ lat: targetPoleLat, lng: curr.lng != null ? curr.lng : curr.lon, isPolarEntry: true });
+                    }
+                    result.push(curr);
+                } else if (wasInside && !isInside) {
+                    const frac = (targetPoleLat - prev.lat) / (curr.lat - prev.lat);
+                    let lngInt = (prev.lng != null ? prev.lng : prev.lon) + frac * ((curr.lng != null ? curr.lng : curr.lon) - (prev.lng != null ? prev.lng : prev.lon));
+                    if (lngInt > 180) lngInt -= 360;
+                    if (lngInt < -180) lngInt += 360;
+                    result.push({ lat: targetPoleLat, lng: lngInt, isPolarBreak: true });
+                } else if (!wasInside && isInside) {
+                    const frac = (targetPoleLat - prev.lat) / (curr.lat - prev.lat);
+                    let lngInt = (prev.lng != null ? prev.lng : prev.lon) + frac * ((curr.lng != null ? curr.lng : curr.lon) - (prev.lng != null ? prev.lng : prev.lon));
+                    if (lngInt > 180) lngInt -= 360;
+                    if (lngInt < -180) lngInt += 360;
+                    result.push({ lat: targetPoleLat, lng: lngInt, isPolarEntry: true });
+                    result.push(curr);
+                }
+            }
+            return result;
+        };
+
+        const clippedNorth = clipToPoleMercator(northCoords);
+        const clippedSouth = clipToPoleMercator(southCoords);
+
+        // Separar cada límite en dos ramas: tramo 1 (antes del polo) y tramo 2 (después del polo)
+        const breakNorthIdx = clippedNorth.findIndex(p => p.isPolarBreak);
+        const entryNorthIdx = clippedNorth.findIndex(p => p.isPolarEntry);
+        const breakSouthIdx = clippedSouth.findIndex(p => p.isPolarBreak);
+        const entrySouthIdx = clippedSouth.findIndex(p => p.isPolarEntry);
+
+        const northBranch1 = breakNorthIdx !== -1 ? clippedNorth.slice(0, breakNorthIdx + 1) : clippedNorth;
+        const northBranch2 = entryNorthIdx !== -1 ? clippedNorth.slice(entryNorthIdx) : [];
+        const southBranch1 = breakSouthIdx !== -1 ? clippedSouth.slice(0, breakSouthIdx + 1) : clippedSouth;
+        const southBranch2 = entrySouthIdx !== -1 ? clippedSouth.slice(entrySouthIdx) : [];
+
+        const allPolys = [];
+
+        // Generar Polígono de la Rama 1 (hacia el polo)
+        if (northBranch1.length >= 2 && southBranch1.length >= 2) {
+            const polys1 = buildSingleCorridorPolygons(northBranch1, southBranch1);
+            allPolys.push(...polys1);
+        }
+
+        // Generar Polígono de la Rama 2 (saliendo del polo)
+        if (northBranch2.length >= 2 && southBranch2.length >= 2) {
+            const polys2 = buildSingleCorridorPolygons(northBranch2, southBranch2);
+            allPolys.push(...polys2);
+        }
+
+        return allPolys.length > 0 ? allPolys : buildSingleCorridorPolygons(northCoords, southCoords);
     }
 
     /**
@@ -646,9 +822,7 @@ const EclipseMap2D = (() => {
 
         // 1. Pasillo sombreado de totalidad/anularidad (Polígonos cerrados en los extremos y cortados limpiamente en el antimeridiano)
         if (hasNorth && hasSouth) {
-            const corridorPolygons = (geom.corridorPolygons && geom.corridorPolygons.length > 0)
-                ? geom.corridorPolygons
-                : buildCorridorPolygons(geom.totNorthCoords, geom.totSouthCoords, geom.fullEspenakLoop);
+            const corridorPolygons = buildCorridorPolygons(geom.totNorthCoords, geom.totSouthCoords, geom.fullEspenakLoop);
             corridorPolygons.forEach(polyCoords => {
                 const poly = L.polygon(polyCoords, {
                     pane: 'corridorPane',
