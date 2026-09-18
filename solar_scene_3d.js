@@ -903,6 +903,7 @@ var constellationsGroup3D = null;
                 uVx: { value: new THREE.Vector3(1, 0, 0) },
                 uVy: { value: new THREE.Vector3(0, 1, 0) },
                 uShadowCenter: { value: new THREE.Vector2(0, 0) },
+                uRho1: { value: 1.0 },
                 uL1: { value: 0.53 },
                 uL2: { value: 0.008 },
                 uTanF1: { value: 0.0046 },
@@ -923,6 +924,7 @@ var constellationsGroup3D = null;
                 uniform vec3 uVx;
                 uniform vec3 uVy;
                 uniform vec2 uShadowCenter;
+                uniform float uRho1;
                 uniform float uL1;
                 uniform float uL2;
                 uniform float uTanF1;
@@ -932,36 +934,44 @@ var constellationsGroup3D = null;
                 varying vec3 vLocalPosition;
 
                 void main() {
-                    // 1. Solo en la cara diurna iluminada por el Sol
-                    float z_p = dot(vLocalPosition, uSunDir);
-                    if (z_p <= 0.0) {
-                        discard;
-                    }
-
-                    // 2. Coordenadas exactas en el plano fundamental Besseliano
+                    // 1. Coordenadas exactas en el plano fundamental Besseliano
                     float x_p = dot(vLocalPosition, uVx);
                     float y_p = dot(vLocalPosition, uVy);
 
+                    // Escala elipsoidal de Bessel (y1 = y / rho1) y condición exacta del terminador (zeta <= 0)
+                    float rho1 = max(0.001, uRho1);
+                    float y1 = y_p / rho1;
+                    float r1_sq = x_p * x_p + y1 * y1;
+
+                    // Descarte astronómico riguroso por cruce del terminador elipsoidal (zeta <= 0 ó z_p <= 0)
+                    float z_p = dot(vLocalPosition, uSunDir);
+                    if (z_p <= 0.0 || r1_sq >= 1.0) {
+                        discard;
+                    }
+
+                    float zeta = sqrt(max(0.0, 1.0 - r1_sq));
+
+                    // Distancia topocéntrica Besseliana al eje de la sombra con sección cónica elipsoidal
                     float dx = x_p - uShadowCenter.x;
-                    float dy = y_p - uShadowCenter.y;
+                    float dy = (y_p - uShadowCenter.y) / rho1;
                     float dist = sqrt(dx * dx + dy * dy);
 
-                    // Radios cónicos rigurosos: penumbra y umbra coherente con el trazado de límites
-                    float L1_z = max(0.001, uL1 - z_p * uTanF1);
-                    float L2_z = max(0.0001, abs(uL2));
+                    // Radios cónicos rigurosos con altura elipsoidal zeta
+                    float L1_z = max(0.001, uL1 - zeta * uTanF1);
+                    float L2_z = max(0.0001, abs(uL2 - zeta * uTanF2));
 
                     if (dist > L1_z) {
                         discard; // Fuera de la penumbra
                     }
 
-                    // 3. Gradiente penumbral físico difuso continuo
+                    // 2. Gradiente penumbral físico difuso continuo
                     float normDist = clamp((dist - L2_z) / max(0.0001, L1_z - L2_z), 0.0, 1.0);
                     float factor = 1.0 - normDist;
                     // Atenuación suave difusa
                     float penAlpha = pow(factor, 1.35) * 0.88;
                     vec3 penCol = vec3(0.02, 0.04, 0.09);
 
-                    // 4. Núcleo negro de totalidad / anularidad (Umbra / Antumbra)
+                    // 3. Núcleo negro de totalidad / anularidad (Umbra / Antumbra)
                     float alpha = 0.0;
                     vec3 col = penCol;
 
@@ -1265,51 +1275,55 @@ var constellationsGroup3D = null;
             return null;
         }
 
-        function createCorridorRibbonMesh(northCoords, southCoords, colorHex, radius = GROUND_OVERLAY_RADIUS, opacity = 0.18) {
+        function createCorridorRibbonMesh(northCoords, southCoords, colorHex, radius = GROUND_OVERLAY_RADIUS, opacity = 0.18, sunsetArc = null, sunriseArc = null) {
             if (!northCoords || !southCoords || northCoords.length < 2 || southCoords.length < 2) return null;
 
-            const tMin = Math.max(northCoords[0].t, southCoords[0].t);
-            const tMax = Math.min(northCoords[northCoords.length - 1].t, southCoords[southCoords.length - 1].t);
-            if (tMin >= tMax) return null;
+            const positions = [];
 
-            let northIdx = 0, southIdx = 0;
-            function interpolateAtT(coords, targetT, startIdx) {
-                let i = startIdx;
-                while (i < coords.length - 1 && coords[i + 1].t < targetT) {
-                    i++;
+            // 1. Sello 3D del extremo de amanecer (Sunrise Terminator Arc)
+            // sunriseArc recorre el terminador desde el inicio de southCoords hasta el inicio de northCoords
+            if (sunriseArc && sunriseArc.length >= 2) {
+                const vPivot = latLngToVector3(northCoords[0].lat, northCoords[0].lng != null ? northCoords[0].lng : northCoords[0].lon, radius);
+                for (let i = 0; i < sunriseArc.length - 1; i++) {
+                    const pA = sunriseArc[i];
+                    const pB = sunriseArc[i + 1];
+                    const vA = latLngToVector3(pA.lat, pA.lng != null ? pA.lng : pA.lon, radius);
+                    const vB = latLngToVector3(pB.lat, pB.lng != null ? pB.lng : pB.lon, radius);
+                    positions.push(vPivot.x, vPivot.y, vPivot.z);
+                    positions.push(vA.x, vA.y, vA.z);
+                    positions.push(vB.x, vB.y, vB.z);
                 }
-                if (i >= coords.length - 1) return { pt: coords[coords.length - 1], nextIdx: i };
+            }
+
+            // 2. Malla central del pasillo interpolada continuamente a lo largo de las trayectorias norte y sur
+            function sampleByFrac(coords, frac) {
+                const idxF = frac * (coords.length - 1);
+                const i = Math.min(Math.floor(idxF), coords.length - 2);
+                const f = idxF - i;
                 const p0 = coords[i];
                 const p1 = coords[i + 1];
-                const dtRange = p1.t - p0.t;
-                const frac = dtRange !== 0 ? (targetT - p0.t) / dtRange : 0;
-                const lat0 = p0.lat, lat1 = p1.lat;
                 let lng0 = p0.lng != null ? p0.lng : p0.lon;
                 let lng1 = p1.lng != null ? p1.lng : p1.lon;
                 let dLng = lng1 - lng0;
                 if (dLng > 180) dLng -= 360;
                 if (dLng < -180) dLng += 360;
-                let lng = lng0 + frac * dLng;
+                let lng = lng0 + f * dLng;
                 if (lng > 180) lng -= 360;
                 if (lng < -180) lng += 360;
-                const lat = lat0 + frac * (lat1 - lat0);
-                return { pt: { lat, lng }, nextIdx: i };
+                const lat = p0.lat + f * (p1.lat - p0.lat);
+                return { lat, lng };
             }
 
-            const steps = 400;
-            const dt = (tMax - tMin) / steps;
-            const positions = [];
+            const steps = Math.max(northCoords.length, southCoords.length, 400);
             let prevN = null, prevS = null;
 
             for (let step = 0; step <= steps; step++) {
-                const t = tMin + step * dt;
-                const resN = interpolateAtT(northCoords, t, northIdx);
-                const resS = interpolateAtT(southCoords, t, southIdx);
-                northIdx = resN.nextIdx;
-                southIdx = resS.nextIdx;
+                const frac = step / steps;
+                const pN = sampleByFrac(northCoords, frac);
+                const pS = sampleByFrac(southCoords, frac);
 
-                const vN = latLngToVector3(resN.pt.lat, resN.pt.lng, radius);
-                const vS = latLngToVector3(resS.pt.lat, resS.pt.lng, radius);
+                const vN = latLngToVector3(pN.lat, pN.lng, radius);
+                const vS = latLngToVector3(pS.lat, pS.lng, radius);
 
                 if (prevN && prevS) {
                     const dN = prevN.distanceTo(vN);
@@ -1330,6 +1344,22 @@ var constellationsGroup3D = null;
                 }
                 prevN = vN;
                 prevS = vS;
+            }
+
+            // 3. Sello 3D del extremo de atardecer (Sunset Terminator Arc)
+            // sunsetArc recorre el terminador desde el final de northCoords hasta el final de southCoords
+            if (sunsetArc && sunsetArc.length >= 2) {
+                const lastS = southCoords[southCoords.length - 1];
+                const vPivot = latLngToVector3(lastS.lat, lastS.lng != null ? lastS.lng : lastS.lon, radius);
+                for (let i = 0; i < sunsetArc.length - 1; i++) {
+                    const pA = sunsetArc[i];
+                    const pB = sunsetArc[i + 1];
+                    const vA = latLngToVector3(pA.lat, pA.lng != null ? pA.lng : pA.lon, radius);
+                    const vB = latLngToVector3(pB.lat, pB.lng != null ? pB.lng : pB.lon, radius);
+                    positions.push(vPivot.x, vPivot.y, vPivot.z);
+                    positions.push(vA.x, vA.y, vA.z);
+                    positions.push(vB.x, vB.y, vB.z);
+                }
             }
 
             if (positions.length > 0) {
@@ -1467,7 +1497,15 @@ var constellationsGroup3D = null;
             if (isCentral && showCorridorShade) {
                 if (data.totNorthCoords && data.totNorthCoords.length > 1 &&
                     data.totSouthCoords && data.totSouthCoords.length > 1) {
-                    totalityCorridorMesh = createCorridorRibbonMesh(data.totNorthCoords, data.totSouthCoords, corridorColor, GROUND_OVERLAY_RADIUS, 0.18);
+                    totalityCorridorMesh = createCorridorRibbonMesh(
+                        data.totNorthCoords,
+                        data.totSouthCoords,
+                        corridorColor,
+                        GROUND_OVERLAY_RADIUS,
+                        0.18,
+                        data.sunsetArc,
+                        data.sunriseArc
+                    );
                     if (totalityCorridorMesh) {
                         earthGroup.add(totalityCorridorMesh);
                     }
@@ -1913,10 +1951,15 @@ var constellationsGroup3D = null;
             // 6. Órbita Lunar sincronizada arriba
 
             // Enviar uniforms exactos al Shader GPU en el marco canónico
+            const dRadAtT = ((e.d0 || 0) + (e.d1 || 0)*t + (e.d2 || 0)*t*t) * Math.PI / 180;
+            const cosDatT = Math.cos(dRadAtT);
+            const rho1AtT = Math.sqrt(Math.max(0.001, 1.0 - 0.006694385 * cosDatT * cosDatT));
+
             shadowShaderMaterial.uniforms.uSunDir.value.copy(wCanon);
             shadowShaderMaterial.uniforms.uVx.value.copy(uCanon);
             shadowShaderMaterial.uniforms.uVy.value.copy(vCanon);
             shadowShaderMaterial.uniforms.uShadowCenter.value.set(shadowCenterX, shadowCenterY);
+            shadowShaderMaterial.uniforms.uRho1.value = rho1AtT;
             shadowShaderMaterial.uniforms.uL1.value = l1;
             shadowShaderMaterial.uniforms.uL2.value = l2;
             shadowShaderMaterial.uniforms.uTanF1.value = e.tan_f1 || 0.0046;
