@@ -1442,7 +1442,6 @@ var constellationsGroup3D = null;
             if (totalityNorthLine) { dispose3DObject(totalityNorthLine); totalityNorthLine = null; }
             if (totalitySouthLine) { dispose3DObject(totalitySouthLine); totalitySouthLine = null; }
             if (totalityCorridorMesh) { dispose3DObject(totalityCorridorMesh); totalityCorridorMesh = null; }
-            if (umbraMesh3D) { dispose3DObject(umbraMesh3D); umbraMesh3D = null; }
             if (isomagnitudesGroup) { dispose3DObject(isomagnitudesGroup); isomagnitudesGroup = null; }
             if (utLinesGroup) { dispose3DObject(utLinesGroup); utLinesGroup = null; }
 
@@ -1612,12 +1611,6 @@ var constellationsGroup3D = null;
         let _sceneActiveContactRowId = null;
 
         function updateUmbraMesh3D(eclipse, t, isAnnular) {
-            const showTotalityBand = getDOM('chk-show-totality')?.checked;
-            if (showTotalityBand === false) {
-                if (umbraMesh3D) umbraMesh3D.visible = false;
-                return;
-            }
-
             let poly = null;
             if (typeof computeUmbraPolygon === 'function') {
                 poly = computeUmbraPolygon(eclipse, t);

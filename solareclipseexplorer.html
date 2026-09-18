@@ -4131,17 +4131,26 @@
         });
 
         getDOM('chk-show-center-line')?.addEventListener('change', () => {
-            if (currentEclipse) drawShadowPath(currentEclipse);
+            if (currentEclipse) {
+                drawShadowPath(currentEclipse);
+                updateShadowAtTime(simCurrentT);
+            }
             requestRender();
         });
 
         getDOM('chk-show-totality')?.addEventListener('change', () => {
-            if (currentEclipse) drawShadowPath(currentEclipse);
+            if (currentEclipse) {
+                drawShadowPath(currentEclipse);
+                updateShadowAtTime(simCurrentT);
+            }
             requestRender();
         });
 
         getDOM('chk-show-corridor-shade')?.addEventListener('change', () => {
-            if (currentEclipse) drawShadowPath(currentEclipse);
+            if (currentEclipse) {
+                drawShadowPath(currentEclipse);
+                updateShadowAtTime(simCurrentT);
+            }
             requestRender();
         });
 
@@ -4161,13 +4170,17 @@
 
         chkIsomagnitudes?.addEventListener('change', () => {
             updateLabelsCheckboxState();
-            if (currentEclipse) drawShadowPath(currentEclipse);
+            if (currentEclipse) {
+                drawShadowPath(currentEclipse);
+                updateShadowAtTime(simCurrentT);
+            }
             requestRender();
         });
 
         chkLabels?.addEventListener('change', () => {
             if (currentEclipse) {
                 drawShadowPath(currentEclipse);
+                updateShadowAtTime(simCurrentT);
             }
             requestRender();
         });
