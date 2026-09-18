@@ -593,7 +593,12 @@ var DEG = 180 / Math.PI;
                             const edge = getEdgeIntersection(prev, pt, getPointFn);
                             if (edge) {
                                 const latLng = besselianXYToLatLng(eclipse, edge.t, edge.x, edge.y);
-                                if (latLng) coords.push(latLng);
+                                if (latLng) {
+                                    latLng.t = edge.t;
+                                    latLng.x = edge.x;
+                                    latLng.y = edge.y;
+                                    coords.push(latLng);
+                                }
                             }
                         }
                         const latLng = besselianXYToLatLng(eclipse, t, pt.x, pt.y);
@@ -602,7 +607,12 @@ var DEG = 180 / Math.PI;
                         const edge = getEdgeIntersection(prev, pt, getPointFn);
                         if (edge) {
                             const latLng = besselianXYToLatLng(eclipse, edge.t, edge.x, edge.y);
-                            if (latLng) coords.push(latLng);
+                            if (latLng) {
+                                latLng.t = edge.t;
+                                latLng.x = edge.x;
+                                latLng.y = edge.y;
+                                coords.push(latLng);
+                            }
                         }
                     }
                     prev = pt;
@@ -627,15 +637,13 @@ var DEG = 180 / Math.PI;
             let sunriseArc = [];
 
             if (isCentral && centerCoords.length >= 2) {
-                const tRise = centerCoords[0].t;
-                const tSet = centerCoords[centerCoords.length - 1].t;
+                const getRho1 = (tVal) => {
+                    const d = ((eclipse.d0 || 0) + (eclipse.d1 || 0)*tVal + (eclipse.d2 || 0)*tVal*tVal) * Math.PI / 180;
+                    const cosD = Math.cos(d);
+                    return Math.sqrt(1.0 - 0.006694385 * cosD * cosD);
+                };
 
-                const sunsetInfo = computeTerminatorIntersectionArc(eclipse, tSet, 8);
-                const sunriseInfo = computeTerminatorIntersectionArc(eclipse, tRise, 8);
-                sunsetArc = sunsetInfo.arc;
-                sunriseArc = sunriseInfo.arc.slice().reverse(); // de Sur a Norte para cierre del bucle
-
-                const rawNorth = computeTrajectoryWithExactBounds(t => {
+                const pointAtNorth = (t) => {
                     const x = (eclipse.x0 || 0) + (eclipse.x1 || 0)*t + (eclipse.x2 || 0)*t*t + (eclipse.x3 || 0)*t*t*t;
                     const y = (eclipse.y0 || 0) + (eclipse.y1 || 0)*t + (eclipse.y2 || 0)*t*t + (eclipse.y3 || 0)*t*t*t;
                     const dx = (eclipse.x1 || 0) + 2*(eclipse.x2 || 0)*t + 3*(eclipse.x3 || 0)*t*t;
@@ -645,9 +653,9 @@ var DEG = 180 / Math.PI;
                     const vlen = Math.hypot(dx, dy) || 1;
                     const px = x + l2 * (-dy / vlen), py = y + l2 * (dx / vlen);
                     return { x: px, y: py, r2: getR1Sq(t, px, py), t };
-                });
+                };
 
-                const rawSouth = computeTrajectoryWithExactBounds(t => {
+                const pointAtSouth = (t) => {
                     const x = (eclipse.x0 || 0) + (eclipse.x1 || 0)*t + (eclipse.x2 || 0)*t*t + (eclipse.x3 || 0)*t*t*t;
                     const y = (eclipse.y0 || 0) + (eclipse.y1 || 0)*t + (eclipse.y2 || 0)*t*t + (eclipse.y3 || 0)*t*t*t;
                     const dx = (eclipse.x1 || 0) + 2*(eclipse.x2 || 0)*t + 3*(eclipse.x3 || 0)*t*t;
@@ -657,23 +665,51 @@ var DEG = 180 / Math.PI;
                     const vlen = Math.hypot(dx, dy) || 1;
                     const px = x - l2 * (-dy / vlen), py = y - l2 * (dx / vlen);
                     return { x: px, y: py, r2: getR1Sq(t, px, py), t };
-                });
+                };
 
-                // Acoplamiento estricto a la ventana rectora [tRise, tSet] delimitada por el terminador
-                const filteredNorth = rawNorth.filter(p => p.t >= tRise && p.t <= tSet);
-                const filteredSouth = rawSouth.filter(p => p.t >= tRise && p.t <= tSet);
+                const rawNorth = computeTrajectoryWithExactBounds(pointAtNorth);
+                const rawSouth = computeTrajectoryWithExactBounds(pointAtSouth);
 
-                totNorthCoords = [
-                    sunriseInfo.ptNorth,
-                    ...filteredNorth,
-                    sunsetInfo.ptNorth
-                ];
+                totNorthCoords = rawNorth;
+                totSouthCoords = rawSouth;
 
-                totSouthCoords = [
-                    sunriseInfo.ptSouth,
-                    ...filteredSouth,
-                    sunsetInfo.ptSouth
-                ];
+                // Cálculo astronómico riguroso del arco del terminador (zeta = 0) entre límites
+                const buildTerminatorArc = (pA, pB, pointAtA, pointAtB, numSteps = 8) => {
+                    if (!pA || !pB || pA.t == null || pB.t == null) return [];
+                    const pA_xy = pointAtA(pA.t);
+                    const pB_xy = pointAtB(pB.t);
+                    if (!pA_xy || !pB_xy) return [];
+                    const rho1A = getRho1(pA.t);
+                    const rho1B = getRho1(pB.t);
+                    let phiA = Math.atan2(pA_xy.y / rho1A, pA_xy.x);
+                    let phiB = Math.atan2(pB_xy.y / rho1B, pB_xy.x);
+                    let dPhi = phiB - phiA;
+                    while (dPhi > Math.PI) dPhi -= 2 * Math.PI;
+                    while (dPhi < -Math.PI) dPhi += 2 * Math.PI;
+
+                    const arc = [];
+                    for (let i = 0; i <= numSteps; i++) {
+                        const frac = i / numSteps;
+                        const t = pA.t + frac * (pB.t - pA.t);
+                        const phi = phiA + frac * dPhi;
+                        const rho1 = getRho1(t);
+                        const x = Math.cos(phi);
+                        const y = Math.sin(phi) * rho1;
+                        const pt = besselianXYToLatLng(eclipse, t, x, y);
+                        if (pt) {
+                            pt.t = t;
+                            arc.push(pt);
+                        }
+                    }
+                    return arc;
+                };
+
+                if (rawNorth.length >= 2 && rawSouth.length >= 2) {
+                    const nFirst = rawNorth[0], nLast = rawNorth[rawNorth.length - 1];
+                    const sFirst = rawSouth[0], sLast = rawSouth[rawSouth.length - 1];
+                    sunsetArc = buildTerminatorArc(nLast, sLast, pointAtNorth, pointAtSouth, 8);
+                    sunriseArc = buildTerminatorArc(sFirst, nFirst, pointAtSouth, pointAtNorth, 8);
+                }
             }
 
             // 3. ISOMAGNITUDES Opcionales (Curvas de Magnitud de Eclipse constante)
