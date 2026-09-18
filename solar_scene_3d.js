@@ -1275,15 +1275,15 @@ var constellationsGroup3D = null;
             const positions = [];
 
             // 1. Sello 3D del extremo de amanecer (Sunrise Terminator Arc)
-            // sunriseArc recorre el terminador desde el inicio de southCoords hasta el inicio de northCoords
             if (sunriseArc && sunriseArc.length >= 2) {
-                const vPivot = latLngToVector3(northCoords[0].lat, northCoords[0].lng != null ? northCoords[0].lng : northCoords[0].lon, radius);
+                const vSouthStart = latLngToVector3(southCoords[0].lat, southCoords[0].lng != null ? southCoords[0].lng : southCoords[0].lon, radius);
+                const vNorthStart = latLngToVector3(northCoords[0].lat, northCoords[0].lng != null ? northCoords[0].lng : northCoords[0].lon, radius);
+                const vMidStart = new THREE.Vector3().addVectors(vSouthStart, vNorthStart).multiplyScalar(0.5).normalize().multiplyScalar(radius);
+
                 for (let i = 0; i < sunriseArc.length - 1; i++) {
-                    const pA = sunriseArc[i];
-                    const pB = sunriseArc[i + 1];
-                    const vA = latLngToVector3(pA.lat, pA.lng != null ? pA.lng : pA.lon, radius);
-                    const vB = latLngToVector3(pB.lat, pB.lng != null ? pB.lng : pB.lon, radius);
-                    positions.push(vPivot.x, vPivot.y, vPivot.z);
+                    const vA = latLngToVector3(sunriseArc[i].lat, sunriseArc[i].lng != null ? sunriseArc[i].lng : sunriseArc[i].lon, radius);
+                    const vB = latLngToVector3(sunriseArc[i + 1].lat, sunriseArc[i + 1].lng != null ? sunriseArc[i + 1].lng : sunriseArc[i + 1].lon, radius);
+                    positions.push(vMidStart.x, vMidStart.y, vMidStart.z);
                     positions.push(vA.x, vA.y, vA.z);
                     positions.push(vB.x, vB.y, vB.z);
                 }
@@ -1341,18 +1341,19 @@ var constellationsGroup3D = null;
             }
 
             // 3. Sello 3D del extremo de atardecer (Sunset Terminator Arc)
-            // sunsetArc recorre el terminador desde el final de northCoords hasta el final de southCoords
             if (sunsetArc && sunsetArc.length >= 2) {
+                const lastN = northCoords[northCoords.length - 1];
                 const lastS = southCoords[southCoords.length - 1];
-                const vPivot = latLngToVector3(lastS.lat, lastS.lng != null ? lastS.lng : lastS.lon, radius);
+                const vNorthEnd = latLngToVector3(lastN.lat, lastN.lng != null ? lastN.lng : lastN.lon, radius);
+                const vSouthEnd = latLngToVector3(lastS.lat, lastS.lng != null ? lastS.lng : lastS.lon, radius);
+                const vMidEnd = new THREE.Vector3().addVectors(vNorthEnd, vSouthEnd).multiplyScalar(0.5).normalize().multiplyScalar(radius);
+
                 for (let i = 0; i < sunsetArc.length - 1; i++) {
-                    const pA = sunsetArc[i];
-                    const pB = sunsetArc[i + 1];
-                    const vA = latLngToVector3(pA.lat, pA.lng != null ? pA.lng : pA.lon, radius);
-                    const vB = latLngToVector3(pB.lat, pB.lng != null ? pB.lng : pB.lon, radius);
-                    positions.push(vPivot.x, vPivot.y, vPivot.z);
-                    positions.push(vA.x, vA.y, vA.z);
+                    const vA = latLngToVector3(sunsetArc[i].lat, sunsetArc[i].lng != null ? sunsetArc[i].lng : sunsetArc[i].lon, radius);
+                    const vB = latLngToVector3(sunsetArc[i + 1].lat, sunsetArc[i + 1].lng != null ? sunsetArc[i + 1].lng : sunsetArc[i + 1].lon, radius);
+                    positions.push(vMidEnd.x, vMidEnd.y, vMidEnd.z);
                     positions.push(vB.x, vB.y, vB.z);
+                    positions.push(vA.x, vA.y, vA.z);
                 }
             }
 
