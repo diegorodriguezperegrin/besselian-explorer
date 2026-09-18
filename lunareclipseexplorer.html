@@ -208,84 +208,6 @@
             border: 1px solid var(--border-color);
         }
 
-        /* Indicador Flotante EN VIVO con LED */
-        .live-indicator-badge {
-            position: absolute;
-            top: 15px;
-            right: 375px;
-            z-index: 35;
-            background: rgba(15, 23, 42, 0.85);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(239, 68, 68, 0.4);
-            border-radius: 20px;
-            padding: 5px 12px;
-            display: none;
-            align-items: center;
-            gap: 7px;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5), 0 0 10px rgba(239, 68, 68, 0.2);
-            pointer-events: auto;
-            cursor: pointer;
-            transition: right 0.25s ease, opacity 0.2s ease, border-color 0.2s ease;
-            user-select: none;
-        }
-
-        .live-indicator-badge.active {
-            display: flex;
-        }
-
-        .live-indicator-badge.panel-collapsed {
-            right: 15px;
-        }
-
-        @keyframes blinkLiveBadge {
-            0%, 100% { border-color: rgba(239, 68, 68, 0.35); box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5), 0 0 8px rgba(239, 68, 68, 0.15); }
-            50% { border-color: rgba(239, 68, 68, 0.75); box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5), 0 0 16px rgba(239, 68, 68, 0.45); }
-        }
-
-        .live-indicator-badge.active {
-            animation: blinkLiveBadge 2s infinite ease-in-out;
-        }
-
-        .live-led {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #ef4444;
-            box-shadow: 0 0 8px #ef4444;
-            flex-shrink: 0;
-            animation: blinkLiveLed 1.2s infinite ease-in-out;
-        }
-
-        @keyframes blinkLiveLed {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.35; transform: scale(0.85); }
-        }
-
-        .live-text {
-            font-family: var(--font-heading);
-            font-size: 0.74rem;
-            font-weight: 700;
-            color: #ef4444;
-            letter-spacing: 0.8px;
-            text-transform: uppercase;
-            animation: blinkLiveText 1.2s infinite ease-in-out;
-        }
-
-        @keyframes blinkLiveText {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-
-        @media (max-width: 900px) {
-            .live-indicator-badge {
-                top: 56px;
-                right: 12px !important;
-                padding: 4px 10px;
-            }
-            .live-text {
-                font-size: 0.70rem;
-            }
-        }
     </style>
 <body>
     <!-- Precarga nativa decodificada en paralelo para renderizado instantáneo sin boceto en fotograma 1 -->
@@ -649,7 +571,13 @@
 
         <!-- Fila Inferior: Botonera centrada y Selector de Velocidad -->
         <div class="playback-dock-bottom">
-            <div class="playback-dock-bottom-left"></div>
+            <div class="playback-dock-bottom-left">
+                <span id="speed-indicator-badge" style="font-family: var(--font-mono); font-size: 0.78rem; color: var(--accent-blue); font-weight: 600; padding: 0 4px; min-width: 28px; display: inline-block;">1x</span>
+                <label class="checkbox-row" style="margin: 0; font-size: 0.74rem; white-space: nowrap; gap: 5px;" title="Sincronizar simulación en tiempo real con el reloj de la máquina">
+                    <input type="checkbox" id="chk-live-mode" onchange="toggleLiveModeCheckbox(this.checked)">
+                    <span>En vivo</span>
+                </label>
+            </div>
             <div class="player-ctrls-compact">
                 <button class="ctrl-btn" id="btn-rewind" onclick="changeSpeedStep(-1)" title="Retroceder / Aumentar velocidad atrás (1x a 1200x)"><i class="fa-solid fa-backward" aria-hidden="true"></i></button>
                 <button class="ctrl-btn" id="btn-prev-contact" onclick="jumpContactStep(-1)" title="Momento anterior del eclipse (P1, U1, Máx, U4, P4)"><i class="fa-solid fa-step-backward" aria-hidden="true"></i></button>
@@ -657,12 +585,7 @@
                 <button class="ctrl-btn" id="btn-next-contact" onclick="jumpContactStep(1)" title="Momento siguiente del eclipse (P1, U1, Máx, U4, P4)"><i class="fa-solid fa-step-forward" aria-hidden="true"></i></button>
                 <button class="ctrl-btn" id="btn-fast-forward" onclick="changeSpeedStep(1)" title="Avanzar / Aumentar velocidad adelante (1x a 1200x)"><i class="fa-solid fa-forward" aria-hidden="true"></i></button>
             </div>
-            <div class="playback-dock-bottom-right">
-                <label class="checkbox-row" style="margin: 0; font-size: 0.74rem; white-space: nowrap; gap: 5px;">
-                    <input type="checkbox" id="chk-live-mode" onchange="toggleLiveModeCheckbox(this.checked)">
-                    <span>En vivo</span>
-                </label>
-            </div>
+            <div class="playback-dock-bottom-right"></div>
         </div>
     </aside>
 
@@ -1184,6 +1107,9 @@ END:VCALENDAR`;
 
             document.getElementById('time-utc-text').textContent = utcTimeStr;
             document.getElementById('time-local-text').textContent = `${localTimeStr}${tzAbbr ? ' ' + tzAbbr : ''}`;
+
+            const speedBadge = document.getElementById('speed-indicator-badge');
+            if (speedBadge) speedBadge.textContent = isLiveMode ? '1x' : `${simSpeedMultiplier}x`;
 
             const geo = getMoonShadowCoordsAtTime(simCurrentTimeMs);
             const phaseLabel = document.getElementById('player-phase-label');
