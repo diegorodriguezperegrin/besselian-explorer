@@ -971,22 +971,15 @@ var constellationsGroup3D = null;
                     float penAlpha = pow(factor, 1.35) * 0.88;
                     vec3 penCol = vec3(0.02, 0.04, 0.09);
 
-                    // 3. Núcleo negro de totalidad / anularidad (Umbra / Antumbra)
-                    float alpha = 0.0;
-                    vec3 col = penCol;
-
+                    // 3. Penumbra exterior difusa: el núcleo de totalidad/anularidad (dist <= L2_z)
+                    // se delega a la malla vectorial 3D unificada (umbraMesh3D) dentro de earthGroup
                     if (dist <= L2_z) {
-                        float umbFactor = clamp(1.0 - (dist / max(0.0001, L2_z)), 0.0, 1.0);
-                        alpha = mix(0.88, 0.98, smoothstep(0.0, 0.25, umbFactor));
-                        col = vec3(0.0, 0.0, 0.0);
+                        discard;
                     } else if (uShowPenumbra > 0.5) {
-                        alpha = penAlpha;
-                        col = penCol;
+                        gl_FragColor = vec4(penCol, penAlpha);
                     } else {
                         discard;
                     }
-
-                    gl_FragColor = vec4(col, alpha);
                 }
             `,
             side: THREE.FrontSide
@@ -1091,6 +1084,7 @@ var constellationsGroup3D = null;
         var totalityNorthLine = null;
         var totalitySouthLine = null;
         var totalityCorridorMesh = null;
+        var umbraMesh3D = null;
         var isomagnitudesGroup = null;
         var graticuleGroup = null;
         var moonPolarAxisGroup = null;
@@ -1448,6 +1442,7 @@ var constellationsGroup3D = null;
             if (totalityNorthLine) { dispose3DObject(totalityNorthLine); totalityNorthLine = null; }
             if (totalitySouthLine) { dispose3DObject(totalitySouthLine); totalitySouthLine = null; }
             if (totalityCorridorMesh) { dispose3DObject(totalityCorridorMesh); totalityCorridorMesh = null; }
+            if (umbraMesh3D) { dispose3DObject(umbraMesh3D); umbraMesh3D = null; }
             if (isomagnitudesGroup) { dispose3DObject(isomagnitudesGroup); isomagnitudesGroup = null; }
             if (utLinesGroup) { dispose3DObject(utLinesGroup); utLinesGroup = null; }
 
@@ -1615,6 +1610,98 @@ var constellationsGroup3D = null;
         let _lastSliderVal = -999999;
         let _lastOrbitEclipseCat = null;
         let _sceneActiveContactRowId = null;
+
+        function updateUmbraMesh3D(eclipse, t, isAnnular) {
+            const showTotalityBand = getDOM('chk-show-totality')?.checked;
+            if (showTotalityBand === false) {
+                if (umbraMesh3D) umbraMesh3D.visible = false;
+                return;
+            }
+
+            let poly = null;
+            if (typeof computeUmbraPolygon === 'function') {
+                poly = computeUmbraPolygon(eclipse, t);
+            } else if (typeof window !== 'undefined' && typeof window.computeUmbraPolygon === 'function') {
+                poly = window.computeUmbraPolygon(eclipse, t);
+            } else if (typeof BesselianEngine !== 'undefined' && typeof BesselianEngine.computeUmbraPolygon === 'function') {
+                poly = BesselianEngine.computeUmbraPolygon(eclipse, t);
+            } else if (typeof window !== 'undefined' && window.BesselianEngine && typeof window.BesselianEngine.computeUmbraPolygon === 'function') {
+                poly = window.BesselianEngine.computeUmbraPolygon(eclipse, t);
+            }
+
+            if (!poly || poly.length < 3) {
+                if (umbraMesh3D) umbraMesh3D.visible = false;
+                return;
+            }
+
+            // Mapear los vértices al espacio tridimensional del cuerpo de la Tierra (local a earthGroup)
+            const pts3D = [];
+            let sumX = 0, sumY = 0, sumZ = 0;
+            for (let i = 0; i < poly.length; i++) {
+                const pt = poly[i];
+                const v = latLngToVector3(pt.lat, pt.lng != null ? pt.lng : pt.lon, GROUND_OVERLAY_RADIUS);
+                pts3D.push(v);
+                sumX += v.x;
+                sumY += v.y;
+                sumZ += v.z;
+            }
+
+            // Centroide esférico normalizado y proyectado sobre la cota rasante
+            const cLen = Math.sqrt(sumX * sumX + sumY * sumY + sumZ * sumZ) || 1.0;
+            const centroid = new THREE.Vector3(
+                (sumX / cLen) * GROUND_OVERLAY_RADIUS,
+                (sumY / cLen) * GROUND_OVERLAY_RADIUS,
+                (sumZ / cLen) * GROUND_OVERLAY_RADIUS
+            );
+
+            // Triangulación radial en abanico (Triangle Fan) desde el centroide a los vértices del polígono
+            const positions = [];
+            const n = pts3D.length;
+            for (let i = 0; i < n; i++) {
+                const pA = pts3D[i];
+                const pB = pts3D[(i + 1) % n];
+
+                positions.push(centroid.x, centroid.y, centroid.z);
+                positions.push(pA.x, pA.y, pA.z);
+                positions.push(pB.x, pB.y, pB.z);
+            }
+
+            const umbraColor = isAnnular ? 0x261a0d : 0x000000;
+            const umbraOpacity = isAnnular ? 0.85 : 0.94;
+
+            if (!umbraMesh3D) {
+                const geometry = new THREE.BufferGeometry();
+                geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+                geometry.computeVertexNormals();
+
+                const material = new THREE.MeshBasicMaterial({
+                    color: umbraColor,
+                    transparent: true,
+                    opacity: umbraOpacity,
+                    side: THREE.DoubleSide,
+                    depthWrite: false,
+                    depthTest: true,
+                    polygonOffset: true,
+                    polygonOffsetFactor: -1,
+                    polygonOffsetUnits: -2
+                });
+
+                umbraMesh3D = new THREE.Mesh(geometry, material);
+                umbraMesh3D.renderOrder = 34; // Renderizado por encima de la franja estática (32) y por debajo de la línea central (35)
+                earthGroup.add(umbraMesh3D);
+            } else {
+                umbraMesh3D.visible = true;
+                umbraMesh3D.geometry.dispose();
+                umbraMesh3D.geometry = new THREE.BufferGeometry();
+                umbraMesh3D.geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+                umbraMesh3D.geometry.computeVertexNormals();
+                umbraMesh3D.material.color.setHex(umbraColor);
+                umbraMesh3D.material.opacity = umbraOpacity;
+                if (umbraMesh3D.parent !== earthGroup) {
+                    earthGroup.add(umbraMesh3D);
+                }
+            }
+        }
 
         function updateShadowAtTime(t) {
             if (!currentEclipse) return;
@@ -2162,6 +2249,16 @@ var constellationsGroup3D = null;
                 });
             }
 
+            // Actualizar malla vectorial de umbra 3D unificada sobre la superficie terrestre (earthGroup)
+            const typeCode = (e.eclipse_type || '').toUpperCase();
+            const isAnnular = typeCode.startsWith('A');
+            const isCentral = !typeCode.startsWith('P');
+            if (isCentral) {
+                updateUmbraMesh3D(e, t, isAnnular);
+            } else if (umbraMesh3D) {
+                umbraMesh3D.visible = false;
+            }
+
             needsRender = true;
         }
 
@@ -2230,6 +2327,7 @@ if (typeof window !== 'undefined') {
     window.pathLine = pathLine;
     window.totalityNorthLine = totalityNorthLine;
     window.totalitySouthLine = totalitySouthLine;
+    window.umbraMesh3D = umbraMesh3D;
     window.isomagnitudesGroup = isomagnitudesGroup;
     window.graticuleGroup = graticuleGroup;
     window.moonPolarAxisGroup = moonPolarAxisGroup;
@@ -2247,6 +2345,7 @@ if (typeof window !== 'undefined') {
         vector3ToLatLng,
         drawShadowPath,
         updateShadowAtTime,
+        updateUmbraMesh3D,
         updateMoonOrbit,
         updateGraticule,
         recenterEarth,
