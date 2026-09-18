@@ -943,9 +943,9 @@ var constellationsGroup3D = null;
                     float y1 = y_p / rho1;
                     float r1_sq = x_p * x_p + y1 * y1;
 
-                    // Descarte astronómico riguroso por cruce del terminador elipsoidal (zeta <= 0 ó z_p <= 0)
+                    // Descarte astronómico en el horizonte elipsoidal (permitir desvanecimiento continuo hasta el terminador real)
                     float z_p = dot(vLocalPosition, uSunDir);
-                    if (z_p <= 0.0 || r1_sq >= 1.0) {
+                    if (z_p < -0.015 || r1_sq >= 1.0) {
                         discard;
                     }
 
@@ -956,9 +956,9 @@ var constellationsGroup3D = null;
                     float dy = (y_p - uShadowCenter.y) / rho1;
                     float dist = sqrt(dx * dx + dy * dy);
 
-                    // Radios cónicos rigurosos con altura elipsoidal zeta
-                    float L1_z = max(0.001, uL1 - zeta * uTanF1);
-                    float L2_z = max(0.0001, abs(uL2 - zeta * uTanF2));
+                    // Radios cónicos rigurosos: conicidad umbral completa de Bessel (|uL2| - z_p * uTanF2)
+                    float L1_z = max(0.001, uL1 - z_p * uTanF1);
+                    float L2_z = max(0.0001, abs(uL2) - z_p * uTanF2);
 
                     if (dist > L1_z) {
                         discard; // Fuera de la penumbra
