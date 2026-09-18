@@ -391,13 +391,15 @@ const EclipseMap2D = (() => {
      * Construye un polígono de pasillo cerrado a partir de una sección norte y sur,
      * recortándolo limpiamente al cruzar el antimeridiano.
      */
-    function buildSingleCorridorPolygons(northCoords, southCoords) {
+    function buildSingleCorridorPolygons(northCoords, southCoords, customSunsetArc = null, customSunriseArc = null) {
         if (!northCoords || !southCoords || northCoords.length < 2 || southCoords.length < 2) return [];
 
         const nFirst = northCoords[0], nLast = northCoords[northCoords.length - 1];
         const sFirst = southCoords[0], sLast = southCoords[southCoords.length - 1];
 
-        const buildDirectTerminalArc = (pA, pB, numSteps = 4) => {
+        // Arco de corte en terminador: si no se provee arco astronómico exacto (ej. ramas polares),
+        // interpola a lo largo del arco geodésico continuo
+        const buildTerminalArc = (pA, pB, numSteps = 8) => {
             if (!pA || !pB) return [];
             const pAlon = pA.lng != null ? pA.lng : pA.lon;
             const pBlon = pB.lng != null ? pB.lng : pB.lon;
@@ -421,8 +423,12 @@ const EclipseMap2D = (() => {
             return arc;
         };
 
-        const sunsetArc = buildDirectTerminalArc(nLast, sLast);
-        const sunriseArc = buildDirectTerminalArc(sFirst, nFirst);
+        const sunsetArc = (customSunsetArc && customSunsetArc.length > 0)
+            ? customSunsetArc
+            : buildTerminalArc(nLast, sLast);
+        const sunriseArc = (customSunriseArc && customSunriseArc.length > 0)
+            ? customSunriseArc
+            : buildTerminalArc(sFirst, nFirst);
 
         const sunsetIntermediates = sunsetArc.length > 2 ? sunsetArc.slice(1, -1) : [];
         const sunriseIntermediates = sunriseArc.length > 2 ? sunriseArc.slice(1, -1) : [];
@@ -501,7 +507,7 @@ const EclipseMap2D = (() => {
      * cerrando cada uno contra el borde polar sin cruzarse entre sí (evitando la franja diagonal fantasma
      * y trazos horizontales sobre el polo).
      */
-    function buildCorridorPolygons(northCoords, southCoords, espenakLoop = null) {
+    function buildCorridorPolygons(northCoords, southCoords, espenakLoop = null, customSunsetArc = null, customSunriseArc = null, precomputedPolygons = null) {
         if (!northCoords || !southCoords || northCoords.length < 2 || southCoords.length < 2) return [];
 
         const hasPolarCrossing = (coords) => {
@@ -530,7 +536,10 @@ const EclipseMap2D = (() => {
         const southPolar = hasPolarCrossing(southCoords);
 
         if (!northPolar.isPolar && !southPolar.isPolar) {
-            return buildSingleCorridorPolygons(northCoords, southCoords);
+            if (precomputedPolygons && precomputedPolygons.length > 0) {
+                return precomputedPolygons;
+            }
+            return buildSingleCorridorPolygons(northCoords, southCoords, customSunsetArc, customSunriseArc);
         }
 
         const poleSign = northPolar.isPolar ? northPolar.poleSign : southPolar.poleSign;
@@ -594,17 +603,17 @@ const EclipseMap2D = (() => {
 
         // Generar Polígono de la Rama 1 (hacia el polo)
         if (northBranch1.length >= 2 && southBranch1.length >= 2) {
-            const polys1 = buildSingleCorridorPolygons(northBranch1, southBranch1);
+            const polys1 = buildSingleCorridorPolygons(northBranch1, southBranch1, null, customSunriseArc);
             allPolys.push(...polys1);
         }
 
         // Generar Polígono de la Rama 2 (saliendo del polo)
         if (northBranch2.length >= 2 && southBranch2.length >= 2) {
-            const polys2 = buildSingleCorridorPolygons(northBranch2, southBranch2);
+            const polys2 = buildSingleCorridorPolygons(northBranch2, southBranch2, customSunsetArc, null);
             allPolys.push(...polys2);
         }
 
-        return allPolys.length > 0 ? allPolys : buildSingleCorridorPolygons(northCoords, southCoords);
+        return allPolys.length > 0 ? allPolys : buildSingleCorridorPolygons(northCoords, southCoords, customSunsetArc, customSunriseArc);
     }
 
     /**
@@ -822,7 +831,14 @@ const EclipseMap2D = (() => {
 
         // 1. Pasillo sombreado de totalidad/anularidad (Polígonos cerrados en los extremos y cortados limpiamente en el antimeridiano)
         if (hasNorth && hasSouth) {
-            const corridorPolygons = buildCorridorPolygons(geom.totNorthCoords, geom.totSouthCoords, geom.fullEspenakLoop);
+            const corridorPolygons = buildCorridorPolygons(
+                geom.totNorthCoords,
+                geom.totSouthCoords,
+                geom.fullEspenakLoop,
+                geom.sunsetArc,
+                geom.sunriseArc,
+                geom.corridorPolygons
+            );
             corridorPolygons.forEach(polyCoords => {
                 const poly = L.polygon(polyCoords, {
                     pane: 'corridorPane',
