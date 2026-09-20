@@ -782,6 +782,11 @@
                     <input type="checkbox" id="chk-map-path-shade" checked onchange="EclipseMap2D.toggleLayer('shade', this.checked)">
                     <span>Franja de totalidad / anularidad</span>
                 </label>
+                <div style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 6px; margin-bottom: 2px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Navegación</div>
+                <label class="checkbox-row" id="lbl-auto-zoom-map">
+                    <input type="checkbox" id="chk-auto-zoom-map">
+                    <span>Zoom automático al cambiar de eclipse</span>
+                </label>
             </div>
         </div>
     </div>
@@ -868,11 +873,11 @@
                 </label>
             </div>
             <div class="player-ctrls-compact">
-                <button class="ctrl-btn" id="btn-rewind" onclick="changeSpeedStep(-1)" title="Reducir velocidad (1/2x a 1200x)" aria-label="Reducir velocidad"><i class="fa-solid fa-backward" aria-hidden="true"></i></button>
                 <button class="ctrl-btn" id="btn-prev-contact" onclick="jumpContactStep(-1)" title="Momento anterior del eclipse (C1, C2, Máx, C3, C4)" aria-label="Contacto anterior"><i class="fa-solid fa-step-backward" aria-hidden="true"></i></button>
+                <button class="ctrl-btn" id="btn-rewind" onclick="changeSpeedStep(-1)" title="Reducir velocidad (1/2x a 1200x)" aria-label="Reducir velocidad"><i class="fa-solid fa-backward" aria-hidden="true"></i></button>
                 <button class="ctrl-btn play-main" id="btn-play-pause" onclick="toggleSimulation()" title="Reproducir / Pausar" aria-label="Reproducir o pausar simulación"><i class="fa-solid fa-play" aria-hidden="true"></i></button>
-                <button class="ctrl-btn" id="btn-next-contact" onclick="jumpContactStep(1)" title="Momento siguiente del eclipse (C1, C2, Máx, C3, C4)" aria-label="Contacto siguiente"><i class="fa-solid fa-step-forward" aria-hidden="true"></i></button>
                 <button class="ctrl-btn" id="btn-fast-forward" onclick="changeSpeedStep(1)" title="Aumentar velocidad (1/2x a 1200x)" aria-label="Aumentar velocidad"><i class="fa-solid fa-forward" aria-hidden="true"></i></button>
+                <button class="ctrl-btn" id="btn-next-contact" onclick="jumpContactStep(1)" title="Momento siguiente del eclipse (C1, C2, Máx, C3, C4)" aria-label="Contacto siguiente"><i class="fa-solid fa-step-forward" aria-hidden="true"></i></button>
             </div>
             <div class="playback-dock-bottom-right">
                 <button type="button" class="ctrl-btn" id="btn-recenter" onclick="handleRecenterClick()" title="Centrar eclipse" style="width: 30px; height: 30px; padding: 0; border-radius: 7px;" aria-label="Centrar eclipse">
@@ -885,10 +890,10 @@
     <script src="baily_activity_log.js?v=20260916_v14"></script>
     <script src="route_director.js?v=20260916_v14"></script>
     <script src="lunar_limb_engine.js?v=20260916_v14"></script>
-    <script src="besselian_engine.js?v=20260916_v14"></script>
+    <script src="besselian_engine.js?v=20260920_v3"></script>
     <script src="celestial_sphere_3d.js?v=20260916_v14"></script>
-    <script src="solar_scene_3d.js?v=20260916_v14"></script>
-    <script src="eclipse_map_2d.js?v=20260916_v14"></script>
+    <script src="solar_scene_3d.js?v=20260920_v5"></script>
+    <script src="eclipse_map_2d.js?v=20260920_v3"></script>
     <script src="shared_ui_panels.js?v=20260916_v14"></script>
     <script>
         // RAD y DEG definidos en besselian_engine.js

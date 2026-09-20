@@ -964,18 +964,14 @@ var constellationsGroup3D = null;
                         discard; // Fuera de la penumbra
                     }
 
-                    // 2. Gradiente penumbral físico difuso continuo
-                    float normDist = clamp((dist - L2_z) / max(0.0001, L1_z - L2_z), 0.0, 1.0);
-                    float factor = 1.0 - normDist;
-                    // Atenuación suave difusa
-                    float penAlpha = pow(factor, 1.35) * 0.88;
-                    vec3 penCol = vec3(0.02, 0.04, 0.09);
-
-                    // 3. Penumbra exterior difusa: el núcleo de totalidad/anularidad (dist <= L2_z)
-                    // se delega a la malla vectorial 3D unificada (umbraMesh3D) dentro de earthGroup
-                    if (dist <= L2_z) {
-                        discard;
-                    } else if (uShowPenumbra > 0.5) {
+                    // 2. Gradiente penumbral físico difuso exterior exclusivo:
+                    // Si la opción de penumbra está apagada o estamos dentro del núcleo de la sombra (dist <= L2_z),
+                    // se descarta (discard). Toda la mancha negra de totalidad se renderiza exclusivamente por umbraMesh3D en earthGroup.
+                    if (uShowPenumbra > 0.5 && dist > L2_z) {
+                        float normDist = clamp((dist - L2_z) / max(0.0001, L1_z - L2_z), 0.0, 1.0);
+                        float factor = 1.0 - normDist;
+                        float penAlpha = pow(factor, 1.35) * 0.88;
+                        vec3 penCol = vec3(0.02, 0.04, 0.09);
                         gl_FragColor = vec4(penCol, penAlpha);
                     } else {
                         discard;
@@ -1289,7 +1285,7 @@ var constellationsGroup3D = null;
                 }
             }
 
-            // 2. Malla central del pasillo interpolada continuamente a lo largo de las trayectorias norte y sur
+            // 2. Malla del pasillo con subdivisión transversal y proyección a la superficie esférica
             function sampleByFrac(coords, frac) {
                 const idxF = frac * (coords.length - 1);
                 const i = Math.min(Math.floor(idxF), coords.length - 2);
@@ -1308,8 +1304,9 @@ var constellationsGroup3D = null;
                 return { lat, lng };
             }
 
-            const steps = Math.max(northCoords.length, southCoords.length, 400);
-            let prevN = null, prevS = null;
+            const steps = Math.max(northCoords.length, southCoords.length, 300);
+            const widthBands = 8; // Subdivisión transversal para adaptarse a la curvatura esférica
+            let prevRow = null;
 
             for (let step = 0; step <= steps; step++) {
                 const frac = step / steps;
@@ -1319,25 +1316,38 @@ var constellationsGroup3D = null;
                 const vN = latLngToVector3(pN.lat, pN.lng, radius);
                 const vS = latLngToVector3(pS.lat, pS.lng, radius);
 
-                if (prevN && prevS) {
-                    const dN = prevN.distanceTo(vN);
-                    const dS = prevS.distanceTo(vS);
-                    const dCross = vN.distanceTo(vS);
-                    // Comprobación geométrica 3D para evitar puentes espurios o discontinuidades
-                    if (dN < 15.0 && dS < 15.0 && dCross < 25.0) {
-                        // Triángulo 1: prevN -> prevS -> vN
-                        positions.push(prevN.x, prevN.y, prevN.z);
-                        positions.push(prevS.x, prevS.y, prevS.z);
-                        positions.push(vN.x, vN.y, vN.z);
+                // Generar fila de vértices interpolados sobre la esfera
+                const currentRow = [];
+                for (let b = 0; b <= widthBands; b++) {
+                    const wFrac = b / widthBands;
+                    // Interpolación esférica (Slerp) o lerp normalizado para abrazar la esfera
+                    const vInterp = new THREE.Vector3().lerpVectors(vN, vS, wFrac).normalize().multiplyScalar(radius);
+                    currentRow.push(vInterp);
+                }
 
-                        // Triángulo 2: prevS -> vS -> vN
-                        positions.push(prevS.x, prevS.y, prevS.z);
-                        positions.push(vS.x, vS.y, vS.z);
-                        positions.push(vN.x, vN.y, vN.z);
+                if (prevRow) {
+                    const dStep = prevRow[0].distanceTo(currentRow[0]);
+                    // Evitar saltos espurios de antimeridiano
+                    if (dStep < 45.0) {
+                        for (let b = 0; b < widthBands; b++) {
+                            const pA = prevRow[b];
+                            const pB = prevRow[b + 1];
+                            const pC = currentRow[b];
+                            const pD = currentRow[b + 1];
+
+                            // Triángulo 1: pA -> pC -> pB
+                            positions.push(pA.x, pA.y, pA.z);
+                            positions.push(pC.x, pC.y, pC.z);
+                            positions.push(pB.x, pB.y, pB.z);
+
+                            // Triángulo 2: pB -> pC -> pD
+                            positions.push(pB.x, pB.y, pB.z);
+                            positions.push(pC.x, pC.y, pC.z);
+                            positions.push(pD.x, pD.y, pD.z);
+                        }
                     }
                 }
-                prevN = vN;
-                prevS = vS;
+                prevRow = currentRow;
             }
 
             // 3. Sello 3D del extremo de atardecer (Sunset Terminator Arc)
@@ -1611,6 +1621,12 @@ var constellationsGroup3D = null;
         let _lastOrbitEclipseCat = null;
         let _sceneActiveContactRowId = null;
 
+        const _MAX_UMBRA_FAN_VERTICES = 512 * 3; // Hasta 512 triángulos subdivididos esféricamente
+        const _umbraPosArray = new Float32Array(_MAX_UMBRA_FAN_VERTICES * 3);
+        const _umbraPt3DPool = Array.from({ length: 128 }, () => new THREE.Vector3());
+        const _umbraMidPt3DPool = Array.from({ length: 128 }, () => new THREE.Vector3());
+        const _umbraCentroid = new THREE.Vector3();
+
         function updateUmbraMesh3D(eclipse, t, isAnnular) {
             let poly = null;
             if (typeof computeUmbraPolygon === 'function') {
@@ -1628,13 +1644,20 @@ var constellationsGroup3D = null;
                 return;
             }
 
+            const n = poly.length;
+            while (_umbraPt3DPool.length < n) {
+                _umbraPt3DPool.push(new THREE.Vector3());
+                _umbraMidPt3DPool.push(new THREE.Vector3());
+            }
+
             // Mapear los vértices al espacio tridimensional del cuerpo de la Tierra (local a earthGroup)
-            const pts3D = [];
             let sumX = 0, sumY = 0, sumZ = 0;
-            for (let i = 0; i < poly.length; i++) {
+            for (let i = 0; i < n; i++) {
                 const pt = poly[i];
-                const v = latLngToVector3(pt.lat, pt.lng != null ? pt.lng : pt.lon, GROUND_OVERLAY_RADIUS);
-                pts3D.push(v);
+                const lat = pt.lat;
+                const lon = pt.lng != null ? pt.lng : pt.lon;
+                const v = latLngToVector3(lat, lon, GROUND_OVERLAY_RADIUS);
+                _umbraPt3DPool[i].copy(v);
                 sumX += v.x;
                 sumY += v.y;
                 sumZ += v.z;
@@ -1642,22 +1665,69 @@ var constellationsGroup3D = null;
 
             // Centroide esférico normalizado y proyectado sobre la cota rasante
             const cLen = Math.sqrt(sumX * sumX + sumY * sumY + sumZ * sumZ) || 1.0;
-            const centroid = new THREE.Vector3(
+            _umbraCentroid.set(
                 (sumX / cLen) * GROUND_OVERLAY_RADIUS,
                 (sumY / cLen) * GROUND_OVERLAY_RADIUS,
                 (sumZ / cLen) * GROUND_OVERLAY_RADIUS
             );
 
-            // Triangulación radial en abanico (Triangle Fan) desde el centroide a los vértices del polígono
-            const positions = [];
-            const n = pts3D.length;
+            // Anillo intermedio de puntos proyectados sobre la esfera para eliminar el pandeo de cuerda (sagitta)
             for (let i = 0; i < n; i++) {
-                const pA = pts3D[i];
-                const pB = pts3D[(i + 1) % n];
+                const bnd = _umbraPt3DPool[i];
+                const mx = (_umbraCentroid.x + bnd.x) * 0.5;
+                const my = (_umbraCentroid.y + bnd.y) * 0.5;
+                const mz = (_umbraCentroid.z + bnd.z) * 0.5;
+                const mLen = Math.sqrt(mx * mx + my * my + mz * mz) || 1.0;
+                _umbraMidPt3DPool[i].set(
+                    (mx / mLen) * GROUND_OVERLAY_RADIUS,
+                    (my / mLen) * GROUND_OVERLAY_RADIUS,
+                    (mz / mLen) * GROUND_OVERLAY_RADIUS
+                );
+            }
 
-                positions.push(centroid.x, centroid.y, centroid.z);
-                positions.push(pA.x, pA.y, pA.z);
-                positions.push(pB.x, pB.y, pB.z);
+            // Triangulación esférica concéntrica (3 triángulos por sector: 1 interior + 2 exteriores)
+            let idx = 0;
+            const maxFloatIdx = _MAX_UMBRA_FAN_VERTICES * 3;
+            for (let i = 0; i < n; i++) {
+                if (idx + 27 > maxFloatIdx) break;
+                const next = (i + 1) % n;
+                const pA = _umbraPt3DPool[i];
+                const pB = _umbraPt3DPool[next];
+                const mA = _umbraMidPt3DPool[i];
+                const mB = _umbraMidPt3DPool[next];
+
+                // 1. Triángulo interior: centroid -> mA -> mB
+                _umbraPosArray[idx++] = _umbraCentroid.x;
+                _umbraPosArray[idx++] = _umbraCentroid.y;
+                _umbraPosArray[idx++] = _umbraCentroid.z;
+                _umbraPosArray[idx++] = mA.x;
+                _umbraPosArray[idx++] = mA.y;
+                _umbraPosArray[idx++] = mA.z;
+                _umbraPosArray[idx++] = mB.x;
+                _umbraPosArray[idx++] = mB.y;
+                _umbraPosArray[idx++] = mB.z;
+
+                // 2. Triángulo exterior 1: mA -> pA -> pB
+                _umbraPosArray[idx++] = mA.x;
+                _umbraPosArray[idx++] = mA.y;
+                _umbraPosArray[idx++] = mA.z;
+                _umbraPosArray[idx++] = pA.x;
+                _umbraPosArray[idx++] = pA.y;
+                _umbraPosArray[idx++] = pA.z;
+                _umbraPosArray[idx++] = pB.x;
+                _umbraPosArray[idx++] = pB.y;
+                _umbraPosArray[idx++] = pB.z;
+
+                // 3. Triángulo exterior 2: mA -> pB -> mB
+                _umbraPosArray[idx++] = mA.x;
+                _umbraPosArray[idx++] = mA.y;
+                _umbraPosArray[idx++] = mA.z;
+                _umbraPosArray[idx++] = pB.x;
+                _umbraPosArray[idx++] = pB.y;
+                _umbraPosArray[idx++] = pB.z;
+                _umbraPosArray[idx++] = mB.x;
+                _umbraPosArray[idx++] = mB.y;
+                _umbraPosArray[idx++] = mB.z;
             }
 
             const umbraColor = isAnnular ? 0x261a0d : 0x000000;
@@ -1665,8 +1735,13 @@ var constellationsGroup3D = null;
 
             if (!umbraMesh3D) {
                 const geometry = new THREE.BufferGeometry();
-                geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+                const posAttr = new THREE.BufferAttribute(_umbraPosArray, 3);
+                posAttr.setUsage(THREE.DynamicDrawUsage);
+                geometry.setAttribute('position', posAttr);
+                posAttr.needsUpdate = true;
+                geometry.setDrawRange(0, idx / 3);
                 geometry.computeVertexNormals();
+                geometry.computeBoundingSphere();
 
                 const material = new THREE.MeshBasicMaterial({
                     color: umbraColor,
@@ -1685,10 +1760,13 @@ var constellationsGroup3D = null;
                 earthGroup.add(umbraMesh3D);
             } else {
                 umbraMesh3D.visible = true;
-                umbraMesh3D.geometry.dispose();
-                umbraMesh3D.geometry = new THREE.BufferGeometry();
-                umbraMesh3D.geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-                umbraMesh3D.geometry.computeVertexNormals();
+                const geometry = umbraMesh3D.geometry;
+                const posAttr = geometry.getAttribute('position');
+                posAttr.needsUpdate = true;
+                geometry.setDrawRange(0, idx / 3);
+                geometry.computeVertexNormals();
+                geometry.computeBoundingSphere();
+
                 umbraMesh3D.material.color.setHex(umbraColor);
                 umbraMesh3D.material.opacity = umbraOpacity;
                 if (umbraMesh3D.parent !== earthGroup) {

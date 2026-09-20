@@ -648,10 +648,14 @@ var DEG = 180 / Math.PI;
                     const y = (eclipse.y0 || 0) + (eclipse.y1 || 0)*t + (eclipse.y2 || 0)*t*t + (eclipse.y3 || 0)*t*t*t;
                     const dx = (eclipse.x1 || 0) + 2*(eclipse.x2 || 0)*t + 3*(eclipse.x3 || 0)*t*t;
                     const dy = (eclipse.y1 || 0) + 2*(eclipse.y2 || 0)*t + 3*(eclipse.y3 || 0)*t*t;
-                    const l2 = Math.abs((eclipse.l20 || 0.008) + (eclipse.l21 || 0)*t);
-                    if (l2 <= 0.0001) return null;
+                    const rho1 = getRho1(t);
+                    const rCenterSq = x * x + (y / rho1) * (y / rho1);
+                    const zetaCenter = Math.sqrt(Math.max(0.0, 1.0 - rCenterSq));
+                    const tanF2 = eclipse.tan_f2 || 0.00457;
+                    const L2_eff = Math.abs((eclipse.l20 || 0.008) + (eclipse.l21 || 0)*t) + zetaCenter * tanF2;
+                    if (L2_eff <= 0.0001) return null;
                     const vlen = Math.hypot(dx, dy) || 1;
-                    const px = x + l2 * (-dy / vlen), py = y + l2 * (dx / vlen);
+                    const px = x + L2_eff * (-dy / vlen), py = y + L2_eff * (dx / vlen);
                     return { x: px, y: py, r2: getR1Sq(t, px, py), t };
                 };
 
@@ -660,10 +664,14 @@ var DEG = 180 / Math.PI;
                     const y = (eclipse.y0 || 0) + (eclipse.y1 || 0)*t + (eclipse.y2 || 0)*t*t + (eclipse.y3 || 0)*t*t*t;
                     const dx = (eclipse.x1 || 0) + 2*(eclipse.x2 || 0)*t + 3*(eclipse.x3 || 0)*t*t;
                     const dy = (eclipse.y1 || 0) + 2*(eclipse.y2 || 0)*t + 3*(eclipse.y3 || 0)*t*t;
-                    const l2 = Math.abs((eclipse.l20 || 0.008) + (eclipse.l21 || 0)*t);
-                    if (l2 <= 0.0001) return null;
+                    const rho1 = getRho1(t);
+                    const rCenterSq = x * x + (y / rho1) * (y / rho1);
+                    const zetaCenter = Math.sqrt(Math.max(0.0, 1.0 - rCenterSq));
+                    const tanF2 = eclipse.tan_f2 || 0.00457;
+                    const L2_eff = Math.abs((eclipse.l20 || 0.008) + (eclipse.l21 || 0)*t) + zetaCenter * tanF2;
+                    if (L2_eff <= 0.0001) return null;
                     const vlen = Math.hypot(dx, dy) || 1;
-                    const px = x - l2 * (-dy / vlen), py = y - l2 * (dx / vlen);
+                    const px = x - L2_eff * (-dy / vlen), py = y - L2_eff * (dx / vlen);
                     return { x: px, y: py, r2: getR1Sq(t, px, py), t };
                 };
 
@@ -1335,18 +1343,30 @@ var DEG = 180 / Math.PI;
             // Si la sombra está completamente fuera del limbo terrestre
             if (r_center_sq > (1.0 + l2 * 1.5) * (1.0 + l2 * 1.5)) return null;
 
-            const L2 = Math.max(0.0001, l2);
+            const tanF2 = eclipse.tan_f2 || 0.00457;
+
+            // Radio efectivo del semieje de la umbra sobre la superficie a cota zetaCenter:
+            // Sincronizado exactamente con pointAtNorth y pointAtSouth para garantizar tangencia perfecta con los límites del pasillo
+            const zetaCenter = Math.sqrt(Math.max(0.0, 1.0 - r_center_sq));
+            const L2_eff = Math.max(0.0001, Math.abs(l2) + zetaCenter * tanF2);
+
             const N = 64;
 
-            // Muestreo del cilindro de sombra en el plano fundamental Besseliano
+            // Muestreo del contorno umbral con semieje transversal riguroso L2_eff
+            const getPointAtAngle = (ang) => {
+                const cosA = Math.cos(ang);
+                const sinA = Math.sin(ang);
+                const px = x + L2_eff * cosA;
+                const py = y + L2_eff * sinA;
+                const py1 = py / rho1;
+                const r1_sq = px * px + py1 * py1;
+                return { ang, px, py, py1, r1_sq, inside: r1_sq <= 1.0 };
+            };
+
             const circlePts = [];
             for (let i = 0; i < N; i++) {
                 const ang = (i / N) * 2 * Math.PI;
-                const px = x + L2 * Math.cos(ang);
-                const py = y + L2 * Math.sin(ang);
-                const py1 = py / rho1;
-                const r1_sq = px*px + py1*py1;
-                circlePts.push({ ang, px, py, py1, r1_sq, inside: r1_sq <= 1.0 });
+                circlePts.push(getPointAtAngle(ang));
             }
 
             const allInside = circlePts.every(p => p.inside);
@@ -1372,19 +1392,14 @@ var DEG = 180 / Math.PI;
                         if (b < a) b += 2 * Math.PI;
                         for (let k = 0; k < 25; k++) {
                             const m = 0.5 * (a + b);
-                            const px = x + L2 * Math.cos(m);
-                            const py = y + L2 * Math.sin(m);
-                            const py1 = py / rho1;
-                            const r1sq = px*px + py1*py1;
-                            if ((r1sq <= 1.0) === cur.inside) a = m;
+                            const pMid = getPointAtAngle(m);
+                            if (pMid.inside === cur.inside) a = m;
                             else b = m;
                         }
                         const m = 0.5 * (a + b);
-                        const px = x + L2 * Math.cos(m);
-                        const py = y + L2 * Math.sin(m);
-                        const py1 = py / rho1;
-                        const norm = Math.hypot(px, py1) || 1;
-                        const phi = Math.atan2(py1 / norm, px / norm);
+                        const pExact = getPointAtAngle(m);
+                        const norm = Math.hypot(pExact.px, pExact.py1) || 1;
+                        const phi = Math.atan2(pExact.py1 / norm, pExact.px / norm);
                         transitions.push({
                             ang: m,
                             fromInside: cur.inside,
@@ -1393,9 +1408,10 @@ var DEG = 180 / Math.PI;
                     }
                 }
 
-                if (transitions.length === 2) {
-                    const exit = transitions.find(t => t.fromInside);
-                    const entry = transitions.find(t => !t.fromInside);
+                if (transitions.length >= 2) {
+                    // Seleccionar la transición de entrada y de salida principales
+                    const exit = transitions.find(tr => tr.fromInside) || transitions[0];
+                    const entry = transitions.find(tr => !tr.fromInside) || transitions[transitions.length - 1];
 
                     // 1. Arco de la sombra dentro de la Tierra: de entry a exit
                     let curAng = entry.ang;
@@ -1404,16 +1420,13 @@ var DEG = 180 / Math.PI;
                     const numCircleSteps = 32;
                     for (let i = 0; i <= numCircleSteps; i++) {
                         const ang = curAng + (i / numCircleSteps) * (targetAng - curAng);
-                        const px = x + L2 * Math.cos(ang);
-                        const py = y + L2 * Math.sin(ang);
-                        const py1 = py / rho1;
-                        const r1sq = px*px + py1*py1;
+                        const pArc = getPointAtAngle(ang);
                         let ll = null;
-                        if (r1sq <= 1.0) {
-                            ll = besselianXYToLatLng(eclipse, t, px, py);
+                        if (pArc.inside) {
+                            ll = besselianXYToLatLng(eclipse, t, pArc.px, pArc.py);
                         } else {
-                            const norm = Math.hypot(px, py1);
-                            ll = besselianXYToLatLng(eclipse, t, px / norm, (py1 / norm) * rho1);
+                            const norm = Math.hypot(pArc.px, pArc.py1) || 1.0;
+                            ll = besselianXYToLatLng(eclipse, t, pArc.px / norm, (pArc.py1 / norm) * rho1);
                         }
                         if (ll && !isNaN(ll.lat) && !isNaN(ll.lng)) pts.push({ lat: ll.lat, lng: ll.lng });
                     }

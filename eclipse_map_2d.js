@@ -26,8 +26,12 @@ const EclipseMap2D = (() => {
         shade: true
     };
 
-    // Sombra lunar dinámica — vector nítido (umbra) + canvas offscreen (penumbra opcional)
-    let umbraPolygon = null;           // L.polygon vectorial nítido de totalidad/anularidad
+    // Sombra lunar dinámica — vector nítido (umbra principal + clon ±360°) + canvas offscreen (penumbra opcional)
+    let umbraPolygonMain = null;       // L.polygon vectorial principal de totalidad/anularidad
+    let umbraPolygonClone = null;      // L.polygon vectorial clon desplazado ±360°
+    let mapUmbraPolygon = null;        // Alias
+    let mapUmbraPolygonClone = null;   // Alias
+    let umbraPolygon = null;           // Compatibilidad retroactiva
     let shadowCanvas = null;           // <canvas> de renderizado CPU offscreen para penumbra
     let shadowOverlay = null;          // L.ImageOverlay superpuesto al mapa para penumbra
     let _lastShadowKey = null;         // dirty-check para evitar redibujados innecesarios
@@ -234,12 +238,19 @@ const EclipseMap2D = (() => {
                 if (isVisible) pathShadeLayer.addTo(map);
                 else map.removeLayer(pathShadeLayer);
             }
-            // Sombra dinámica vectorial (umbra)
-            if (umbraPolygon) {
+            // Sombra dinámica vectorial (umbra principal y clon ±360°)
+            if (umbraPolygonMain) {
                 if (isVisible) {
-                    if (!map.hasLayer(umbraPolygon)) umbraPolygon.addTo(map);
+                    if (!map.hasLayer(umbraPolygonMain)) umbraPolygonMain.addTo(map);
                 } else {
-                    map.removeLayer(umbraPolygon);
+                    map.removeLayer(umbraPolygonMain);
+                }
+            }
+            if (umbraPolygonClone) {
+                if (isVisible) {
+                    if (!map.hasLayer(umbraPolygonClone)) umbraPolygonClone.addTo(map);
+                } else {
+                    map.removeLayer(umbraPolygonClone);
                 }
             }
             // Sombra dinámica del canvas overlay (penumbra)
@@ -264,356 +275,120 @@ const EclipseMap2D = (() => {
     const MERCATOR_MAX_LAT = 85.05112878;
 
     /**
-     * Interpola el cruce con el antimeridiano (±180°) entre dos puntos
+     * Desenrolla de forma continua una secuencia de coordenadas para evitar fracturas
+     * en el meridiano ±180° y saltos espurios a través del planisferio en Web Mercator.
      */
-    function getAntimeridianInterp(prev, curr) {
-        const deltaLng = curr.lng - prev.lng;
-        if (Math.abs(deltaLng) <= 180) return null;
-        if (deltaLng < -180) {
-            // De Este a Oeste (+180 a -180)
-            const unwrappedCurrLng = curr.lng + 360;
-            const frac = (180 - prev.lng) / (unwrappedCurrLng - prev.lng);
-            const latInt = prev.lat + frac * (curr.lat - prev.lat);
-            return { east: [latInt, 179.9999], west: [latInt, -179.9999] };
-        } else {
-            // De Oeste a Este (-180 a +180)
-            const unwrappedCurrLng = curr.lng - 360;
-            const frac = (-180 - prev.lng) / (unwrappedCurrLng - prev.lng);
-            const latInt = prev.lat + frac * (curr.lat - prev.lat);
-            return { east: [latInt, 179.9999], west: [latInt, -179.9999] };
-        }
-    }
-
-    /**
-     * Divide una lista continua de coordenadas en múltiples segmentos:
-     * 1) Al sobrepasar la latitud límite de Mercator EPSG:3857 (±85.051129°), segmenta sin unir por el polo.
-     * 2) Al detectar cruce/sobrevuelo polar (|lat| > 80° y |Δlng| > 90°), cierra el segmento actual y abre uno nuevo.
-     * 3) Al cruzar el antimeridiano (±180°), divide limpiamente para evitar trazos horizontales espurios en Web Mercator.
-     */
-    function splitCoordsAtAntimeridian(coords) {
+    function unwrapCoords(coords) {
         if (!coords || coords.length === 0) return [];
-        const rawPts = coords.map(p => Array.isArray(p) ? { lat: p[0], lng: p[1] } : { lat: p.lat, lng: p.lng != null ? p.lng : p.lon });
-        
-        // Fase 1: Segmentar por límite estricto de latitud Mercator (EPSG:3857)
-        const latSegments = [];
-        let curLatSeg = [];
-
-        for (let i = 0; i < rawPts.length; i++) {
-            const curr = rawPts[i];
-            const isInside = Math.abs(curr.lat) <= MERCATOR_MAX_LAT;
-
-            if (i === 0) {
-                if (isInside) curLatSeg.push({ lat: curr.lat, lng: curr.lng });
-                continue;
+        let prevLng = null;
+        let offset = 0;
+        return coords.map((p, idx) => {
+            let lat = p.lat != null ? p.lat : p[0];
+            let lng = p.lng != null ? p.lng : (p.lon != null ? p.lon : p[1]);
+            if (lat > MERCATOR_MAX_LAT) lat = MERCATOR_MAX_LAT;
+            else if (lat < -MERCATOR_MAX_LAT) lat = -MERCATOR_MAX_LAT;
+            if (idx === 0) {
+                prevLng = lng;
+                return [lat, lng];
             }
-
-            const prev = rawPts[i - 1];
-            const wasInside = Math.abs(prev.lat) <= MERCATOR_MAX_LAT;
-
-            if (wasInside && isInside) {
-                curLatSeg.push({ lat: curr.lat, lng: curr.lng });
-            } else if (wasInside && !isInside) {
-                // Sale de los límites hacia el polo: interpolar en el límite de Mercator
-                const poleLat = (curr.lat < 0 ? -1 : 1) * MERCATOR_MAX_LAT;
-                const frac = (poleLat - prev.lat) / (curr.lat - prev.lat);
-                let lngInt = prev.lng + frac * (curr.lng - prev.lng);
-                if (lngInt > 180) lngInt -= 360;
-                if (lngInt < -180) lngInt += 360;
-                curLatSeg.push({ lat: poleLat, lng: lngInt });
-                if (curLatSeg.length > 0) latSegments.push(curLatSeg);
-                curLatSeg = [];
-            } else if (!wasInside && isInside) {
-                // Entra de regreso a los límites desde el polo: interpolar en el límite de Mercator
-                const poleLat = (prev.lat < 0 ? -1 : 1) * MERCATOR_MAX_LAT;
-                const frac = (poleLat - prev.lat) / (curr.lat - prev.lat);
-                let lngInt = prev.lng + frac * (curr.lng - prev.lng);
-                if (lngInt > 180) lngInt -= 360;
-                if (lngInt < -180) lngInt += 360;
-                curLatSeg = [{ lat: poleLat, lng: lngInt }, { lat: curr.lat, lng: curr.lng }];
-            }
-        }
-        if (curLatSeg.length > 0) latSegments.push(curLatSeg);
-
-        // Fase 2: Para cada segmento de latitud, detectar saltos polares y cortes en antimeridiano
-        const finalSegments = [];
-
-        latSegments.forEach(segPts => {
-            if (segPts.length === 0) return;
-            let currentSegment = [];
-
-            for (let i = 0; i < segPts.length; i++) {
-                const curr = segPts[i];
-                if (currentSegment.length === 0) {
-                    currentSegment.push([curr.lat, curr.lng]);
-                    continue;
-                }
-
-                const prev = segPts[i - 1];
-                const dLngRaw = Math.abs(curr.lng - prev.lng);
-                const isPolarJump = (Math.abs(prev.lat) > 80 || Math.abs(curr.lat) > 80) &&
-                                    dLngRaw > 90 && (360 - dLngRaw) > 90;
-
-                if (isPolarJump) {
-                    // Cruce polar: cerrar segmento actual y abrir uno nuevo en el otro extremo
-                    if (currentSegment.length > 0) {
-                        finalSegments.push(currentSegment);
-                    }
-                    currentSegment = [[curr.lat, curr.lng]];
-                    continue;
-                }
-
-                const interp = getAntimeridianInterp(prev, curr);
-                if (interp) {
-                    const deltaLng = curr.lng - prev.lng;
-                    if (deltaLng < -180) {
-                        currentSegment.push(interp.east);
-                        finalSegments.push(currentSegment);
-                        currentSegment = [interp.west, [curr.lat, curr.lng]];
-                    } else {
-                        currentSegment.push(interp.west);
-                        finalSegments.push(currentSegment);
-                        currentSegment = [interp.east, [curr.lat, curr.lng]];
-                    }
-                } else {
-                    currentSegment.push([curr.lat, curr.lng]);
-                }
-            }
-
-            if (currentSegment.length > 0) {
-                finalSegments.push(currentSegment);
-            }
+            const dLng = lng - prevLng;
+            if (dLng > 180) offset -= 360;
+            else if (dLng < -180) offset += 360;
+            prevLng = lng;
+            return [lat, lng + offset];
         });
-
-        return finalSegments;
     }
 
     /**
-     * Construye un polígono de pasillo cerrado a partir de una sección norte y sur,
-     * recortándolo limpiamente al cruzar el antimeridiano.
+     * Sincroniza el marco de referencia angular entre dos secuencias desenrolladas,
+     * garantizando que ambas inicien en el mismo ciclo de 360° (evitando desfasajes entre Norte y Sur).
      */
-    function buildSingleCorridorPolygons(northCoords, southCoords, customSunsetArc = null, customSunriseArc = null) {
-        if (!northCoords || !southCoords || northCoords.length < 2 || southCoords.length < 2) return [];
-
-        const nFirst = northCoords[0], nLast = northCoords[northCoords.length - 1];
-        const sFirst = southCoords[0], sLast = southCoords[southCoords.length - 1];
-
-        // Arco de corte en terminador: si no se provee arco astronómico exacto (ej. ramas polares),
-        // interpola a lo largo del arco geodésico continuo
-        const buildTerminalArc = (pA, pB, numSteps = 8) => {
-            if (!pA || !pB) return [];
-            const pAlon = pA.lng != null ? pA.lng : pA.lon;
-            const pBlon = pB.lng != null ? pB.lng : pB.lon;
-            let dLng = pBlon - pAlon;
-            if (dLng > 180) dLng -= 360;
-            if (dLng < -180) dLng += 360;
-
-            const arc = [];
-            for (let i = 0; i <= numSteps; i++) {
-                const frac = i / numSteps;
-                let lng = pAlon + frac * dLng;
-                if (lng > 180) lng -= 360;
-                if (lng < -180) lng += 360;
-                arc.push({
-                    lat: pA.lat + frac * (pB.lat - pA.lat),
-                    lng: lng,
-                    lon: lng,
-                    t: (pA.t != null && pB.t != null) ? (pA.t + frac * (pB.t - pA.t)) : null
-                });
+    function alignUnwrappedSeries(reference, target) {
+        if (!reference || reference.length === 0 || !target || target.length === 0) return;
+        const refLng = reference[0][1];
+        const tgtLng = target[0][1];
+        const dLng = tgtLng - refLng;
+        const shifts = Math.round(dLng / 360);
+        if (shifts !== 0) {
+            const offset = shifts * 360;
+            for (let i = 0; i < target.length; i++) {
+                target[i][1] -= offset;
             }
-            return arc;
+        }
+    }
+
+    /**
+     * Si la trayectoria desenrollada cruza el antimeridiano (se proyecta fuera de [-180, 180]),
+     * genera copias desplazadas en ±360° para mantener la franja continua en cualquier vista o centrado del mapa.
+     */
+    function getWrappedCopies(latLngs) {
+        if (!latLngs || latLngs.length === 0) return [latLngs];
+        let minLng = Infinity, maxLng = -Infinity;
+        for (let i = 0; i < latLngs.length; i++) {
+            const lng = latLngs[i][1];
+            if (lng < minLng) minLng = lng;
+            if (lng > maxLng) maxLng = lng;
+        }
+        const copies = [latLngs];
+        if (maxLng > 180) {
+            copies.push(latLngs.map(([lat, lng]) => [lat, lng - 360]));
+        }
+        if (minLng < -180) {
+            copies.push(latLngs.map(([lat, lng]) => [lat, lng + 360]));
+        }
+        return copies;
+    }
+
+    /**
+     * Construye el bucle continuo del pasillo de totalidad/anularidad uniendo los límites
+     * norte y sur mediante los arcos astronómicos del terminador en puesta (sunset) y salida (sunrise).
+     */
+    function buildUnwrappedCorridorLoop(nUnwrapped, sUnwrapped, rawSunsetArc, rawSunriseArc) {
+        if (!nUnwrapped || !sUnwrapped || nUnwrapped.length < 2 || sUnwrapped.length < 2) return [];
+
+        let sunsetU = unwrapCoords(rawSunsetArc);
+        if (sunsetU.length > 0) {
+            const dLng = sunsetU[0][1] - nUnwrapped[nUnwrapped.length - 1][1];
+            const offset = Math.round(dLng / 360) * 360;
+            if (offset !== 0) {
+                for (let i = 0; i < sunsetU.length; i++) sunsetU[i][1] -= offset;
+            }
+        }
+
+        let sunriseU = unwrapCoords(rawSunriseArc);
+        if (sunriseU.length > 0) {
+            const dLng = sunriseU[0][1] - sUnwrapped[0][1];
+            const offset = Math.round(dLng / 360) * 360;
+            if (offset !== 0) {
+                for (let i = 0; i < sunriseU.length; i++) sunriseU[i][1] -= offset;
+            }
+        }
+
+        const buildIntermediates = (pA, pB, steps = 6) => {
+            const pts = [];
+            for (let i = 1; i < steps; i++) {
+                const frac = i / steps;
+                pts.push([
+                    pA[0] + frac * (pB[0] - pA[0]),
+                    pA[1] + frac * (pB[1] - pA[1])
+                ]);
+            }
+            return pts;
         };
 
-        const sunsetArc = (customSunsetArc && customSunsetArc.length > 0)
-            ? customSunsetArc
-            : buildTerminalArc(nLast, sLast);
-        const sunriseArc = (customSunriseArc && customSunriseArc.length > 0)
-            ? customSunriseArc
-            : buildTerminalArc(sFirst, nFirst);
+        const sunsetInter = sunsetU.length > 2
+            ? sunsetU.slice(1, -1)
+            : buildIntermediates(nUnwrapped[nUnwrapped.length - 1], sUnwrapped[sUnwrapped.length - 1]);
+        const sunriseInter = sunriseU.length > 2
+            ? sunriseU.slice(1, -1)
+            : buildIntermediates(sUnwrapped[0], nUnwrapped[0]);
 
-        const sunsetIntermediates = sunsetArc.length > 2 ? sunsetArc.slice(1, -1) : [];
-        const sunriseIntermediates = sunriseArc.length > 2 ? sunriseArc.slice(1, -1) : [];
-
-        const loop = [
-            ...northCoords.map(p => ({ lat: p.lat, lng: p.lng != null ? p.lng : p.lon })),
-            ...sunsetIntermediates.map(p => ({ lat: p.lat, lng: p.lng != null ? p.lng : p.lon })),
-            ...southCoords.slice().reverse().map(p => ({ lat: p.lat, lng: p.lng != null ? p.lng : p.lon })),
-            ...sunriseIntermediates.map(p => ({ lat: p.lat, lng: p.lng != null ? p.lng : p.lon }))
+        return [
+            ...nUnwrapped,
+            ...sunsetInter,
+            ...sUnwrapped.slice().reverse(),
+            ...sunriseInter
         ];
-
-        let hasCrossing = false;
-        for (let i = 0; i < loop.length; i++) {
-            const p1 = loop[i];
-            const p2 = loop[(i + 1) % loop.length];
-            if (Math.abs(p2.lng - p1.lng) > 180) {
-                hasCrossing = true;
-                break;
-            }
-        }
-
-        if (!hasCrossing) {
-            return [loop.map(p => [p.lat, p.lng])];
-        }
-
-        const eastSegs = [];
-        const westSegs = [];
-        let curEast = [];
-        let curWest = [];
-
-        for (let i = 0; i < loop.length; i++) {
-            const p1 = loop[i];
-            const p2 = loop[(i + 1) % loop.length];
-            const isEast1 = p1.lng >= 0;
-            if (isEast1) curEast.push([p1.lat, p1.lng]);
-            else curWest.push([p1.lat, p1.lng]);
-
-            const dLng = p2.lng - p1.lng;
-            if (Math.abs(dLng) > 180) {
-                if (isEast1) {
-                    const frac = (180 - p1.lng) / ((p2.lng + 360) - p1.lng);
-                    const latInt = p1.lat + frac * (p2.lat - p1.lat);
-                    curEast.push([latInt, 179.9999]);
-                    eastSegs.push(curEast);
-                    curEast = [];
-                    curWest.push([latInt, -179.9999]);
-                } else {
-                    const frac = (-180 - p1.lng) / ((p2.lng - 360) - p1.lng);
-                    const latInt = p1.lat + frac * (p2.lat - p1.lat);
-                    curWest.push([latInt, -179.9999]);
-                    westSegs.push(curWest);
-                    curWest = [];
-                    curEast.push([latInt, 179.9999]);
-                }
-            }
-        }
-        if (curEast.length > 0) {
-            if (eastSegs.length > 0) eastSegs[0] = [...curEast, ...eastSegs[0]];
-            else eastSegs.push(curEast);
-        }
-        if (curWest.length > 0) {
-            if (westSegs.length > 0) westSegs[0] = [...curWest, ...westSegs[0]];
-            else westSegs.push(curWest);
-        }
-
-        const polys = [];
-        eastSegs.forEach(seg => { if (seg.length >= 3) polys.push(seg); });
-        westSegs.forEach(seg => { if (seg.length >= 3) polys.push(seg); });
-        return polys;
-    }
-
-    /**
-     * Construye los polígonos de relleno del pasillo de totalidad/anularidad.
-     * En caso de cruce/sobrevuelo polar (|lat| > 80° o corte en ±85.051129°), divide el pasillo
-     * en dos tramos independientes (tramo que desciende/entra al polo y tramo que asciende/sale del polo),
-     * cerrando cada uno contra el borde polar sin cruzarse entre sí (evitando la franja diagonal fantasma
-     * y trazos horizontales sobre el polo).
-     */
-    function buildCorridorPolygons(northCoords, southCoords, espenakLoop = null, customSunsetArc = null, customSunriseArc = null, precomputedPolygons = null) {
-        if (!northCoords || !southCoords || northCoords.length < 2 || southCoords.length < 2) return [];
-
-        const hasPolarCrossing = (coords) => {
-            let hasExceed = false;
-            let hasJump = false;
-            let poleSign = -1;
-            for (let i = 0; i < coords.length; i++) {
-                const p = coords[i];
-                if (Math.abs(p.lat) > 85.0) {
-                    hasExceed = true;
-                    poleSign = p.lat < 0 ? -1 : 1;
-                }
-                if (i > 0) {
-                    const prev = coords[i - 1];
-                    const dLng = Math.abs(p.lng != null ? p.lng : p.lon - (prev.lng != null ? prev.lng : prev.lon));
-                    if ((Math.abs(p.lat) > 80 || Math.abs(prev.lat) > 80) && dLng > 90 && (360 - dLng) > 90) {
-                        hasJump = true;
-                        poleSign = (p.lat + prev.lat) < 0 ? -1 : 1;
-                    }
-                }
-            }
-            return { isPolar: hasExceed || hasJump, poleSign };
-        };
-
-        const northPolar = hasPolarCrossing(northCoords);
-        const southPolar = hasPolarCrossing(southCoords);
-
-        if (!northPolar.isPolar && !southPolar.isPolar) {
-            if (precomputedPolygons && precomputedPolygons.length > 0) {
-                return precomputedPolygons;
-            }
-            return buildSingleCorridorPolygons(northCoords, southCoords, customSunsetArc, customSunriseArc);
-        }
-
-        const poleSign = northPolar.isPolar ? northPolar.poleSign : southPolar.poleSign;
-        const targetPoleLat = poleSign * MERCATOR_MAX_LAT;
-
-        // Función para recortar una línea al entrar o salir del límite polar de Mercator
-        const clipToPoleMercator = (coords) => {
-            const result = [];
-            for (let i = 0; i < coords.length; i++) {
-                const curr = coords[i];
-                const isInside = Math.abs(curr.lat) <= MERCATOR_MAX_LAT;
-                if (i === 0) {
-                    if (isInside) result.push(curr);
-                    continue;
-                }
-                const prev = coords[i - 1];
-                const wasInside = Math.abs(prev.lat) <= MERCATOR_MAX_LAT;
-
-                if (wasInside && isInside) {
-                    // También comprobar salto polar directo
-                    const dLng = Math.abs((curr.lng != null ? curr.lng : curr.lon) - (prev.lng != null ? prev.lng : prev.lon));
-                    if ((Math.abs(curr.lat) > 80 || Math.abs(prev.lat) > 80) && dLng > 90 && (360 - dLng) > 90) {
-                        // Salto polar entre dos puntos: marcar separación
-                        result.push({ lat: targetPoleLat, lng: prev.lng != null ? prev.lng : prev.lon, isPolarBreak: true });
-                        result.push({ lat: targetPoleLat, lng: curr.lng != null ? curr.lng : curr.lon, isPolarEntry: true });
-                    }
-                    result.push(curr);
-                } else if (wasInside && !isInside) {
-                    const frac = (targetPoleLat - prev.lat) / (curr.lat - prev.lat);
-                    let lngInt = (prev.lng != null ? prev.lng : prev.lon) + frac * ((curr.lng != null ? curr.lng : curr.lon) - (prev.lng != null ? prev.lng : prev.lon));
-                    if (lngInt > 180) lngInt -= 360;
-                    if (lngInt < -180) lngInt += 360;
-                    result.push({ lat: targetPoleLat, lng: lngInt, isPolarBreak: true });
-                } else if (!wasInside && isInside) {
-                    const frac = (targetPoleLat - prev.lat) / (curr.lat - prev.lat);
-                    let lngInt = (prev.lng != null ? prev.lng : prev.lon) + frac * ((curr.lng != null ? curr.lng : curr.lon) - (prev.lng != null ? prev.lng : prev.lon));
-                    if (lngInt > 180) lngInt -= 360;
-                    if (lngInt < -180) lngInt += 360;
-                    result.push({ lat: targetPoleLat, lng: lngInt, isPolarEntry: true });
-                    result.push(curr);
-                }
-            }
-            return result;
-        };
-
-        const clippedNorth = clipToPoleMercator(northCoords);
-        const clippedSouth = clipToPoleMercator(southCoords);
-
-        // Separar cada límite en dos ramas: tramo 1 (antes del polo) y tramo 2 (después del polo)
-        const breakNorthIdx = clippedNorth.findIndex(p => p.isPolarBreak);
-        const entryNorthIdx = clippedNorth.findIndex(p => p.isPolarEntry);
-        const breakSouthIdx = clippedSouth.findIndex(p => p.isPolarBreak);
-        const entrySouthIdx = clippedSouth.findIndex(p => p.isPolarEntry);
-
-        const northBranch1 = breakNorthIdx !== -1 ? clippedNorth.slice(0, breakNorthIdx + 1) : clippedNorth;
-        const northBranch2 = entryNorthIdx !== -1 ? clippedNorth.slice(entryNorthIdx) : [];
-        const southBranch1 = breakSouthIdx !== -1 ? clippedSouth.slice(0, breakSouthIdx + 1) : clippedSouth;
-        const southBranch2 = entrySouthIdx !== -1 ? clippedSouth.slice(entrySouthIdx) : [];
-
-        const allPolys = [];
-
-        // Generar Polígono de la Rama 1 (hacia el polo)
-        if (northBranch1.length >= 2 && southBranch1.length >= 2) {
-            const polys1 = buildSingleCorridorPolygons(northBranch1, southBranch1, null, customSunriseArc);
-            allPolys.push(...polys1);
-        }
-
-        // Generar Polígono de la Rama 2 (saliendo del polo)
-        if (northBranch2.length >= 2 && southBranch2.length >= 2) {
-            const polys2 = buildSingleCorridorPolygons(northBranch2, southBranch2, customSunsetArc, null);
-            allPolys.push(...polys2);
-        }
-
-        return allPolys.length > 0 ? allPolys : buildSingleCorridorPolygons(northCoords, southCoords, customSunsetArc, customSunriseArc);
     }
 
     /**
@@ -698,6 +473,88 @@ const EclipseMap2D = (() => {
      * 2) Marcador central de totalidad sobre el eje de la franja.
      * 3) Gradiente penumbral offscreen en proyección Web Mercator (solo si está activado).
      */
+    /**
+     * Actualiza la sombra móvil de totalidad/anularidad (umbra) en el mapa 2D.
+     * Mantiene dos polígonos sincronizados en tiempo real (umbraPolygonMain y umbraPolygonClone desplazado ±360°)
+     * para que la sombra avance en perfecto tándem y simetría a ambos lados del planisferio.
+     */
+    function updateUmbraMap(activeEclipse, t) {
+        if (!map || !activeEclipse) return;
+        const L = window.L;
+        if (!L) return;
+
+        const isAnnular = (activeEclipse.eclipse_type || '').toUpperCase().startsWith('A');
+        const polyFill = isAnnular ? '#261a0d' : '#000000';
+        const polyFillOpacity = isAnnular ? 0.82 : 0.88;
+
+        let polyPoints = null;
+        if (typeof computeUmbraPolygon === 'function') {
+            polyPoints = computeUmbraPolygon(activeEclipse, t);
+        } else if (typeof window !== 'undefined' && typeof window.computeUmbraPolygon === 'function') {
+            polyPoints = window.computeUmbraPolygon(activeEclipse, t);
+        } else if (typeof BesselianEngine !== 'undefined' && typeof BesselianEngine.computeUmbraPolygon === 'function') {
+            polyPoints = BesselianEngine.computeUmbraPolygon(activeEclipse, t);
+        } else if (typeof window !== 'undefined' && window.BesselianEngine && typeof window.BesselianEngine.computeUmbraPolygon === 'function') {
+            polyPoints = window.BesselianEngine.computeUmbraPolygon(activeEclipse, t);
+        }
+
+        if (polyPoints && polyPoints.length >= 3) {
+            const unwrappedCoords = unwrapCoords(polyPoints);
+            const cloneCoords = unwrappedCoords.map(p => ({
+                lat: p.lat != null ? p.lat : p[0],
+                lng: (p.lng != null ? p.lng : p[1]) + ((p.lng != null ? p.lng : p[1]) < 0 ? 360 : -360)
+            }));
+
+            const polyOpts = {
+                pane: 'umbraPane',
+                fillColor: polyFill,
+                fillOpacity: polyFillOpacity,
+                stroke: false,
+                interactive: false,
+                className: 'eclipse-umbra-polygon'
+            };
+
+            if (!umbraPolygonMain) {
+                umbraPolygonMain = L.polygon(unwrappedCoords, polyOpts).addTo(map);
+            } else {
+                umbraPolygonMain.setStyle({ fillColor: polyFill, fillOpacity: polyFillOpacity, stroke: false });
+                umbraPolygonMain.setLatLngs(unwrappedCoords);
+                if (!map.hasLayer(umbraPolygonMain)) umbraPolygonMain.addTo(map);
+            }
+
+            if (!umbraPolygonClone) {
+                umbraPolygonClone = L.polygon(cloneCoords, polyOpts).addTo(map);
+            } else {
+                umbraPolygonClone.setStyle({ fillColor: polyFill, fillOpacity: polyFillOpacity, stroke: false });
+                umbraPolygonClone.setLatLngs(cloneCoords);
+                if (!map.hasLayer(umbraPolygonClone)) umbraPolygonClone.addTo(map);
+            }
+
+            // Sincronizar referencias y alias para garantizar accesibilidad
+            mapUmbraPolygon = umbraPolygonMain;
+            mapUmbraPolygonClone = umbraPolygonClone;
+            umbraPolygon = umbraPolygonMain;
+            if (typeof window !== 'undefined') {
+                window.mapUmbraPolygon = umbraPolygonMain;
+                window.mapUmbraPolygonClone = umbraPolygonClone;
+                window.umbraPolygonMain = umbraPolygonMain;
+                window.umbraPolygonClone = umbraPolygonClone;
+                window.umbraPolygon = umbraPolygonMain;
+            }
+        } else {
+            // La umbra no está tocando la superficie terrestre en este instante
+            if (umbraPolygonMain && map.hasLayer(umbraPolygonMain)) map.removeLayer(umbraPolygonMain);
+            if (umbraPolygonClone && map.hasLayer(umbraPolygonClone)) map.removeLayer(umbraPolygonClone);
+            if (typeof window !== 'undefined') {
+                window.mapUmbraPolygon = null;
+                window.mapUmbraPolygonClone = null;
+                window.umbraPolygonMain = null;
+                window.umbraPolygonClone = null;
+                window.umbraPolygon = null;
+            }
+        }
+    }
+
     function updateShadow(params) {
         if (!map) return;
         const L = window.L;
@@ -709,7 +566,8 @@ const EclipseMap2D = (() => {
 
         // Si la visibilidad de la sombra/franja está desactivada por el usuario
         if (!layerVisibility.shade) {
-            if (umbraPolygon && map.hasLayer(umbraPolygon)) map.removeLayer(umbraPolygon);
+            if (umbraPolygonMain && map.hasLayer(umbraPolygonMain)) map.removeLayer(umbraPolygonMain);
+            if (umbraPolygonClone && map.hasLayer(umbraPolygonClone)) map.removeLayer(umbraPolygonClone);
             if (shadowOverlay && map.hasLayer(shadowOverlay)) map.removeLayer(shadowOverlay);
             return;
         }
@@ -718,46 +576,7 @@ const EclipseMap2D = (() => {
         // 1. POLÍGONO VECTORIAL DE TOTALIDAD / ANULARIDAD (Umbra / Antumbra)
         // =========================================================================
         if (activeEclipse) {
-            const isAnnular = (activeEclipse.eclipse_type || '').toUpperCase().startsWith('A');
-            const polyFill = isAnnular ? '#261a0d' : '#000000';
-            const polyFillOpacity = isAnnular ? 0.82 : 0.88;
-
-            let polyPoints = null;
-            if (typeof computeUmbraPolygon === 'function') {
-                polyPoints = computeUmbraPolygon(activeEclipse, t);
-            } else if (typeof window !== 'undefined' && typeof window.computeUmbraPolygon === 'function') {
-                polyPoints = window.computeUmbraPolygon(activeEclipse, t);
-            } else if (typeof BesselianEngine !== 'undefined' && typeof BesselianEngine.computeUmbraPolygon === 'function') {
-                polyPoints = BesselianEngine.computeUmbraPolygon(activeEclipse, t);
-            } else if (typeof window !== 'undefined' && window.BesselianEngine && typeof window.BesselianEngine.computeUmbraPolygon === 'function') {
-                polyPoints = window.BesselianEngine.computeUmbraPolygon(activeEclipse, t);
-            }
-
-            if (polyPoints && polyPoints.length >= 3) {
-                const latLngs = polyPoints.map(p => [p.lat, p.lng]);
-                if (!umbraPolygon) {
-                    umbraPolygon = L.polygon(latLngs, {
-                        pane: 'umbraPane',
-                        fillColor: polyFill,
-                        fillOpacity: polyFillOpacity,
-                        stroke: false,
-                        interactive: false,
-                        className: 'eclipse-umbra-polygon'
-                    });
-                    umbraPolygon.addTo(map);
-                } else {
-                    umbraPolygon.setStyle({
-                        fillColor: polyFill,
-                        fillOpacity: polyFillOpacity,
-                        stroke: false
-                    });
-                    umbraPolygon.setLatLngs(latLngs);
-                    if (!map.hasLayer(umbraPolygon)) umbraPolygon.addTo(map);
-                }
-            } else {
-                // La umbra no está tocando la superficie terrestre en este instante
-                if (umbraPolygon && map.hasLayer(umbraPolygon)) map.removeLayer(umbraPolygon);
-            }
+            updateUmbraMap(activeEclipse, t);
         }
 
         // =========================================================================
@@ -802,7 +621,8 @@ const EclipseMap2D = (() => {
         if (pathShadeLayer) map.removeLayer(pathShadeLayer);
         if (pathLimitsLayer) map.removeLayer(pathLimitsLayer);
         if (pathCenterLineLayer) map.removeLayer(pathCenterLineLayer);
-        if (umbraPolygon && map.hasLayer(umbraPolygon)) map.removeLayer(umbraPolygon);
+        if (umbraPolygonMain && map.hasLayer(umbraPolygonMain)) map.removeLayer(umbraPolygonMain);
+        if (umbraPolygonClone && map.hasLayer(umbraPolygonClone)) map.removeLayer(umbraPolygonClone);
         _lastShadowKey = null;
 
         pathShadeLayer = L.featureGroup();
@@ -829,70 +649,96 @@ const EclipseMap2D = (() => {
         const hasNorth = geom.totNorthCoords && geom.totNorthCoords.length > 1;
         const hasSouth = geom.totSouthCoords && geom.totSouthCoords.length > 1;
 
-        // 1. Pasillo sombreado de totalidad/anularidad (Polígonos cerrados en los extremos y cortados limpiamente en el antimeridiano)
-        if (hasNorth && hasSouth) {
-            const corridorPolygons = buildCorridorPolygons(
-                geom.totNorthCoords,
-                geom.totSouthCoords,
-                geom.fullEspenakLoop,
+        // Desenrollar las trayectorias de forma continua para evitar cortes en el meridiano ±180°
+        const nUnwrapped = hasNorth ? unwrapCoords(geom.totNorthCoords) : null;
+        const sUnwrapped = hasSouth ? unwrapCoords(geom.totSouthCoords) : null;
+        const cUnwrapped = hasCentral ? unwrapCoords(geom.centerCoords) : null;
+
+        // Alinear los marcos de longitud entre series para garantizar homogeneidad angular sin desfasajes de 360°
+        if (nUnwrapped && sUnwrapped) {
+            alignUnwrappedSeries(nUnwrapped, sUnwrapped);
+        }
+        if (nUnwrapped && cUnwrapped) {
+            alignUnwrappedSeries(nUnwrapped, cUnwrapped);
+        } else if (sUnwrapped && cUnwrapped) {
+            alignUnwrappedSeries(sUnwrapped, cUnwrapped);
+        }
+
+        // 1. Pasillo sombreado de totalidad/anularidad (Polígono continuo sin cortes y con copias envolventes)
+        if (hasNorth && hasSouth && nUnwrapped && sUnwrapped) {
+            const corridorLoop = buildUnwrappedCorridorLoop(
+                nUnwrapped,
+                sUnwrapped,
                 geom.sunsetArc,
-                geom.sunriseArc,
-                geom.corridorPolygons
+                geom.sunriseArc
             );
-            corridorPolygons.forEach(polyCoords => {
-                const poly = L.polygon(polyCoords, {
-                    pane: 'corridorPane',
-                    color: 'transparent',
-                    fillColor: fillColor,
-                    fillOpacity: 1,
+            if (corridorLoop && corridorLoop.length >= 3) {
+                const wrappedCorridors = getWrappedCopies(corridorLoop);
+                wrappedCorridors.forEach((polyCoords, idx) => {
+                    const poly = L.polygon(polyCoords, {
+                        pane: 'corridorPane',
+                        color: 'transparent',
+                        fillColor: fillColor,
+                        fillOpacity: 1,
+                        interactive: false
+                    });
+                    if (idx > 0) poly._isWrappedCopy = true;
+                    poly.addTo(pathShadeLayer);
+                });
+            }
+        }
+
+        // 2. Límite Norte y Sur (Polylines continuas con copias envolventes)
+        if (nUnwrapped && nUnwrapped.length > 1) {
+            const wrappedNorth = getWrappedCopies(nUnwrapped);
+            wrappedNorth.forEach((lineCoords, idx) => {
+                const northLine = L.polyline(lineCoords, {
+                    pane: 'corridorLinesPane',
+                    color: limitColor,
+                    weight: 2,
+                    opacity: 0.85,
+                    lineCap: 'round',
+                    lineJoin: 'round',
                     interactive: false
                 });
-                poly.addTo(pathShadeLayer);
+                if (idx > 0) northLine._isWrappedCopy = true;
+                northLine.addTo(pathLimitsLayer);
             });
         }
 
-        // 2. Límite Norte y Sur (Multi-polylines si cruzan el antimeridiano)
-        if (hasNorth) {
-            const northSegs = splitCoordsAtAntimeridian(geom.totNorthCoords);
-            const northLine = L.polyline(northSegs.length > 1 ? northSegs : northSegs[0], {
-                pane: 'corridorLinesPane',
-                color: limitColor,
-                weight: 2,
-                opacity: 0.85,
-                lineCap: 'round',
-                lineJoin: 'round',
-                interactive: false
+        if (sUnwrapped && sUnwrapped.length > 1) {
+            const wrappedSouth = getWrappedCopies(sUnwrapped);
+            wrappedSouth.forEach((lineCoords, idx) => {
+                const southLine = L.polyline(lineCoords, {
+                    pane: 'corridorLinesPane',
+                    color: limitColor,
+                    weight: 2,
+                    opacity: 0.85,
+                    lineCap: 'round',
+                    lineJoin: 'round',
+                    interactive: false
+                });
+                if (idx > 0) southLine._isWrappedCopy = true;
+                southLine.addTo(pathLimitsLayer);
             });
-            northLine.addTo(pathLimitsLayer);
         }
 
-        if (hasSouth) {
-            const southSegs = splitCoordsAtAntimeridian(geom.totSouthCoords);
-            const southLine = L.polyline(southSegs.length > 1 ? southSegs : southSegs[0], {
-                pane: 'corridorLinesPane',
-                color: limitColor,
-                weight: 2,
-                opacity: 0.85,
-                lineCap: 'round',
-                lineJoin: 'round',
-                interactive: false
+        // 3. Línea Central (Polyline continua con copias envolventes)
+        if (cUnwrapped && cUnwrapped.length > 1) {
+            const wrappedCenter = getWrappedCopies(cUnwrapped);
+            wrappedCenter.forEach((lineCoords, idx) => {
+                const centerLine = L.polyline(lineCoords, {
+                    pane: 'corridorLinesPane',
+                    color: primaryColor,
+                    weight: 3.5,
+                    opacity: 0.95,
+                    lineCap: 'round',
+                    lineJoin: 'round',
+                    interactive: false
+                });
+                if (idx > 0) centerLine._isWrappedCopy = true;
+                centerLine.addTo(pathCenterLineLayer);
             });
-            southLine.addTo(pathLimitsLayer);
-        }
-
-        // 3. Línea Central (Multi-polyline si cruza el antimeridiano)
-        if (hasCentral) {
-            const centerSegs = splitCoordsAtAntimeridian(geom.centerCoords);
-            const centerLine = L.polyline(centerSegs.length > 1 ? centerSegs : centerSegs[0], {
-                pane: 'corridorLinesPane',
-                color: primaryColor,
-                weight: 3.5,
-                opacity: 0.95,
-                lineCap: 'round',
-                lineJoin: 'round',
-                interactive: false
-            });
-            centerLine.addTo(pathCenterLineLayer);
         }
 
         // Añadir las capas según visibilidad activa
@@ -900,8 +746,10 @@ const EclipseMap2D = (() => {
         if (layerVisibility.limits) pathLimitsLayer.addTo(map);
         if (layerVisibility.centerLine) pathCenterLineLayer.addTo(map);
 
-        // Auto-centrar el mapa en la franja si no hay vista fijada previa
-        fitEclipse();
+        // Auto-centrar el mapa en la franja si la opción de auto-zoom está activa
+        if (document.getElementById('chk-auto-zoom-map')?.checked) {
+            fitEclipse();
+        }
     }
 
     /**
@@ -1632,38 +1480,17 @@ const EclipseMap2D = (() => {
     function fitEclipse() {
         if (!map || typeof L === 'undefined') return;
         const grp = L.featureGroup();
-        if (pathCenterLineLayer) pathCenterLineLayer.eachLayer(l => grp.addLayer(l));
-        if (pathLimitsLayer) pathLimitsLayer.eachLayer(l => grp.addLayer(l));
-        if (pathShadeLayer) pathShadeLayer.eachLayer(l => grp.addLayer(l));
+        const addNonWrapped = (layerGroup) => {
+            if (!layerGroup) return;
+            layerGroup.eachLayer(l => {
+                if (!l._isWrappedCopy) grp.addLayer(l);
+            });
+        };
+        addNonWrapped(pathCenterLineLayer);
+        addNonWrapped(pathLimitsLayer);
+        addNonWrapped(pathShadeLayer);
         const bounds = grp.getBounds();
         if (bounds.isValid()) {
-            const spanLng = bounds.getEast() - bounds.getWest();
-            if (spanLng > 300 && pathCenterLineLayer) {
-                let maxSubBounds = null;
-                let maxPoints = 0;
-                pathCenterLineLayer.eachLayer(layer => {
-                    if (layer.getLatLngs) {
-                        const lls = layer.getLatLngs();
-                        if (Array.isArray(lls) && lls.length > 0) {
-                            if (Array.isArray(lls[0])) {
-                                lls.forEach(sub => {
-                                    if (sub.length > maxPoints) {
-                                        maxPoints = sub.length;
-                                        maxSubBounds = L.latLngBounds(sub);
-                                    }
-                                });
-                            } else if (lls.length > maxPoints) {
-                                maxPoints = lls.length;
-                                maxSubBounds = L.latLngBounds(lls);
-                            }
-                        }
-                    }
-                });
-                if (maxSubBounds && maxSubBounds.isValid()) {
-                    map.fitBounds(maxSubBounds, { padding: [70, 70], maxZoom: 6 });
-                    return;
-                }
-            }
             map.fitBounds(bounds, { padding: [70, 70], maxZoom: 6 });
         }
     }
@@ -1733,6 +1560,12 @@ const EclipseMap2D = (() => {
         renderEclipsePath,
         drawEclipsePath: renderEclipsePath,
         updateShadow,
+        updateUmbraMap,
+        updateUmbraPolygon: updateUmbraMap,
+        get mapUmbraPolygon() { return umbraPolygonMain; },
+        get mapUmbraPolygonClone() { return umbraPolygonClone; },
+        get umbraPolygonMain() { return umbraPolygonMain; },
+        get umbraPolygonClone() { return umbraPolygonClone; },
         setObserverMarker,
         setAsActiveObserver,
         selectSearchResult,
@@ -1756,6 +1589,8 @@ const EclipseMap2D = (() => {
 // Exposición global
 if (typeof window !== 'undefined') {
     window.EclipseMap2D = EclipseMap2D;
+    window.updateUmbraMap = EclipseMap2D.updateUmbraMap;
+    window.updateUmbraPolygon = EclipseMap2D.updateUmbraPolygon;
     window.buildNasaPopupHtml = EclipseMap2D.buildNasaPopupHtml;
     window.formatUtTimeFromT = EclipseMap2D.formatUtTimeFromT;
     window.setAsActiveObserver = EclipseMap2D.setAsActiveObserver;
