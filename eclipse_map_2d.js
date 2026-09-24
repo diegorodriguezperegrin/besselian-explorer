@@ -8,6 +8,7 @@ const EclipseMap2D = (() => {
     let map = null;
     let isLoaded = false;
     let isLoading = false;
+    let initPromise = null;
     let activeBasemapKey = 'dark';
     const tileLayers = {};
     let currentEclipse = null;
@@ -26,15 +27,12 @@ const EclipseMap2D = (() => {
         shade: true
     };
 
-    // Sombra lunar dinámica — vector nítido (umbra principal + clon ±360°) + canvas offscreen (penumbra opcional)
+    // Sombra lunar dinámica — vector nítido (umbra principal + clon ±360°)
     let umbraPolygonMain = null;       // L.polygon vectorial principal de totalidad/anularidad
     let umbraPolygonClone = null;      // L.polygon vectorial clon desplazado ±360°
     let mapUmbraPolygon = null;        // Alias
     let mapUmbraPolygonClone = null;   // Alias
     let umbraPolygon = null;           // Compatibilidad retroactiva
-    let shadowCanvas = null;           // <canvas> de renderizado CPU offscreen para penumbra
-    let shadowOverlay = null;          // L.ImageOverlay superpuesto al mapa para penumbra
-    let _lastShadowKey = null;         // dirty-check para evitar redibujados innecesarios
 
     // URLs de teselas de alta velocidad sin API Key y sin marcas de agua
     const BASEMAP_CONFIGS = {
@@ -124,20 +122,26 @@ const EclipseMap2D = (() => {
      */
     async function initMap(containerId = 'leaflet-map-container') {
         if (map) return map;
-        isLoading = true;
+        if (initPromise) return initPromise;
 
-        await loadLeafletDependencies();
-        const L = window.L;
+        initPromise = (async () => {
+            isLoading = true;
 
-        const container = document.getElementById(containerId);
-        if (!container) throw new Error(`Contenedor #${containerId} no encontrado en el DOM`);
+            await loadLeafletDependencies();
+            const L = window.L;
 
-        map = L.map(containerId, {
-            center: [40.0, -3.5], // Por defecto centrado en la península ibérica
-            zoom: 5,
-            zoomControl: false,
-            attributionControl: false
-        });
+            const container = document.getElementById(containerId);
+            if (!container) throw new Error(`Contenedor #${containerId} no encontrado en el DOM`);
+            if (container._leaflet_id) {
+                try { delete container._leaflet_id; } catch(e) {}
+            }
+
+            map = L.map(containerId, {
+                center: [40.0, -3.5], // Por defecto centrado en la península ibérica
+                zoom: 5,
+                zoomControl: false,
+                attributionControl: false
+            });
 
         // Crear panel para etiquetas por encima de vectores si se necesita
         map.createPane('labelsPane');
@@ -211,6 +215,8 @@ const EclipseMap2D = (() => {
         isLoaded = true;
         isLoading = false;
         return map;
+        })();
+        return initPromise;
     }
 
     /**
@@ -248,21 +254,12 @@ const EclipseMap2D = (() => {
             }
             if (umbraPolygonClone) {
                 if (isVisible) {
-                    if (!map.hasLayer(umbraPolygonClone)) umbraPolygonClone.addTo(map);
+                    if (mapUmbraPolygonClone && !map.hasLayer(umbraPolygonClone)) umbraPolygonClone.addTo(map);
                 } else {
                     map.removeLayer(umbraPolygonClone);
                 }
             }
-            // Sombra dinámica del canvas overlay (penumbra)
-            if (shadowOverlay) {
-                if (isVisible) {
-                    if (!map.hasLayer(shadowOverlay)) shadowOverlay.addTo(map);
-                } else {
-                    map.removeLayer(shadowOverlay);
-                }
-            }
-            // Forzar redibujado la próxima vez que se reactive
-            if (!isVisible) _lastShadowKey = null;
+
         } else if (layerKey === 'limits' && pathLimitsLayer) {
             if (isVisible) pathLimitsLayer.addTo(map);
             else map.removeLayer(pathLimitsLayer);
@@ -392,88 +389,6 @@ const EclipseMap2D = (() => {
     }
 
     /**
-     * Renderiza la penumbra lunar en un <canvas> offscreen 512×256 en proyección Web Mercator estricta
-     * (coincidente pixel a pixel con el CRS EPSG:3857 de Leaflet entre ±85.05112878°).
-     * Solo se ejecuta si la opción "Gradiente penumbral" está activada.
-     */
-    function renderShadowCanvas({ x, y, l1, l2, dRad, muRad, tanF1, tanF2 }) {
-        const W = 512, H = 256;
-        if (!shadowCanvas) {
-            shadowCanvas = document.createElement('canvas');
-            shadowCanvas.width = W;
-            shadowCanvas.height = H;
-        }
-        const ctx = shadowCanvas.getContext('2d');
-        const imgData = ctx.createImageData(W, H);
-        const data = imgData.data;
-
-        const sinD = Math.sin(dRad), cosD = Math.cos(dRad);
-        const e2 = 0.006694385; // WGS84
-
-        for (let py = 0; py < H; py++) {
-            // y_merc en [-π, +π] de Norte a Sur (py=0 es lat +85.0511°, py=H-1 es lat -85.0511°)
-            const v = 1.0 - (2.0 * (py + 0.5)) / H;
-            const yMerc = Math.PI * v;
-            const expY = Math.exp(yMerc);
-            const expNegY = 1.0 / expY;
-            const coshY = 0.5 * (expY + expNegY);
-            const sinhY = 0.5 * (expY - expNegY);
-            const sinPhi = sinhY / coshY;
-            const cosPhi = 1.0 / coshY;
-
-            // Coordenadas geocéntricas en el elipsoide WGS84
-            const C = 1.0 / Math.sqrt(1.0 - e2 * sinPhi * sinPhi);
-            const rhoCosPhi = C * cosPhi;
-            const rhoSinPhi = (1.0 - e2) * C * sinPhi;
-
-            for (let px = 0; px < W; px++) {
-                // lon en [-π, +π] de Oeste a Este
-                const lon = (((px + 0.5) / W) * 2.0 - 1.0) * Math.PI;
-
-                // Ángulo horario local del observador: θ = μ + λ
-                const theta = muRad + lon;
-                const sinTheta = Math.sin(theta), cosTheta = Math.cos(theta);
-
-                // Coordenadas Besselianas del observador en el plano fundamental
-                const xi   = rhoCosPhi * sinTheta;
-                const eta  = rhoSinPhi * cosD - rhoCosPhi * sinD * cosTheta;
-                const zeta = rhoSinPhi * sinD + rhoCosPhi * cosD * cosTheta;
-
-                if (zeta <= 0.0) continue;  // Cara nocturna: no hay sombra
-
-                // Corrección de los radios de penumbra y umbra por la altura ζ del observador
-                const L1 = l1 - zeta * tanF1;
-                const L2abs = Math.abs(l2 - zeta * tanF2);
-
-                const dx = xi  - x;
-                const dy = eta - y;
-                const dist = Math.sqrt(dx * dx + dy * dy);
-
-                if (dist > L1) continue;  // Fuera de la penumbra exterior
-
-                const idx = (py * W + px) * 4;
-
-                // ---- PENUMBRA (eclipse parcial) ----
-                const norm = Math.max(0.0, dist - L2abs) / Math.max(1e-6, L1 - L2abs);
-                const factor = Math.max(0.0, Math.min(1.0, 1.0 - norm));
-                const alpha = Math.pow(factor, 1.35) * 0.85;
-                data[idx]     = 5;
-                data[idx + 1] = 10;
-                data[idx + 2] = 23;
-                data[idx + 3] = Math.round(alpha * 255) | 0;
-            }
-        }
-        ctx.putImageData(imgData, 0, 0);
-    }
-
-    /**
-     * API pública: recibe los parámetros Besselianos calculados en updateShadowAtTime()
-     * y actualiza el mapa 2D:
-     * 1) Polígono vectorial exacto de la sombra de totalidad/anularidad (L.polygon en umbraPane).
-     * 2) Marcador central de totalidad sobre el eje de la franja.
-     * 3) Gradiente penumbral offscreen en proyección Web Mercator (solo si está activado).
-     */
-    /**
      * Actualiza la sombra móvil de totalidad/anularidad (umbra) en el mapa 2D.
      * Mantiene dos polígonos sincronizados en tiempo real (umbraPolygonMain y umbraPolygonClone desplazado ±360°)
      * para que la sombra avance en perfecto tándem y simetría a ambos lados del planisferio.
@@ -500,10 +415,6 @@ const EclipseMap2D = (() => {
 
         if (polyPoints && polyPoints.length >= 3) {
             const unwrappedCoords = unwrapCoords(polyPoints);
-            const cloneCoords = unwrappedCoords.map(p => ({
-                lat: p.lat != null ? p.lat : p[0],
-                lng: (p.lng != null ? p.lng : p[1]) + ((p.lng != null ? p.lng : p[1]) < 0 ? 360 : -360)
-            }));
 
             const polyOpts = {
                 pane: 'umbraPane',
@@ -522,29 +433,63 @@ const EclipseMap2D = (() => {
                 if (!map.hasLayer(umbraPolygonMain)) umbraPolygonMain.addTo(map);
             }
 
-            if (!umbraPolygonClone) {
-                umbraPolygonClone = L.polygon(cloneCoords, polyOpts).addTo(map);
+            // Condicionar el clon de ±360°: solo se instancia o dibuja si la elipse de la umbra
+            // cruza o roza el antimeridiano (|lng| > 160°). Para eclipses en longitudes intermedias
+            // (como España/Marruecos en 2027 a ≈ 0°), se desactiva/elimina el clon para evitar
+            // artefactos y franjas horizontales negras espurias que corten el mapa.
+            let minLng = Infinity;
+            let maxLng = -Infinity;
+            for (let i = 0; i < unwrappedCoords.length; i++) {
+                const lng = unwrappedCoords[i][1];
+                if (lng < minLng) minLng = lng;
+                if (lng > maxLng) maxLng = lng;
+            }
+
+            const nearAntimeridian = (maxLng > 160 || minLng < -160);
+
+            if (nearAntimeridian) {
+                const avgLng = (minLng + maxLng) / 2;
+                const shift = (avgLng > 0) ? -360 : 360;
+                const cloneCoords = unwrappedCoords.map(([lat, lng]) => [lat, lng + shift]);
+
+                if (!umbraPolygonClone) {
+                    umbraPolygonClone = L.polygon(cloneCoords, polyOpts).addTo(map);
+                } else {
+                    umbraPolygonClone.setStyle({ fillColor: polyFill, fillOpacity: polyFillOpacity, stroke: false });
+                    umbraPolygonClone.setLatLngs(cloneCoords);
+                    if (!map.hasLayer(umbraPolygonClone)) umbraPolygonClone.addTo(map);
+                }
+                mapUmbraPolygonClone = umbraPolygonClone;
+                if (typeof window !== 'undefined') {
+                    window.mapUmbraPolygonClone = umbraPolygonClone;
+                    window.umbraPolygonClone = umbraPolygonClone;
+                }
             } else {
-                umbraPolygonClone.setStyle({ fillColor: polyFill, fillOpacity: polyFillOpacity, stroke: false });
-                umbraPolygonClone.setLatLngs(cloneCoords);
-                if (!map.hasLayer(umbraPolygonClone)) umbraPolygonClone.addTo(map);
+                if (umbraPolygonClone && map.hasLayer(umbraPolygonClone)) {
+                    map.removeLayer(umbraPolygonClone);
+                }
+                mapUmbraPolygonClone = null;
+                if (typeof window !== 'undefined') {
+                    window.mapUmbraPolygonClone = null;
+                    window.umbraPolygonClone = null;
+                }
             }
 
             // Sincronizar referencias y alias para garantizar accesibilidad
             mapUmbraPolygon = umbraPolygonMain;
-            mapUmbraPolygonClone = umbraPolygonClone;
             umbraPolygon = umbraPolygonMain;
             if (typeof window !== 'undefined') {
                 window.mapUmbraPolygon = umbraPolygonMain;
-                window.mapUmbraPolygonClone = umbraPolygonClone;
                 window.umbraPolygonMain = umbraPolygonMain;
-                window.umbraPolygonClone = umbraPolygonClone;
                 window.umbraPolygon = umbraPolygonMain;
             }
         } else {
             // La umbra no está tocando la superficie terrestre en este instante
             if (umbraPolygonMain && map.hasLayer(umbraPolygonMain)) map.removeLayer(umbraPolygonMain);
             if (umbraPolygonClone && map.hasLayer(umbraPolygonClone)) map.removeLayer(umbraPolygonClone);
+            mapUmbraPolygon = null;
+            mapUmbraPolygonClone = null;
+            umbraPolygon = null;
             if (typeof window !== 'undefined') {
                 window.mapUmbraPolygon = null;
                 window.mapUmbraPolygonClone = null;
@@ -562,52 +507,20 @@ const EclipseMap2D = (() => {
 
         const activeEclipse = params.eclipse || currentEclipse || (typeof window !== 'undefined' && window.currentEclipse) || null;
         const t = params.t != null ? params.t : (parseFloat(document.getElementById('time-slider')?.value) || 0);
-        const { x, y, l1, l2, dRad, muRad, tanF1, tanF2, showPenumbra } = params;
 
         // Si la visibilidad de la sombra/franja está desactivada por el usuario
         if (!layerVisibility.shade) {
             if (umbraPolygonMain && map.hasLayer(umbraPolygonMain)) map.removeLayer(umbraPolygonMain);
             if (umbraPolygonClone && map.hasLayer(umbraPolygonClone)) map.removeLayer(umbraPolygonClone);
-            if (shadowOverlay && map.hasLayer(shadowOverlay)) map.removeLayer(shadowOverlay);
             return;
         }
 
         // =========================================================================
-        // 1. POLÍGONO VECTORIAL DE TOTALIDAD / ANULARIDAD (Umbra / Antumbra)
+        // POLÍGONO VECTORIAL DE TOTALIDAD / ANULARIDAD (Umbra / Antumbra)
+        // En modo Mapa 2D se proyecta únicamente la umbra/antumbra sobre el terreno.
         // =========================================================================
         if (activeEclipse) {
             updateUmbraMap(activeEclipse, t);
-        }
-
-        // =========================================================================
-        // 2. GRADIENTE PENUMBRAL (Solo si la casilla "Gradiente penumbral" está activa)
-        // =========================================================================
-        if (showPenumbra) {
-            const key = `${x.toFixed(4)},${y.toFixed(4)},${l1.toFixed(4)},${l2.toFixed(4)},${dRad.toFixed(5)},${muRad.toFixed(5)}`;
-            if (key !== _lastShadowKey) {
-                _lastShadowKey = key;
-                renderShadowCanvas({ x, y, l1, l2, dRad, muRad, tanF1, tanF2 });
-
-                const dataUrl = shadowCanvas.toDataURL('image/png');
-                const bounds = [[-85.0511287798, -180], [85.0511287798, 180]];
-
-                if (shadowOverlay && map.hasLayer(shadowOverlay)) {
-                    shadowOverlay.setUrl(dataUrl);
-                } else {
-                    if (shadowOverlay) map.removeLayer(shadowOverlay);
-                    shadowOverlay = L.imageOverlay(dataUrl, bounds, {
-                        opacity: 1.0,
-                        interactive: false,
-                        pane: 'shadowPane',
-                        className: 'eclipse-shadow-overlay'
-                    }).addTo(map);
-                }
-            }
-        } else {
-            // Si el gradiente penumbral está apagado, liberar la capa del mapa
-            if (shadowOverlay && map.hasLayer(shadowOverlay)) {
-                map.removeLayer(shadowOverlay);
-            }
         }
     }
 
@@ -723,6 +636,57 @@ const EclipseMap2D = (() => {
             });
         }
 
+        // 2b. Arcos del terminador (Puesta y Salida de Sol) para cerrar el pasillo contra el horizonte
+        if (geom.sunsetArc && geom.sunsetArc.length > 1) {
+            let sunsetU = unwrapCoords(geom.sunsetArc);
+            if (sunsetU.length > 0 && nUnwrapped && nUnwrapped.length > 0) {
+                const dLng = sunsetU[0][1] - nUnwrapped[nUnwrapped.length - 1][1];
+                const offset = Math.round(dLng / 360) * 360;
+                if (offset !== 0) {
+                    for (let i = 0; i < sunsetU.length; i++) sunsetU[i][1] -= offset;
+                }
+            }
+            const wrappedSunset = getWrappedCopies(sunsetU);
+            wrappedSunset.forEach((lineCoords, idx) => {
+                const sLine = L.polyline(lineCoords, {
+                    pane: 'corridorLinesPane',
+                    color: limitColor,
+                    weight: 2,
+                    opacity: 0.85,
+                    lineCap: 'round',
+                    lineJoin: 'round',
+                    interactive: false
+                });
+                if (idx > 0) sLine._isWrappedCopy = true;
+                sLine.addTo(pathLimitsLayer);
+            });
+        }
+
+        if (geom.sunriseArc && geom.sunriseArc.length > 1) {
+            let sunriseU = unwrapCoords(geom.sunriseArc);
+            if (sunriseU.length > 0 && sUnwrapped && sUnwrapped.length > 0) {
+                const dLng = sunriseU[0][1] - sUnwrapped[0][1];
+                const offset = Math.round(dLng / 360) * 360;
+                if (offset !== 0) {
+                    for (let i = 0; i < sunriseU.length; i++) sunriseU[i][1] -= offset;
+                }
+            }
+            const wrappedSunrise = getWrappedCopies(sunriseU);
+            wrappedSunrise.forEach((lineCoords, idx) => {
+                const sLine = L.polyline(lineCoords, {
+                    pane: 'corridorLinesPane',
+                    color: limitColor,
+                    weight: 2,
+                    opacity: 0.85,
+                    lineCap: 'round',
+                    lineJoin: 'round',
+                    interactive: false
+                });
+                if (idx > 0) sLine._isWrappedCopy = true;
+                sLine.addTo(pathLimitsLayer);
+            });
+        }
+
         // 3. Línea Central (Polyline continua con copias envolventes)
         if (cUnwrapped && cUnwrapped.length > 1) {
             const wrappedCenter = getWrappedCopies(cUnwrapped);
@@ -834,6 +798,17 @@ const EclipseMap2D = (() => {
         }
 
         currentInspectedLocation = { lat: normLat, lon: normLng, name: locationName };
+        if (typeof window !== 'undefined') {
+            const isPure = typeof window.isPureCoordinates === 'function' ? window.isPureCoordinates(locationName) : false;
+            window.selectedLocation = {
+                lat: normLat,
+                lon: normLng,
+                name: (locationName && !isPure) ? locationName : null
+            };
+            if (typeof selectedLocation !== 'undefined') {
+                selectedLocation = window.selectedLocation;
+            }
+        }
 
         // Construir contenido HTML del popup interactivo estilo NASA
         const popupContent = buildNasaPopupHtml(normLat, normLng, circ, locationName);
@@ -990,6 +965,17 @@ const EclipseMap2D = (() => {
         }
         if (typeof updateObserverPosition === 'function') {
             updateObserverPosition(lat, lon, finalName);
+        }
+        if (typeof window !== 'undefined') {
+            const isPure = typeof window.isPureCoordinates === 'function' ? window.isPureCoordinates(finalName) : false;
+            window.selectedLocation = {
+                lat,
+                lon,
+                name: !isPure ? finalName : null
+            };
+            if (typeof selectedLocation !== 'undefined') {
+                selectedLocation = window.selectedLocation;
+            }
         }
         if (isLoaded) {
             setObserverMarker(lat, lon, finalName);
@@ -1453,6 +1439,21 @@ const EclipseMap2D = (() => {
         const input = document.getElementById('map-search-input');
         if (dropdown) dropdown.style.display = 'none';
         if (input) input.value = name;
+
+        if (typeof window !== 'undefined') {
+            const isPure = typeof window.isPureCoordinates === 'function' ? window.isPureCoordinates(name) : false;
+            window.selectedLocation = {
+                lat,
+                lon,
+                name: (name && !isPure) ? name : null
+            };
+            if (typeof selectedLocation !== 'undefined') {
+                selectedLocation = window.selectedLocation;
+            }
+            if (typeof window.updateSidePanelLocationName === 'function') {
+                window.updateSidePanelLocationName();
+            }
+        }
 
         if (map) {
             map.flyTo([lat, lon], 12, { duration: 1.2 });

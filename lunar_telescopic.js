@@ -80,12 +80,17 @@ function toggleTelescopeHUD(show) {
                 const totalVisualRotDeg = (isEquatorial ? chiRad : (horizCoords.qRad + chiRad)) * DEG;
                 pillCoords.style.display = 'flex';
                 const isAbove = horizCoords.alt > -0.5;
+                const altStr = (horizCoords.alt != null) ? horizCoords.alt.toFixed(1).padStart(4, '\u00A0') : '--';
+                const altStrUnder = (horizCoords.alt != null) ? horizCoords.alt.toFixed(1).padStart(5, '\u00A0') : '--';
+                const qSigned = (horizCoords.qDeg != null) ? ((horizCoords.qDeg >= 0 ? '+' : '') + horizCoords.qDeg.toFixed(1)) : '--';
+                const qStr = qSigned.padStart(6, '\u00A0');
                 if (isAbove) {
                     pillCoords.className = 'hud-pill altaz';
-                    pillCoords.textContent = `Alt: ${horizCoords.alt.toFixed(1)}° · Az: ${horizCoords.az.toFixed(1)}° · Paraláctico (q): ${horizCoords.qDeg >= 0 ? '+' : ''}${horizCoords.qDeg.toFixed(1)}° (Rot. visual: ${totalVisualRotDeg.toFixed(1)}°)`;
+                    const azStr = (horizCoords.az != null) ? horizCoords.az.toFixed(1).padStart(5, '\u00A0') : '--';
+                    pillCoords.textContent = `Alt: ${altStr}° · Az: ${azStr}° · Paraláctico (q): ${qStr}° (Rot. visual: ${totalVisualRotDeg.toFixed(1)}°)`;
                 } else {
                     pillCoords.className = 'hud-pill warning';
-                    pillCoords.textContent = `Bajo el horizonte (${horizCoords.alt.toFixed(1)}°) · Paraláctico (q): ${horizCoords.qDeg >= 0 ? '+' : ''}${horizCoords.qDeg.toFixed(1)}°`;
+                    pillCoords.textContent = `Bajo el horizonte (${altStrUnder}°) · Paraláctico (q): ${qStr}°`;
                 }
             }
         }

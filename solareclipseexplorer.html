@@ -63,6 +63,14 @@
             cursor: grabbing;
         }
 
+        /* Rótulo de telemetría numérica en HUD Telescópico con cifras tabulares fijas */
+        #hud-pill-coords {
+            font-family: var(--font-mono, monospace);
+            font-variant-numeric: tabular-nums;
+            font-feature-settings: "tnum" 1;
+            white-space: pre;
+        }
+
         /* Píldora de Baily Beads en HUD Telescópico */
         #hud-pill-bead {
             background: transparent !important;
@@ -398,6 +406,11 @@
         <div style="position: absolute; bottom: -7px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 8px solid transparent; border-right: 8px solid transparent; border-top: 8px solid rgba(11, 19, 41, 0.96);"></div>
     </div>
 
+    <!-- Ventana Flotante Minimalista de Vista Telescópica (#floating-telescope-window) -->
+    <div id="floating-telescope-window" style="display: none; position: fixed; z-index: 9999; width: 320px; height: 320px; border-radius: 12px; background: linear-gradient(135deg, rgba(14, 165, 233, 0.08), rgba(249, 115, 22, 0.06)), rgba(11, 19, 41, 0.96); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(56, 189, 248, 0.25); box-shadow: 0 12px 36px rgba(0, 0, 0, 0.75); overflow: hidden; cursor: grab; user-select: none; touch-action: none; box-sizing: border-box;" title="Arrastra para mover · Clic para abrir vista completa · Doble clic para cerrar">
+        <canvas id="canvas-floating-telescope" style="width: 100%; height: 100%; display: block; pointer-events: none; border-radius: 11px;"></canvas>
+    </div>
+
     <!-- Texto flotante cinematográfico para el Modo Ruta (sin fondo ni borde, estilo documental con text-shadow) -->
     <div id="route-cinematic-hud" style="display: none; position: absolute; top: 28px; left: 50%; transform: translateX(-50%); z-index: var(--z-modal); flex-direction: column; align-items: center; text-align: center; gap: 8px; pointer-events: none; max-width: 760px; width: calc(100vw - 32px); box-sizing: border-box;">
         <div id="route-scene-title" style="font-family: var(--font-heading); font-size: 1.15rem; font-weight: 700; color: #f8fafc; letter-spacing: 0.04em; text-transform: uppercase; text-shadow: 0 2px 14px rgba(0,0,0,0.95), 0 0 24px rgba(0,0,0,0.9); line-height: 1.3;"></div>
@@ -581,6 +594,8 @@
             <button onclick="exportSelectedEclipseToICal()" style="background: none; border: none; color: var(--accent-blue); font-size: 0.72rem; cursor: pointer; text-decoration: underline;"><i class="fa-solid fa-calendar-plus"></i> iCal</button>
         </div>
         <div class="observer-card" style="margin-top: 0;">
+            <!-- Nombre de la ubicación activa si existe (estilo idéntico a tooltip flotante NASA) -->
+            <div id="side-panel-location-name" style="display: none; font-weight: 700; color: #38bdf8; font-size: 0.84rem; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: var(--font-body, system-ui);" title=""></div>
             <!-- Coordenadas del Observador y Zona Horaria (formato idéntico a tarjeta flotante) -->
             <div style="font-size: 0.74rem; font-family: var(--font-mono); margin-bottom: 4px; display: flex; justify-content: space-between; align-items: center;">
                 <div style="display: flex; align-items: center; gap: 5px;">
@@ -662,7 +677,7 @@
                     </label>
                     <label class="checkbox-row" id="lbl-show-constellations" style="padding-left: 24px; transition: var(--transition-smooth);">
                         <input type="checkbox" id="chk-show-constellations" checked>
-                        <span>Líneas de constelaciones</span>
+                        <span>Constelaciones</span>
                     </label>
                     <label class="checkbox-row" id="lbl-show-nodes">
                         <input type="checkbox" id="chk-show-nodes" checked>
@@ -674,11 +689,15 @@
                     </label>
                     <label class="checkbox-row" id="lbl-show-limits-labels" style="padding-left: 24px; transition: var(--transition-smooth);">
                         <input type="checkbox" id="chk-show-limits-labels">
-                        <span>Rótulos de los límites</span>
+                        <span>Rótulos</span>
                     </label>
                     <label class="checkbox-row" id="lbl-show-shadow">
                         <input type="checkbox" id="chk-show-shadow">
                         <span>Gradiente penumbral</span>
+                    </label>
+                    <label class="checkbox-row" id="lbl-show-penumbra-rings">
+                        <input type="checkbox" id="chk-show-penumbra-rings">
+                        <span>Anillos de penumbra (0–80%)</span>
                     </label>
                     <label class="checkbox-row" id="lbl-show-center-line">
                         <input type="checkbox" id="chk-show-center-line" checked>
@@ -712,12 +731,24 @@
                         <input type="checkbox" id="chk-daylight-mode">
                         <span>Iluminación global</span>
                     </label>
+                    <label class="checkbox-row" id="lbl-show-horizon-lobes">
+                        <input type="checkbox" id="chk-show-horizon-lobes" checked>
+                        <span>Lóbulos de ocultación y horizonte</span>
+                    </label>
                     <label class="checkbox-row" id="lbl-show-isomagnitudes">
                         <input type="checkbox" id="chk-show-isomagnitudes" checked>
-                        <span>Líneas de ocultación y tiempo</span>
+                        <span>Líneas de isomagnitud</span>
                     </label>
-                    <label class="checkbox-row" id="lbl-show-labels" style="padding-left: 14px; transition: var(--transition-smooth);">
-                        <input type="checkbox" id="chk-show-labels" checked>
+                    <label class="checkbox-row" id="lbl-show-isomagnitudes-labels" style="padding-left: 24px; transition: var(--transition-smooth);">
+                        <input type="checkbox" id="chk-show-isomagnitudes-labels" checked>
+                        <span>Rótulos</span>
+                    </label>
+                    <label class="checkbox-row" id="lbl-show-ut-lines">
+                        <input type="checkbox" id="chk-show-ut-lines" checked>
+                        <span>Líneas de tiempo</span>
+                    </label>
+                    <label class="checkbox-row" id="lbl-show-ut-labels" style="padding-left: 24px; transition: var(--transition-smooth);">
+                        <input type="checkbox" id="chk-show-ut-labels" checked>
                         <span>Rótulos</span>
                     </label>
                 </div>
@@ -725,6 +756,10 @@
 
             <!-- GRUPO 2: CONTROLES PARA MODO TELESCOPIO -->
             <div id="layers-group-tele" style="display: none; flex-direction: column; gap: 0.45rem;">
+                <label class="checkbox-row" id="lbl-floating-telescope" title="Abrir una ventana flotante minimalista con la simulación telescópica en tiempo real">
+                    <input type="checkbox" id="chk-floating-telescope" onchange="toggleFloatingTelescope(this.checked)">
+                    <span>Ventana flotante</span>
+                </label>
                 <label class="checkbox-row" id="lbl-tele-zenith-up" title="Marcar para orientación Altazimutal (Cenit) o desmarcar para Ecuatorial (Norte celeste)">
                     <input type="checkbox" id="chk-tele-zenith-up" checked onchange="renderTelescopicView()">
                     <span>Orientación altazimutal</span>
@@ -763,13 +798,11 @@
 
             <!-- GRUPO 3: CONTROLES PARA MODO MAPA 2D -->
             <div id="layers-group-map" style="display: none; flex-direction: column; gap: 0.45rem;">
-                <div style="font-size: 0.72rem; color: var(--text-secondary); margin-bottom: 2px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Estilo de mapa</div>
                 <div style="display: flex; gap: 4px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: 8px; padding: 2px;">
                     <button type="button" class="mini-toggle-btn map-basemap-side-btn active" data-basemap="dark" onclick="EclipseMap2D.switchBasemap('dark')" style="flex: 1; text-align: center;">Oscuro</button>
                     <button type="button" class="mini-toggle-btn map-basemap-side-btn" data-basemap="streets" onclick="EclipseMap2D.switchBasemap('streets')" style="flex: 1; text-align: center;">Callejero</button>
                     <button type="button" class="mini-toggle-btn map-basemap-side-btn" data-basemap="satellite" onclick="EclipseMap2D.switchBasemap('satellite')" style="flex: 1; text-align: center;">Satélite</button>
                 </div>
-                <div style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 6px; margin-bottom: 2px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Capas del eclipse</div>
                 <label class="checkbox-row" id="lbl-map-center-line">
                     <input type="checkbox" id="chk-map-center-line" checked onchange="EclipseMap2D.toggleLayer('centerLine', this.checked)">
                     <span>Línea central</span>
@@ -782,7 +815,6 @@
                     <input type="checkbox" id="chk-map-path-shade" checked onchange="EclipseMap2D.toggleLayer('shade', this.checked)">
                     <span>Franja de totalidad / anularidad</span>
                 </label>
-                <div style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 6px; margin-bottom: 2px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Navegación</div>
                 <label class="checkbox-row" id="lbl-auto-zoom-map">
                     <input type="checkbox" id="chk-auto-zoom-map">
                     <span>Zoom automático al cambiar de eclipse</span>
@@ -822,15 +854,15 @@
                 </div>
                 <span style="text-align: right; color: var(--accent-blue, #38bdf8); font-weight: 500;">Ángulo polar</span>
             </div>
-            <div class="limb-timetable-row" style="display: flex; justify-content: space-between; align-items: center; height: 18px; min-height: 18px; max-height: 18px; line-height: 17px; font-family: var(--font-mono); font-size: 0.76rem; border-bottom: 1px solid rgba(255,255,255,0.04); padding: 0 4px; box-sizing: border-box; cursor: pointer; border-radius: 4px;">
+            <div class="limb-timetable-row" id="row-limb-c2" onclick="jumpToLimbContact('c2')" title="Clic para saltar a C2' (Segundo Contacto corregido por perfil lunar)" style="display: flex; justify-content: space-between; align-items: center; height: 18px; min-height: 18px; max-height: 18px; line-height: 17px; font-family: var(--font-mono); font-size: 0.76rem; border-bottom: 1px solid rgba(255,255,255,0.04); padding: 0 4px; box-sizing: border-box; cursor: pointer; border-radius: 4px;">
                 <div id="limb-c2-text" style="display: flex; align-items: center; gap: 6px; white-space: nowrap;"><span class="limb-row-key" style="color: #f8fafc; font-weight: 600; min-width: 38px;">C2'</span> <span style="color: #f8fafc; min-width: 68px;">--:--:--</span></div>
                 <div id="limb-p2-text" style="display: flex; align-items: center; justify-content: flex-end; gap: 6px; white-space: nowrap;"><span class="limb-row-key" style="color: #f8fafc; font-weight: 600; min-width: 26px; text-align: left;">P2'</span> <span style="color: #f8fafc; min-width: 48px; text-align: right;">--</span></div>
             </div>
-            <div class="limb-timetable-row" style="display: flex; justify-content: space-between; align-items: center; height: 18px; min-height: 18px; max-height: 18px; line-height: 17px; font-family: var(--font-mono); font-size: 0.76rem; border-bottom: 1px solid rgba(255,255,255,0.04); padding: 0 4px; box-sizing: border-box; cursor: pointer; border-radius: 4px;">
+            <div class="limb-timetable-row" id="row-limb-c3" onclick="jumpToLimbContact('c3')" title="Clic para saltar a C3' (Tercer Contacto corregido por perfil lunar)" style="display: flex; justify-content: space-between; align-items: center; height: 18px; min-height: 18px; max-height: 18px; line-height: 17px; font-family: var(--font-mono); font-size: 0.76rem; border-bottom: 1px solid rgba(255,255,255,0.04); padding: 0 4px; box-sizing: border-box; cursor: pointer; border-radius: 4px;">
                 <div id="limb-c3-text" style="display: flex; align-items: center; gap: 6px; white-space: nowrap;"><span class="limb-row-key" style="color: #f8fafc; font-weight: 600; min-width: 38px;">C3'</span> <span style="color: #f8fafc; min-width: 68px;">--:--:--</span></div>
                 <div id="limb-p3-text" style="display: flex; align-items: center; justify-content: flex-end; gap: 6px; white-space: nowrap;"><span class="limb-row-key" style="color: #f8fafc; font-weight: 600; min-width: 26px; text-align: left;">P3'</span> <span style="color: #f8fafc; min-width: 48px; text-align: right;">--</span></div>
             </div>
-            <div class="limb-timetable-row" style="display: flex; justify-content: space-between; align-items: center; height: 18px; min-height: 18px; max-height: 18px; line-height: 17px; font-family: var(--font-mono); font-size: 0.76rem; padding: 0 4px; box-sizing: border-box; cursor: pointer; border-radius: 4px;">
+            <div class="limb-timetable-row" id="row-limb-dur" style="display: flex; justify-content: space-between; align-items: center; height: 18px; min-height: 18px; max-height: 18px; line-height: 17px; font-family: var(--font-mono); font-size: 0.76rem; padding: 0 4px; box-sizing: border-box; border-radius: 4px;">
                 <div id="limb-duration-text" style="display: flex; align-items: center; gap: 6px; white-space: nowrap;"><span class="limb-row-key" style="color: #f8fafc; font-weight: 600; min-width: 38px;">Dur.</span> <span style="color: #f8fafc; min-width: 68px;">--</span></div>
                 <div></div>
             </div>
@@ -890,10 +922,10 @@
     <script src="baily_activity_log.js?v=20260916_v14"></script>
     <script src="route_director.js?v=20260916_v14"></script>
     <script src="lunar_limb_engine.js?v=20260916_v14"></script>
-    <script src="besselian_engine.js?v=20260920_v3"></script>
+    <script src="besselian_engine.js?v=20260920_v5"></script>
     <script src="celestial_sphere_3d.js?v=20260916_v14"></script>
-    <script src="solar_scene_3d.js?v=20260920_v5"></script>
-    <script src="eclipse_map_2d.js?v=20260920_v3"></script>
+    <script src="solar_scene_3d.js?v=20260920_v6"></script>
+    <script src="eclipse_map_2d.js?v=20260920_v4"></script>
     <script src="shared_ui_panels.js?v=20260916_v14"></script>
     <script>
         // RAD y DEG definidos en besselian_engine.js
@@ -922,6 +954,8 @@
             ];
 
         let currentObserver = { ...OBSERVER_PRESETS[0] };
+        let selectedLocation = { ...currentObserver };
+        window.selectedLocation = selectedLocation;
         var currentActiveView = '3d'; // '3d' | 'telescopic' | 'route'
         window.currentActiveView = currentActiveView;
         // isRouteActive, isRoutePlaying, routeCurrentTime, currentRouteData definidos en route_director.js
@@ -1032,6 +1066,61 @@
             tzEl.textContent = tzStr;
         }
 
+        function isPureCoordinates(str) {
+            if (!str || typeof str !== 'string') return true;
+            const s = str.trim();
+            if (!s || s === 'Personalizado' || s === '--') return true;
+            if (typeof parseCoordinatesInput === 'function' && parseCoordinatesInput(s)) {
+                return true;
+            }
+            const cleaned = s.replace(/[\d\s.,;°'"′″·\-+/–]/g, '').replace(/[NSEOWnseow]/g, '');
+            return cleaned.length === 0;
+        }
+        window.isPureCoordinates = isPureCoordinates;
+
+        function updateSidePanelLocationName(customName = null) {
+            const locNameEl = getDOM('side-panel-location-name');
+            if (!locNameEl) return;
+
+            let nameToDisplay = customName;
+
+            if (!nameToDisplay) {
+                if (typeof selectedLocation !== 'undefined' && selectedLocation && selectedLocation.name) {
+                    nameToDisplay = selectedLocation.name;
+                } else if (typeof window !== 'undefined' && window.selectedLocation && window.selectedLocation.name) {
+                    nameToDisplay = window.selectedLocation.name;
+                } else if (currentObserver && currentObserver.name) {
+                    nameToDisplay = currentObserver.name;
+                }
+            }
+
+            if (!nameToDisplay) {
+                const s3d = getDOM('space-3d-search-input');
+                const sMap = getDOM('map-search-input');
+                const sObs = getDOM('observer-location-input');
+                const sVal = (s3d && s3d.value.trim()) || (sMap && sMap.value.trim()) || (sObs && sObs.value.trim()) || '';
+                if (sVal && !isPureCoordinates(sVal)) {
+                    nameToDisplay = sVal;
+                }
+            }
+
+            if (nameToDisplay && !isPureCoordinates(nameToDisplay)) {
+                locNameEl.textContent = nameToDisplay;
+                locNameEl.title = nameToDisplay;
+                locNameEl.style.display = 'block';
+            } else {
+                locNameEl.textContent = '';
+                locNameEl.title = '';
+                locNameEl.style.display = 'none';
+            }
+        }
+        window.updateSidePanelLocationName = updateSidePanelLocationName;
+
+        function updateLocalCircumstancesUI() {
+            renderLocalSolarCircumstances();
+        }
+        window.updateLocalCircumstancesUI = updateLocalCircumstancesUI;
+
         let activeExtremeMode = null; // 'GE' | 'GD' | null
         let savedObserverBeforeExtreme = null;
 
@@ -1119,6 +1208,14 @@
             currentObserver.name = (name && name !== 'Personalizado') ? name : dmsCoordsStr;
             currentObserver.tz = tz || getTimeZoneFromLon(lon);
 
+            selectedLocation = {
+                lat,
+                lon,
+                name: (name && !isPureCoordinates(name)) ? name : null,
+                tz: currentObserver.tz
+            };
+            window.selectedLocation = selectedLocation;
+
             if (observerMarkerGroup3D) {
                 observerMarkerGroup3D.position.copy(latLngToVector3(lat, lon, EARTH_RADIUS * 1.004));
                 observerMarkerGroup3D.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), latLngToVector3(lat, lon, 1.0).normalize());
@@ -1138,6 +1235,7 @@
                 subtitleEl.textContent = dmsCoordsStr;
             }
             updateObserverHeaderTz();
+            updateSidePanelLocationName();
 
             if (currentEclipse) {
                 renderLocalSolarCircumstances();
@@ -1815,6 +1913,8 @@
             const res = calculateLocalSolarCircumstances(currentEclipse, currentObserver.lat, currentObserver.lon);
             localCircumstancesCache = res;
 
+            updateSidePanelLocationName();
+
             if (thTime) {
                 if (activeExtremeMode) {
                     thTime.textContent = 'Hora (UT1)';
@@ -1937,7 +2037,7 @@
                 }
 
                 const strokeColor = isAbove ? (isRising ? '#4ade80' : '#f59e0b') : 'var(--text-dim)';
-                const arrowUnicode = `<span style="color: ${strokeColor}; font-weight: 700; margin-right: 3px;">${isRising ? '↗' : '↘'}</span>`;
+                const arrowUnicode = `<span class="contact-arrow" style="color: ${strokeColor}; font-weight: 700; margin-right: 3px;">${isRising ? '↗' : '↘'}</span>`;
                 const textColor = isAbove ? '#f8fafc' : 'var(--text-dim)';
 
                 rowsHtml += `
@@ -1984,6 +2084,16 @@
                 if (isPlaying) toggleSimulation();
             }
         }
+
+        function jumpToLimbContact(key) {
+            const circ = (typeof localCircumstancesCache !== 'undefined') ? localCircumstancesCache : null;
+            const times = (typeof getLimbContactTimes === 'function') ? getLimbContactTimes(circ) : null;
+            if (times && times[key] != null) {
+                const label = (circ && circ.isTotal) ? (key.toUpperCase() + "'") : (key === 'c2' ? "C1'" : "C4'");
+                jumpToContact(label, times[key]);
+            }
+        }
+        window.jumpToLimbContact = jumpToLimbContact;
 
         // --- SELECTOR DE MODO DE VISTA (ESPACIO 3D vs MAPA vs TELESCOPIO vs RUTA) ---
         function switchMainView(mode) {
@@ -2120,6 +2230,26 @@
                     popupEl.style.visibility = 'hidden';
                 }
             }
+            // Sincronizar estado y visibilidad de la ventana flotante telescópica
+            if (mode === 'telescopic') {
+                if (typeof toggleFloatingTelescope === 'function') {
+                    toggleFloatingTelescope(false);
+                } else {
+                    const win = getDOM('floating-telescope-window');
+                    if (win) win.style.display = 'none';
+                    const chk = getDOM('chk-floating-telescope');
+                    if (chk) chk.checked = false;
+                    isFloatingTelescopeActive = false;
+                    window.isFloatingTelescopeActive = false;
+                }
+            } else if (typeof isFloatingTelescopeActive !== 'undefined' && isFloatingTelescopeActive) {
+                const win = getDOM('floating-telescope-window');
+                if (win) {
+                    win.style.display = 'block';
+                    if (typeof resizeFloatingTelescopeCanvas === 'function') resizeFloatingTelescopeCanvas();
+                    if (typeof renderFloatingTelescopeView === 'function') renderFloatingTelescopeView();
+                }
+            }
             updateTopNavButtonsState();
             updateRecenterBtnState();
         }
@@ -2245,9 +2375,8 @@
         // Extraído a lunar_limb_engine.js
         // =========================================================================
 
-        function renderTelescopicView() {
-            const canvas = getDOM('canvas-telescopic');
-            if (!canvas || currentActiveView !== 'telescopic' || !currentEclipse) return;
+        function renderTelescopicScene(canvas, isFloating = false) {
+            if (!canvas || !currentEclipse) return;
 
             const ctx = canvas.getContext('2d');
             const dpr = window.devicePixelRatio || 1;
@@ -2275,13 +2404,17 @@
             const limbOpen = limbPanel && !limbPanel.classList.contains('collapsed');
 
             let centerOffsetX = 0;
-            if (isSmall && limbOpen && w > 520) {
+            if (!isFloating && isSmall && limbOpen && w > 520) {
                 centerOffsetX = 175;
             }
 
-            const cx = (w / 2 + centerOffsetX) + telePanX;
-            const cy = h / 2 + telePanY;
-            const rSunPx = Math.min(w, h) * 0.18 * teleZoom;
+            const curPanX = isFloating ? 0 : telePanX;
+            const curPanY = isFloating ? 0 : telePanY;
+            const curZoom = isFloating ? 1.0 : teleZoom;
+
+            const cx = (w / 2 + centerOffsetX) + curPanX;
+            const cy = h / 2 + curPanY;
+            const rSunPx = Math.min(w, h) * (isFloating ? 0.32 : 0.18) * curZoom;
 
             ctx.translate(cx, cy);
 
@@ -2301,7 +2434,7 @@
                 }
 
                 // 1. Retícula de orientación celeste y coordenadas locales (Cenit / Horizonte o Norte / Sur)
-                const showTeleLabels = getDOM('chk-tele-labels')?.checked ?? true;
+                const showTeleLabels = !isFloating && (getDOM('chk-tele-labels')?.checked ?? true);
                 const rReticle = Math.max(rSunPx * 1.55, 120);
 
                 if (showTeleLabels) {
@@ -2836,88 +2969,317 @@
                 // Generar texto unificado de aviso para perlas y diamante
                 const beadAnnouncement = getBeadAnnouncement(activeBeadsList, isDiamondRing, axisC);
 
-                // Actualizar panel flotante del radar del Limbo Lunar si está visible
-                const limbPanel = getDOM('lunar-limb-panel');
-                if (limbPanel && !limbPanel.classList.contains('collapsed')) {
-                    renderLunarLimbRadar(activeBeadsList, isDiamondRing, beadAnnouncement);
-                }
-
-                // 5. Telemetría HUD
-                const teleHud = getDOM('telescope-hud');
-                if (teleHud) {
-                    teleHud.style.display = showTeleLabels ? 'flex' : 'none';
-                }
-                const pillCoords = getDOM('hud-pill-coords');
-                const pillOrient = getDOM('hud-pill-orient');
-                const pillBead = getDOM('hud-pill-bead');
-                if (pillOrient) {
-                    const cleanObsName = currentObserver.name.replace(/\s*\([^)]*\)/g, '').trim() || currentObserver.name;
-                    const orientModeStr = isZenithUp ? 'Altazimutal' : 'Ecuatorial';
-                    pillOrient.textContent = `${cleanObsName} · ${orientModeStr}`;
-                }
-                if (pillBead) {
-                    if (isDiamondRing) {
-                        pillBead.style.display = 'inline-flex';
-                        pillBead.textContent = 'Anillo de Diamantes';
-                    } else if (activeBeadsList.length > 0) {
-                        pillBead.style.display = 'inline-flex';
-                        const fallbackText = activeBeadsList.length === 1 ? '1 perla activa' : `${activeBeadsList.length} perlas activas`;
-                        pillBead.textContent = beadAnnouncement || fallbackText;
-                    } else if (isTotalNow && activeBeadsList.length === 0) {
-                        pillBead.style.display = 'inline-flex';
-                        pillBead.textContent = 'Fotosfera oculta · Corona visible';
-                    } else {
-                        pillBead.style.display = 'none';
+                if (!isFloating) {
+                    // Actualizar panel flotante del radar del Limbo Lunar si está visible
+                    const limbPanel = getDOM('lunar-limb-panel');
+                    if (limbPanel && !limbPanel.classList.contains('collapsed')) {
+                        renderLunarLimbRadar(activeBeadsList, isDiamondRing, beadAnnouncement);
                     }
-                }
-                if (pillCoords) {
-                    const isAbove = p.alt > -0.5;
-                    pillCoords.className = isAbove ? 'hud-pill altaz' : 'hud-pill warning';
 
-                    // Cálculo astronómico riguroso de oscurecimiento (fracción de superficie solar cubierta)
-                    let obsFraction = 0;
-                    if (p && p.delta < p.L1) {
-                        const rS = (p.L1 + p.L2) / 2.0;
-                        const rM = (p.L1 - p.L2) / 2.0;
-                        const d = p.delta;
-                        if (d >= rS + rM) {
-                            obsFraction = 0.0;
-                        } else if (rM >= rS && d <= rM - rS) {
-                            // Totalidad completa
-                            obsFraction = 1.0;
-                        } else if (rM < rS && d <= rS - rM) {
-                            // Anularidad completa: Luna totalmente dentro del disco solar
-                            obsFraction = (rM * rM) / (rS * rS);
-                        } else if (d > 0.00001) {
-                            const r1sq = rS * rS, r2sq = rM * rM;
-                            const cosAlpha = Math.max(-1.0, Math.min(1.0, (d * d + r1sq - r2sq) / (2.0 * d * rS)));
-                            const cosBeta = Math.max(-1.0, Math.min(1.0, (d * d + r2sq - r1sq) / (2.0 * d * rM)));
-                            const alpha = 2.0 * Math.acos(cosAlpha);
-                            const beta = 2.0 * Math.acos(cosBeta);
-                            const area = 0.5 * (r1sq * (alpha - Math.sin(alpha)) + r2sq * (beta - Math.sin(beta)));
-                            obsFraction = Math.max(0.0, Math.min(1.0, area / (Math.PI * r1sq)));
+                    // 5. Telemetría HUD
+                    const teleHud = getDOM('telescope-hud');
+                    if (teleHud) {
+                        teleHud.style.display = showTeleLabels ? 'flex' : 'none';
+                    }
+                    const pillCoords = getDOM('hud-pill-coords');
+                    const pillOrient = getDOM('hud-pill-orient');
+                    const pillBead = getDOM('hud-pill-bead');
+                    if (pillOrient) {
+                        const cleanObsName = currentObserver.name.replace(/\s*\([^)]*\)/g, '').trim() || currentObserver.name;
+                        const orientModeStr = isZenithUp ? 'Altazimutal' : 'Ecuatorial';
+                        pillOrient.textContent = `${cleanObsName} · ${orientModeStr}`;
+                    }
+                    if (pillBead) {
+                        if (isDiamondRing) {
+                            pillBead.style.display = 'inline-flex';
+                            pillBead.textContent = 'Anillo de Diamantes';
+                        } else if (activeBeadsList.length > 0) {
+                            pillBead.style.display = 'inline-flex';
+                            const fallbackText = activeBeadsList.length === 1 ? '1 perla activa' : `${activeBeadsList.length} perlas activas`;
+                            pillBead.textContent = beadAnnouncement || fallbackText;
+                        } else if (isTotalNow && activeBeadsList.length === 0) {
+                            pillBead.style.display = 'inline-flex';
+                            pillBead.textContent = 'Fotosfera oculta · Corona visible';
+                        } else {
+                            pillBead.style.display = 'none';
                         }
                     }
+                    if (pillCoords) {
+                        const isAbove = p.alt > -0.5;
+                        pillCoords.className = isAbove ? 'hud-pill altaz' : 'hud-pill warning';
 
-                    // Mientras existan perlas de Baily o anillo de diamantes, la ocultación física de la fotosfera no es del 100%
-                    let obsPct = obsFraction * 100;
-                    if ((activeBeadsList.length > 0 || isDiamondRing) && obsPct >= 99.85) {
-                        obsPct = 99.9;
-                    } else if (!isTotalNow && obsPct >= 100.0) {
-                        obsPct = 99.9;
-                    } else if (isTotalNow && activeBeadsList.length === 0) {
-                        obsPct = 100.0;
+                        // Cálculo astronómico riguroso de oscurecimiento (fracción de superficie solar cubierta)
+                        let obsFraction = 0;
+                        if (p && p.delta < p.L1) {
+                            const rS = (p.L1 + p.L2) / 2.0;
+                            const rM = (p.L1 - p.L2) / 2.0;
+                            const d = p.delta;
+                            if (d >= rS + rM) {
+                                obsFraction = 0.0;
+                            } else if (rM >= rS && d <= rM - rS) {
+                                // Totalidad completa
+                                obsFraction = 1.0;
+                            } else if (rM < rS && d <= rS - rM) {
+                                // Anularidad completa: Luna totalmente dentro del disco solar
+                                obsFraction = (rM * rM) / (rS * rS);
+                            } else if (d > 0.00001) {
+                                const r1sq = rS * rS, r2sq = rM * rM;
+                                const cosAlpha = Math.max(-1.0, Math.min(1.0, (d * d + r1sq - r2sq) / (2.0 * d * rS)));
+                                const cosBeta = Math.max(-1.0, Math.min(1.0, (d * d + r2sq - r1sq) / (2.0 * d * rM)));
+                                const alpha = 2.0 * Math.acos(cosAlpha);
+                                const beta = 2.0 * Math.acos(cosBeta);
+                                const area = 0.5 * (r1sq * (alpha - Math.sin(alpha)) + r2sq * (beta - Math.sin(beta)));
+                                obsFraction = Math.max(0.0, Math.min(1.0, area / (Math.PI * r1sq)));
+                            }
+                        }
+
+                        // Mientras existan perlas de Baily o anillo de diamantes, la ocultación física de la fotosfera no es del 100%
+                        let obsPct = obsFraction * 100;
+                        if ((activeBeadsList.length > 0 || isDiamondRing) && obsPct >= 99.85) {
+                            obsPct = 99.9;
+                        } else if (!isTotalNow && obsPct >= 100.0) {
+                            obsPct = 99.9;
+                        } else if (isTotalNow && activeBeadsList.length === 0) {
+                            obsPct = 100.0;
+                        }
+                        const obsStr = obsPct.toFixed(1).padStart(5, '\u00A0');
+                        const altStr = (p && p.alt != null) ? p.alt.toFixed(1).padStart(4, '\u00A0') : '--';
+                        const altStrUnder = (p && p.alt != null) ? p.alt.toFixed(1).padStart(5, '\u00A0') : '--';
+                        const azStr = (p && p.az != null) ? p.az.toFixed(1).padStart(5, '\u00A0') : '--';
+                        const qSigned = (p && p.qDeg != null) ? ((p.qDeg >= 0 ? '+' : '') + p.qDeg.toFixed(1)) : '--';
+                        const qStr = qSigned.padStart(6, '\u00A0');
+
+                        pillCoords.textContent = isAbove
+                            ? `Alt: ${altStr}° · Az: ${azStr}° · Ocultación: ${obsStr}% · Paraláctico q: ${qStr}°`
+                            : `Bajo el horizonte (${altStrUnder}°) · Ocultación: ${obsStr}%`;
                     }
-                    const obsStr = obsPct.toFixed(1);
-
-                    pillCoords.textContent = isAbove
-                        ? `Alt: ${p.alt.toFixed(1)}° · Az: ${p.az.toFixed(1)}° · Ocultación: ${obsStr}% · Paraláctico q: ${p.qDeg >= 0 ? '+' : ''}${p.qDeg.toFixed(1)}°`
-                        : `Bajo el horizonte (${p.alt.toFixed(1)}°) · Ocultación: ${obsStr}%`;
                 }
             }
 
             ctx.restore();
         }
+
+        function renderTelescopicView() {
+            if (currentActiveView !== 'telescopic') return;
+            const canvas = getDOM('canvas-telescopic');
+            if (canvas) renderTelescopicScene(canvas, false);
+        }
+
+        let isFloatingTelescopeActive = false;
+        window.isFloatingTelescopeActive = isFloatingTelescopeActive;
+
+        function resizeFloatingTelescopeCanvas() {
+            const win = getDOM('floating-telescope-window');
+            const canvas = getDOM('canvas-floating-telescope');
+            if (!win || !canvas) return;
+            const dpr = window.devicePixelRatio || 1;
+            let w = win.clientWidth;
+            let h = win.clientHeight;
+            if (!w || !h) {
+                const rect = win.getBoundingClientRect();
+                w = Math.round(rect.width) || parseFloat(win.style.width) || 320;
+                h = Math.round(rect.height) || parseFloat(win.style.height) || 320;
+            }
+            if (canvas.width !== Math.round(w * dpr) || canvas.height !== Math.round(h * dpr)) {
+                canvas.width = Math.round(w * dpr);
+                canvas.height = Math.round(h * dpr);
+            }
+        }
+        window.resizeFloatingTelescopeCanvas = resizeFloatingTelescopeCanvas;
+
+        function positionFloatingTelescopeWindow() {
+            const win = getDOM('floating-telescope-window');
+            if (!win) return;
+            const obsCard = document.querySelector('.observer-card');
+            const settingsPanel = getDOM('settings-panel');
+            let targetRect = null;
+            if (obsCard && obsCard.offsetParent !== null) {
+                const r = obsCard.getBoundingClientRect();
+                if (r.width > 50 && r.height > 50) {
+                    targetRect = r;
+                }
+            }
+            if (!targetRect && settingsPanel && settingsPanel.offsetParent !== null) {
+                const r = settingsPanel.getBoundingClientRect();
+                if (r.width > 50) {
+                    targetRect = {
+                        left: r.left + 16,
+                        top: r.top + 60,
+                        width: Math.min(320, r.width - 32),
+                        height: 320
+                    };
+                }
+            }
+
+            if (targetRect) {
+                const cardW = Math.round(targetRect.width) || 320;
+                const cardH = 320;
+                win.style.width = `${cardW}px`;
+                win.style.height = `${cardH}px`;
+                win.style.left = `${Math.round(targetRect.left)}px`;
+                win.style.top = `${Math.round(targetRect.top)}px`;
+                win.style.right = 'auto';
+                win.style.bottom = 'auto';
+            } else {
+                const w = 320;
+                const h = 320;
+                win.style.width = `${w}px`;
+                win.style.height = `${h}px`;
+                win.style.left = `${Math.max(10, window.innerWidth - w - 24)}px`;
+                win.style.top = '70px';
+                win.style.right = 'auto';
+                win.style.bottom = 'auto';
+            }
+        }
+
+        function initFloatingTelescopeEvents() {
+            const win = getDOM('floating-telescope-window');
+            if (!win || win.dataset.eventsInitialized) return;
+            win.dataset.eventsInitialized = 'true';
+
+            let isDragging = false;
+            let hasMoved = false;
+            let startX = 0, startY = 0;
+            let initialLeft = 0, initialTop = 0;
+            let clickTimer = null;
+
+            win.addEventListener('pointerdown', (e) => {
+                if (e.button !== 0) return;
+                isDragging = true;
+                hasMoved = false;
+                startX = e.clientX;
+                startY = e.clientY;
+
+                const rect = win.getBoundingClientRect();
+                initialLeft = rect.left;
+                initialTop = rect.top;
+
+                win.style.right = 'auto';
+                win.style.bottom = 'auto';
+                win.style.left = `${initialLeft}px`;
+                win.style.top = `${initialTop}px`;
+
+                try {
+                    win.setPointerCapture(e.pointerId);
+                } catch (_) {}
+                win.style.cursor = 'grabbing';
+            });
+
+            win.addEventListener('pointermove', (e) => {
+                if (!isDragging) return;
+                const dx = e.clientX - startX;
+                const dy = e.clientY - startY;
+                if (!hasMoved && Math.hypot(dx, dy) > 5) {
+                    hasMoved = true;
+                }
+                if (hasMoved) {
+                    const winW = win.offsetWidth || 320;
+                    const winH = win.offsetHeight || 320;
+                    const maxLeft = Math.max(0, window.innerWidth - winW);
+                    const maxTop = Math.max(0, window.innerHeight - winH);
+
+                    let newLeft = initialLeft + dx;
+                    let newTop = initialTop + dy;
+
+                    newLeft = Math.max(0, Math.min(maxLeft, newLeft));
+                    newTop = Math.max(0, Math.min(maxTop, newTop));
+
+                    win.style.left = `${Math.round(newLeft)}px`;
+                    win.style.top = `${Math.round(newTop)}px`;
+                }
+            });
+
+            const onPointerEnd = (e) => {
+                if (!isDragging) return;
+                isDragging = false;
+                try {
+                    win.releasePointerCapture(e.pointerId);
+                } catch (_) {}
+                win.style.cursor = 'grab';
+
+                if (hasMoved) {
+                    return; // Arrastre completado
+                }
+
+                // Clic simple vs Doble clic (< 5px de desplazamiento)
+                if (clickTimer) {
+                    clearTimeout(clickTimer);
+                    clickTimer = null;
+                    // Doble clic: cerrar y desmarcar
+                    toggleFloatingTelescope(false);
+                } else {
+                    clickTimer = setTimeout(() => {
+                        clickTimer = null;
+                        // Clic simple: conmutar a vista telescópica
+                        if (currentActiveView !== 'telescopic') {
+                            switchMainView('telescopic');
+                        }
+                    }, 220);
+                }
+            };
+
+            win.addEventListener('pointerup', onPointerEnd);
+            win.addEventListener('pointercancel', (e) => {
+                isDragging = false;
+                try { win.releasePointerCapture(e.pointerId); } catch (_) {}
+                win.style.cursor = 'grab';
+            });
+
+            // Respaldo de dblclick nativo
+            win.addEventListener('dblclick', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (clickTimer) {
+                    clearTimeout(clickTimer);
+                    clickTimer = null;
+                }
+                toggleFloatingTelescope(false);
+            });
+        }
+        window.initFloatingTelescopeEvents = initFloatingTelescopeEvents;
+
+        function toggleFloatingTelescope(enable) {
+            initFloatingTelescopeEvents();
+            const win = getDOM('floating-telescope-window');
+            const chk = getDOM('chk-floating-telescope');
+            if (chk) chk.checked = !!enable;
+
+            isFloatingTelescopeActive = !!enable;
+            window.isFloatingTelescopeActive = isFloatingTelescopeActive;
+
+            if (enable) {
+                if (win) {
+                    if (!win.dataset.positioned) {
+                        positionFloatingTelescopeWindow();
+                        win.dataset.positioned = 'true';
+                    }
+                    win.style.display = 'block';
+                    resizeFloatingTelescopeCanvas();
+                }
+                if (currentActiveView === 'telescopic') {
+                    switchMainView('3d');
+                }
+                renderFloatingTelescopeView();
+            } else {
+                if (win) {
+                    win.style.display = 'none';
+                }
+            }
+        }
+        window.toggleFloatingTelescope = toggleFloatingTelescope;
+
+        function renderFloatingTelescopeView() {
+            if (!isFloatingTelescopeActive) return;
+            const win = getDOM('floating-telescope-window');
+            if (!win || win.style.display === 'none') return;
+            const canvas = getDOM('canvas-floating-telescope');
+            if (!canvas) return;
+            if (canvas.width === 0 || canvas.height === 0) {
+                resizeFloatingTelescopeCanvas();
+            }
+            renderTelescopicScene(canvas, true);
+        }
+        window.renderFloatingTelescopeView = renderFloatingTelescopeView;
 
         // --- EXPORTACIÓN A CALENDARIO ICAL (.ICS) ---
         function exportSelectedEclipseToICal() {
@@ -4127,13 +4489,36 @@
             }
         }
 
-        getDOM('chk-show-shadow')?.addEventListener('change', (e) => {
-            if (shadowShaderMaterial) {
-                shadowShaderMaterial.uniforms.uShowPenumbra.value = e.target.checked ? 1.0 : 0.0;
+        function syncPenumbraCheckbox(prop, checked) {
+            if (prop === 'shadow') {
+                const el3D = getDOM('chk-show-shadow');
+                if (el3D && el3D.checked !== checked) el3D.checked = checked;
+                if (shadowShaderMaterial) {
+                    shadowShaderMaterial.uniforms.uShowPenumbra.value = checked ? 1.0 : 0.0;
+                    shadowShaderMaterial.uniformsNeedUpdate = true;
+                }
+            } else if (prop === 'rings') {
+                const el3D = getDOM('chk-show-penumbra-rings');
+                if (el3D && el3D.checked !== checked) el3D.checked = checked;
+                if (shadowShaderMaterial) {
+                    shadowShaderMaterial.uniforms.uShowPenumbraRings.value = checked ? 1.0 : 0.0;
+                    shadowShaderMaterial.uniformsNeedUpdate = true;
+                }
+            }
+            const showPen = getDOM('chk-show-shadow')?.checked ?? false;
+            const showRings = getDOM('chk-show-penumbra-rings')?.checked ?? false;
+            if (shadowShaderMaterial && shadowShaderMaterial.uniforms.uEclipseMask.value) {
+                shadowShaderMaterial.uniforms.uUseMask.value = (showPen || showRings) ? 1.0 : 0.0;
                 shadowShaderMaterial.uniformsNeedUpdate = true;
             }
+            if (currentEclipse) {
+                updateShadowAtTime(simCurrentT);
+            }
             requestRender();
-        });
+        }
+
+        getDOM('chk-show-shadow')?.addEventListener('change', (e) => syncPenumbraCheckbox('shadow', e.target.checked));
+        getDOM('chk-show-penumbra-rings')?.addEventListener('change', (e) => syncPenumbraCheckbox('rings', e.target.checked));
 
         getDOM('chk-show-center-line')?.addEventListener('change', () => {
             if (currentEclipse) {
@@ -4159,22 +4544,31 @@
             requestRender();
         });
 
-        const chkIsomagnitudes = getDOM('chk-show-isomagnitudes');
-        const chkLabels = getDOM('chk-show-labels');
-        const lblLabels = getDOM('lbl-show-labels');
+        const chkHorizonLobes = getDOM('chk-show-horizon-lobes');
+        chkHorizonLobes?.addEventListener('change', () => {
+            if (currentEclipse) {
+                drawShadowPath(currentEclipse);
+                updateShadowAtTime(simCurrentT);
+            }
+            requestRender();
+        });
 
-        function updateLabelsCheckboxState() {
-            if (!chkIsomagnitudes || !chkLabels) return;
+        const chkIsomagnitudes = getDOM('chk-show-isomagnitudes');
+        const chkIsoLabels = getDOM('chk-show-isomagnitudes-labels') || getDOM('chk-show-labels');
+        const lblIsoLabels = getDOM('lbl-show-isomagnitudes-labels') || getDOM('lbl-show-labels');
+
+        function updateIsoLabelsCheckboxState() {
+            if (!chkIsomagnitudes || !chkIsoLabels) return;
             const isIsoActive = chkIsomagnitudes.checked;
-            chkLabels.disabled = !isIsoActive;
-            if (lblLabels) {
-                lblLabels.style.opacity = isIsoActive ? '1' : '0.4';
-                lblLabels.style.pointerEvents = isIsoActive ? 'auto' : 'none';
+            chkIsoLabels.disabled = !isIsoActive;
+            if (lblIsoLabels) {
+                lblIsoLabels.style.opacity = isIsoActive ? '1' : '0.4';
+                lblIsoLabels.style.pointerEvents = isIsoActive ? 'auto' : 'none';
             }
         }
 
         chkIsomagnitudes?.addEventListener('change', () => {
-            updateLabelsCheckboxState();
+            updateIsoLabelsCheckboxState();
             if (currentEclipse) {
                 drawShadowPath(currentEclipse);
                 updateShadowAtTime(simCurrentT);
@@ -4182,13 +4576,46 @@
             requestRender();
         });
 
-        chkLabels?.addEventListener('change', () => {
+        chkIsoLabels?.addEventListener('change', () => {
             if (currentEclipse) {
                 drawShadowPath(currentEclipse);
                 updateShadowAtTime(simCurrentT);
             }
             requestRender();
         });
+        updateIsoLabelsCheckboxState();
+
+        const chkUtLines = getDOM('chk-show-ut-lines');
+        const chkUtLabels = getDOM('chk-show-ut-labels');
+        const lblUtLabels = getDOM('lbl-show-ut-labels');
+
+        function updateUtLabelsCheckboxState() {
+            if (!chkUtLines || !chkUtLabels) return;
+            const isUtActive = chkUtLines.checked;
+            chkUtLabels.disabled = !isUtActive;
+            if (lblUtLabels) {
+                lblUtLabels.style.opacity = isUtActive ? '1' : '0.4';
+                lblUtLabels.style.pointerEvents = isUtActive ? 'auto' : 'none';
+            }
+        }
+
+        chkUtLines?.addEventListener('change', () => {
+            updateUtLabelsCheckboxState();
+            if (currentEclipse) {
+                drawShadowPath(currentEclipse);
+                updateShadowAtTime(simCurrentT);
+            }
+            requestRender();
+        });
+
+        chkUtLabels?.addEventListener('change', () => {
+            if (currentEclipse) {
+                drawShadowPath(currentEclipse);
+                updateShadowAtTime(simCurrentT);
+            }
+            requestRender();
+        });
+        updateUtLabelsCheckboxState();
 
         getDOM('chk-show-subsolar')?.addEventListener('change', (e) => {
             if (subsolarMarkerGroup) subsolarMarkerGroup.visible = e.target.checked;
@@ -4206,7 +4633,8 @@
         });
 
         // Inicializar el estado de disponibilidad de los checkboxes de rótulos
-        updateLabelsCheckboxState();
+        updateIsoLabelsCheckboxState();
+        updateUtLabelsCheckboxState();
         updateLimitLabelsCheckboxState();
 
         function updateLightingMode() {
@@ -4601,6 +5029,21 @@
             if (currentActiveView === 'telescopic') {
                 renderTelescopicView();
             }
+            if (typeof isFloatingTelescopeActive !== 'undefined' && isFloatingTelescopeActive) {
+                const win = getDOM('floating-telescope-window');
+                if (win && win.style.display !== 'none') {
+                    const winW = win.offsetWidth || 320;
+                    const winH = win.offsetHeight || 320;
+                    const curLeft = parseFloat(win.style.left) || 0;
+                    const curTop = parseFloat(win.style.top) || 0;
+                    const maxLeft = Math.max(0, window.innerWidth - winW);
+                    const maxTop = Math.max(0, window.innerHeight - winH);
+                    if (curLeft > maxLeft) win.style.left = `${maxLeft}px`;
+                    if (curTop > maxTop) win.style.top = `${maxTop}px`;
+                }
+                if (typeof resizeFloatingTelescopeCanvas === 'function') resizeFloatingTelescopeCanvas();
+                if (typeof renderFloatingTelescopeView === 'function') renderFloatingTelescopeView();
+            }
         }
 
         window.addEventListener('resize', handleGlobalResize);
@@ -4718,6 +5161,7 @@
         filterEclipsesByYear(2027, defaultCat, true);
         switchObserverExtreme('GD', true);
         initTelescopicCanvas();
+        initFloatingTelescopeEvents();
         setupSpace3DSearchListeners();
         if (typeof controls !== 'undefined' && controls && controls.addEventListener) {
             controls.addEventListener('change', () => {

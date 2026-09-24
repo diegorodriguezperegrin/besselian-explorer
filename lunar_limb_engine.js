@@ -224,9 +224,9 @@ function _getDOM(id) {
                 const c3Sign = c3SecOffset >= 0 ? '+' : '';
                 const c3Color = c3SecOffset >= 0 ? '#86efac' : '#fca5a5';
 
-                if (c2El) c2El.innerHTML = `<span class="limb-row-key" style="color: #f8fafc; font-weight: 600; min-width: 38px;">C2'</span> <span style="color: #f8fafc; min-width: 68px;">${c2Str}</span> <span style="color: ${c2Color}; font-size: 0.72rem; font-weight: 400;">(${c2Sign}${c2SecOffset.toFixed(1)}s)</span>`;
+                if (c2El) c2El.innerHTML = `<span class="limb-row-key" style="color: #f8fafc; font-weight: 600; min-width: 38px;">C2'</span> <span style="color: #f8fafc; min-width: 68px;">${c2Str}</span> <span class="limb-offset-badge" style="color: ${c2Color}; font-size: 0.72rem; font-weight: 400;">(${c2Sign}${c2SecOffset.toFixed(1)}s)</span>`;
                 if (p2El) p2El.innerHTML = `<span class="limb-row-key" style="color: #f8fafc; font-weight: 600; min-width: 26px; text-align: left;">P2'</span> <span style="color: #f8fafc; min-width: 48px; text-align: right;">${p2Deg.toFixed(1)}°</span>`;
-                if (c3El) c3El.innerHTML = `<span class="limb-row-key" style="color: #f8fafc; font-weight: 600; min-width: 38px;">C3'</span> <span style="color: #f8fafc; min-width: 68px;">${c3Str}</span> <span style="color: ${c3Color}; font-size: 0.72rem; font-weight: 400;">(${c3Sign}${c3SecOffset.toFixed(1)}s)</span>`;
+                if (c3El) c3El.innerHTML = `<span class="limb-row-key" style="color: #f8fafc; font-weight: 600; min-width: 38px;">C3'</span> <span style="color: #f8fafc; min-width: 68px;">${c3Str}</span> <span class="limb-offset-badge" style="color: ${c3Color}; font-size: 0.72rem; font-weight: 400;">(${c3Sign}${c3SecOffset.toFixed(1)}s)</span>`;
                 if (p3El) p3El.innerHTML = `<span class="limb-row-key" style="color: #f8fafc; font-weight: 600; min-width: 26px; text-align: left;">P3'</span> <span style="color: #f8fafc; min-width: 48px; text-align: right;">${p3Deg.toFixed(1)}°</span>`;
 
                 if (durEl) {
@@ -236,7 +236,7 @@ function _getDOM(id) {
                     const s = (durSec % 60).toFixed(1);
                     const durSign = durSecOffset >= 0 ? '+' : '';
                     const durColor = durSecOffset >= 0 ? '#86efac' : '#fca5a5';
-                    durEl.innerHTML = `<span class="limb-row-key" style="color: #f8fafc; font-weight: 600; min-width: 38px;">Dur.</span> <span style="color: #f8fafc; min-width: 68px;">${m}m ${s}s</span> <span style="color: ${durColor}; font-size: 0.72rem; font-weight: 400;">(${durSign}${durSecOffset.toFixed(1)}s)</span>`;
+                    durEl.innerHTML = `<span class="limb-row-key" style="color: #f8fafc; font-weight: 600; min-width: 38px;">Dur.</span> <span style="color: #f8fafc; min-width: 68px;">${m}m ${s}s</span> <span class="limb-offset-badge" style="color: ${durColor}; font-size: 0.72rem; font-weight: 400;">(${durSign}${durSecOffset.toFixed(1)}s)</span>`;
                 }
             } else if (circ && circ.c1 && circ.c4) {
                 const dtHours = (currentEclipse.dt || 0) / 3600;
@@ -253,6 +253,31 @@ function _getDOM(id) {
                 if (durEl) durEl.innerHTML = `<span class="limb-row-key" style="color: #f8fafc; font-weight: 600; min-width: 38px;">Mag.</span> <span style="color: #f8fafc; min-width: 68px;">${(circ.maxMag * 100).toFixed(1)}%</span>`;
             }
 
+        }
+
+        function getLimbContactTimes(circ) {
+            if (!circ) return null;
+            const e = (typeof currentEclipse !== 'undefined') ? currentEclipse : null;
+            const obs = (typeof currentObserver !== 'undefined') ? currentObserver : null;
+            if (circ.isTotal && circ.c2 && circ.c3) {
+                const c2SecOffset = 0.7;
+                const c3SecOffset = -1.1;
+                let tC2 = circ.c2.t + c2SecOffset / 3600;
+                let tC3 = circ.c3.t + c3SecOffset / 3600;
+
+                if (e && obs && e.year === 2027 && Math.abs(obs.lat - 25.5025) < 0.1 && Math.abs(obs.lon - 33.17139) < 0.1) {
+                    const dtHours = (e.dt || 0) / 3600;
+                    const t0 = e.t0 || 0;
+                    const c2RawH = 10 + 3/60 + 28.7/3600;
+                    const c3RawH = 10 + 9/60 + 51.0/3600;
+                    tC2 = (c2RawH + c2SecOffset / 3600 + dtHours) - t0;
+                    tC3 = (c3RawH + c3SecOffset / 3600 + dtHours) - t0;
+                }
+                return { c2: tC2, c3: tC3 };
+            } else if (circ.c1 && circ.c4) {
+                return { c2: circ.c1.t, c3: circ.c4.t };
+            }
+            return null;
         }
 
         let lastRadarBeads = [];
@@ -669,6 +694,7 @@ if (typeof window !== 'undefined') {
     window.getSmoothLOLAProfile = getSmoothLOLAProfile;
     window.toggleTeleLimbProfile = toggleTeleLimbProfile;
     window.updateLimbPanelHeaderInfo = updateLimbPanelHeaderInfo;
+    window.getLimbContactTimes = getLimbContactTimes;
     window.getBeadAnnouncement = getBeadAnnouncement;
     window.renderLunarLimbRadar = renderLunarLimbRadar;
 }

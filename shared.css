@@ -1117,9 +1117,24 @@ input:focus, select:focus {
 }
 
 .contacts-table tr.active td {
-    color: var(--accent-blue);
+    color: var(--accent-blue, #38bdf8) !important;
     font-weight: 700;
     background: rgba(56, 189, 248, 0.16);
+}
+
+.contacts-table tr.active td strong,
+.contacts-table tr.active td span:not(.contact-arrow) {
+    color: var(--accent-blue, #38bdf8) !important;
+    font-weight: 700;
+}
+
+.limb-timetable-row.active {
+    background: rgba(56, 189, 248, 0.16) !important;
+}
+
+.limb-timetable-row.active span:not(.limb-offset-badge) {
+    color: var(--accent-blue, #38bdf8) !important;
+    font-weight: 700;
 }
 
 /* Tarjetas flotantes de circunstancias locales (Mapa 2D y Globo 3D): Idénticas a .observer-card */
@@ -1359,6 +1374,13 @@ input:focus, select:focus {
 .hud-pill.warning {
     background: rgba(35, 12, 16, 0.7);
     color: #fca5a5;
+}
+
+#hud-pill-coords {
+    font-family: var(--font-mono, monospace);
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+    white-space: pre;
 }
 
 /* Barra de búsqueda flotante superior (Modos 3D y Mapa) - Ancho sincronizado con el reproductor (460px) */

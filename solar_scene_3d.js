@@ -74,17 +74,45 @@ var constellationsGroup3D = null;
         }
 
         const OrbitControlsClass = THREE.OrbitControls || window.OrbitControls;
+        const BASE_ROTATE_SPEED = 0.8;
+        const BASE_PAN_SPEED = 1.2;
+        const BASE_VIEW_ALTITUDE = 160.0; // Distancia típica de vista global (~210) menos radio terrestre (50)
+
+        function updateDynamicControlsSensitivity() {
+            if (!controls || !camera) return;
+            const earthPos = (typeof earthGroup !== 'undefined' && earthGroup && earthGroup.position)
+                ? earthGroup.position
+                : new THREE.Vector3(0, 0, 0);
+
+            let altitude = BASE_VIEW_ALTITUDE;
+            if (focusedBody === 'moon' && typeof moonMesh3D !== 'undefined' && moonMesh3D) {
+                const camDistMoon = camera.position.distanceTo(moonMesh3D.position);
+                const radiusMoon = typeof MOON_RADIUS !== 'undefined' ? MOON_RADIUS : 13.62;
+                altitude = Math.max(0.05, camDistMoon - radiusMoon);
+                const zoomFactor = Math.min(1.0, Math.max(0.03, altitude / (radiusMoon * 3.5)));
+                controls.rotateSpeed = BASE_ROTATE_SPEED * zoomFactor;
+                return;
+            }
+
+            const camDist = camera.position.distanceTo(earthPos);
+            const radius = typeof EARTH_RADIUS !== 'undefined' ? EARTH_RADIUS : 50.0;
+            altitude = Math.max(0.05, camDist - radius);
+            // Escala proporcional a la distancia a la superficie (con un suelo mínimo para no bloquearse)
+            const zoomFactor = Math.min(1.0, Math.max(0.03, altitude / BASE_VIEW_ALTITUDE));
+            controls.rotateSpeed = BASE_ROTATE_SPEED * zoomFactor;
+        }
+
         var controls;
         if (OrbitControlsClass) {
             controls = new OrbitControlsClass(camera, renderer.domElement);
             controls.enableDamping = true;
             controls.dampingFactor = 0.05;
-            controls.rotateSpeed = 0.8;
+            controls.rotateSpeed = BASE_ROTATE_SPEED;
             controls.minDistance = 2.0;
             controls.maxDistance = 2500000;
             controls.enablePan = true;
             controls.screenSpacePanning = true;
-            controls.panSpeed = 1.2;
+            controls.panSpeed = BASE_PAN_SPEED;
             controls.zoomSpeed = 1.2;
 
             controls.mouseButtons = {
@@ -93,7 +121,14 @@ var constellationsGroup3D = null;
                 RIGHT: THREE.MOUSE.PAN
             };
 
+            const origControlsUpdate = controls.update.bind(controls);
+            controls.update = function() {
+                updateDynamicControlsSensitivity();
+                return origControlsUpdate();
+            };
+
             renderer.domElement.addEventListener('pointerdown', (e) => {
+                updateDynamicControlsSensitivity();
                 if (e.altKey && e.button === 0) {
                     try {
                         Object.defineProperty(e, 'shiftKey', { get: () => true });
@@ -101,10 +136,15 @@ var constellationsGroup3D = null;
                 }
             }, { capture: true });
 
+            renderer.domElement.addEventListener('wheel', () => {
+                updateDynamicControlsSensitivity();
+            }, { passive: true });
+
             renderer.domElement.style.touchAction = 'none';
             renderer.domElement.style.userSelect = 'none';
 
             controls.addEventListener('start', () => {
+                updateDynamicControlsSensitivity();
                 cameraTransition = null;
                 if (typeof isRouteActive !== 'undefined' && isRouteActive) {
                     if (typeof window.isRouteUserInteracting !== 'undefined') {
@@ -113,6 +153,7 @@ var constellationsGroup3D = null;
                 }
             });
             controls.addEventListener('change', () => {
+                updateDynamicControlsSensitivity();
                 needsRender = true;
             });
         } else {
@@ -124,7 +165,7 @@ var constellationsGroup3D = null;
             if (!controls || !camera) return;
             if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA')) return;
 
-            const panDist = Math.max(1.0, (camera.position.distanceTo(controls.target) || 200) * 0.04);
+            const panDist = Math.max(0.01, (camera.position.distanceTo(controls.target) || 200) * 0.04);
             let moved = false;
             const vRight = new THREE.Vector3().setFromMatrixColumn(camera.matrix, 0);
             const vUp = new THREE.Vector3().setFromMatrixColumn(camera.matrix, 1);
@@ -898,6 +939,7 @@ var constellationsGroup3D = null;
             polygonOffset: true,
             polygonOffsetFactor: -1,
             polygonOffsetUnits: -2,
+            extensions: { derivatives: true },
             uniforms: {
                 uSunDir: { value: new THREE.Vector3(0, 0, 1) },
                 uVx: { value: new THREE.Vector3(1, 0, 0) },
@@ -908,13 +950,22 @@ var constellationsGroup3D = null;
                 uL2: { value: 0.008 },
                 uTanF1: { value: 0.0046 },
                 uTanF2: { value: 0.00457 },
-                uShowPenumbra: { value: 0.0 }
+                uShowPenumbra: { value: 0.0 },
+                uShowPenumbraRings: { value: 0.0 },
+                uEclipseMask: { value: null },
+                uUseMask: { value: 0.0 }
             },
             vertexShader: `
                 precision highp float;
-                varying vec3 vLocalPosition;
+                varying vec3 vEarthLocal;
+                varying vec2 vMaskUv;
                 void main() {
-                    vLocalPosition = normalize(position);
+                    vEarthLocal = normalize(position);
+                    // Coordenadas UV equirectangulares en el marco solidario de la Tierra (earthGroup)
+                    // Coincide con latLngToVector3: x = cos(lat)*cos(lng), y = sin(lat), z = -cos(lat)*sin(lng)
+                    float lng = atan(-vEarthLocal.z, vEarthLocal.x);
+                    float lat = asin(clamp(vEarthLocal.y, -1.0, 1.0));
+                    vMaskUv = vec2(lng / 6.283185307179586 + 0.5, lat / 3.141592653589793 + 0.5);
                     gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
                 }
             `,
@@ -930,52 +981,89 @@ var constellationsGroup3D = null;
                 uniform float uTanF1;
                 uniform float uTanF2;
                 uniform float uShowPenumbra;
+                uniform float uShowPenumbraRings;
+                uniform sampler2D uEclipseMask;
+                uniform float uUseMask;
 
-                varying vec3 vLocalPosition;
+                varying vec3 vEarthLocal;
+                varying vec2 vMaskUv;
 
                 void main() {
-                    // 1. Coordenadas exactas en el plano fundamental Besseliano
-                    float x_p = dot(vLocalPosition, uVx);
-                    float y_p = dot(vLocalPosition, uVy);
-
-                    // Escala elipsoidal de Bessel (y1 = y / rho1) y condición exacta del terminador (zeta <= 0)
-                    float rho1 = max(0.001, uRho1);
-                    float y1 = y_p / rho1;
-                    float r1_sq = x_p * x_p + y1 * y1;
-
-                    // Descarte astronómico en el horizonte elipsoidal (permitir desvanecimiento continuo hasta el terminador real)
-                    float z_p = dot(vLocalPosition, uSunDir);
-                    if (z_p < -0.015 || r1_sq >= 1.0) {
+                    // 1. Descarte astronómico estricto en el horizonte / terminador de la cara nocturna
+                    // zeta = seno de la altura del Sol sobre el horizonte en el punto de la superficie terrestre
+                    float zeta = dot(vEarthLocal, uSunDir);
+                    if (zeta <= 0.0) {
                         discard;
                     }
 
-                    float zeta = sqrt(max(0.0, 1.0 - r1_sq));
+                    // 2. Máscara de delimitación del eclipse:
+                    // Prohíbe terminantemente que los anillos o el gradiente sobrepasen las líneas cian
+                    // de salida y puesta de sol (curva de máximo en horizonte de Espenak) o los límites 0%.
+                    float maskFactor = 1.0;
+                    if (uUseMask > 0.5) {
+                        float maskVal = texture2D(uEclipseMask, vMaskUv).r;
+                        if (maskVal <= 0.5) {
+                            discard;
+                        }
+                    }
 
-                    // Distancia topocéntrica Besseliana al eje de la sombra con sección cónica elipsoidal
-                    float dx = x_p - uShadowCenter.x;
-                    float dy = (y_p - uShadowCenter.y) / rho1;
+                    // 3. Coordenadas exactas en el plano fundamental Besseliano con compresión WGS84 por declinación
+                    float xi = dot(vEarthLocal, uVx);
+                    float eta = dot(vEarthLocal, uVy) * uRho1;
+
+                    // Distancia topocéntrica Besseliana al eje de la sombra en el plano fundamental
+                    float dx = xi - uShadowCenter.x;
+                    float dy = eta - uShadowCenter.y;
                     float dist = sqrt(dx * dx + dy * dy);
 
-                    // Radios cónicos rigurosos: conicidad umbral completa de Bessel (|uL2| - z_p * uTanF2)
-                    float L1_z = max(0.001, uL1 - z_p * uTanF1);
-                    float L2_z = max(0.0001, abs(uL2) - z_p * uTanF2);
+                    // Conicidad de Bessel corregida por la elevación topocéntrica zeta del observador
+                    float L1_z = max(0.001, uL1 - zeta * uTanF1);
+                    float L2_z = max(0.0001, abs(uL2 - zeta * uTanF2));
 
-                    if (dist > L1_z) {
+                    // Permitir margen exterior para que el contorno del 0% se dibuje con su grosor completo y antialiasing
+                    float maxPenDist = (uShowPenumbraRings > 0.5) ? (L1_z * 1.05) : L1_z;
+                    if (dist > maxPenDist) {
                         discard; // Fuera de la penumbra
                     }
 
-                    // 2. Gradiente penumbral físico difuso exterior exclusivo:
-                    // Si la opción de penumbra está apagada o estamos dentro del núcleo de la sombra (dist <= L2_z),
-                    // se descarta (discard). Toda la mancha negra de totalidad se renderiza exclusivamente por umbraMesh3D en earthGroup.
-                    if (uShowPenumbra > 0.5 && dist > L2_z) {
-                        float normDist = clamp((dist - L2_z) / max(0.0001, L1_z - L2_z), 0.0, 1.0);
-                        float factor = 1.0 - normDist;
-                        float penAlpha = pow(factor, 1.35) * 0.88;
-                        vec3 penCol = vec3(0.02, 0.04, 0.09);
-                        gl_FragColor = vec4(penCol, penAlpha);
-                    } else {
+                    // Fracción de magnitud coincidente exactamente con besselian_engine.js: dist = L1_z * (1.0 - frac)
+                    float factor = 1.0 - (dist / L1_z);
+                    float f = clamp(factor, 0.0, 1.0);
+
+                    // 4. Cálculo de anillos de contorno de penumbra (0%, 20%, 40%, 60%, 80%)
+                    float ringAlpha = 0.0;
+                    if (uShowPenumbraRings > 0.5) {
+                        float df = max(fwidth(factor), 0.0003);
+                        float w = 1.35 * df; // Garantiza trazo nítido continuo sin poros
+                        float r0  = smoothstep(w, 0.0, abs(factor - 0.00));
+                        float r20 = smoothstep(w, 0.0, abs(factor - 0.20));
+                        float r40 = smoothstep(w, 0.0, abs(factor - 0.40));
+                        float r60 = smoothstep(w, 0.0, abs(factor - 0.60));
+                        float r80 = smoothstep(w, 0.0, abs(factor - 0.80));
+                        ringAlpha = clamp(r0 + r20 + r40 + r60 + r80, 0.0, 1.0);
+                    }
+
+                    // Gradiente penumbral suave: se desvanece por completo al llegar a la isolínea 0% (f = 0.0)
+                    // y alcanza una opacidad translúcida moderada (~0.38) cerca del centro,
+                    // permitiendo ver claramente los continentes y contrastar con la umbra central negra pura.
+                    float penAlpha = (uShowPenumbra > 0.5) ? pow(f, 1.8) * 0.38 : 0.0;
+
+                    // Si ni el gradiente ni los anillos están activos en este punto, descartar
+                    if (penAlpha < 0.003 && ringAlpha < 0.01) {
                         discard;
                     }
+
+                    // 5. Composición de color: gradiente penumbral y/o anillos dorados
+                    vec3 penCol = vec3(0.02, 0.04, 0.09);
+                    vec3 ringCol = vec3(0.98, 0.78, 0.12); // Ámbar / dorado coincidente con isomagnitudes
+
+                    vec3 finalCol = mix(penCol, ringCol, ringAlpha * 0.94);
+                    float finalAlpha = max(penAlpha, ringAlpha * 0.92) * maskFactor;
+                    if (finalAlpha <= 0.003) {
+                        discard;
+                    }
+
+                    gl_FragColor = vec4(finalCol, finalAlpha);
                 }
             `,
             side: THREE.FrontSide
@@ -985,11 +1073,11 @@ var constellationsGroup3D = null;
         const SHADOW_OVERLAY_RADIUS = EARTH_RADIUS * 1.0010;
         const GROUND_OVERLAY_RADIUS = EARTH_RADIUS * 1.0018;
 
-        // Esfera superpuesta del shader de sombra (renderizada pegada a la superficie por debajo de las líneas de la trayectoria)
+        // Esfera superpuesta del shader de sombra (renderizada en earthGroup pegada a la superficie por debajo de las líneas de la trayectoria)
         var shadowOverlayGeometry = new THREE.SphereGeometry(SHADOW_OVERLAY_RADIUS, 128, 128);
         var shadowOverlayMesh = new THREE.Mesh(shadowOverlayGeometry, shadowShaderMaterial);
         shadowOverlayMesh.renderOrder = 18;
-        scene.add(shadowOverlayMesh);
+        earthGroup.add(shadowOverlayMesh);
 
         // Resiliencia ante pérdida transitoria de contexto WebGL en móviles / cambio de pestaña
         renderer.domElement.addEventListener('webglcontextlost', (e) => {
@@ -1079,6 +1167,8 @@ var constellationsGroup3D = null;
         var pathLine = null;
         var totalityNorthLine = null;
         var totalitySouthLine = null;
+        var totalitySunsetLine = null;
+        var totalitySunriseLine = null;
         var totalityCorridorMesh = null;
         var umbraMesh3D = null;
         var isomagnitudesGroup = null;
@@ -1213,15 +1303,19 @@ var constellationsGroup3D = null;
 
         function createSegmentedLine(coordList, colorHex, radius = GROUND_OVERLAY_RADIUS, linewidth = 1, opacity = 1.0) {
             const segmentPoints = [];
-            const maxSegmentDist3D = 8.5; // Distancia máxima en unidades 3D (~1080 km) para descartar saltos artificiales (antimeridiano > 25 u)
+            const maxSegmentDist3D = 35.0; // Distancia máxima en unidades 3D (~4400 km) para descartar saltos artificiales espurios garantizando trazo continuo
 
             for (let i = 1; i < coordList.length; i++) {
                 const prev = coordList[i - 1];
                 const curr = coordList[i];
                 if (!prev || !curr) continue;
 
-                const p1 = latLngToVector3(prev.lat, prev.lng, radius);
-                const p2 = latLngToVector3(curr.lat, curr.lng, radius);
+                const prevLng = prev.lng != null ? prev.lng : prev.lon;
+                const currLng = curr.lng != null ? curr.lng : curr.lon;
+                if (prev.lat == null || prevLng == null || curr.lat == null || currLng == null) continue;
+
+                const p1 = latLngToVector3(prev.lat, prevLng, radius);
+                const p2 = latLngToVector3(curr.lat, currLng, radius);
 
                 // Comprobación geométrica 3D continua (funciona en polos, antimeridiano ±180° y latitudes árticas)
                 const d = p1.distanceTo(p2);
@@ -1448,17 +1542,149 @@ var constellationsGroup3D = null;
             moonOrbitLine3D.geometry.computeBoundingSphere();
         }
 
+        function createEclipseMaskTexture(data) {
+            if (!data || !data.fullEspenakLoop || !data.isoLines) return null;
+            const iso0 = data.isoLines.find(x => x.frac === 0);
+            if (!iso0) return null;
+
+            const hasNorth = iso0.isoNorthCoords && iso0.isoNorthCoords.length >= 2;
+            const hasSouth = iso0.isoSouthCoords && iso0.isoSouthCoords.length >= 2;
+            if (!hasNorth && !hasSouth) return null;
+
+            const srPts = (data.espenakSunrisePart && data.espenakSunrisePart.length > 0)
+                ? data.espenakSunrisePart
+                : (data.fullEspenakLoop ? data.fullEspenakLoop.filter(p => p.t < 0) : []);
+            const ssPts = (data.espenakSunsetPart && data.espenakSunsetPart.length > 0)
+                ? data.espenakSunsetPart
+                : (data.fullEspenakLoop ? data.fullEspenakLoop.filter(p => p.t >= 0) : []);
+
+            if (srPts.length === 0 || ssPts.length === 0) return null;
+
+            let rawPoly = [];
+            let poleLat = null;
+            if (hasNorth && hasSouth) {
+                // Eclipse no polar: límites norte y sur existentes en la superficie terrestre
+                rawPoly = [
+                    ...srPts,
+                    ...iso0.isoNorthCoords,
+                    ...ssPts,
+                    ...iso0.isoSouthCoords.slice().reverse()
+                ];
+            } else if (hasSouth && !hasNorth) {
+                // Eclipse polar norte (ej. 12 de agosto de 2026):
+                // El límite norte pasa fuera de la Tierra en el espacio, cubriendo el Polo Norte.
+                // El contorno cierra rigurosamente por srPts -> ssPts -> isoSouthCoords invertido.
+                rawPoly = [
+                    ...srPts,
+                    ...ssPts,
+                    ...iso0.isoSouthCoords.slice().reverse()
+                ];
+                poleLat = 90;
+            } else if (hasNorth && !hasSouth) {
+                // Eclipse polar sur (ej. 17 de febrero de 2026):
+                // El límite sur pasa fuera de la Tierra en el espacio, cubriendo el Polo Sur.
+                rawPoly = [
+                    ...srPts,
+                    ...ssPts,
+                    ...iso0.isoNorthCoords.slice().reverse()
+                ];
+                poleLat = -90;
+            }
+
+            const canvas = document.createElement('canvas');
+            canvas.width = 2048;
+            canvas.height = 1024;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Desenvolver longitudes para polígono continuo
+            const unwrapped = [];
+            let prevLng = null;
+            let offset = 0;
+            let minLng = Infinity, maxLng = -Infinity;
+            for (const pt of rawPoly) {
+                let lng = pt.lng != null ? pt.lng : (pt.lon != null ? pt.lon : 0);
+                if (prevLng !== null) {
+                    const diff = lng - prevLng;
+                    if (diff > 180) offset -= 360;
+                    else if (diff < -180) offset += 360;
+                }
+                prevLng = lng;
+                const finalLng = lng + offset;
+                if (finalLng < minLng) minLng = finalLng;
+                if (finalLng > maxLng) maxLng = finalLng;
+                unwrapped.push({ lat: pt.lat, lng: finalLng });
+            }
+
+            if (unwrapped.length < 3) return null;
+
+            // Cierre riguroso por el polo si el contorno envuelve el eje de la Tierra (eclipses polares)
+            const firstPt = unwrapped[0];
+            const lastPt = unwrapped[unwrapped.length - 1];
+            const netOffset = Math.round((lastPt.lng - firstPt.lng) / 360) * 360;
+            if (netOffset !== 0 && poleLat !== null) {
+                unwrapped.push({ lat: poleLat, lng: lastPt.lng });
+                unwrapped.push({ lat: poleLat, lng: firstPt.lng });
+            }
+
+            const avgLng = (minLng + maxLng) / 2;
+            const baseShift = -Math.round(avgLng / 360) * 360;
+
+            ctx.fillStyle = '#ffffff';
+            // Dibujar copias desplazadas ±360° para envolver el antimeridiano
+            [-720, -360, 0, 360, 720].forEach(shift => {
+                ctx.beginPath();
+                unwrapped.forEach((pt, i) => {
+                    const x = ((pt.lng + baseShift + shift + 180) / 360) * canvas.width;
+                    const y = ((90 - pt.lat) / 180) * canvas.height;
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                });
+                ctx.closePath();
+                ctx.fill();
+            });
+
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.wrapS = THREE.RepeatWrapping;
+            texture.wrapT = THREE.ClampToEdgeWrapping;
+            texture.minFilter = THREE.LinearFilter;
+            texture.magFilter = THREE.LinearFilter;
+            return texture;
+        }
+
+        var horizonLobesGroup = null;
+        var isomagnitudesGroup = null;
+        var utLinesGroup = null;
+
         function drawShadowPath(eclipse) {
             if (pathLine) { dispose3DObject(pathLine); pathLine = null; }
             if (totalityNorthLine) { dispose3DObject(totalityNorthLine); totalityNorthLine = null; }
             if (totalitySouthLine) { dispose3DObject(totalitySouthLine); totalitySouthLine = null; }
+            if (totalitySunsetLine) { dispose3DObject(totalitySunsetLine); totalitySunsetLine = null; }
+            if (totalitySunriseLine) { dispose3DObject(totalitySunriseLine); totalitySunriseLine = null; }
             if (totalityCorridorMesh) { dispose3DObject(totalityCorridorMesh); totalityCorridorMesh = null; }
+            if (horizonLobesGroup) { dispose3DObject(horizonLobesGroup); horizonLobesGroup = null; }
             if (isomagnitudesGroup) { dispose3DObject(isomagnitudesGroup); isomagnitudesGroup = null; }
             if (utLinesGroup) { dispose3DObject(utLinesGroup); utLinesGroup = null; }
 
             updateMoonOrbit(eclipse);
 
             const data = precomputeEclipseGeometry(eclipse);
+
+            if (shadowShaderMaterial) {
+                const maskTex = createEclipseMaskTexture(data);
+                if (maskTex) {
+                    if (shadowShaderMaterial.uniforms.uEclipseMask.value) {
+                        shadowShaderMaterial.uniforms.uEclipseMask.value.dispose();
+                    }
+                    shadowShaderMaterial.uniforms.uEclipseMask.value = maskTex;
+                    shadowShaderMaterial.uniforms.uUseMask.value = 1.0;
+                } else {
+                    shadowShaderMaterial.uniforms.uUseMask.value = 0.0;
+                }
+                shadowShaderMaterial.uniformsNeedUpdate = true;
+            }
 
             const typeCode = (eclipse.eclipse_type || '').toUpperCase();
             const isAnnular = typeCode.startsWith('A');
@@ -1495,6 +1721,17 @@ var constellationsGroup3D = null;
                     totalitySouthLine = createSegmentedLine(data.totSouthCoords, limitColor, GROUND_OVERLAY_RADIUS, 2);
                     if (totalitySouthLine) earthGroup.add(totalitySouthLine);
                 }
+
+                // Arcos del terminador para cerrar la franja de totalidad contra el horizonte
+                if (data.sunsetArc && data.sunsetArc.length > 1) {
+                    totalitySunsetLine = createSegmentedLine(data.sunsetArc, limitColor, GROUND_OVERLAY_RADIUS, 2);
+                    if (totalitySunsetLine) earthGroup.add(totalitySunsetLine);
+                }
+
+                if (data.sunriseArc && data.sunriseArc.length > 1) {
+                    totalitySunriseLine = createSegmentedLine(data.sunriseArc, limitColor, GROUND_OVERLAY_RADIUS, 2);
+                    if (totalitySunriseLine) earthGroup.add(totalitySunriseLine);
+                }
             }
 
             // 3. Franja Sombreada de Totalidad / Anularidad
@@ -1517,9 +1754,37 @@ var constellationsGroup3D = null;
                 }
             }
 
-            // 3. ISOMAGNITUDES Opcionales y Figura del 8 (Terminadores Amanecer/Atardecer)
-            const showIsomagnitudes = getDOM('chk-show-isomagnitudes')?.checked;
-            const showLabels = showIsomagnitudes && (getDOM('chk-show-labels')?.checked ?? true);
+            // 3. LÓBULOS DE OCULTACIÓN Y LÍNEA DE HORIZONTE
+            const showHorizonLobes = getDOM('chk-show-horizon-lobes')?.checked !== false;
+            if (showHorizonLobes) {
+                horizonLobesGroup = new THREE.Group();
+
+                // Renderizar Lóbulo de Amanecer (Naranja #f97316)
+                if (data.sunriseLoop && data.sunriseLoop.length > 1) {
+                    const lineSunriseTerm = createSegmentedLine(data.sunriseLoop, 0xf97316, GROUND_OVERLAY_RADIUS, 2);
+                    if (lineSunriseTerm) horizonLobesGroup.add(lineSunriseTerm);
+                }
+
+                // Renderizar Lóbulo de Atardecer (Naranja #f97316)
+                if (data.sunsetLoop && data.sunsetLoop.length > 1) {
+                    const lineSunsetTerm = createSegmentedLine(data.sunsetLoop, 0xf97316, GROUND_OVERLAY_RADIUS, 2);
+                    if (lineSunsetTerm) horizonLobesGroup.add(lineSunsetTerm);
+                }
+
+                // Curva de Máximo Eclipse en Horizonte (Espenak analítica Cian #38bdf8 extendida hasta los extremos)
+                if (data.fullEspenakLoop && data.fullEspenakLoop.length > 1) {
+                    const lineEspenakMax = createSegmentedLine(data.fullEspenakLoop, 0x38bdf8, GROUND_OVERLAY_RADIUS, 3);
+                    if (lineEspenakMax) horizonLobesGroup.add(lineEspenakMax);
+                }
+
+                earthGroup.add(horizonLobesGroup);
+            }
+
+            // 4. LÍNEAS DE ISOMAGNITUD Y SUS RÓTULOS
+            const showIsomagnitudes = getDOM('chk-show-isomagnitudes')?.checked !== false;
+            const showIsoLabels = showIsomagnitudes && (
+                (getDOM('chk-show-isomagnitudes-labels') || getDOM('chk-show-labels'))?.checked ?? true
+            );
 
             if (showIsomagnitudes) {
                 isomagnitudesGroup = new THREE.Group();
@@ -1534,7 +1799,7 @@ var constellationsGroup3D = null;
                         if (lineS) isomagnitudesGroup.add(lineS);
                     }
 
-                    if (showLabels && iso.magText) {
+                    if (showIsoLabels && iso.magText) {
                         if (iso.midPtN) {
                             const spriteN = createTextSprite(iso.magText, '#000000', '#ffffff', 0.65);
                             if (spriteN) {
@@ -1554,29 +1819,13 @@ var constellationsGroup3D = null;
                     }
                 });
 
-                // Renderizar Lóbulo de Amanecer (Naranja #f97316)
-                if (data.sunriseLoop && data.sunriseLoop.length > 1) {
-                    const lineSunriseTerm = createSegmentedLine(data.sunriseLoop, 0xf97316, GROUND_OVERLAY_RADIUS, 2);
-                    if (lineSunriseTerm) isomagnitudesGroup.add(lineSunriseTerm);
-                }
-
-                // Renderizar Lóbulo de Atardecer (Naranja #f97316)
-                if (data.sunsetLoop && data.sunsetLoop.length > 1) {
-                    const lineSunsetTerm = createSegmentedLine(data.sunsetLoop, 0xf97316, GROUND_OVERLAY_RADIUS, 2);
-                    if (lineSunsetTerm) isomagnitudesGroup.add(lineSunsetTerm);
-                }
-
-                // Curva de Máximo Eclipse en Horizonte (Espenak analítica Cian #38bdf8)
-                if (data.fullEspenakLoop && data.fullEspenakLoop.length > 1) {
-                    const lineEspenakMax = createSegmentedLine(data.fullEspenakLoop, 0x38bdf8, GROUND_OVERLAY_RADIUS, 3);
-                    if (lineEspenakMax) isomagnitudesGroup.add(lineEspenakMax);
-                }
-
                 earthGroup.add(isomagnitudesGroup);
             }
 
-            // 4. LÍNEAS DE TIEMPO UNIVERSAL (HORAS UT)
-            const showUtLines = showIsomagnitudes;
+            // 5. LÍNEAS DE TIEMPO UNIVERSAL (HORAS UT) Y SUS RÓTULOS
+            const showUtLines = getDOM('chk-show-ut-lines')?.checked !== false;
+            const showUtLabels = showUtLines && (getDOM('chk-show-ut-labels')?.checked ?? true);
+
             if (showUtLines) {
                 utLinesGroup = new THREE.Group();
 
@@ -1585,7 +1834,7 @@ var constellationsGroup3D = null;
                         const utLineMesh = createSegmentedLine(utLine.pts, 0x10b981, GROUND_OVERLAY_RADIUS, 1, 0.70);
                         if (utLineMesh) utLinesGroup.add(utLineMesh);
 
-                        if (showLabels && utLine.labelPt) {
+                        if (showUtLabels && utLine.labelPt) {
                             const textSprite = createTextSprite(utLine.labelText, '#000000', '#ffffff', 0.75);
                             if (textSprite) {
                                 const spritePos = latLngToVector3(utLine.labelPt.lat, utLine.labelPt.lng, EARTH_RADIUS * 1.0030);
@@ -1620,6 +1869,7 @@ var constellationsGroup3D = null;
         let _lastSliderVal = -999999;
         let _lastOrbitEclipseCat = null;
         let _sceneActiveContactRowId = null;
+        let _sceneActiveLimbRowId = null;
 
         const _MAX_UMBRA_FAN_VERTICES = 512 * 3; // Hasta 512 triángulos subdivididos esféricamente
         const _umbraPosArray = new Float32Array(_MAX_UMBRA_FAN_VERTICES * 3);
@@ -2109,16 +2359,38 @@ var constellationsGroup3D = null;
 
             // 6. Órbita Lunar sincronizada arriba
 
-            // Enviar uniforms exactos al Shader GPU en el marco canónico
-            const dRadAtT = ((e.d0 || 0) + (e.d1 || 0)*t + (e.d2 || 0)*t*t) * Math.PI / 180;
-            const cosDatT = Math.cos(dRadAtT);
-            const rho1AtT = Math.sqrt(Math.max(0.001, 1.0 - 0.006694385 * cosDatT * cosDatT));
+            // Evaluación astronómica de contacto penumbral con la superficie terrestre
+            const bounds = (typeof getEclipseTimeBounds === 'function')
+                ? getEclipseTimeBounds(e)
+                : (typeof BesselianEngine !== 'undefined' && typeof BesselianEngine.getEclipseTimeBounds === 'function')
+                    ? BesselianEngine.getEclipseTimeBounds(e)
+                    : null;
+            const tMinEclipse = bounds ? bounds.tClosest - bounds.deltaT : -4.0;
+            const tMaxEclipse = bounds ? bounds.tClosest + bounds.deltaT : 4.0;
+            const R_center_sq = x * x + y * y;
+            const maxPenR = 1.0 + l1;
+            const isPenumbraTouching = (t >= tMinEclipse - 0.01 && t <= tMaxEclipse + 0.01 && R_center_sq <= maxPenR * maxPenR);
 
-            shadowShaderMaterial.uniforms.uSunDir.value.copy(wCanon);
-            shadowShaderMaterial.uniforms.uVx.value.copy(uCanon);
-            shadowShaderMaterial.uniforms.uVy.value.copy(vCanon);
-            shadowShaderMaterial.uniforms.uShadowCenter.value.set(shadowCenterX, shadowCenterY);
-            shadowShaderMaterial.uniforms.uRho1.value = rho1AtT;
+            // Declinación y ángulo horario en el instante t para el triedro local en earthGroup
+            const dRadAtT = ((e.d0 || 0) + (e.d1 || 0)*t + (e.d2 || 0)*t*t) * Math.PI / 180;
+            const muRadAtT = muDeg * Math.PI / 180;
+            const sinMu = Math.sin(muRadAtT), cosMu = Math.cos(muRadAtT);
+            const sinD = Math.sin(dRadAtT), cosD = Math.cos(dRadAtT);
+
+            // Triedro ortonormal Besseliano en el marco local de rotación terrestre (earthGroup):
+            const uSunLocal = new THREE.Vector3(cosD * cosMu, sinD, cosD * sinMu).normalize();
+            const uVxLocal = new THREE.Vector3(sinMu, 0, -cosMu).normalize();
+            const uVyLocal = new THREE.Vector3().crossVectors(uSunLocal, uVxLocal).normalize();
+
+            // Compresión de radio por declinación del elipsoide WGS84 (rho1 = sqrt(1 - e^2 cos^2 d))
+            const e2 = 0.006694385;
+            const rho1 = Math.sqrt(1.0 - e2 * cosD * cosD);
+
+            shadowShaderMaterial.uniforms.uSunDir.value.copy(uSunLocal);
+            shadowShaderMaterial.uniforms.uVx.value.copy(uVxLocal);
+            shadowShaderMaterial.uniforms.uVy.value.copy(uVyLocal);
+            shadowShaderMaterial.uniforms.uShadowCenter.value.set(x, y);
+            shadowShaderMaterial.uniforms.uRho1.value = rho1;
             shadowShaderMaterial.uniforms.uL1.value = l1;
             shadowShaderMaterial.uniforms.uL2.value = l2;
             shadowShaderMaterial.uniforms.uTanF1.value = e.tan_f1 || 0.0046;
@@ -2270,13 +2542,55 @@ var constellationsGroup3D = null;
                         const newRow = getDOM(targetRowId);
                         if (newRow) newRow.classList.add('active');
                     }
-                    _sceneActiveContactRowId = targetRowId;
-                }
-            } else if (_sceneActiveContactRowId) {
-                const prevRow = getDOM(_sceneActiveContactRowId);
-                if (prevRow) prevRow.classList.remove('active');
-                _sceneActiveContactRowId = null;
+                _sceneActiveContactRowId = targetRowId;
             }
+        } else if (_sceneActiveContactRowId) {
+            const prevRow = getDOM(_sceneActiveContactRowId);
+            if (prevRow) prevRow.classList.remove('active');
+            _sceneActiveContactRowId = null;
+        }
+
+        // Iluminar fila activa en la tabla del perfil del limbo lunar (C2', C3')
+        if (localCircumstancesCache) {
+            const limbTimes = (typeof getLimbContactTimes === 'function')
+                ? getLimbContactTimes(localCircumstancesCache)
+                : null;
+            const matchThresholdHours = 100 / 3600; // Margen dinámico de ±100 segundos
+            let closestLimbKey = null;
+            let minLimbDiff = Infinity;
+            if (limbTimes) {
+                if (limbTimes.c2 != null) {
+                    const diff2 = Math.abs(t - limbTimes.c2);
+                    if (diff2 <= matchThresholdHours && diff2 < minLimbDiff) {
+                        minLimbDiff = diff2;
+                        closestLimbKey = 'c2';
+                    }
+                }
+                if (limbTimes.c3 != null) {
+                    const diff3 = Math.abs(t - limbTimes.c3);
+                    if (diff3 <= matchThresholdHours && diff3 < minLimbDiff) {
+                        minLimbDiff = diff3;
+                        closestLimbKey = 'c3';
+                    }
+                }
+            }
+            const targetLimbRowId = closestLimbKey ? `row-limb-${closestLimbKey}` : null;
+            if (targetLimbRowId !== _sceneActiveLimbRowId) {
+                if (_sceneActiveLimbRowId) {
+                    const prevLimbRow = getDOM(_sceneActiveLimbRowId);
+                    if (prevLimbRow) prevLimbRow.classList.remove('active');
+                }
+                if (targetLimbRowId) {
+                    const newLimbRow = getDOM(targetLimbRowId);
+                    if (newLimbRow) newLimbRow.classList.add('active');
+                }
+                _sceneActiveLimbRowId = targetLimbRowId;
+            }
+        } else if (_sceneActiveLimbRowId) {
+            const prevLimbRow = getDOM(_sceneActiveLimbRowId);
+            if (prevLimbRow) prevLimbRow.classList.remove('active');
+            _sceneActiveLimbRowId = null;
+        }
 
             if (!_elCurrentSlider) _elCurrentSlider = getDOM('time-slider');
             const isInteracting = (typeof isSliderInteracting !== 'undefined' && isSliderInteracting);
@@ -2290,34 +2604,42 @@ var constellationsGroup3D = null;
             if (currentActiveView === 'telescopic') {
                 renderTelescopicView();
             }
+            if (typeof renderFloatingTelescopeView === 'function') {
+                renderFloatingTelescopeView();
+            }
+
+            // Sincronizar uniforms de sombra penumbral y anillos con el shader 3D
+            const showPen = getDOM('chk-show-shadow')?.checked ?? false;
+            const showPenRings = getDOM('chk-show-penumbra-rings')?.checked ?? false;
+            const shouldShowPen = isPenumbraTouching && showPen;
+            const shouldShowRings = isPenumbraTouching && showPenRings;
+
+            if (shadowShaderMaterial) {
+                if (!shadowShaderMaterial.uniforms.uEclipseMask.value && currentEclipse) {
+                    const geomData = precomputeEclipseGeometry(currentEclipse);
+                    const maskTex = createEclipseMaskTexture(geomData);
+                    if (maskTex) {
+                        shadowShaderMaterial.uniforms.uEclipseMask.value = maskTex;
+                    }
+                }
+                const hasMask = !!shadowShaderMaterial.uniforms.uEclipseMask.value;
+                shadowShaderMaterial.uniforms.uUseMask.value = (hasMask && (shouldShowPen || shouldShowRings)) ? 1.0 : 0.0;
+                shadowShaderMaterial.uniforms.uShowPenumbra.value = shouldShowPen ? 1.0 : 0.0;
+                shadowShaderMaterial.uniforms.uShowPenumbraRings.value = shouldShowRings ? 1.0 : 0.0;
+                if (shadowOverlayMesh) {
+                    shadowOverlayMesh.visible = (shouldShowPen || shouldShowRings);
+                }
+                shadowShaderMaterial.uniformsNeedUpdate = true;
+            }
 
             // Sincronizar sombra con el mapa 2D cuando está activo
-            // Se usan directamente los elementos Besselianos para proyección rigurosa
+            // En modo 2D se proyecta únicamente la umbra/antumbra sobre el terreno
             if (currentActiveView === 'map' &&
                 typeof EclipseMap2D !== 'undefined' && EclipseMap2D.isLoaded &&
                 typeof EclipseMap2D.updateShadow === 'function') {
-                const showPen = getDOM('chk-show-shadow')?.checked ?? true;
-                // Declinación del eje de sombra en el instante actual
-                const dRad = ((e.d0 || 0) + (e.d1 || 0)*t + (e.d2 || 0)*t*t) * Math.PI / 180;
-                // Ángulo horario con mu2 y corrección Delta T
-                let muDeg2D = (e.mu0 || 0) + (e.mu1 || 0)*t + (e.mu2 || 0)*t*t;
-                if (e.dt) muDeg2D -= getEarthRotationAngleDeg(e.dt);
-                const muRad = muDeg2D * Math.PI / 180;
-                // Radios penumbrales/umbrales SIN abs para corrección ζ·tan_f
-                const l1_2d = (e.l10 || 0.54) + (e.l11 || 0)*t + (e.l12 || 0)*t*t;
-                const l2_2d = (e.l20 || 0.01) + (e.l21 || 0)*t + (e.l22 || 0)*t*t;
                 EclipseMap2D.updateShadow({
                     t: t,
-                    eclipse: e,
-                    x: x,
-                    y: y,
-                    l1: l1_2d,
-                    l2: l2_2d,
-                    dRad: dRad,
-                    muRad: muRad,
-                    tanF1: e.tan_f1 || 0.0046,
-                    tanF2: e.tan_f2 || 0.00457,
-                    showPenumbra: showPen
+                    eclipse: e
                 });
             }
 
@@ -2399,18 +2721,23 @@ if (typeof window !== 'undefined') {
     window.pathLine = pathLine;
     window.totalityNorthLine = totalityNorthLine;
     window.totalitySouthLine = totalitySouthLine;
+    window.totalitySunsetLine = totalitySunsetLine;
+    window.totalitySunriseLine = totalitySunriseLine;
     window.umbraMesh3D = umbraMesh3D;
+    window.horizonLobesGroup = horizonLobesGroup;
     window.isomagnitudesGroup = isomagnitudesGroup;
     window.graticuleGroup = graticuleGroup;
     window.moonPolarAxisGroup = moonPolarAxisGroup;
     window.utLinesGroup = utLinesGroup;
     window.requestRender = requestRender;
     window.needsRender = needsRender;
+    window.updateDynamicControlsSensitivity = updateDynamicControlsSensitivity;
     window.Scene3D = {
         scene,
         camera,
         renderer,
         controls,
+        updateDynamicControlsSensitivity,
         transitionCamera,
         handle3DSpaceClick,
         latLngToVector3,
