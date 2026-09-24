@@ -2,3 +2,5 @@ node_modules/
 .DS_Store
 Thumbs.db
 scratch/
+* - copia*
+revisar_modo_envivo_con_modelo_local.py
