@@ -13,7 +13,7 @@ const OBSERVER_LOCATIONS_CATALOG = [
     // =========================================================================
     // ESPAÑA
     // =========================================================================
-    { name: "Mataró (Cosmos Mataró, ES)", lat: 41.54, lon: 2.44, tz: "Europe/Madrid", category: "España" },
+    { name: "Mataró (Cosmos Mataró, ES)", lat: 41.5416, lon: 2.4453, tz: "Europe/Madrid", category: "España" },
     { name: "A Coruña (ES)", lat: 43.37, lon: -8.40, tz: "Europe/Madrid", category: "España" },
     { name: "Albacete (ES)", lat: 38.99, lon: -1.86, tz: "Europe/Madrid", category: "España" },
     { name: "Alicante (ES)", lat: 38.35, lon: -0.48, tz: "Europe/Madrid", category: "España" },

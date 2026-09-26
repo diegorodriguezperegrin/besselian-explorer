@@ -1,0 +1,1859 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Banco de Pruebas 3D: Lóbulos y Límites de Eclipse (WGS84)</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Three.js y OrbitControls con fallback local -->
+    <script src="vendor/three.min.js"></script>
+    <script>window.THREE || document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>')</script>
+    <script src="vendor/OrbitControls.js"></script>
+    <script>(window.THREE && window.THREE.OrbitControls) || document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"><\/script>')</script>
+
+    <!-- Datos de eclipses y motor besseliano aislado para pruebas -->
+    <script src="solar_eclipses_data.js"></script>
+    <script src="lobes_test_engine.js"></script>
+
+    <style>
+        :root {
+            --bg-dark: #030712;
+            --bg-card: #0b1329;
+            --bg-panel: #0f172a;
+            --border-color: rgba(56, 189, 248, 0.25);
+            --border-active: rgba(56, 189, 248, 0.7);
+            --accent-blue: #38bdf8;
+            --accent-cyan: #22d3ee;
+            --accent-yellow: #facc15;
+            --accent-orange: #f97316;
+            --accent-green: #4ade80;
+            --accent-red: #f87171;
+            --accent-pink: #ec4899;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --font-main: 'Plus Jakarta Sans', sans-serif;
+            --font-heading: 'Outfit', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: var(--font-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(180deg, rgba(15, 23, 42, 0.95), rgba(11, 19, 41, 0.85));
+            border-bottom: 1px solid var(--border-color);
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 20;
+            flex-shrink: 0;
+        }
+
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-title i {
+            font-size: 1.4rem;
+            color: var(--accent-orange);
+            filter: drop-shadow(0 0 8px rgba(249, 115, 22, 0.5));
+        }
+
+        .header-title h1 {
+            font-family: var(--font-heading);
+            font-size: 1.15rem;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+        }
+
+        .header-badge {
+            font-size: 0.75rem;
+            color: var(--accent-cyan);
+            background: rgba(34, 211, 238, 0.12);
+            border: 1px solid rgba(34, 211, 238, 0.35);
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-family: var(--font-mono);
+            font-weight: 600;
+        }
+
+        .header-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.85rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.2s ease;
+        }
+
+        .header-links a:hover {
+            color: var(--text-main);
+            border-color: var(--accent-blue);
+            background: rgba(56, 189, 248, 0.1);
+        }
+
+        .main-container {
+            display: grid;
+            grid-template-columns: 420px 1fr;
+            flex: 1;
+            height: calc(100vh - 54px);
+            overflow: hidden;
+        }
+
+        /* SIDEBAR PANEL */
+        .sidebar {
+            background-color: var(--bg-panel);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(56, 189, 248, 0.3) transparent;
+        }
+
+        .section-box {
+            padding: 14px 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .section-title {
+            font-family: var(--font-heading);
+            font-size: 0.88rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--accent-blue);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .quick-buttons {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+            margin-bottom: 10px;
+        }
+
+        .btn-quick {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: var(--text-main);
+            font-size: 0.76rem;
+            font-family: var(--font-mono);
+            padding: 6px 4px;
+            border-radius: 6px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.15s ease;
+        }
+
+        .btn-quick:hover {
+            background: rgba(56, 189, 248, 0.15);
+            border-color: var(--accent-blue);
+            color: var(--accent-blue);
+        }
+
+        .btn-quick.active {
+            background: rgba(56, 189, 248, 0.25);
+            border-color: var(--accent-cyan);
+            color: var(--accent-cyan);
+            font-weight: 600;
+            box-shadow: 0 0 10px rgba(34, 211, 238, 0.2);
+        }
+
+        .select-custom {
+            width: 100%;
+            background: rgba(11, 19, 41, 0.85);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            font-family: var(--font-mono);
+            font-size: 0.82rem;
+            padding: 6px 10px;
+            border-radius: 6px;
+            outline: none;
+            margin-bottom: 8px;
+        }
+
+        .select-custom:focus {
+            border-color: var(--accent-blue);
+        }
+
+        /* SECUENCIADOR / REPRODUCTOR DE ECLIPSES */
+        .sequencer-box {
+            background: rgba(0, 0, 0, 0.38);
+            border: 1px solid rgba(56, 189, 248, 0.25);
+            border-radius: 8px;
+            padding: 8px 10px;
+            margin: 8px 0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+        }
+
+        .seq-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 7px;
+        }
+
+        .seq-title {
+            font-size: 0.74rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--accent-cyan);
+            letter-spacing: 0.05em;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .seq-counter {
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            color: var(--accent-blue);
+            background: rgba(56, 189, 248, 0.12);
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid rgba(56, 189, 248, 0.25);
+            font-weight: 600;
+        }
+
+        .seq-order-toggle {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 5px;
+            margin-bottom: 7px;
+        }
+
+        .btn-order {
+            padding: 5px 4px;
+            font-size: 0.74rem;
+            font-family: var(--font-mono);
+            border-radius: 6px;
+            cursor: pointer;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            transition: all 0.15s ease;
+        }
+
+        .btn-order:hover {
+            background: rgba(56, 189, 248, 0.15);
+            border-color: var(--accent-blue);
+            color: var(--accent-blue);
+        }
+
+        .btn-order.active {
+            background: rgba(56, 189, 248, 0.25);
+            border-color: var(--accent-cyan);
+            color: var(--accent-cyan);
+            font-weight: 600;
+            box-shadow: 0 0 8px rgba(34, 211, 238, 0.25);
+        }
+
+        .seq-scope-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 7px;
+        }
+
+        .select-scope {
+            flex: 1;
+            background: rgba(11, 19, 41, 0.85);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            font-family: var(--font-mono);
+            font-size: 0.73rem;
+            padding: 4px 6px;
+            border-radius: 5px;
+            outline: none;
+        }
+
+        .seq-controls {
+            display: grid;
+            grid-template-columns: 1fr 1.35fr 1fr;
+            gap: 5px;
+            margin-bottom: 7px;
+        }
+
+        .btn-seq-nav {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: var(--text-main);
+            font-size: 0.73rem;
+            padding: 6px 3px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            transition: all 0.15s ease;
+        }
+
+        .btn-seq-nav:hover {
+            background: rgba(56, 189, 248, 0.2);
+            border-color: var(--accent-blue);
+            color: var(--accent-blue);
+        }
+
+        .btn-seq-play {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.25), rgba(6, 182, 212, 0.35));
+            border: 1px solid rgba(16, 185, 129, 0.55);
+            color: #34d399;
+            font-size: 0.76rem;
+            font-weight: 700;
+            padding: 6px 4px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            transition: all 0.15s ease;
+        }
+
+        .btn-seq-play:hover {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.4), rgba(6, 182, 212, 0.55));
+            border-color: #34d399;
+            box-shadow: 0 0 12px rgba(52, 211, 153, 0.35);
+        }
+
+        .btn-seq-play.playing {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.3), rgba(249, 115, 22, 0.35));
+            border-color: rgba(239, 68, 68, 0.7);
+            color: #f87171;
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.3);
+            animation: pulsePlay 1.5s infinite;
+        }
+
+        @keyframes pulsePlay {
+            0% { box-shadow: 0 0 4px rgba(239, 68, 68, 0.3); }
+            50% { box-shadow: 0 0 14px rgba(239, 68, 68, 0.6); }
+            100% { box-shadow: 0 0 4px rgba(239, 68, 68, 0.3); }
+        }
+
+        .seq-speed-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .speed-buttons {
+            display: flex;
+            gap: 3px;
+        }
+
+        .btn-speed {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+            font-size: 0.67rem;
+            padding: 2px 5px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .btn-speed:hover {
+            border-color: var(--accent-blue);
+            color: var(--accent-blue);
+        }
+
+        .btn-speed.active {
+            background: rgba(56, 189, 248, 0.22);
+            border-color: var(--accent-blue);
+            color: var(--accent-blue);
+            font-weight: 600;
+        }
+
+        /* METADATA PILLS */
+        .meta-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            background: rgba(0, 0, 0, 0.25);
+            padding: 8px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            font-family: var(--font-mono);
+            font-size: 0.74rem;
+        }
+
+        .meta-item {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .meta-label {
+            color: var(--text-muted);
+        }
+
+        .meta-val {
+            font-weight: 600;
+            color: var(--accent-cyan);
+        }
+
+        /* LAYER TOGGLES */
+        .layer-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .layer-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 6px 10px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 6px;
+            font-size: 0.8rem;
+            transition: background 0.15s ease;
+        }
+
+        .layer-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .layer-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .color-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            box-shadow: 0 0 6px currentColor;
+        }
+
+        .layer-count {
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            background: rgba(0, 0, 0, 0.3);
+            padding: 1px 6px;
+            border-radius: 4px;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 32px;
+            height: 18px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #334155;
+            transition: .2s;
+            border-radius: 18px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 12px;
+            width: 12px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .2s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: var(--accent-blue);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(14px);
+        }
+
+        /* DISPLAY OPTIONS */
+        .option-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.78rem;
+        }
+
+        .option-row label {
+            color: var(--text-muted);
+        }
+
+        .slider-control {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .slider-control input[type="range"] {
+            width: 90px;
+            accent-color: var(--accent-blue);
+        }
+
+        .slider-val {
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            width: 24px;
+            text-align: right;
+        }
+
+        /* DIAGNOSTICS TABLE */
+        .diag-container {
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            background: rgba(0, 0, 0, 0.35);
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            overflow-x: auto;
+        }
+
+        .diag-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .diag-table th {
+            text-align: left;
+            padding: 6px 8px;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--accent-blue);
+            font-weight: 600;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .diag-table td {
+            padding: 5px 8px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            color: var(--text-main);
+        }
+
+        .diag-table tr:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .status-ok {
+            color: var(--accent-green);
+        }
+
+        .status-warn {
+            color: var(--accent-yellow);
+        }
+
+        .status-gap {
+            color: var(--accent-red);
+        }
+
+        /* CAMERA TOOLBAR */
+        .cam-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+        }
+
+        .btn-cam {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-main);
+            font-size: 0.74rem;
+            padding: 6px 4px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .btn-cam:hover {
+            background: rgba(56, 189, 248, 0.2);
+            border-color: var(--accent-blue);
+            color: var(--accent-blue);
+        }
+
+        /* 3D CANVAS VIEWPORT */
+        .viewport {
+            position: relative;
+            background-color: #02050e;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #threejs-canvas-container {
+            width: 100%;
+            height: 100%;
+        }
+
+        .viewport-hud {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            background: rgba(11, 19, 41, 0.85);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-color);
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            pointer-events: none;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            z-index: 10;
+        }
+
+        .hud-line {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+
+        .hud-line:last-child {
+            margin-bottom: 0;
+        }
+
+        .hud-key {
+            color: var(--text-muted);
+        }
+
+        .hud-val {
+            color: var(--accent-cyan);
+            font-weight: 600;
+        }
+
+        .legend-hud {
+            position: absolute;
+            bottom: 14px;
+            left: 14px;
+            background: rgba(11, 19, 41, 0.85);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-color);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.72rem;
+            pointer-events: none;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 3px;
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-title">
+            <i class="fa-solid fa-compass-drafting"></i>
+            <h1>Banco de Pruebas 3D: Lóbulos de Eclipse &amp; Límites en WGS84</h1>
+            <span class="header-badge">Motor Aislado: lobes_test_engine.js</span>
+        </div>
+        <div class="header-links">
+            <a href="solareclipseexplorer.html"><i class="fa-solid fa-arrow-left"></i> Volver al Explorador Principal</a>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <!-- 1. SELECCIÓN DE ECLIPSE -->
+            <div class="section-box">
+                <div class="section-title">
+                    <span><i class="fa-solid fa-globe"></i> Eclipse de Prueba</span>
+                </div>
+                <div class="quick-buttons">
+                    <button class="btn-quick active" onclick="loadPresetEclipse(9566)">2026 Total</button>
+                    <button class="btn-quick" onclick="loadPresetEclipse(9568)">2027 Total</button>
+                    <button class="btn-quick" onclick="loadPresetEclipse(9569)">2028 Anular</button>
+                    <button class="btn-quick" onclick="loadPresetEclipse(9565)">2026 Anular S</button>
+                    <button class="btn-quick" onclick="loadPresetEclipse(9570)">2028 Total S</button>
+                    <button class="btn-quick" onclick="loadPresetEclipse(9514)">2024 Total NA</button>
+                </div>
+                <select id="sel-all-eclipses" class="select-custom" onchange="onSelectCustomEclipse(this.value)">
+                    <option value="">Buscar en Catálogo Histórico/Futuro...</option>
+                </select>
+
+                <!-- SECUENCIADOR / REPRODUCTOR MULTI-CRITERIO -->
+                <div class="sequencer-box">
+                    <div class="seq-header">
+                        <span class="seq-title"><i class="fa-solid fa-play-circle"></i> Secuencia Continua</span>
+                        <span class="seq-counter" id="seq-counter">1 / 11.898</span>
+                    </div>
+
+                    <div class="seq-order-toggle">
+                        <button class="btn-order active" id="btn-order-date" onclick="setSequenceOrder('date')" title="Ordenar cronológicamente por fecha">
+                            <i class="fa-solid fa-calendar-days"></i> Por Fecha
+                        </button>
+                        <button class="btn-order" id="btn-order-saros" onclick="setSequenceOrder('saros')" title="Ordenar por serie de Saros">
+                            <i class="fa-solid fa-rotate"></i> Por Saros
+                        </button>
+                    </div>
+
+                    <div class="seq-scope-row">
+                        <label for="sel-seq-scope" style="font-size:0.71rem; color:var(--text-muted);">Alcance:</label>
+                        <select id="sel-seq-scope" class="select-scope" onchange="onSequenceScopeChanged(this.value)">
+                            <option value="all" selected>Todos (-1999 a 3000: 11.898)</option>
+                            <option value="modern">Era Moderna (1900 a 2100)</option>
+                            <option value="current_saros">Solo Saros Actual</option>
+                        </select>
+                    </div>
+
+                    <div class="seq-controls">
+                        <button class="btn-seq-nav" onclick="stepSequence(-1)" title="Eclipse anterior (Atajo: Flecha Izquierda)">
+                            <i class="fa-solid fa-backward-step"></i> Ant
+                        </button>
+                        <button class="btn-seq-play" id="btn-seq-play" onclick="toggleSequencePlay()" title="Reproducir / Pausar secuencia automática (Atajo: Espacio)">
+                            <i class="fa-solid fa-play" id="icon-seq-play"></i> <span id="text-seq-play">Reproducir</span>
+                        </button>
+                        <button class="btn-seq-nav" onclick="stepSequence(1)" title="Siguiente eclipse (Atajo: Flecha Derecha)">
+                            Sig <i class="fa-solid fa-forward-step"></i>
+                        </button>
+                    </div>
+
+                    <div class="seq-speed-row">
+                        <span style="font-size:0.70rem; color:var(--text-muted);">Velocidad:</span>
+                        <div class="speed-buttons">
+                            <button class="btn-speed" onclick="setSequenceSpeed(400, this)">0.4s</button>
+                            <button class="btn-speed" onclick="setSequenceSpeed(800, this)">0.8s</button>
+                            <button class="btn-speed active" onclick="setSequenceSpeed(1400, this)">1.4s</button>
+                            <button class="btn-speed" onclick="setSequenceSpeed(2500, this)">2.5s</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="meta-grid" id="eclipse-meta">
+                    <div class="meta-item"><span class="meta-label">Fecha:</span><span class="meta-val" id="meta-date">--</span></div>
+                    <div class="meta-item"><span class="meta-label">Tipo:</span><span class="meta-val" id="meta-type">--</span></div>
+                    <div class="meta-item"><span class="meta-label">Gamma:</span><span class="meta-val" id="meta-gamma">--</span></div>
+                    <div class="meta-item"><span class="meta-label">T0 (TT):</span><span class="meta-val" id="meta-t0">--</span></div>
+                    <div class="meta-item"><span class="meta-label">Enters Comp:</span><span class="meta-val" id="meta-enters">--</span></div>
+                    <div class="meta-item"><span class="meta-label">Duración:</span><span class="meta-val" id="meta-dur">--</span></div>
+                </div>
+            </div>
+
+            <!-- 2. CAPAS Y CURVAS BESSELIANAS -->
+            <div class="section-box">
+                <div class="section-title">
+                    <span><i class="fa-solid fa-bezier-curve"></i> Curvas Matemáticas</span>
+                    <button class="btn-cam" style="padding: 2px 6px; font-size: 0.68rem;" onclick="toggleAllLayers(true)">Todas</button>
+                </div>
+                <div class="layer-list">
+                    <!-- Sunrise Loop -->
+                    <div class="layer-item">
+                        <div class="layer-info">
+                            <span class="color-dot" style="color: #f97316; background: #f97316;"></span>
+                            <span>Lóbulo Salida Sol (sunriseLoop)</span>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span class="layer-count" id="count-sunriseLoop">0</span>
+                            <label class="switch">
+                                <input type="checkbox" id="layer-sunriseLoop" checked onchange="updateLayersVisibility()">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                    <!-- Sunset Loop -->
+                    <div class="layer-item">
+                        <div class="layer-info">
+                            <span class="color-dot" style="color: #a855f7; background: #a855f7;"></span>
+                            <span>Lóbulo Puesta Sol (sunsetLoop)</span>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span class="layer-count" id="count-sunsetLoop">0</span>
+                            <label class="switch">
+                                <input type="checkbox" id="layer-sunsetLoop" checked onchange="updateLayersVisibility()">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                    <!-- Full Espenak Loop -->
+                    <div class="layer-item">
+                        <div class="layer-info">
+                            <span class="color-dot" style="color: #38bdf8; background: #38bdf8;"></span>
+                            <span>Espenak Máx Horizonte (fullLoop)</span>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span class="layer-count" id="count-fullEspenakLoop">0</span>
+                            <label class="switch">
+                                <input type="checkbox" id="layer-fullEspenakLoop" checked onchange="updateLayersVisibility()">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                    <!-- Espenak Sunrise Part -->
+                    <div class="layer-item">
+                        <div class="layer-info">
+                            <span class="color-dot" style="color: #0284c7; background: #0284c7;"></span>
+                            <span>Espenak Salida (espenakSunrise)</span>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span class="layer-count" id="count-espenakSunrisePart">0</span>
+                            <label class="switch">
+                                <input type="checkbox" id="layer-espenakSunrisePart" checked onchange="updateLayersVisibility()">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                    <!-- Espenak Sunset Part -->
+                    <div class="layer-item">
+                        <div class="layer-info">
+                            <span class="color-dot" style="color: #0ea5e9; background: #0ea5e9;"></span>
+                            <span>Espenak Puesta (espenakSunset)</span>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span class="layer-count" id="count-espenakSunsetPart">0</span>
+                            <label class="switch">
+                                <input type="checkbox" id="layer-espenakSunsetPart" checked onchange="updateLayersVisibility()">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                    <!-- Sunrise Arc (Terminador) -->
+                    <div class="layer-item">
+                        <div class="layer-info">
+                            <span class="color-dot" style="color: #10b981; background: #10b981;"></span>
+                            <span>Arco Terminador Salida (sunriseArc)</span>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span class="layer-count" id="count-sunriseArc">0</span>
+                            <label class="switch">
+                                <input type="checkbox" id="layer-sunriseArc" checked onchange="updateLayersVisibility()">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                    <!-- Sunset Arc (Terminador) -->
+                    <div class="layer-item">
+                        <div class="layer-info">
+                            <span class="color-dot" style="color: #ec4899; background: #ec4899;"></span>
+                            <span>Arco Terminador Puesta (sunsetArc)</span>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span class="layer-count" id="count-sunsetArc">0</span>
+                            <label class="switch">
+                                <input type="checkbox" id="layer-sunsetArc" checked onchange="updateLayersVisibility()">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                    <!-- Totality / Annularity Limits -->
+                    <div class="layer-item">
+                        <div class="layer-info">
+                            <span class="color-dot" style="color: #ef4444; background: #ef4444;"></span>
+                            <span>Límites Totalidad N/S (totCoords)</span>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span class="layer-count" id="count-totLimits">0</span>
+                            <label class="switch">
+                                <input type="checkbox" id="layer-totLimits" checked onchange="updateLayersVisibility()">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                    <!-- Centerline -->
+                    <div class="layer-item">
+                        <div class="layer-info">
+                            <span class="color-dot" style="color: #eab308; background: #eab308;"></span>
+                            <span>Línea Central (centerCoords)</span>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span class="layer-count" id="count-centerCoords">0</span>
+                            <label class="switch">
+                                <input type="checkbox" id="layer-centerCoords" checked onchange="updateLayersVisibility()">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. HERRAMIENTAS DE INSPECCIÓN VISUAL -->
+            <div class="section-box">
+                <div class="section-title">
+                    <span><i class="fa-solid fa-microscope"></i> Inspección de Vértices</span>
+                </div>
+                <div class="option-row">
+                    <label for="opt-show-vertices">Mostrar Puntos / Vértices</label>
+                    <label class="switch">
+                        <input type="checkbox" id="opt-show-vertices" checked onchange="redrawScene()">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="option-row">
+                    <label for="opt-vertex-size">Tamaño de Vértices (px)</label>
+                    <div class="slider-control">
+                        <input type="range" id="opt-vertex-size" min="1" max="10" value="4" oninput="document.getElementById('val-vsize').textContent = this.value; redrawScene();">
+                        <span class="slider-val" id="val-vsize">4</span>
+                    </div>
+                </div>
+                <div class="option-row">
+                    <label for="opt-show-endpoints">Marcadores Inicio/Fin (Verde/Rojo)</label>
+                    <label class="switch">
+                        <input type="checkbox" id="opt-show-endpoints" checked onchange="redrawScene()">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="option-row">
+                    <label for="opt-show-graticule">Retícula Terrestre (15°)</label>
+                    <label class="switch">
+                        <input type="checkbox" id="opt-show-graticule" checked onchange="toggleGraticule()">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="option-row">
+                    <label for="opt-wireframe">Globo Wireframe Puro</label>
+                    <label class="switch">
+                        <input type="checkbox" id="opt-wireframe" onchange="toggleGlobeMaterial()">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="option-row">
+                    <label for="opt-break-thresh">Umbral de Salto Antimeridiano (°)</label>
+                    <div class="slider-control">
+                        <input type="range" id="opt-break-thresh" min="60" max="240" step="10" value="180" oninput="document.getElementById('val-break').textContent = this.value; redrawScene();">
+                        <span class="slider-val" id="val-break">180</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. VISTAS DE CÁMARA -->
+            <div class="section-box">
+                <div class="section-title">
+                    <span><i class="fa-solid fa-video"></i> Vistas Predefinidas</span>
+                </div>
+                <div class="cam-grid">
+                    <button class="btn-cam" onclick="setCameraView('ge')">Máximo Eclipse</button>
+                    <button class="btn-cam" onclick="setCameraView('north')">Polo Norte (+90°)</button>
+                    <button class="btn-cam" onclick="setCameraView('south')">Polo Sur (-90°)</button>
+                    <button class="btn-cam" onclick="setCameraView('sunrise')">Salida Sol</button>
+                    <button class="btn-cam" onclick="setCameraView('sunset')">Puesta Sol</button>
+                    <button class="btn-cam" onclick="setCameraView('reset')">Resetear Vista</button>
+                </div>
+            </div>
+
+            <!-- 5. TELEMETRÍA Y DIAGNÓSTICO -->
+            <div class="section-box" style="flex:1;">
+                <div class="section-title">
+                    <span><i class="fa-solid fa-square-poll-vertical"></i> Diagnóstico de Topología</span>
+                </div>
+                <div class="diag-container">
+                    <table class="diag-table">
+                        <thead>
+                            <tr>
+                                <th>Curva</th>
+                                <th>Pts</th>
+                                <th>Inicio [lat,lon]</th>
+                                <th>Fin [lat,lon]</th>
+                                <th>Cierre</th>
+                                <th>Max Salto</th>
+                            </tr>
+                        </thead>
+                        <tbody id="diag-tbody">
+                            <!-- Inyectado dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </aside>
+
+        <!-- 3D VIEWPORT -->
+        <main class="viewport">
+            <div id="threejs-canvas-container"></div>
+
+            <div class="viewport-hud" id="hud-panel">
+                <div class="hud-line"><span class="hud-key">Eclipse:</span><span class="hud-val" id="hud-eclipse-name">Cargando...</span></div>
+                <div class="hud-line"><span class="hud-key">Coordenadas Cursor:</span><span class="hud-val" id="hud-cursor-coords">Lat: 0.00°, Lon: 0.00°</span></div>
+                <div class="hud-line"><span class="hud-key">Vértice más cercano:</span><span class="hud-val" id="hud-nearest-vertex">Ninguno</span></div>
+            </div>
+
+            <div class="legend-hud">
+                <div class="legend-item"><div class="legend-color" style="background:#f97316;"></div><span>Lóbulo Salida (sunriseLoop)</span></div>
+                <div class="legend-item"><div class="legend-color" style="background:#a855f7;"></div><span>Lóbulo Puesta (sunsetLoop)</span></div>
+                <div class="legend-item"><div class="legend-color" style="background:#38bdf8;"></div><span>Espenak Horizon (full / parts)</span></div>
+                <div class="legend-item"><div class="legend-color" style="background:#10b981;"></div><span>Terminador Salida (sunriseArc)</span></div>
+                <div class="legend-item"><div class="legend-color" style="background:#ec4899;"></div><span>Terminador Puesta (sunsetArc)</span></div>
+                <div class="legend-item"><div class="legend-color" style="background:#ef4444;"></div><span>Límites Centrales (totality)</span></div>
+                <div class="legend-item"><div class="legend-color" style="background:#eab308;"></div><span>Trayectoria Central</span></div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        /* =========================================================================
+           BANCO DE PRUEBAS 3D PARA LÓBULOS Y LÍMITES BESSELIANOS (WGS84)
+           ========================================================================= */
+
+        const EARTH_RADIUS = 50.0;
+        const GROUND_OVERLAY_RADIUS = 50.15;
+        const VERTEX_OVERLAY_RADIUS = 50.25;
+
+        let scene, camera, renderer, controls;
+        let earthSphereMesh = null;
+        let graticuleGroup = null;
+        let curvesGroup = null;
+        let verticesGroup = null;
+        let endpointMarkersGroup = null;
+        let currentEclipse = null;
+        let currentGeomData = null;
+
+        // Base de datos de prueba
+        const PRESET_ECLIPSES = [
+            { cat_no: 9566, year: 2026, month: 8, day: 12, dt: 75.4, eclipse_type: 'T', saros: 126, gamma: 0.89774, magnitude: 1.03863, lat_ge: '65.2N', lng_ge: '25.2W', lat_dd_ge: 65.225, lng_dd_ge: -25.22833, central_duration: '02m18s', duration_secs: 138.2, t0: 18, x0: 0.475514, x1: 0.5189249, x2: -0.0000773, x3: -0.00000804, y0: 0.771183, y1: -0.230168, y2: -0.0001246, y3: 0.00000377, d0: 14.79667, d1: -0.012065, d2: -0.000003, mu0: 88.74779, mu1: 15.00309, mu2: 0, l10: 0.537955, l11: 0.0000939, l20: -0.008142, l21: 0.0000935, tmin: -1.2, tmax: 0.78 },
+            { cat_no: 9568, year: 2027, month: 8, day: 2, dt: 76.0, eclipse_type: 'T', saros: 136, gamma: 0.14209, magnitude: 1.07903, lat_ge: '25.5N', lng_ge: '33.2E', lat_dd_ge: 25.5025, lng_dd_ge: 33.17139, central_duration: '06m23s', duration_secs: 382.6, t0: 10, x0: -0.019772, x1: 0.5447123, x2: -0.0000446, x3: -0.00000922, y0: 0.160061, y1: -0.2111582, y2: -0.0001217, y3: 0.00000376, d0: 17.76247, d1: -0.010181, d2: -0.000004, mu0: 328.42255, mu1: 15.0021, mu2: 0, l10: 0.530596, l11: 0.0000138, l20: -0.015464, l21: 0.0000137, tmin: -2.0, tmax: 2.0 },
+            { cat_no: 9569, year: 2028, month: 1, day: 26, dt: 76.3, eclipse_type: 'A', saros: 141, gamma: 0.39015, magnitude: 0.92079, lat_ge: '3.0N', lng_ge: '51.5W', lat_dd_ge: 2.96039, lng_dd_ge: -51.54608, central_duration: '10m27s', duration_secs: 627.1, t0: 15, x0: -0.205283, x1: 0.474257, x2: -0.000039, x3: -0.00000527, y0: 0.34028, y1: 0.1738587, y2: 0.0000968, y3: -0.00000209, d0: -18.728251, d1: 0.010074, d2: 0.000005, mu0: 41.89128, mu1: 14.99896, mu2: 0, l10: 0.574117, l11: 0.000042, l20: 0.02784, l21: 0.0000418, tmin: -2.0, tmax: 2.0 },
+            { cat_no: 9565, year: 2026, month: 2, day: 17, dt: 75.1, eclipse_type: 'A', saros: 121, gamma: -0.97427, magnitude: 0.96299, lat_ge: '64.7S', lng_ge: '86.8E', lat_dd_ge: -64.71786, lng_dd_ge: 86.7511, central_duration: '02m20s', duration_secs: 139.6, t0: 12, x0: 0.321954, x1: 0.4827224, x2: -0.0000314, x3: -0.00000637, y0: -0.926971, y1: 0.2355394, y2: 0.0001169, y3: -0.00000327, d0: -11.8793, d1: 0.014049, d2: 0.000002, mu0: 356.5144, mu1: 15.00198, mu2: 0, l10: 0.55772, l11: -0.0001181, l20: 0.011524, l21: -0.01175, tmin: -2.0, tmax: 2.0 },
+            { cat_no: 9570, year: 2028, month: 7, day: 22, dt: 76.6, eclipse_type: 'T', saros: 146, gamma: -0.60557, magnitude: 1.05602, lat_ge: '15.6S', lng_ge: '126.7E', lat_dd_ge: -15.57907, lng_dd_ge: 126.72137, central_duration: '05m10s', duration_secs: 309.7, t0: 3, x0: -0.154409, x1: 0.5449892, x2: -0.0000214, x3: -0.00000869, y0: -0.586424, y1: -0.1746085, y2: -0.0001021, y3: 0.00000296, d0: 20.18231, d1: -0.007974, d2: -0.000005, mu0: 223.37868, mu1: 15.00102, mu2: 0, l10: 0.535237, l11: -0.0000859, l20: -0.010846, l21: -0.0000854, tmin: -2.0, tmax: 2.0 },
+            { cat_no: 9514, year: 2024, month: 4, day: 8, dt: 71.3, eclipse_type: 'T', saros: 139, gamma: 0.34314, magnitude: 1.05656, lat_ge: '25.3N', lng_ge: '104.1W', lat_dd_ge: 25.2975, lng_dd_ge: -104.1417, central_duration: '04m28s', duration_secs: 268.1, t0: 18, x0: -0.111425, x1: 0.5427952, x2: -0.0000305, x3: -0.00000862, y0: 0.384666, y1: -0.1568285, y2: -0.0000965, y3: 0.00000259, d0: 7.58552, d1: -0.014905, d2: -0.000002, mu0: 89.59765, mu1: 15.00392, mu2: 0, l10: 0.535824, l11: 0.0000465, l20: -0.01026, l21: 0.0000464, tmin: -2.0, tmax: 2.0 }
+        ];
+
+        // Conversión canónica Lat/Lng a Vector3 3D
+        function latLngToVector3(lat, lng, radius = EARTH_RADIUS) {
+            const latRad = lat * (Math.PI / 180);
+            const lngRad = lng * (Math.PI / 180);
+            const x =  radius * Math.cos(latRad) * Math.cos(lngRad);
+            const y =  radius * Math.sin(latRad);
+            const z = -radius * Math.cos(latRad) * Math.sin(lngRad);
+            return new THREE.Vector3(x, y, z);
+        }
+
+        function vector3ToLatLng(v) {
+            const r = Math.sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
+            if (r === 0) return { lat: 0, lon: 0 };
+            const lat = Math.asin(Math.max(-1, Math.min(1, v.y / r))) * (180 / Math.PI);
+            let lon = Math.atan2(-v.z, v.x) * (180 / Math.PI);
+            return { lat, lon };
+        }
+
+        // Trazado de líneas segmentadas con interpolación suave y corte por antimeridiano
+        function createSegmentedLine(coordList, colorHex, radius = GROUND_OVERLAY_RADIUS, linewidth = 2, opacity = 1.0) {
+            if (!coordList || coordList.length < 2) return null;
+
+            const breakThreshold = parseFloat(document.getElementById('opt-break-thresh').value) || 180;
+            const segmentPoints = [];
+
+            for (let i = 1; i < coordList.length; i++) {
+                const prev = coordList[i - 1];
+                const curr = coordList[i];
+                if (!prev || !curr) continue;
+                if (prev.breakSegment || curr.breakSegment) continue;
+
+                const prevLng = prev.lng != null ? prev.lng : prev.lon;
+                const currLng = curr.lng != null ? curr.lng : curr.lon;
+                if (prev.lat == null || prevLng == null || curr.lat == null || currLng == null) continue;
+
+                let dLng = Math.abs(currLng - prevLng);
+                if (dLng > breakThreshold && dLng < (360 - 20)) {
+                    continue; // Corte limpio de antimeridiano
+                }
+
+                const p1 = latLngToVector3(prev.lat, prevLng, radius);
+                const p2 = latLngToVector3(curr.lat, currLng, radius);
+
+                const d = p1.distanceTo(p2);
+                if (d > 1.2) {
+                    const steps = Math.ceil(d / 0.8);
+                    let prevSub = p1;
+                    for (let s = 1; s <= steps; s++) {
+                        const frac = s / steps;
+                        const currSub = new THREE.Vector3().lerpVectors(p1, p2, frac).normalize().multiplyScalar(radius);
+                        segmentPoints.push(prevSub);
+                        segmentPoints.push(currSub);
+                        prevSub = currSub;
+                    }
+                } else {
+                    segmentPoints.push(p1);
+                    segmentPoints.push(p2);
+                }
+            }
+
+            if (segmentPoints.length > 0) {
+                const geometry = new THREE.BufferGeometry().setFromPoints(segmentPoints);
+                const material = new THREE.LineBasicMaterial({
+                    color: colorHex,
+                    linewidth: linewidth,
+                    transparent: true,
+                    opacity: opacity,
+                    depthWrite: false,
+                    depthTest: true,
+                    polygonOffset: true,
+                    polygonOffsetFactor: -2,
+                    polygonOffsetUnits: -4
+                });
+                return new THREE.LineSegments(geometry, material);
+            }
+            return null;
+        }
+
+        // Trazado de vértices como nube de puntos para inspección
+        function createPointsMesh(coordList, colorHex, size = 4) {
+            if (!coordList || coordList.length === 0) return null;
+            const points = [];
+            for (let i = 0; i < coordList.length; i++) {
+                const pt = coordList[i];
+                const lng = pt.lng != null ? pt.lng : pt.lon;
+                if (pt.lat == null || lng == null) continue;
+                points.push(latLngToVector3(pt.lat, lng, VERTEX_OVERLAY_RADIUS));
+            }
+            if (points.length === 0) return null;
+
+            const geometry = new THREE.BufferGeometry().setFromPoints(points);
+            const material = new THREE.PointsMaterial({
+                color: colorHex,
+                size: size,
+                sizeAttenuation: false,
+                transparent: true,
+                opacity: 0.9,
+                depthWrite: false,
+                depthTest: true
+            });
+            return new THREE.Points(geometry, material);
+        }
+
+        // Marcadores especiales para el inicio (Verde) y fin (Rojo) de la curva
+        function createEndpointMarker(pt, colorHex, label) {
+            const lng = pt.lng != null ? pt.lng : pt.lon;
+            const pos = latLngToVector3(pt.lat, lng, VERTEX_OVERLAY_RADIUS + 0.1);
+            const geo = new THREE.SphereGeometry(0.6, 12, 12);
+            const mat = new THREE.MeshBasicMaterial({ color: colorHex });
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.position.copy(pos);
+            mesh.userData = { label, lat: pt.lat, lng };
+            return mesh;
+        }
+
+        // Construcción de la retícula de coordenadas
+        function createGraticule() {
+            const group = new THREE.Group();
+            const material = new THREE.LineBasicMaterial({
+                color: 0x38bdf8,
+                transparent: true,
+                opacity: 0.12,
+                depthWrite: false
+            });
+            const majorMaterial = new THREE.LineBasicMaterial({
+                color: 0x38bdf8,
+                transparent: true,
+                opacity: 0.35,
+                depthWrite: false
+            });
+
+            // Paralelos
+            for (let lat = -75; lat <= 75; lat += 15) {
+                const points = [];
+                for (let lng = -180; lng <= 180; lng += 3) {
+                    points.push(latLngToVector3(lat, lng, GROUND_OVERLAY_RADIUS));
+                }
+                const geometry = new THREE.BufferGeometry().setFromPoints(points);
+                const mat = (lat === 0) ? majorMaterial : material;
+                const line = new THREE.LineLoop(geometry, mat);
+                group.add(line);
+            }
+
+            // Meridianos
+            for (let lng = -180; lng < 180; lng += 15) {
+                const points = [];
+                for (let lat = -87; lat <= 87; lat += 3) {
+                    points.push(latLngToVector3(lat, lng, GROUND_OVERLAY_RADIUS));
+                }
+                const geometry = new THREE.BufferGeometry().setFromPoints(points);
+                const mat = (lng === 0) ? majorMaterial : material;
+                const line = new THREE.Line(geometry, mat);
+                group.add(line);
+            }
+
+            return group;
+        }
+
+        // Inicialización de Three.js
+        function initScene() {
+            const container = document.getElementById('threejs-canvas-container');
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x02050e);
+
+            camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 2000);
+            camera.position.set(0, 40, 150);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+            renderer.setSize(width, height);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            container.appendChild(renderer.domElement);
+
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.rotateSpeed = 0.7;
+            controls.zoomSpeed = 1.0;
+            controls.minDistance = 60;
+            controls.maxDistance = 500;
+
+            // Iluminación suave
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+            scene.add(ambientLight);
+
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.4);
+            dirLight.position.set(100, 100, 100);
+            scene.add(dirLight);
+
+            // Malla de la Tierra: Esfera limpia y minimalista sin texturas
+            const globeGeo = new THREE.SphereGeometry(EARTH_RADIUS, 64, 64);
+            const globeMat = new THREE.MeshStandardMaterial({
+                color: 0x090f1d,
+                roughness: 0.85,
+                metalness: 0.1
+            });
+            earthSphereMesh = new THREE.Mesh(globeGeo, globeMat);
+            scene.add(earthSphereMesh);
+
+            // Retícula
+            graticuleGroup = createGraticule();
+            scene.add(graticuleGroup);
+
+            // Grupos dinámicos de curvas y vértices
+            curvesGroup = new THREE.Group();
+            scene.add(curvesGroup);
+
+            verticesGroup = new THREE.Group();
+            scene.add(verticesGroup);
+
+            endpointMarkersGroup = new THREE.Group();
+            scene.add(endpointMarkersGroup);
+
+            // Redimensionamiento
+            window.addEventListener('resize', onWindowResize);
+
+            // Interacción del cursor
+            setupRaycasting(container);
+
+            // Animación
+            animate();
+        }
+
+        function onWindowResize() {
+            const container = document.getElementById('threejs-canvas-container');
+            if (!container) return;
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // Raycasting para inspección interactiva
+        function setupRaycasting(container) {
+            const raycaster = new THREE.Raycaster();
+            const mouse = new THREE.Vector2();
+
+            container.addEventListener('mousemove', (e) => {
+                const rect = container.getBoundingClientRect();
+                mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+                mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+                raycaster.setFromCamera(mouse, camera);
+                const intersects = raycaster.intersectObject(earthSphereMesh);
+
+                if (intersects.length > 0) {
+                    const pt = intersects[0].point;
+                    const ll = vector3ToLatLng(pt);
+                    document.getElementById('hud-cursor-coords').textContent = `Lat: ${ll.lat.toFixed(2)}°, Lon: ${ll.lon.toFixed(2)}°`;
+
+                    // Buscar vértice más cercano entre las curvas activas
+                    findNearestVertex(ll.lat, ll.lon);
+                }
+            });
+        }
+
+        function findNearestVertex(lat, lon) {
+            if (!currentGeomData) return;
+            let bestDist = Infinity;
+            let bestInfo = null;
+
+            const checkList = [
+                { id: 'sunriseLoop', name: 'sunriseLoop', coords: currentGeomData.sunriseLoop },
+                { id: 'sunsetLoop', name: 'sunsetLoop', coords: currentGeomData.sunsetLoop },
+                { id: 'fullEspenakLoop', name: 'fullEspenakLoop', coords: currentGeomData.fullEspenakLoop },
+                { id: 'espenakSunrisePart', name: 'espenakSunrisePart', coords: currentGeomData.espenakSunrisePart },
+                { id: 'espenakSunsetPart', name: 'espenakSunsetPart', coords: currentGeomData.espenakSunsetPart },
+                { id: 'sunriseArc', name: 'sunriseArc', coords: currentGeomData.sunriseArc },
+                { id: 'sunsetArc', name: 'sunsetArc', coords: currentGeomData.sunsetArc },
+                { id: 'totLimits', name: 'totNorthCoords', coords: currentGeomData.totNorthCoords },
+                { id: 'totLimits', name: 'totSouthCoords', coords: currentGeomData.totSouthCoords },
+                { id: 'centerCoords', name: 'centerCoords', coords: currentGeomData.centerCoords }
+            ];
+
+            for (const item of checkList) {
+                // Filtrar para consultar únicamente capas que el usuario tiene activadas
+                const isLayerVisible = document.getElementById(`layer-${item.id}`)?.checked;
+                if (!isLayerVisible) continue;
+                if (!item.coords) continue;
+
+                for (let i = 0; i < item.coords.length; i++) {
+                    const p = item.coords[i];
+                    if (!p) continue;
+                    const pLng = p.lng != null ? p.lng : p.lon;
+                    if (p.lat == null || pLng == null) continue;
+                    const dLat = p.lat - lat;
+                    let dLon = Math.abs(pLng - lon);
+                    if (dLon > 180) dLon = 360 - dLon;
+                    const distDeg = Math.hypot(dLat, dLon);
+                    if (distDeg < bestDist) {
+                        bestDist = distDeg;
+                        bestInfo = `${item.name}[${i}] (Lat: ${p.lat.toFixed(2)}°, Lon: ${pLng.toFixed(2)}°, Δ=${distDeg.toFixed(2)}°)`;
+                    }
+                }
+            }
+
+            if (bestInfo && bestDist < 10.0) {
+                document.getElementById('hud-nearest-vertex').textContent = bestInfo;
+            } else {
+                document.getElementById('hud-nearest-vertex').textContent = 'Ninguno cercano (<10°)';
+            }
+        }
+
+        // Limpieza de objetos Three.js
+        function clearGroup(group) {
+            while (group.children.length > 0) {
+                const obj = group.children[0];
+                group.remove(obj);
+                if (obj.geometry) obj.geometry.dispose();
+                if (obj.material) {
+                    if (Array.isArray(obj.material)) obj.material.forEach(m => m.dispose());
+                    else obj.material.dispose();
+                }
+            }
+        }
+
+        // =========================================================================
+        // SECUENCIADOR / REPRODUCTOR CONTINUO DE ECLIPSES
+        // =========================================================================
+        let sequenceOrder = 'date'; // 'date' | 'saros'
+        let sequenceScope = 'all';  // 'all' | 'modern' | 'current_saros'
+        let sequenceList = [];
+        let currentSequenceIndex = 0;
+        let sequencePlayInterval = null;
+        let sequenceSpeedMs = 1400;
+
+        function buildSequenceList() {
+            const rawPool = (typeof NASA_SOLAR_ECLIPSES !== 'undefined' && NASA_SOLAR_ECLIPSES.length > 0)
+                ? NASA_SOLAR_ECLIPSES
+                : PRESET_ECLIPSES;
+
+            // 1. Filtrado por alcance
+            let pool = rawPool;
+            if (sequenceScope === 'modern') {
+                pool = rawPool.filter(e => e.year >= 1900 && e.year <= 2100);
+            } else if (sequenceScope === 'current_saros' && currentEclipse && currentEclipse.saros != null) {
+                pool = rawPool.filter(e => e.saros === currentEclipse.saros);
+            }
+
+            // 2. Ordenación
+            if (sequenceOrder === 'saros') {
+                sequenceList = pool.slice().sort((a, b) => {
+                    const sA = a.saros != null ? a.saros : 0;
+                    const sB = b.saros != null ? b.saros : 0;
+                    if (sA !== sB) return sA - sB;
+                    return (a.cat_no || 0) - (b.cat_no || 0);
+                });
+            } else {
+                sequenceList = pool.slice().sort((a, b) => (a.cat_no || 0) - (b.cat_no || 0));
+            }
+
+            // 3. Sincronizar índice actual
+            if (currentEclipse) {
+                const idx = sequenceList.findIndex(e => (e.cat_no || e.catalog_number) === (currentEclipse.cat_no || currentEclipse.catalog_number));
+                currentSequenceIndex = idx >= 0 ? idx : 0;
+            } else {
+                currentSequenceIndex = 0;
+            }
+
+            updateSequenceCounter();
+            populateCatalogDropdown();
+        }
+
+        function updateSequenceCounter() {
+            const counterElem = document.getElementById('seq-counter');
+            if (!counterElem) return;
+            const total = sequenceList.length;
+            const curr = total > 0 ? (currentSequenceIndex + 1) : 0;
+            if (sequenceScope === 'current_saros' && currentEclipse) {
+                counterElem.textContent = `Saros ${currentEclipse.saros}: ${curr}/${total}`;
+            } else {
+                counterElem.textContent = `${curr} / ${total.toLocaleString()}`;
+            }
+        }
+
+        function setSequenceOrder(order) {
+            sequenceOrder = order;
+            document.getElementById('btn-order-date')?.classList.toggle('active', order === 'date');
+            document.getElementById('btn-order-saros')?.classList.toggle('active', order === 'saros');
+            buildSequenceList();
+        }
+
+        function onSequenceScopeChanged(scope) {
+            sequenceScope = scope;
+            buildSequenceList();
+        }
+
+        function stepSequence(delta) {
+            if (sequenceList.length === 0) return;
+            currentSequenceIndex = (currentSequenceIndex + delta + sequenceList.length) % sequenceList.length;
+            const nextEc = sequenceList[currentSequenceIndex];
+            if (nextEc) {
+                applyEclipse(nextEc);
+                const sel = document.getElementById('sel-all-eclipses');
+                if (sel) sel.value = nextEc.cat_no || '';
+                document.querySelectorAll('.btn-quick').forEach(b => {
+                    const matches = b.getAttribute('onclick')?.includes(nextEc.cat_no);
+                    b.classList.toggle('active', !!matches);
+                });
+            }
+            updateSequenceCounter();
+        }
+
+        function toggleSequencePlay() {
+            if (sequencePlayInterval) {
+                clearInterval(sequencePlayInterval);
+                sequencePlayInterval = null;
+                const btn = document.getElementById('btn-seq-play');
+                const icon = document.getElementById('icon-seq-play');
+                const text = document.getElementById('text-seq-play');
+                if (btn) btn.classList.remove('playing');
+                if (icon) icon.className = 'fa-solid fa-play';
+                if (text) text.textContent = 'Reproducir';
+            } else {
+                const btn = document.getElementById('btn-seq-play');
+                const icon = document.getElementById('icon-seq-play');
+                const text = document.getElementById('text-seq-play');
+                if (btn) btn.classList.add('playing');
+                if (icon) icon.className = 'fa-solid fa-pause';
+                if (text) text.textContent = 'Pausar';
+
+                stepSequence(1);
+                sequencePlayInterval = setInterval(() => {
+                    stepSequence(1);
+                }, sequenceSpeedMs);
+            }
+        }
+
+        function setSequenceSpeed(speedMs, btn) {
+            sequenceSpeedMs = speedMs;
+            document.querySelectorAll('.btn-speed').forEach(b => b.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+
+            if (sequencePlayInterval) {
+                clearInterval(sequencePlayInterval);
+                sequencePlayInterval = setInterval(() => {
+                    stepSequence(1);
+                }, sequenceSpeedMs);
+            }
+        }
+
+        function syncSequenceIndexWithEclipse(eclipse) {
+            if (!eclipse || sequenceList.length === 0) return;
+            const idx = sequenceList.findIndex(e => (e.cat_no || e.catalog_number) === (eclipse.cat_no || eclipse.catalog_number));
+            if (idx >= 0) {
+                currentSequenceIndex = idx;
+                updateSequenceCounter();
+            }
+        }
+
+        // Carga y cálculo de eclipse
+        function loadPresetEclipse(catNo) {
+            // Actualizar botones UI
+            document.querySelectorAll('.btn-quick').forEach(b => b.classList.remove('active'));
+            const clickedBtn = Array.from(document.querySelectorAll('.btn-quick')).find(b => b.getAttribute('onclick')?.includes(catNo));
+            if (clickedBtn) clickedBtn.classList.add('active');
+
+            let eclipse = PRESET_ECLIPSES.find(e => e.cat_no === catNo);
+            if (!eclipse && typeof NASA_SOLAR_ECLIPSES !== 'undefined') {
+                eclipse = NASA_SOLAR_ECLIPSES.find(e => e.cat_no === catNo || e.catalog_number === catNo);
+            }
+            if (eclipse) {
+                applyEclipse(eclipse);
+            }
+        }
+
+        function onSelectCustomEclipse(val) {
+            if (!val) return;
+            const catNo = parseInt(val, 10);
+            loadPresetEclipse(catNo);
+        }
+
+        function applyEclipse(eclipse) {
+            currentEclipse = eclipse;
+
+            // Metadatos
+            const dateStr = `${eclipse.year}-${String(eclipse.month).padStart(2,'0')}-${String(eclipse.day).padStart(2,'0')}`;
+            document.getElementById('meta-date').textContent = dateStr;
+            document.getElementById('meta-type').textContent = eclipse.eclipse_type || '--';
+            document.getElementById('meta-gamma').textContent = (eclipse.gamma != null) ? eclipse.gamma.toFixed(4) : '--';
+            document.getElementById('meta-t0').textContent = (eclipse.t0 != null) ? `${eclipse.t0.toFixed(2)}h` : '--';
+            document.getElementById('meta-dur').textContent = eclipse.central_duration || `${Math.round(eclipse.duration_secs || 0)}s`;
+            document.getElementById('hud-eclipse-name').textContent = `${dateStr} (${eclipse.eclipse_type}) Saros ${eclipse.saros || '--'}`;
+
+            try {
+                // Ejecución canónica a través de lobes_test_engine.js
+                console.time('[Lobes Workbench] precomputeEclipseGeometry');
+                currentGeomData = precomputeEclipseGeometry(eclipse);
+                console.timeEnd('[Lobes Workbench] precomputeEclipseGeometry');
+
+                // Determinar si entra completamente desde los datos precalculados
+                const entersCompletely = currentGeomData.entersCompletely;
+                document.getElementById('meta-enters').textContent = entersCompletely ? 'SÍ (Complet)' : 'NO (Polar/Parc)';
+                document.getElementById('meta-enters').style.color = entersCompletely ? 'var(--accent-green)' : 'var(--accent-yellow)';
+
+                // Actualizar contadores y diagnóstico
+                updateTelemetryAndCounts();
+
+                // Redibujar escena
+                redrawScene();
+
+                // Centrar cámara en el eclipse
+                focusCameraOnGreatestEclipse();
+
+                // Sincronizar índice en el secuenciador
+                syncSequenceIndexWithEclipse(eclipse);
+            } catch (err) {
+                console.error('[Lobes Workbench Error in applyEclipse]:', err);
+            }
+        }
+
+        // Diagnóstico topológico y conteo de vértices
+        function updateTelemetryAndCounts() {
+            const d = currentGeomData;
+            if (!d) return;
+
+            const layers = [
+                { id: 'sunriseLoop', name: 'sunriseLoop', coords: d.sunriseLoop, color: '#f97316' },
+                { id: 'sunsetLoop', name: 'sunsetLoop', coords: d.sunsetLoop, color: '#a855f7' },
+                { id: 'fullEspenakLoop', name: 'fullEspenakLoop', coords: d.fullEspenakLoop, color: '#38bdf8' },
+                { id: 'espenakSunrisePart', name: 'espenakSunrisePart', coords: d.espenakSunrisePart, color: '#0284c7' },
+                { id: 'espenakSunsetPart', name: 'espenakSunsetPart', coords: d.espenakSunsetPart, color: '#0ea5e9' },
+                { id: 'sunriseArc', name: 'sunriseArc', coords: d.sunriseArc, color: '#10b981' },
+                { id: 'sunsetArc', name: 'sunsetArc', coords: d.sunsetArc, color: '#ec4899' },
+                { id: 'totLimits', name: 'totNorth/South', coords: [...(d.totNorthCoords || []), ...(d.totSouthCoords || [])], color: '#ef4444' },
+                { id: 'centerCoords', name: 'centerCoords', coords: d.centerCoords, color: '#eab308' }
+            ];
+
+            const tbody = document.getElementById('diag-tbody');
+            tbody.innerHTML = '';
+
+            for (const layer of layers) {
+                const countElem = document.getElementById(`count-${layer.id}`);
+                const count = layer.coords ? layer.coords.length : 0;
+                if (countElem) countElem.textContent = count;
+
+                if (count === 0) {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td style="color:${layer.color}">${layer.name}</td>
+                        <td class="status-warn">0</td>
+                        <td>--</td>
+                        <td>--</td>
+                        <td>--</td>
+                        <td>--</td>
+                    `;
+                    tbody.appendChild(tr);
+                    continue;
+                }
+
+                const p0 = layer.coords[0];
+                const pEnd = layer.coords[count - 1];
+                const p0Lat = (p0 && p0.lat != null) ? p0.lat.toFixed(1) : '--';
+                const p0Lng = (p0 && (p0.lng != null ? p0.lng : p0.lon) != null) ? (p0.lng != null ? p0.lng : p0.lon).toFixed(1) : '--';
+                const pEndLat = (pEnd && pEnd.lat != null) ? pEnd.lat.toFixed(1) : '--';
+                const pEndLng = (pEnd && (pEnd.lng != null ? pEnd.lng : pEnd.lon) != null) ? (pEnd.lng != null ? pEnd.lng : pEnd.lon).toFixed(1) : '--';
+
+                // Distancia de cierre p0 -> pEnd
+                let closeDist = 0;
+                if (p0 && pEnd && p0.lat != null && pEnd.lat != null) {
+                    const p0L = p0.lng != null ? p0.lng : p0.lon;
+                    const pEL = pEnd.lng != null ? pEnd.lng : pEnd.lon;
+                    let dLonClose = Math.abs(pEL - p0L);
+                    if (dLonClose > 180) dLonClose = 360 - dLonClose;
+                    closeDist = Math.hypot(pEnd.lat - p0.lat, dLonClose);
+                }
+
+                // Máximo salto entre puntos sucesivos
+                let maxJump = 0;
+                for (let i = 1; i < count; i++) {
+                    const prev = layer.coords[i - 1];
+                    const curr = layer.coords[i];
+                    if (!prev || !curr) continue;
+                    const prevLng = prev.lng != null ? prev.lng : prev.lon;
+                    const currLng = curr.lng != null ? curr.lng : curr.lon;
+                    if (prev.lat == null || prevLng == null || curr.lat == null || currLng == null) continue;
+                    let dL = Math.abs(currLng - prevLng);
+                    if (dL > 180) dL = 360 - dL;
+                    const jump = Math.hypot(curr.lat - prev.lat, dL);
+                    if (jump > maxJump) maxJump = jump;
+                }
+
+                const isLoop = ['sunriseLoop', 'sunsetLoop'].includes(layer.name);
+                const closeClass = isLoop ? (closeDist < 5.0 ? 'status-ok' : 'status-gap') : 'text-muted';
+                const jumpClass = maxJump > 15.0 ? 'status-gap' : (maxJump > 5.0 ? 'status-warn' : 'status-ok');
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="color:${layer.color}; font-weight:600;">${layer.name}</td>
+                    <td>${count}</td>
+                    <td>[${p0Lat}, ${p0Lng}]</td>
+                    <td>[${pEndLat}, ${pEndLng}]</td>
+                    <td class="${closeClass}">${closeDist.toFixed(1)}°</td>
+                    <td class="${jumpClass}">${maxJump.toFixed(1)}°</td>
+                `;
+                tbody.appendChild(tr);
+            }
+        }
+
+        // Reconstrucción del render 3D
+        function redrawScene() {
+            clearGroup(curvesGroup);
+            clearGroup(verticesGroup);
+            clearGroup(endpointMarkersGroup);
+
+            if (!currentGeomData) return;
+
+            const showVertices = document.getElementById('opt-show-vertices').checked;
+            const vertexSize = parseFloat(document.getElementById('opt-vertex-size').value) || 4;
+            const showEndpoints = document.getElementById('opt-show-endpoints').checked;
+
+            const renderCurve = (layerId, coords, colorHex, width = 2) => {
+                const isVisible = document.getElementById(`layer-${layerId}`)?.checked;
+                if (!isVisible || !coords || coords.length < 2) return;
+
+                // 1. Línea segmentada continua
+                const line = createSegmentedLine(coords, colorHex, GROUND_OVERLAY_RADIUS, width);
+                if (line) {
+                    line.renderOrder = 30;
+                    curvesGroup.add(line);
+                }
+
+                // 2. Vértices / nube de puntos
+                if (showVertices) {
+                    const pointsMesh = createPointsMesh(coords, colorHex, vertexSize);
+                    if (pointsMesh) {
+                        pointsMesh.renderOrder = 35;
+                        verticesGroup.add(pointsMesh);
+                    }
+                }
+
+                // 3. Marcadores de extremos (Verde = Inicio, Rojo = Fin)
+                if (showEndpoints && coords.length > 0) {
+                    const pStart = coords[0];
+                    const pEnd = coords[coords.length - 1];
+                    if (pStart) {
+                        const mStart = createEndpointMarker(pStart, 0x10b981, `${layerId} [START]`);
+                        mStart.renderOrder = 40;
+                        endpointMarkersGroup.add(mStart);
+                    }
+                    if (pEnd) {
+                        const mEnd = createEndpointMarker(pEnd, 0xef4444, `${layerId} [END]`);
+                        mEnd.renderOrder = 40;
+                        endpointMarkersGroup.add(mEnd);
+                    }
+                }
+            };
+
+            const d = currentGeomData;
+
+            // Renderizar cada curva con sus colores distintivos
+            renderCurve('sunriseLoop', d.sunriseLoop, 0xf97316, 2.5);
+            renderCurve('sunsetLoop', d.sunsetLoop, 0xa855f7, 2.5);
+            renderCurve('fullEspenakLoop', d.fullEspenakLoop, 0x38bdf8, 3.0);
+            renderCurve('espenakSunrisePart', d.espenakSunrisePart, 0x0284c7, 2.0);
+            renderCurve('espenakSunsetPart', d.espenakSunsetPart, 0x0ea5e9, 2.0);
+            renderCurve('sunriseArc', d.sunriseArc, 0x10b981, 2.5);
+            renderCurve('sunsetArc', d.sunsetArc, 0xec4899, 2.5);
+            renderCurve('totLimits', d.totNorthCoords, 0xef4444, 2.0);
+            renderCurve('totLimits', d.totSouthCoords, 0xef4444, 2.0);
+            renderCurve('centerCoords', d.centerCoords, 0xeab308, 3.0);
+        }
+
+        function updateLayersVisibility() {
+            redrawScene();
+        }
+
+        function toggleAllLayers(status) {
+            const checkboxes = document.querySelectorAll('.layer-item input[type="checkbox"]');
+            checkboxes.forEach(cb => cb.checked = status);
+            redrawScene();
+        }
+
+        function toggleGraticule() {
+            if (graticuleGroup) {
+                graticuleGroup.visible = document.getElementById('opt-show-graticule').checked;
+            }
+        }
+
+        function toggleGlobeMaterial() {
+            const isWireframe = document.getElementById('opt-wireframe').checked;
+            if (earthSphereMesh) {
+                earthSphereMesh.material.wireframe = isWireframe;
+                earthSphereMesh.material.color.setHex(isWireframe ? 0x1e293b : 0x090f1d);
+            }
+        }
+
+        // Posicionamiento de cámara inteligente
+        function focusCameraOnGreatestEclipse() {
+            if (!currentEclipse) return;
+            const lat = currentEclipse.lat_dd_ge || 0;
+            const lng = currentEclipse.lng_dd_ge || 0;
+            const targetPos = latLngToVector3(lat, lng, 130);
+
+            camera.position.copy(targetPos);
+            controls.target.set(0, 0, 0);
+            controls.update();
+        }
+
+        function setCameraView(viewType) {
+            if (!currentEclipse) return;
+            const dist = 140;
+            switch (viewType) {
+                case 'ge':
+                    focusCameraOnGreatestEclipse();
+                    break;
+                case 'north':
+                    camera.position.set(0, dist, 0.01);
+                    controls.target.set(0, 0, 0);
+                    controls.update();
+                    break;
+                case 'south':
+                    camera.position.set(0, -dist, 0.01);
+                    controls.target.set(0, 0, 0);
+                    controls.update();
+                    break;
+                case 'sunrise':
+                    if (currentGeomData && currentGeomData.sunriseLoop && currentGeomData.sunriseLoop.length > 0) {
+                        const p = currentGeomData.sunriseLoop[0];
+                        const pLng = p.lng != null ? p.lng : p.lon;
+                        camera.position.copy(latLngToVector3(p.lat, pLng, dist));
+                        controls.target.set(0, 0, 0);
+                        controls.update();
+                    }
+                    break;
+                case 'sunset':
+                    if (currentGeomData && currentGeomData.sunsetLoop && currentGeomData.sunsetLoop.length > 0) {
+                        const p = currentGeomData.sunsetLoop[0];
+                        const pLng = p.lng != null ? p.lng : p.lon;
+                        camera.position.copy(latLngToVector3(p.lat, pLng, dist));
+                        controls.target.set(0, 0, 0);
+                        controls.update();
+                    }
+                    break;
+                case 'reset':
+                    camera.position.set(0, 40, 150);
+                    controls.target.set(0, 0, 0);
+                    controls.update();
+                    break;
+            }
+        }
+
+        // Llenar el desplegable con catálogo histórico según la secuencia activa
+        function populateCatalogDropdown() {
+            const select = document.getElementById('sel-all-eclipses');
+            if (typeof NASA_SOLAR_ECLIPSES === 'undefined' || !select) return;
+
+            select.innerHTML = '<option value="">Buscar en Catálogo Histórico/Futuro...</option>';
+            const fragment = document.createDocumentFragment();
+            const list = (sequenceList && sequenceList.length > 0) ? sequenceList : NASA_SOLAR_ECLIPSES;
+
+            list.forEach(e => {
+                const opt = document.createElement('option');
+                opt.value = e.cat_no || e.catalog_number;
+                const m = String(e.month).padStart(2, '0');
+                const d = String(e.day).padStart(2, '0');
+                opt.textContent = `${e.year}-${m}-${d} [${e.eclipse_type}] Saros ${e.saros != null ? e.saros : '--'} (γ=${e.gamma != null ? e.gamma.toFixed(2) : '?'})`;
+                fragment.appendChild(opt);
+            });
+            select.appendChild(fragment);
+            if (currentEclipse) {
+                select.value = currentEclipse.cat_no || currentEclipse.catalog_number || '';
+            }
+        }
+
+        // Inicio al cargar DOM
+        window.addEventListener('DOMContentLoaded', () => {
+            initScene();
+            buildSequenceList();
+            // Cargar por defecto el eclipse del 12 de agosto de 2026
+            loadPresetEclipse(9566);
+
+            // Atajos de teclado para navegación y reproducción
+            window.addEventListener('keydown', (e) => {
+                if (['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
+                if (e.key === 'ArrowRight') {
+                    e.preventDefault();
+                    stepSequence(1);
+                } else if (e.key === 'ArrowLeft') {
+                    e.preventDefault();
+                    stepSequence(-1);
+                } else if (e.key === ' ' || e.code === 'Space') {
+                    e.preventDefault();
+                    toggleSequencePlay();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

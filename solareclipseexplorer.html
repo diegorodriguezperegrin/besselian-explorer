@@ -248,6 +248,109 @@
             white-space: nowrap;
         }
 
+        /* Botones de Exportación Directa Unificados (iCal, KML, GPX) */
+        .export-buttons-group {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+
+        .btn-export-chip {
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 4px !important;
+            background: rgba(56, 189, 248, 0.08) !important;
+            border: 1px solid rgba(56, 189, 248, 0.3) !important;
+            border-radius: 6px !important;
+            padding: 3px 8px !important;
+            color: #38bdf8 !important;
+            font-size: 0.68rem !important;
+            font-family: var(--font-heading, system-ui) !important;
+            font-weight: 600 !important;
+            cursor: pointer !important;
+            text-decoration: none !important;
+            transition: all 0.15s ease !important;
+            white-space: nowrap !important;
+            line-height: 1.2 !important;
+            user-select: none !important;
+            box-sizing: border-box !important;
+        }
+
+        .btn-export-chip:hover {
+            background: rgba(56, 189, 248, 0.22) !important;
+            border-color: #38bdf8 !important;
+            color: #ffffff !important;
+            text-decoration: none !important;
+        }
+
+        .btn-export-chip i {
+            font-size: 0.70rem !important;
+            pointer-events: none !important;
+            color: inherit !important;
+            width: auto !important;
+            text-align: center !important;
+            text-decoration: none !important;
+            display: inline-block !important;
+        }
+
+        .btn-export-chip span {
+            pointer-events: none !important;
+            color: inherit !important;
+            font-size: inherit !important;
+            font-weight: inherit !important;
+            text-decoration: none !important;
+            flex: none !important;
+            letter-spacing: 0.02em !important;
+        }
+
+        /* Deslizadores compactos de intensidad en Capas y Opciones */
+        .mini-layer-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 56px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.18);
+            border-radius: 2px;
+            outline: none;
+            accent-color: var(--accent-blue, #38bdf8);
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: background 0.15s ease;
+            margin: 0;
+            padding: 0;
+        }
+
+        .mini-layer-slider:hover {
+            background: rgba(56, 189, 248, 0.35);
+        }
+
+        .mini-layer-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #38bdf8;
+            cursor: pointer;
+            box-shadow: 0 0 3px rgba(0, 0, 0, 0.6);
+            transition: transform 0.1s ease;
+        }
+
+        .mini-layer-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.25);
+        }
+
+        .mini-layer-slider::-moz-range-thumb {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #38bdf8;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 0 3px rgba(0, 0, 0, 0.6);
+        }
+
         .mini-toggle-btn:hover {
             color: var(--text-primary);
             border-color: rgba(255, 255, 255, 0.25);
@@ -591,7 +694,11 @@
         <!-- Visibilidad y Fases Locales -->
         <div class="section-title section-title-between" style="margin-top: 4px;">
             <span><i class="fa-solid fa-eye"></i> Visibilidad Local</span>
-            <button onclick="exportSelectedEclipseToICal()" style="background: none; border: none; color: var(--accent-blue); font-size: 0.72rem; cursor: pointer; text-decoration: underline;"><i class="fa-solid fa-calendar-plus"></i> iCal</button>
+            <div class="export-buttons-group">
+                <button type="button" onclick="exportSelectedEclipseToICal()" class="btn-export-chip" title="Exportar evento al calendario (.ics)"><i class="fa-solid fa-calendar-plus"></i><span>iCal</span></button>
+                <button type="button" onclick="exportSelectedEclipseToKML()" class="btn-export-chip" title="Exportar franja y ubicación a Google Earth (.kml)"><i class="fa-solid fa-earth-americas"></i><span>KML</span></button>
+                <button type="button" onclick="exportSelectedEclipseToGPX()" class="btn-export-chip" title="Exportar franja y ubicación a GPS / Navegador (.gpx)"><i class="fa-solid fa-location-arrow"></i><span>GPX</span></button>
+            </div>
         </div>
         <div class="observer-card" style="margin-top: 0;">
             <!-- Nombre de la ubicación activa si existe (estilo idéntico a tooltip flotante NASA) -->
@@ -647,20 +754,25 @@
             <i class="fa-solid fa-layer-group"></i> Capas y opciones
         </div>
         <div class="panel-section" style="display: flex; flex-direction: column; gap: 0.35rem; background: rgba(255,255,255,0.03); padding: 0.4rem 0.6rem; border-radius: 12px; border: 1px solid var(--border-color);">
-            <!-- GRUPO 1: CONTROLES PARA MODO ESPACIO 3D -->
+            <!-- GRUPO 1: CONTROLES PARA MODO ESPACIO 3D Y RUTA -->
             <div id="layers-group-3d" style="display: flex; flex-direction: column; gap: 0.45rem;">
-                <!-- 3 Primeros Controles Siempre Visibles en Espacio 3D -->
-                <label class="checkbox-row" id="lbl-show-space-cones">
-                    <input type="checkbox" id="chk-show-space-cones" checked>
-                    <span>Conos de sombra</span>
-                </label>
-                <label class="checkbox-row" id="lbl-show-moon-orbit">
-                    <input type="checkbox" id="chk-show-moon-orbit" checked>
-                    <span>Órbita de la Luna</span>
-                </label>
-                <label class="checkbox-row" id="lbl-show-ecliptic">
-                    <input type="checkbox" id="chk-show-ecliptic" checked>
-                    <span>Plano eclíptico</span>
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
+                    <label class="checkbox-row" id="lbl-show-space-cones" title="Conos volumétricos 3D de umbra y penumbra en el espacio entre la Luna y la Tierra" style="flex: 1; min-width: 0;">
+                        <input type="checkbox" id="chk-show-space-cones" checked>
+                        <span>Conos de sombra</span>
+                    </label>
+                    <input type="range" id="slider-space-cones-intensity" min="0.1" max="2.0" step="0.05" value="1.0" class="mini-layer-slider" title="Intensidad de conos de sombra" aria-label="Intensidad de conos de sombra">
+                </div>
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
+                    <label class="checkbox-row" id="lbl-show-shadow" title="Proyección continua del gradiente de penumbra sobre la superficie terrestre" style="flex: 1; min-width: 0;">
+                        <input type="checkbox" id="chk-show-shadow">
+                        <span>Gradiente penumbral</span>
+                    </label>
+                    <input type="range" id="slider-shadow-intensity" min="0.1" max="2.0" step="0.05" value="1.0" class="mini-layer-slider" title="Intensidad del gradiente penumbral" aria-label="Intensidad del gradiente penumbral">
+                </div>
+                <label class="checkbox-row" id="lbl-show-penumbra-rings" title="Curvas concéntricas de magnitud instantánea (0 a 80%) sobre la superficie">
+                    <input type="checkbox" id="chk-show-penumbra-rings">
+                    <span>Anillos de penumbra (0–80%)</span>
                 </label>
 
                 <!-- Botón Desplegable de Más Opciones 3D -->
@@ -671,34 +783,6 @@
 
                 <!-- Contenedor Desplegable de Opciones Secundarias en Espacio 3D -->
                 <div class="more-layers-container" id="more-layers-container">
-                    <label class="checkbox-row" id="lbl-show-celestial-sphere">
-                        <input type="checkbox" id="chk-show-celestial-sphere" checked>
-                        <span>Esfera celeste y estrellas</span>
-                    </label>
-                    <label class="checkbox-row" id="lbl-show-constellations" style="padding-left: 24px; transition: var(--transition-smooth);">
-                        <input type="checkbox" id="chk-show-constellations" checked>
-                        <span>Constelaciones</span>
-                    </label>
-                    <label class="checkbox-row" id="lbl-show-nodes">
-                        <input type="checkbox" id="chk-show-nodes" checked>
-                        <span>Nodos de la órbita</span>
-                    </label>
-                    <label class="checkbox-row" id="lbl-show-limits">
-                        <input type="checkbox" id="chk-show-limits" checked>
-                        <span>Límites de eclipse</span>
-                    </label>
-                    <label class="checkbox-row" id="lbl-show-limits-labels" style="padding-left: 24px; transition: var(--transition-smooth);">
-                        <input type="checkbox" id="chk-show-limits-labels">
-                        <span>Rótulos</span>
-                    </label>
-                    <label class="checkbox-row" id="lbl-show-shadow">
-                        <input type="checkbox" id="chk-show-shadow">
-                        <span>Gradiente penumbral</span>
-                    </label>
-                    <label class="checkbox-row" id="lbl-show-penumbra-rings">
-                        <input type="checkbox" id="chk-show-penumbra-rings">
-                        <span>Anillos de penumbra (0–80%)</span>
-                    </label>
                     <label class="checkbox-row" id="lbl-show-center-line">
                         <input type="checkbox" id="chk-show-center-line" checked>
                         <span>Línea central</span>
@@ -710,6 +794,46 @@
                     <label class="checkbox-row" id="lbl-show-corridor-shade">
                         <input type="checkbox" id="chk-show-corridor-shade" checked>
                         <span>Franja de totalidad / anularidad</span>
+                    </label>
+                    <label class="checkbox-row" id="lbl-show-isomagnitudes">
+                        <input type="checkbox" id="chk-show-isomagnitudes" checked>
+                        <span>Líneas de isomagnitud</span>
+                    </label>
+                    <label class="checkbox-row" id="lbl-show-isomagnitudes-labels" style="padding-left: 24px; transition: var(--transition-smooth);">
+                        <input type="checkbox" id="chk-show-isomagnitudes-labels" checked>
+                        <span>Rótulos</span>
+                    </label>
+                    <label class="checkbox-row" id="lbl-show-moon-orbit">
+                        <input type="checkbox" id="chk-show-moon-orbit" checked>
+                        <span>Órbita de la Luna</span>
+                    </label>
+                    <label class="checkbox-row" id="lbl-show-limits" style="padding-left: 24px; transition: var(--transition-smooth);">
+                        <input type="checkbox" id="chk-show-limits" checked>
+                        <span>Límites de eclipse</span>
+                    </label>
+                    <label class="checkbox-row" id="lbl-show-limits-labels" style="padding-left: 24px; transition: var(--transition-smooth);">
+                        <input type="checkbox" id="chk-show-limits-labels">
+                        <span>Rótulos</span>
+                    </label>
+                    <label class="checkbox-row" id="lbl-show-ecliptic">
+                        <input type="checkbox" id="chk-show-ecliptic" checked>
+                        <span>Plano eclíptico</span>
+                    </label>
+                    <label class="checkbox-row" id="lbl-show-stars">
+                        <input type="checkbox" id="chk-show-stars" checked>
+                        <span>Estrellas</span>
+                    </label>
+                    <label class="checkbox-row" id="lbl-show-celestial-graticule" style="padding-left: 24px; transition: var(--transition-smooth);">
+                        <input type="checkbox" id="chk-show-celestial-graticule" checked>
+                        <span>Red astronómica</span>
+                    </label>
+                    <label class="checkbox-row" id="lbl-show-constellations" style="padding-left: 24px; transition: var(--transition-smooth);">
+                        <input type="checkbox" id="chk-show-constellations" checked>
+                        <span>Constelaciones</span>
+                    </label>
+                    <label class="checkbox-row" id="lbl-show-nodes">
+                        <input type="checkbox" id="chk-show-nodes" checked>
+                        <span>Nodos de la órbita</span>
                     </label>
                     <label class="checkbox-row" id="lbl-show-observer">
                         <input type="checkbox" id="chk-show-observer" checked>
@@ -734,14 +858,6 @@
                     <label class="checkbox-row" id="lbl-show-horizon-lobes">
                         <input type="checkbox" id="chk-show-horizon-lobes" checked>
                         <span>Lóbulos de ocultación y horizonte</span>
-                    </label>
-                    <label class="checkbox-row" id="lbl-show-isomagnitudes">
-                        <input type="checkbox" id="chk-show-isomagnitudes" checked>
-                        <span>Líneas de isomagnitud</span>
-                    </label>
-                    <label class="checkbox-row" id="lbl-show-isomagnitudes-labels" style="padding-left: 24px; transition: var(--transition-smooth);">
-                        <input type="checkbox" id="chk-show-isomagnitudes-labels" checked>
-                        <span>Rótulos</span>
                     </label>
                     <label class="checkbox-row" id="lbl-show-ut-lines">
                         <input type="checkbox" id="chk-show-ut-lines" checked>
@@ -3336,6 +3452,491 @@
             URL.revokeObjectURL(link.href);
         }
 
+        // --- EXPORTACIÓN A GOOGLE EARTH KML (.KML) ---
+        function exportSelectedEclipseToKML() {
+            if (!currentEclipse) return;
+            const ec = currentEclipse;
+            const precomputeFn = (typeof precomputeEclipseGeometry === 'function')
+                ? precomputeEclipseGeometry
+                : (typeof window !== 'undefined' && window.precomputeEclipseGeometry)
+                    ? window.precomputeEclipseGeometry
+                    : (typeof BesselianEngine !== 'undefined' && BesselianEngine.precomputeEclipseGeometry)
+                        ? BesselianEngine.precomputeEclipseGeometry
+                        : null;
+            const geom = precomputeFn ? precomputeFn(ec) : null;
+
+            const isAnnular = (ec.eclipse_type || '').toUpperCase().startsWith('A');
+            const isCentral = !((ec.eclipse_type || '').toUpperCase().startsWith('P'));
+            const typeName = ec.eclipse_type === 'T' ? 'Eclipse Solar Total'
+                : (ec.eclipse_type === 'A' ? 'Eclipse Solar Anular'
+                : (ec.eclipse_type === 'H' ? 'Eclipse Solar Híbrido' : 'Eclipse Solar Parcial'));
+
+            const escapeXml = (unsafe) => {
+                if (!unsafe) return '';
+                return String(unsafe).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
+            };
+
+            const normalizeLon = (lon) => {
+                let l = lon % 360;
+                if (l > 180) l -= 360;
+                if (l < -180) l += 360;
+                return l;
+            };
+
+            const formatUT = (hoursUT) => {
+                if (hoursUT == null || isNaN(hoursUT)) return '--:--:--';
+                let h = hoursUT % 24;
+                if (h < 0) h += 24;
+                const hh = Math.floor(h);
+                const mm = Math.floor((h - hh) * 60);
+                const ss = Math.round(((h - hh) * 60 - mm) * 60);
+                return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}:${String(ss).padStart(2, '0')} UT`;
+            };
+
+            const splitLineAtAntimeridian = (pts) => {
+                if (!pts || pts.length === 0) return [];
+                const segments = [];
+                let currentSeg = [];
+                for (let i = 0; i < pts.length; i++) {
+                    const p = pts[i];
+                    const lat = p.lat;
+                    const lon = normalizeLon(p.lng != null ? p.lng : p.lon);
+                    if (currentSeg.length > 0) {
+                        const prevLon = currentSeg[currentSeg.length - 1].lon;
+                        if (Math.abs(lon - prevLon) > 180) {
+                            segments.push(currentSeg);
+                            currentSeg = [];
+                        }
+                    }
+                    currentSeg.push({ lat, lon });
+                }
+                if (currentSeg.length > 0) segments.push(currentSeg);
+                return segments;
+            };
+
+            const kmlParts = [];
+            kmlParts.push('<?xml version="1.0" encoding="UTF-8"?>');
+            kmlParts.push('<kml xmlns="http://www.opengis.net/kml/2.2">');
+            kmlParts.push('  <Document>');
+            kmlParts.push(`    <name>${escapeXml(typeName)} - ${ec.year}-${String(ec.month).padStart(2,'0')}-${String(ec.day).padStart(2,'0')}</name>`);
+            kmlParts.push('    <description>Calculado por el Explorador de Eclipses Solares - COSMOS MATARÓ (Fred Espenak &amp; Jean Meeus NASA GSFC Canon)</description>');
+
+            const centerColorKml = isAnnular ? 'ff0c58ea' : 'ff2626dc'; // naranja vs rojo (aabbggrr)
+            const limitColorKml = isAnnular ? 'ff0b9ef5' : 'ffd06325';  // ámbar vs azul
+
+            kmlParts.push('    <Style id="styleCentral">');
+            kmlParts.push(`      <LineStyle><color>${centerColorKml}</color><width>3.5</width></LineStyle>`);
+            kmlParts.push('    </Style>');
+            kmlParts.push('    <Style id="styleLimits">');
+            kmlParts.push(`      <LineStyle><color>${limitColorKml}</color><width>2.0</width></LineStyle>`);
+            kmlParts.push('    </Style>');
+            kmlParts.push('    <Style id="styleObserverPin">');
+            kmlParts.push('      <IconStyle><color>ff38bdf8</color><scale>1.2</scale><Icon><href>https://maps.google.com/mapfiles/kml/pushpin/blue-pushpin.png</href></Icon></IconStyle>');
+            kmlParts.push('    </Style>');
+            kmlParts.push('    <Style id="styleGEPin">');
+            kmlParts.push('      <IconStyle><color>ff22c55e</color><scale>1.3</scale><Icon><href>https://maps.google.com/mapfiles/kml/shapes/star.png</href></Icon></IconStyle>');
+            kmlParts.push('    </Style>');
+
+            // 1. CARPETA DE TRAYECTORIA Y FRANJA (Solo para eclipses centrales)
+            if (isCentral && geom) {
+                kmlParts.push('    <Folder>');
+                kmlParts.push('      <name>Franja de Totalidad / Anularidad</name>');
+
+                // Línea Central
+                if (geom.centerCoords && geom.centerCoords.length > 1) {
+                    const cSegs = splitLineAtAntimeridian(geom.centerCoords);
+                    cSegs.forEach((seg, idx) => {
+                        kmlParts.push('      <Placemark>');
+                        kmlParts.push(`        <name>Línea Central${cSegs.length > 1 ? ` (Tramo ${idx + 1})` : ''}</name>`);
+                        kmlParts.push('        <styleUrl>#styleCentral</styleUrl>');
+                        kmlParts.push('        <LineString>');
+                        kmlParts.push('          <tessellate>1</tessellate>');
+                        kmlParts.push('          <coordinates>');
+                        const coordsStr = seg.map(p => `${p.lon.toFixed(5)},${p.lat.toFixed(5)},0`).join(' ');
+                        kmlParts.push(`            ${coordsStr}`);
+                        kmlParts.push('          </coordinates>');
+                        kmlParts.push('        </LineString>');
+                        kmlParts.push('      </Placemark>');
+                    });
+                }
+
+                // Límite Norte
+                if (geom.totNorthCoords && geom.totNorthCoords.length > 1) {
+                    const nSegs = splitLineAtAntimeridian(geom.totNorthCoords);
+                    nSegs.forEach((seg, idx) => {
+                        kmlParts.push('      <Placemark>');
+                        kmlParts.push(`        <name>Límite Norte${nSegs.length > 1 ? ` (Tramo ${idx + 1})` : ''}</name>`);
+                        kmlParts.push('        <styleUrl>#styleLimits</styleUrl>');
+                        kmlParts.push('        <LineString>');
+                        kmlParts.push('          <tessellate>1</tessellate>');
+                        kmlParts.push('          <coordinates>');
+                        const coordsStr = seg.map(p => `${p.lon.toFixed(5)},${p.lat.toFixed(5)},0`).join(' ');
+                        kmlParts.push(`            ${coordsStr}`);
+                        kmlParts.push('          </coordinates>');
+                        kmlParts.push('        </LineString>');
+                        kmlParts.push('      </Placemark>');
+                    });
+                }
+
+                // Límite Sur
+                if (geom.totSouthCoords && geom.totSouthCoords.length > 1) {
+                    const sSegs = splitLineAtAntimeridian(geom.totSouthCoords);
+                    sSegs.forEach((seg, idx) => {
+                        kmlParts.push('      <Placemark>');
+                        kmlParts.push(`        <name>Límite Sur${sSegs.length > 1 ? ` (Tramo ${idx + 1})` : ''}</name>`);
+                        kmlParts.push('        <styleUrl>#styleLimits</styleUrl>');
+                        kmlParts.push('        <LineString>');
+                        kmlParts.push('          <tessellate>1</tessellate>');
+                        kmlParts.push('          <coordinates>');
+                        const coordsStr = seg.map(p => `${p.lon.toFixed(5)},${p.lat.toFixed(5)},0`).join(' ');
+                        kmlParts.push(`            ${coordsStr}`);
+                        kmlParts.push('          </coordinates>');
+                        kmlParts.push('        </LineString>');
+                        kmlParts.push('      </Placemark>');
+                    });
+                }
+
+                kmlParts.push('    </Folder>');
+            }
+
+            // 2. CARPETA DE PUNTOS CLAVE Y OBSERVADOR
+            kmlParts.push('    <Folder>');
+            kmlParts.push('      <name>Puntos de Observación e Interés</name>');
+
+            const geLat = ec.lat_dd_ge;
+            const geLon = ec.lng_dd_ge;
+            const hasObserver = currentObserver && currentObserver.lat != null && currentObserver.lon != null;
+            const isObserverGE = (typeof activeExtremeMode !== 'undefined' && activeExtremeMode === 'GE') ||
+                (hasObserver && geLat != null && geLon != null &&
+                 Math.hypot(currentObserver.lat - geLat, currentObserver.lon - geLon) < 0.01);
+
+            const dtHours = (ec.dt || 0) / 3600;
+
+            const buildCircHtml = (lat, lon, titleName, isGEPoint = false) => {
+                const res = calculateLocalSolarCircumstances(ec, lat, lon);
+                let html = `<b>${escapeXml(titleName)}</b><br/>`;
+                html += `<b>Coordenadas:</b> ${lat.toFixed(4)}°, ${lon.toFixed(4)}°<br/>`;
+                if (isGEPoint) {
+                    html += `<b>Catálogo:</b> #${ec.cat_no || ec.year} Saros ${ec.saros}<br/>`;
+                    if (ec.central_duration) html += `<b>Duración en GE:</b> ${ec.central_duration}<br/>`;
+                    if (ec.magnitude != null) html += `<b>Magnitud global:</b> ${ec.magnitude.toFixed(4)}<br/>`;
+                    if (ec.td_ge) html += `<b>Hora Dinámica (TD):</b> ${ec.td_ge} TD<br/>`;
+                    if (ec.sun_alt != null) html += `<b>Altura Sol en GE:</b> ${ec.sun_alt}°<br/>`;
+                }
+                if (res && res.isEclipsed) {
+                    const localType = res.isTotal ? 'TOTAL' : (res.isAnnular ? 'ANULAR' : 'PARCIAL');
+                    const magPercent = (res.maxMag * 100).toFixed(1);
+                    const obsPercent = (res.maxObs * 100).toFixed(1);
+                    html += `<hr/><b>Fase Local:</b> ${localType}<br/>`;
+                    html += `<b>Magnitud Local:</b> ${magPercent}% (Área: ${obsPercent}%)<br/>`;
+                    if (res.c1) html += `<b>C1 (Inicio parcial):</b> ${formatUT((ec.t0 || 0) + res.c1.t - dtHours)}<br/>`;
+                    if (res.c2) html += `<b>C2 (Inicio ${res.isTotal ? 'total' : 'anular'}):</b> ${formatUT((ec.t0 || 0) + res.c2.t - dtHours)}<br/>`;
+                    if (res.tMax != null) html += `<b>MÁXIMO:</b> ${formatUT((ec.t0 || 0) + res.tMax - dtHours)}<br/>`;
+                    if (res.c3) html += `<b>C3 (Fin ${res.isTotal ? 'total' : 'anular'}):</b> ${formatUT((ec.t0 || 0) + res.c3.t - dtHours)}<br/>`;
+                    if (res.c4) html += `<b>C4 (Fin parcial):</b> ${formatUT((ec.t0 || 0) + res.c4.t - dtHours)}<br/>`;
+                    if (res.c2 && res.c3) {
+                        const durSec = Math.round((res.c3.t - res.c2.t) * 3600);
+                        const durMin = Math.floor(durSec / 60);
+                        const remSec = durSec % 60;
+                        html += `<b>Duración central:</b> ${String(durMin).padStart(2,'0')}m ${String(remSec).padStart(2,'0')}s<br/>`;
+                    }
+                    if (res.maxParams) {
+                        html += `<b>Altura del Sol:</b> ${res.maxParams.alt.toFixed(1)}° | <b>Azimut:</b> ${res.maxParams.az.toFixed(1)}°<br/>`;
+                    }
+                } else if (!isGEPoint) {
+                    html += `<hr/><i>Este eclipse no es visible desde estas coordenadas.</i><br/>`;
+                }
+                return html;
+            };
+
+            if (isObserverGE) {
+                // Caso 1: El observador es GE -> Solo UN punto
+                if (geLat != null && geLon != null) {
+                    kmlParts.push('      <Placemark>');
+                    kmlParts.push('        <name>Mayor Eclipse (GE)</name>');
+                    kmlParts.push('        <styleUrl>#styleGEPin</styleUrl>');
+                    kmlParts.push(`        <description><![CDATA[${buildCircHtml(geLat, geLon, 'Mayor Eclipse (GE)', true)}]]></description>`);
+                    kmlParts.push('        <Point>');
+                    kmlParts.push(`          <coordinates>${normalizeLon(geLon).toFixed(5)},${geLat.toFixed(5)},0</coordinates>`);
+                    kmlParts.push('        </Point>');
+                    kmlParts.push('      </Placemark>');
+                }
+            } else {
+                // Caso 2: El observador ha elegido otra ubicación -> Punto del observador Y punto de GE
+                if (hasObserver) {
+                    const obsName = currentObserver.name || 'Mi Ubicación';
+                    kmlParts.push('      <Placemark>');
+                    kmlParts.push(`        <name>${escapeXml(obsName)}</name>`);
+                    kmlParts.push('        <styleUrl>#styleObserverPin</styleUrl>');
+                    kmlParts.push(`        <description><![CDATA[${buildCircHtml(currentObserver.lat, currentObserver.lon, obsName, false)}]]></description>`);
+                    kmlParts.push('        <Point>');
+                    kmlParts.push(`          <coordinates>${normalizeLon(currentObserver.lon).toFixed(5)},${currentObserver.lat.toFixed(5)},0</coordinates>`);
+                    kmlParts.push('        </Point>');
+                    kmlParts.push('      </Placemark>');
+                }
+
+                if (geLat != null && geLon != null) {
+                    kmlParts.push('      <Placemark>');
+                    kmlParts.push('        <name>Mayor Eclipse (GE)</name>');
+                    kmlParts.push('        <styleUrl>#styleGEPin</styleUrl>');
+                    kmlParts.push(`        <description><![CDATA[${buildCircHtml(geLat, geLon, 'Mayor Eclipse (GE)', true)}]]></description>`);
+                    kmlParts.push('        <Point>');
+                    kmlParts.push(`          <coordinates>${normalizeLon(geLon).toFixed(5)},${geLat.toFixed(5)},0</coordinates>`);
+                    kmlParts.push('        </Point>');
+                    kmlParts.push('      </Placemark>');
+                }
+            }
+
+            kmlParts.push('    </Folder>');
+            kmlParts.push('  </Document>');
+            kmlParts.push('</kml>');
+
+            const blob = new Blob([kmlParts.join('\r\n')], { type: 'application/vnd.google-earth.kml+xml;charset=utf-8' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `Eclipse_Solar_${ec.year}_${String(ec.month).padStart(2,'0')}_${String(ec.day).padStart(2,'0')}.kml`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(link.href);
+        }
+
+        // --- EXPORTACIÓN A NAVEGADOR GPS (.GPX) ---
+        function exportSelectedEclipseToGPX() {
+            if (!currentEclipse) return;
+            const ec = currentEclipse;
+            const precomputeFn = (typeof precomputeEclipseGeometry === 'function')
+                ? precomputeEclipseGeometry
+                : (typeof window !== 'undefined' && window.precomputeEclipseGeometry)
+                    ? window.precomputeEclipseGeometry
+                    : (typeof BesselianEngine !== 'undefined' && BesselianEngine.precomputeEclipseGeometry)
+                        ? BesselianEngine.precomputeEclipseGeometry
+                        : null;
+            const geom = precomputeFn ? precomputeFn(ec) : null;
+
+            const isCentral = !((ec.eclipse_type || '').toUpperCase().startsWith('P'));
+            const typeName = ec.eclipse_type === 'T' ? 'Eclipse Solar Total'
+                : (ec.eclipse_type === 'A' ? 'Eclipse Solar Anular'
+                : (ec.eclipse_type === 'H' ? 'Eclipse Solar Híbrido' : 'Eclipse Solar Parcial'));
+
+            const escapeXml = (unsafe) => {
+                if (!unsafe) return '';
+                return String(unsafe).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
+            };
+
+            const normalizeLon = (lon) => {
+                let l = lon % 360;
+                if (l > 180) l -= 360;
+                if (l < -180) l += 360;
+                return l;
+            };
+
+            const formatUT = (hoursUT) => {
+                if (hoursUT == null || isNaN(hoursUT)) return '--:--:--';
+                let h = hoursUT % 24;
+                if (h < 0) h += 24;
+                const hh = Math.floor(h);
+                const mm = Math.floor((h - hh) * 60);
+                const ss = Math.round(((h - hh) * 60 - mm) * 60);
+                return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}:${String(ss).padStart(2, '0')} UT`;
+            };
+
+            const toIsoUtc = (hoursUT) => {
+                let h = hoursUT;
+                let y = ec.year;
+                let m = ec.month;
+                let d = ec.day || 1;
+                while (h < 0) {
+                    h += 24; d--;
+                    if (d < 1) {
+                        m--;
+                        if (m < 1) { m = 12; y--; }
+                        d = new Date(Date.UTC(y, m, 0)).getUTCDate();
+                    }
+                }
+                while (h >= 24) {
+                    h -= 24; d++;
+                    const maxD = new Date(Date.UTC(y, m, 0)).getUTCDate();
+                    if (d > maxD) { d = 1; m++; if (m > 12) { m = 1; y++; } }
+                }
+                const totalSecs = Math.round(h * 3600);
+                const hh = Math.floor(totalSecs / 3600) % 24;
+                const mm = Math.floor((totalSecs % 3600) / 60);
+                const ss = totalSecs % 60;
+                const yearStr = y >= 0 ? String(y).padStart(4, '0') : '-' + String(Math.abs(y)).padStart(4, '0');
+                return `${yearStr}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}T${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}:${String(ss).padStart(2, '0')}Z`;
+            };
+
+            const splitLineAtAntimeridian = (pts) => {
+                if (!pts || pts.length === 0) return [];
+                const segments = [];
+                let currentSeg = [];
+                for (let i = 0; i < pts.length; i++) {
+                    const p = pts[i];
+                    const lat = p.lat;
+                    const lon = normalizeLon(p.lng != null ? p.lng : p.lon);
+                    if (currentSeg.length > 0) {
+                        const prevLon = currentSeg[currentSeg.length - 1].lon;
+                        if (Math.abs(lon - prevLon) > 180) {
+                            segments.push(currentSeg);
+                            currentSeg = [];
+                        }
+                    }
+                    currentSeg.push({ lat, lon, t: p.t });
+                }
+                if (currentSeg.length > 0) segments.push(currentSeg);
+                return segments;
+            };
+
+            const gpxParts = [];
+            gpxParts.push('<?xml version="1.0" encoding="UTF-8"?>');
+            gpxParts.push('<gpx version="1.1" creator="Solar Eclipse Explorer - COSMOS MATARÓ" xmlns="http://www.topografix.com/GPX/1/1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd">');
+            gpxParts.push('  <metadata>');
+            gpxParts.push(`    <name>${escapeXml(typeName)} (${ec.year}-${String(ec.month).padStart(2,'0')}-${String(ec.day).padStart(2,'0')})</name>`);
+            gpxParts.push('    <desc>Franja de totalidad y circunstancias de observación generadas por el Explorador de Eclipses Solares de Cosmos Mataró.</desc>');
+            gpxParts.push(`    <time>${ec.year}-${String(ec.month).padStart(2,'0')}-${String(ec.day).padStart(2,'0')}T12:00:00Z</time>`);
+            gpxParts.push('  </metadata>');
+
+            const geLat = ec.lat_dd_ge;
+            const geLon = ec.lng_dd_ge;
+            const hasObserver = currentObserver && currentObserver.lat != null && currentObserver.lon != null;
+            const isObserverGE = (typeof activeExtremeMode !== 'undefined' && activeExtremeMode === 'GE') ||
+                (hasObserver && geLat != null && geLon != null &&
+                 Math.hypot(currentObserver.lat - geLat, currentObserver.lon - geLon) < 0.01);
+
+            const dtHours = (ec.dt || 0) / 3600;
+
+            const getSunAltitude = (latDeg, lonDeg, tVal) => {
+                const phi = latDeg * RAD;
+                const d = ((ec.d0 || 0) + (ec.d1 || 0) * tVal + (ec.d2 || 0) * tVal * tVal) * RAD;
+                let muDeg = (ec.mu0 || 0) + (ec.mu1 || 0) * tVal + (ec.mu2 || 0) * tVal * tVal;
+                if (ec.dt) {
+                    muDeg -= ((typeof getEarthRotationAngleDeg === 'function')
+                        ? getEarthRotationAngleDeg(ec.dt)
+                        : (ec.dt * 15.04107 / 3600));
+                }
+                const theta = (muDeg + lonDeg) * RAD;
+                const sinH = Math.sin(phi) * Math.sin(d) + Math.cos(phi) * Math.cos(d) * Math.cos(theta);
+                return Math.asin(Math.max(-1, Math.min(1, sinH))) * DEG;
+            };
+
+            const buildCircText = (lat, lon, isGEPoint = false) => {
+                const res = calculateLocalSolarCircumstances(ec, lat, lon);
+                const lines = [];
+                if (isGEPoint) {
+                    lines.push(`Mayor Eclipse (GE) - Catálogo #${ec.cat_no || ec.year} Saros ${ec.saros}`);
+                    if (ec.central_duration) lines.push(`Duración máx: ${ec.central_duration}`);
+                    if (ec.magnitude != null) lines.push(`Magnitud global: ${ec.magnitude.toFixed(4)}`);
+                    if (ec.td_ge) lines.push(`Hora máx: ${ec.td_ge} TD`);
+                    if (ec.sun_alt != null) lines.push(`Altura Sol en GE: ${ec.sun_alt}°`);
+                }
+                if (res && res.isEclipsed) {
+                    const localType = res.isTotal ? 'TOTAL' : (res.isAnnular ? 'ANULAR' : 'PARCIAL');
+                    lines.push(`Fase Local: ${localType} (${(res.maxMag * 100).toFixed(1)}%)`);
+                    if (res.c1) lines.push(`C1: ${formatUT((ec.t0 || 0) + res.c1.t - dtHours)}`);
+                    if (res.c2) lines.push(`C2: ${formatUT((ec.t0 || 0) + res.c2.t - dtHours)}`);
+                    if (res.tMax != null) lines.push(`MÁX: ${formatUT((ec.t0 || 0) + res.tMax - dtHours)}`);
+                    if (res.c3) lines.push(`C3: ${formatUT((ec.t0 || 0) + res.c3.t - dtHours)}`);
+                    if (res.c4) lines.push(`C4: ${formatUT((ec.t0 || 0) + res.c4.t - dtHours)}`);
+                    if (res.c2 && res.c3) {
+                        const durSec = Math.round((res.c3.t - res.c2.t) * 3600);
+                        const durMin = Math.floor(durSec / 60);
+                        const remSec = durSec % 60;
+                        lines.push(`Duración: ${String(durMin).padStart(2,'0')}m ${String(remSec).padStart(2,'0')}s`);
+                    }
+                    if (res.maxParams) {
+                        lines.push(`Sol: Alt ${res.maxParams.alt.toFixed(1)}°, Az ${res.maxParams.az.toFixed(1)}°`);
+                    }
+                }
+                return lines.join(' | ');
+            };
+
+            // WAYPOINTS
+            if (isObserverGE) {
+                // Caso 1: El observador es GE -> Solo UN punto
+                if (geLat != null && geLon != null) {
+                    const tClosest = (typeof getEclipseTimeBounds === 'function') ? getEclipseTimeBounds(ec).tClosest : 0;
+                    const geUtHours = (ec.t0 || 0) + tClosest - dtHours;
+                    const geCirc = calculateLocalSolarCircumstances(ec, geLat, geLon);
+                    const geAlt = (geCirc && geCirc.maxParams) ? geCirc.maxParams.alt : (ec.sun_alt != null ? ec.sun_alt : 0);
+                    gpxParts.push(`  <wpt lat="${geLat.toFixed(5)}" lon="${normalizeLon(geLon).toFixed(5)}">`);
+                    gpxParts.push(`    <ele>${geAlt.toFixed(1)}</ele>`);
+                    gpxParts.push(`    <time>${toIsoUtc(geUtHours)}</time>`);
+                    gpxParts.push('    <name>Mayor Eclipse (GE)</name>');
+                    gpxParts.push(`    <desc>${escapeXml(buildCircText(geLat, geLon, true))}</desc>`);
+                    gpxParts.push('    <sym>Flag, Blue</sym>');
+                    gpxParts.push('  </wpt>');
+                }
+            } else {
+                // Caso 2: El observador ha elegido otra ubicación -> Punto del observador Y punto de GE
+                if (hasObserver) {
+                    const obsName = currentObserver.name || 'Ubicación Observador';
+                    const obsCirc = calculateLocalSolarCircumstances(ec, currentObserver.lat, currentObserver.lon);
+                    const obsUtHours = (ec.t0 || 0) + (obsCirc && obsCirc.tMax != null ? obsCirc.tMax : 0) - dtHours;
+                    const obsAlt = (obsCirc && obsCirc.maxParams) ? obsCirc.maxParams.alt : 0;
+                    gpxParts.push(`  <wpt lat="${currentObserver.lat.toFixed(5)}" lon="${normalizeLon(currentObserver.lon).toFixed(5)}">`);
+                    gpxParts.push(`    <ele>${obsAlt.toFixed(1)}</ele>`);
+                    gpxParts.push(`    <time>${toIsoUtc(obsUtHours)}</time>`);
+                    gpxParts.push(`    <name>${escapeXml(obsName)}</name>`);
+                    gpxParts.push(`    <desc>${escapeXml(buildCircText(currentObserver.lat, currentObserver.lon, false))}</desc>`);
+                    gpxParts.push('    <sym>Waypoint</sym>');
+                    gpxParts.push('  </wpt>');
+                }
+
+                if (geLat != null && geLon != null) {
+                    const tClosest = (typeof getEclipseTimeBounds === 'function') ? getEclipseTimeBounds(ec).tClosest : 0;
+                    const geUtHours = (ec.t0 || 0) + tClosest - dtHours;
+                    const geCirc = calculateLocalSolarCircumstances(ec, geLat, geLon);
+                    const geAlt = (geCirc && geCirc.maxParams) ? geCirc.maxParams.alt : (ec.sun_alt != null ? ec.sun_alt : 0);
+                    gpxParts.push(`  <wpt lat="${geLat.toFixed(5)}" lon="${normalizeLon(geLon).toFixed(5)}">`);
+                    gpxParts.push(`    <ele>${geAlt.toFixed(1)}</ele>`);
+                    gpxParts.push(`    <time>${toIsoUtc(geUtHours)}</time>`);
+                    gpxParts.push('    <name>Mayor Eclipse (GE)</name>');
+                    gpxParts.push(`    <desc>${escapeXml(buildCircText(geLat, geLon, true))}</desc>`);
+                    gpxParts.push('    <sym>Flag, Blue</sym>');
+                    gpxParts.push('  </wpt>');
+                }
+            }
+
+            // TRACKS (Línea Central, Límite Norte, Límite Sur)
+            if (isCentral && geom) {
+                const addTrack = (name, pts) => {
+                    if (!pts || pts.length < 2) return;
+                    const segs = splitLineAtAntimeridian(pts);
+                    gpxParts.push('  <trk>');
+                    gpxParts.push(`    <name>${escapeXml(name)}</name>`);
+                    segs.forEach(seg => {
+                        gpxParts.push('    <trkseg>');
+                        seg.forEach(p => {
+                            const ptUtHours = (ec.t0 || 0) + (p.t || 0) - dtHours;
+                            const sunAlt = getSunAltitude(p.lat, p.lon, p.t || 0);
+                            gpxParts.push(`      <trkpt lat="${p.lat.toFixed(5)}" lon="${p.lon.toFixed(5)}">`);
+                            gpxParts.push(`        <ele>${sunAlt.toFixed(1)}</ele>`);
+                            gpxParts.push(`        <time>${toIsoUtc(ptUtHours)}</time>`);
+                            gpxParts.push('      </trkpt>');
+                        });
+                        gpxParts.push('    </trkseg>');
+                    });
+                    gpxParts.push('  </trk>');
+                };
+
+                addTrack('Línea Central', geom.centerCoords);
+                addTrack('Límite Norte', geom.totNorthCoords);
+                addTrack('Límite Sur', geom.totSouthCoords);
+            }
+
+            gpxParts.push('</gpx>');
+
+            const blob = new Blob([gpxParts.join('\r\n')], { type: 'application/gpx+xml;charset=utf-8' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `Eclipse_Solar_${ec.year}_${String(ec.month).padStart(2,'0')}_${String(ec.day).padStart(2,'0')}.gpx`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(link.href);
+        }
+
         // [besselianXYToLatLng, besselianToLatLng] Extraído a besselian_engine.js
 
         // -------------------------------------------------------------
@@ -4376,57 +4977,125 @@
             if (typeof setRouteSpaceConesUserPref === 'function') {
                 setRouteSpaceConesUserPref(vis);
             }
+            if (typeof updateSpaceConesIntensity === 'function') {
+                updateSpaceConesIntensity();
+            }
             if (umbraConeMesh3D) umbraConeMesh3D.visible = vis;
             if (penumbraConeMesh3D) penumbraConeMesh3D.visible = vis;
             requestRender();
         });
 
+        getDOM('slider-space-cones-intensity')?.addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value);
+            const chk = getDOM('chk-show-space-cones');
+            if (chk && !chk.checked && val > 0.05) {
+                chk.checked = true;
+                if (typeof setRouteSpaceConesUserPref === 'function') setRouteSpaceConesUserPref(true);
+                if (typeof umbraConeMesh3D !== 'undefined' && umbraConeMesh3D) umbraConeMesh3D.visible = true;
+                if (typeof penumbraConeMesh3D !== 'undefined' && penumbraConeMesh3D) penumbraConeMesh3D.visible = true;
+            }
+            if (typeof updateSpaceConesIntensity === 'function') {
+                updateSpaceConesIntensity(val);
+            }
+            requestRender();
+        });
+
         getDOM('chk-show-moon-orbit')?.addEventListener('change', (e) => {
-            if (moonOrbitLine3D) moonOrbitLine3D.visible = e.target.checked;
+            const vis = e.target.checked;
+            if (moonOrbitLine3D) moonOrbitLine3D.visible = vis;
+            updateLimitLabelsCheckboxState();
+            if (nodesGroup3D) {
+                const showLimits = getDOM('chk-show-limits')?.checked ?? true;
+                nodesGroup3D.visible = vis && showLimits;
+            }
             requestRender();
         });
         getDOM('chk-show-ecliptic')?.addEventListener('change', (e) => {
             if (eclipticPlaneGroup3D) eclipticPlaneGroup3D.visible = e.target.checked;
             requestRender();
         });
-        function updateConstellationsCheckboxState() {
-            const chkSphere = getDOM('chk-show-celestial-sphere');
+        function updateStarsSubordinatesState() {
+            const chkStars = getDOM('chk-show-stars');
+            const chkGraticule = getDOM('chk-show-celestial-graticule');
+            const lblGraticule = getDOM('lbl-show-celestial-graticule');
             const chkConst = getDOM('chk-show-constellations');
             const lblConst = getDOM('lbl-show-constellations');
-            if (!chkSphere || !chkConst) return;
-            const isSphereActive = chkSphere.checked;
-            chkConst.disabled = !isSphereActive;
+            if (!chkStars) return;
+
+            const isStarsActive = chkStars.checked;
+
+            if (chkGraticule) chkGraticule.disabled = !isStarsActive;
+            if (lblGraticule) {
+                lblGraticule.classList.toggle('disabled', !isStarsActive);
+                lblGraticule.style.opacity = isStarsActive ? '1' : '0.4';
+                lblGraticule.style.pointerEvents = isStarsActive ? 'auto' : 'none';
+            }
+
+            if (chkConst) chkConst.disabled = !isStarsActive;
             if (lblConst) {
-                lblConst.classList.toggle('disabled', !isSphereActive);
-                lblConst.style.opacity = isSphereActive ? '1' : '0.4';
-                lblConst.style.pointerEvents = isSphereActive ? 'auto' : 'none';
+                lblConst.classList.toggle('disabled', !isStarsActive);
+                lblConst.style.opacity = isStarsActive ? '1' : '0.4';
+                lblConst.style.pointerEvents = isStarsActive ? 'auto' : 'none';
+            }
+
+            if (typeof celestialSphereGroup3D !== 'undefined' && celestialSphereGroup3D) {
+                if (celestialSphereGroup3D.starfieldGroup) celestialSphereGroup3D.starfieldGroup.visible = isStarsActive;
+                if (celestialSphereGroup3D.refStarsGroup) celestialSphereGroup3D.refStarsGroup.visible = isStarsActive;
+                if (celestialSphereGroup3D.graticuleGroup) {
+                    celestialSphereGroup3D.graticuleGroup.visible = isStarsActive && (chkGraticule ? chkGraticule.checked : true);
+                }
+                if (celestialSphereGroup3D.constellationsGroup) {
+                    celestialSphereGroup3D.constellationsGroup.visible = isStarsActive && (chkConst ? chkConst.checked : true);
+                }
+                celestialSphereGroup3D.visible = isStarsActive;
             }
         }
-        updateConstellationsCheckboxState();
+        updateStarsSubordinatesState();
 
-        getDOM('chk-show-celestial-sphere')?.addEventListener('change', (e) => {
-            if (typeof celestialSphereGroup3D !== 'undefined' && celestialSphereGroup3D) {
-                celestialSphereGroup3D.visible = e.target.checked;
-            }
-            updateConstellationsCheckboxState();
+        getDOM('chk-show-stars')?.addEventListener('change', () => {
+            updateStarsSubordinatesState();
             requestRender();
         });
+
+        getDOM('chk-show-celestial-graticule')?.addEventListener('change', (e) => {
+            const isStarsActive = getDOM('chk-show-stars')?.checked ?? true;
+            if (typeof celestialSphereGroup3D !== 'undefined' && celestialSphereGroup3D && celestialSphereGroup3D.graticuleGroup) {
+                celestialSphereGroup3D.graticuleGroup.visible = isStarsActive && e.target.checked;
+            }
+            requestRender();
+        });
+
         getDOM('chk-show-constellations')?.addEventListener('change', (e) => {
-            if (typeof constellationsGroup3D !== 'undefined' && constellationsGroup3D) {
-                constellationsGroup3D.visible = e.target.checked;
+            const isStarsActive = getDOM('chk-show-stars')?.checked ?? true;
+            if (typeof celestialSphereGroup3D !== 'undefined' && celestialSphereGroup3D && celestialSphereGroup3D.constellationsGroup) {
+                celestialSphereGroup3D.constellationsGroup.visible = isStarsActive && e.target.checked;
             }
             requestRender();
         });
 
         function updateLimitLabelsCheckboxState() {
+            const chkOrbit = getDOM('chk-show-moon-orbit');
             const chkLimits = getDOM('chk-show-limits');
             const chkLimitLabels = getDOM('chk-show-limits-labels');
+            const lblLimits = getDOM('lbl-show-limits');
             const lblLimitLabels = getDOM('lbl-show-limits-labels');
             if (!chkLimits || !chkLimitLabels) return;
-            const isLimitsActive = chkLimits.checked;
+
+            const isOrbitActive = chkOrbit ? chkOrbit.checked : true;
+            const isLimitsActive = isOrbitActive && chkLimits.checked;
+
+            chkLimits.disabled = !isOrbitActive;
+            if (lblLimits) {
+                lblLimits.classList.toggle('disabled', !isOrbitActive);
+                lblLimits.style.opacity = isOrbitActive ? '1' : '0.4';
+                lblLimits.style.pointerEvents = isOrbitActive ? 'auto' : 'none';
+            }
+
             chkLimitLabels.disabled = !isLimitsActive;
             if (lblLimitLabels) {
                 lblLimitLabels.classList.toggle('disabled', !isLimitsActive);
+                lblLimitLabels.style.opacity = isLimitsActive ? '1' : '0.4';
+                lblLimitLabels.style.pointerEvents = isLimitsActive ? 'auto' : 'none';
             }
         }
 
@@ -4438,9 +5107,10 @@
 
         getDOM('chk-show-limits')?.addEventListener('change', (e) => {
             const vis = e.target.checked;
-            if (nodesGroup3D) nodesGroup3D.visible = vis;
+            const isOrbitActive = getDOM('chk-show-moon-orbit')?.checked ?? true;
+            if (nodesGroup3D) nodesGroup3D.visible = vis && isOrbitActive;
             updateLimitLabelsCheckboxState();
-            if (orbitalLimitMarkers && vis) {
+            if (orbitalLimitMarkers && vis && isOrbitActive) {
                 const showLabels = getDOM('chk-show-limits-labels')?.checked ?? false;
                 orbitalLimitMarkers.sprites.forEach(s => {
                     s.sprite.visible = showLabels;
@@ -4494,7 +5164,8 @@
                 const el3D = getDOM('chk-show-shadow');
                 if (el3D && el3D.checked !== checked) el3D.checked = checked;
                 if (shadowShaderMaterial) {
-                    shadowShaderMaterial.uniforms.uShowPenumbra.value = checked ? 1.0 : 0.0;
+                    const penIntensity = parseFloat(getDOM('slider-shadow-intensity')?.value || 1.0);
+                    shadowShaderMaterial.uniforms.uShowPenumbra.value = checked ? penIntensity : 0.0;
                     shadowShaderMaterial.uniformsNeedUpdate = true;
                 }
             } else if (prop === 'rings') {
@@ -4518,6 +5189,14 @@
         }
 
         getDOM('chk-show-shadow')?.addEventListener('change', (e) => syncPenumbraCheckbox('shadow', e.target.checked));
+        getDOM('slider-shadow-intensity')?.addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value);
+            const chk = getDOM('chk-show-shadow');
+            if (chk && !chk.checked && val > 0.05) {
+                chk.checked = true;
+            }
+            syncPenumbraCheckbox('shadow', chk ? chk.checked : true);
+        });
         getDOM('chk-show-penumbra-rings')?.addEventListener('change', (e) => syncPenumbraCheckbox('rings', e.target.checked));
 
         getDOM('chk-show-center-line')?.addEventListener('change', () => {

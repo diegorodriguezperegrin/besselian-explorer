@@ -424,7 +424,10 @@
         sphereGroup.add(refStars);
 
         // Exponer referencias directamente en el grupo raíz
+        sphereGroup.starfieldGroup = starfield;
+        sphereGroup.graticuleGroup = graticule;
         sphereGroup.constellationsGroup = constellations;
+        sphereGroup.refStarsGroup = refStars;
         sphereGroup.sphereGroup = sphereGroup;
 
         return sphereGroup;

@@ -3,4 +3,6 @@ node_modules/
 Thumbs.db
 scratch/
 * - copia*
+*.backup.*
+audit_report.json
 revisar_modo_envivo_con_modelo_local.py

@@ -23,6 +23,7 @@ function requestRender() {
 var observerMarkerGroup3D = null;
 var celestialSphereGroup3D = null;
 var constellationsGroup3D = null;
+var celestialGraticuleGroup3D = null;
 
         // -------------------------------------------------------------
         // 1. CONFIGURACIÓN THREE.JS
@@ -428,15 +429,16 @@ var constellationsGroup3D = null;
             varying vec2 vUv;
 
             void main() {
-                // Difuminado suave en extremos
+                // Difuminado suave solo en los extremos de contacto (Luna y Tierra)
                 float topFade = smoothstep(0.0, 0.05, vUv.y);
-                float bottomFade = smoothstep(1.0, 0.90, vUv.y);
+                float bottomFade = smoothstep(1.0, 0.94, vUv.y);
                 
+                // Resalte de silueta tangencial (Fresnel) para delinear el borde del cono
                 vec3 viewDir = normalize(cameraPosition - vWorldPos);
-                float rim = abs(dot(vNormal, viewDir));
-                float rimFade = smoothstep(0.04, 0.50, rim);
+                float fresnel = 1.0 - abs(dot(vNormal, viewDir));
+                float edgeGlow = smoothstep(0.05, 0.85, fresnel);
 
-                float alpha = uMaxOpacity * topFade * bottomFade * (0.45 + 0.55 * rimFade);
+                float alpha = uMaxOpacity * topFade * bottomFade * (0.60 + 0.40 * edgeGlow);
                 if (alpha <= 0.005) discard;
                 gl_FragColor = vec4(uColor, alpha);
             }
@@ -451,15 +453,16 @@ var constellationsGroup3D = null;
             varying vec2 vUv;
 
             void main() {
-                // Difuminado amplio y suave para la penumbra exterior
-                float topFade = smoothstep(0.06, 0.35, vUv.y);
-                float bottomFade = smoothstep(1.0, 0.85, vUv.y);
+                // Difuminado suave solo en los extremos de contacto
+                float topFade = smoothstep(0.0, 0.06, vUv.y);
+                float bottomFade = smoothstep(1.0, 0.94, vUv.y);
                 
+                // Efecto Fresnel: la envolvente cónica externa resalta en los bordes de la silueta
                 vec3 viewDir = normalize(cameraPosition - vWorldPos);
-                float rim = abs(dot(vNormal, viewDir));
-                float rimFade = smoothstep(0.04, 0.50, rim);
+                float fresnel = 1.0 - abs(dot(vNormal, viewDir));
+                float edgeGlow = smoothstep(0.05, 0.85, fresnel);
 
-                float alpha = uMaxOpacity * topFade * bottomFade * (0.30 + 0.70 * rimFade);
+                float alpha = uMaxOpacity * topFade * bottomFade * (0.35 + 0.65 * edgeGlow);
                 if (alpha <= 0.005) discard;
                 gl_FragColor = vec4(uColor, alpha);
             }
@@ -487,8 +490,8 @@ var constellationsGroup3D = null;
             depthWrite: false,
             side: THREE.DoubleSide,
             uniforms: {
-                uColor: { value: new THREE.Color(0x1e293b) },
-                uMaxOpacity: { value: 0.18 }
+                uColor: { value: new THREE.Color(0x60a5fa) }, // Azul celeste translúcido visible contra el fondo espacial negro
+                uMaxOpacity: { value: 0.28 }
             },
             vertexShader: coneVertexShader,
             fragmentShader: penumbraConeFragmentShader
@@ -496,6 +499,17 @@ var constellationsGroup3D = null;
         penumbraConeMesh3D = new THREE.Mesh(penumbraConeGeo, penumbraConeMat);
         penumbraConeMesh3D.renderOrder = 1;
         scene.add(penumbraConeMesh3D);
+
+        function updateSpaceConesIntensity(factor) {
+            const k = (factor != null) ? factor : (typeof getDOM === 'function' ? parseFloat(getDOM('slider-space-cones-intensity')?.value || 1.0) : 1.0);
+            if (umbraConeMesh3D && umbraConeMesh3D.material && umbraConeMesh3D.material.uniforms && umbraConeMesh3D.material.uniforms.uMaxOpacity) {
+                umbraConeMesh3D.material.uniforms.uMaxOpacity.value = 0.65 * k;
+            }
+            if (penumbraConeMesh3D && penumbraConeMesh3D.material && penumbraConeMesh3D.material.uniforms && penumbraConeMesh3D.material.uniforms.uMaxOpacity) {
+                penumbraConeMesh3D.material.uniforms.uMaxOpacity.value = 0.28 * k;
+            }
+        }
+        window.updateSpaceConesIntensity = updateSpaceConesIntensity;
 
         // 궤 Órbita Lunar 3D en el Espacio
         var moonOrbitLine3D;
@@ -560,21 +574,25 @@ var constellationsGroup3D = null;
         eclipticPlaneGroup3D = createEclipticPlane3D();
         scene.add(eclipticPlaneGroup3D);
 
-        // Esfera Celeste 3D: Retícula astronómica inercial J2000 y estrellas de referencia
+        // Esfera Celeste 3D: Estrellas de referencia J2000, fondo cósmico, red astronómica y constelaciones
         try {
             if (typeof createCelestialSphere3D === 'function') {
                 celestialSphereGroup3D = createCelestialSphere3D(10000);
                 constellationsGroup3D = celestialSphereGroup3D ? (celestialSphereGroup3D.constellationsGroup || null) : null;
+                celestialGraticuleGroup3D = celestialSphereGroup3D ? (celestialSphereGroup3D.graticuleGroup || null) : null;
 
-                const chkSphere = (typeof getDOM === 'function' ? getDOM('chk-show-celestial-sphere') : document.getElementById('chk-show-celestial-sphere'));
+                const chkStars = (typeof getDOM === 'function' ? getDOM('chk-show-stars') : document.getElementById('chk-show-stars'));
+                const chkGraticule = (typeof getDOM === 'function' ? getDOM('chk-show-celestial-graticule') : document.getElementById('chk-show-celestial-graticule'));
                 const chkConst = (typeof getDOM === 'function' ? getDOM('chk-show-constellations') : document.getElementById('chk-show-constellations'));
 
                 if (celestialSphereGroup3D) {
-                    celestialSphereGroup3D.visible = chkSphere ? chkSphere.checked : true;
+                    const starsOn = chkStars ? chkStars.checked : true;
+                    celestialSphereGroup3D.visible = starsOn;
+                    if (celestialSphereGroup3D.starfieldGroup) celestialSphereGroup3D.starfieldGroup.visible = starsOn;
+                    if (celestialSphereGroup3D.refStarsGroup) celestialSphereGroup3D.refStarsGroup.visible = starsOn;
+                    if (celestialGraticuleGroup3D) celestialGraticuleGroup3D.visible = starsOn && (chkGraticule ? chkGraticule.checked : true);
+                    if (constellationsGroup3D) constellationsGroup3D.visible = starsOn && (chkConst ? chkConst.checked : true);
                     scene.add(celestialSphereGroup3D);
-                }
-                if (constellationsGroup3D && chkConst) {
-                    constellationsGroup3D.visible = chkConst.checked;
                 }
             }
         } catch (err) {
@@ -1046,7 +1064,7 @@ var constellationsGroup3D = null;
                     // Gradiente penumbral suave: se desvanece por completo al llegar a la isolínea 0% (f = 0.0)
                     // y alcanza una opacidad translúcida moderada (~0.38) cerca del centro,
                     // permitiendo ver claramente los continentes y contrastar con la umbra central negra pura.
-                    float penAlpha = (uShowPenumbra > 0.5) ? pow(f, 1.8) * 0.38 : 0.0;
+                    float penAlpha = (uShowPenumbra > 0.01) ? pow(f, 1.8) * 0.38 * uShowPenumbra : 0.0;
 
                     // Si ni el gradiente ni los anillos están activos en este punto, descartar
                     if (penAlpha < 0.003 && ringAlpha < 0.01) {
@@ -1775,6 +1793,15 @@ var constellationsGroup3D = null;
                 if (data.fullEspenakLoop && data.fullEspenakLoop.length > 1) {
                     const lineEspenakMax = createSegmentedLine(data.fullEspenakLoop, 0x38bdf8, GROUND_OVERLAY_RADIUS, 3);
                     if (lineEspenakMax) horizonLobesGroup.add(lineEspenakMax);
+                } else {
+                    if (data.espenakSunrisePart && data.espenakSunrisePart.length > 1) {
+                        const lineEspenakSr = createSegmentedLine(data.espenakSunrisePart, 0x38bdf8, GROUND_OVERLAY_RADIUS, 3);
+                        if (lineEspenakSr) horizonLobesGroup.add(lineEspenakSr);
+                    }
+                    if (data.espenakSunsetPart && data.espenakSunsetPart.length > 1) {
+                        const lineEspenakSs = createSegmentedLine(data.espenakSunsetPart, 0x38bdf8, GROUND_OVERLAY_RADIUS, 3);
+                        if (lineEspenakSs) horizonLobesGroup.add(lineEspenakSs);
+                    }
                 }
 
                 earthGroup.add(horizonLobesGroup);
@@ -2116,7 +2143,8 @@ var constellationsGroup3D = null;
             // 3b. Orientar Plano Eclíptico Físico 3D y Nodos Reales en el Marco Canónico Fijo
             const showEcliptic = getDOM('chk-show-ecliptic')?.checked ?? true;
             const showNodes = getDOM('chk-show-nodes')?.checked ?? true;
-            const showLimits = getDOM('chk-show-limits')?.checked ?? true;
+            const showMoonOrbit = getDOM('chk-show-moon-orbit')?.checked ?? true;
+            const showLimits = (getDOM('chk-show-limits')?.checked ?? true) && showMoonOrbit;
             if (eclipticPlaneGroup3D) eclipticPlaneGroup3D.visible = showEcliptic;
             if (nodeLine3D) nodeLine3D.visible = showNodes;
             if (nodesGroup3D) nodesGroup3D.visible = showLimits;
@@ -2624,7 +2652,8 @@ var constellationsGroup3D = null;
                 }
                 const hasMask = !!shadowShaderMaterial.uniforms.uEclipseMask.value;
                 shadowShaderMaterial.uniforms.uUseMask.value = (hasMask && (shouldShowPen || shouldShowRings)) ? 1.0 : 0.0;
-                shadowShaderMaterial.uniforms.uShowPenumbra.value = shouldShowPen ? 1.0 : 0.0;
+                const penIntensity = typeof getDOM === 'function' ? parseFloat(getDOM('slider-shadow-intensity')?.value || 1.0) : 1.0;
+                shadowShaderMaterial.uniforms.uShowPenumbra.value = shouldShowPen ? penIntensity : 0.0;
                 shadowShaderMaterial.uniforms.uShowPenumbraRings.value = shouldShowRings ? 1.0 : 0.0;
                 if (shadowOverlayMesh) {
                     shadowOverlayMesh.visible = (shouldShowPen || shouldShowRings);
@@ -2715,6 +2744,7 @@ if (typeof window !== 'undefined') {
     window.eclipticPlaneGroup3D = eclipticPlaneGroup3D;
     window.celestialSphereGroup3D = celestialSphereGroup3D;
     window.constellationsGroup3D = constellationsGroup3D;
+    window.celestialGraticuleGroup3D = celestialGraticuleGroup3D;
     window.observerMarkerGroup3D = observerMarkerGroup3D;
     window.subsolarMarkerGroup = subsolarMarkerGroup;
     window.sublunarMarkerGroup = sublunarMarkerGroup;
