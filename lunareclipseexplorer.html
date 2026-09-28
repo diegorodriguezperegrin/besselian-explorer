@@ -546,13 +546,12 @@
     <!-- BARRA / CÁPSULA DE REPRODUCCIÓN FLOTANTE INFERIOR (PLAYBACK DOCK) -->
     <aside class="playback-dock" id="playback-dock">
         <!-- Fila Superior: Estado de fase, Hora Local, UTC y Botón de Cierre -->
-        <div class="playback-dock-top">
+        <div class="playback-dock-top" title="Arrastrar para mover reproductor (Doble clic para centrar abajo)">
             <div class="player-phase-badge" id="player-phase-label">
                 <span style="color: #fca5a5;"><span class="phase-dot total"></span>Totalidad</span>
             </div>
             <div class="player-time-display">
-                <span class="player-time-local-box"><span id="player-time-local-label">Obs.:</span> <strong id="time-local-text">20:11 CEST</strong></span>
-                <span class="player-time-utc-box">UTC: <strong id="time-utc-text">18:11:43</strong></span>
+                <span class="player-time-local-box"><span id="player-time-local-label">UTC</span> <strong id="time-local-text">--:--:--</strong></span>
             </div>
             <div class="panel-toggle" onclick="togglePlaybackDock(false)" title="Minimizar reproductor" style="width: 24px; height: 24px; font-size: 0.75rem; border-radius: 6px;"><i class="fa-solid fa-chevron-left"></i></div>
         </div>
@@ -573,10 +572,6 @@
         <div class="playback-dock-bottom">
             <div class="playback-dock-bottom-left">
                 <span id="speed-indicator-badge" style="font-family: var(--font-mono); font-size: 0.78rem; color: var(--accent-blue); font-weight: 600; padding: 0 4px; min-width: 28px; display: inline-block;">1x</span>
-                <label class="checkbox-row" style="margin: 0; font-size: 0.74rem; white-space: nowrap; gap: 5px;" title="Sincronizar simulación en tiempo real con el reloj de la máquina">
-                    <input type="checkbox" id="chk-live-mode" onchange="toggleLiveModeCheckbox(this.checked)">
-                    <span>En vivo</span>
-                </label>
             </div>
             <div class="player-ctrls-compact">
                 <button class="ctrl-btn" id="btn-rewind" onclick="changeSpeedStep(-1)" title="Retroceder / Aumentar velocidad atrás (1x a 1200x)"><i class="fa-solid fa-backward" aria-hidden="true"></i></button>
@@ -585,6 +580,10 @@
                 <button class="ctrl-btn" id="btn-next-contact" onclick="jumpContactStep(1)" title="Momento siguiente del eclipse (P1, U1, Máx, U4, P4)"><i class="fa-solid fa-step-forward" aria-hidden="true"></i></button>
                 <button class="ctrl-btn" id="btn-fast-forward" onclick="changeSpeedStep(1)" title="Avanzar / Aumentar velocidad adelante (1x a 1200x)"><i class="fa-solid fa-forward" aria-hidden="true"></i></button>
             </div>
+            <label class="checkbox-row player-dock-live-control" style="margin: 0; font-size: 0.74rem; white-space: nowrap; gap: 5px;" title="Sincronizar simulación en tiempo real con el reloj de la máquina">
+                <input type="checkbox" id="chk-live-mode" onchange="toggleLiveModeCheckbox(this.checked)">
+                <span>En vivo</span>
+            </label>
             <div class="playback-dock-bottom-right"></div>
         </div>
     </aside>
@@ -1105,8 +1104,12 @@ END:VCALENDAR`;
                 tzAbbr = 'UTC';
             }
 
-            document.getElementById('time-utc-text').textContent = utcTimeStr;
-            document.getElementById('time-local-text').textContent = `${localTimeStr}${tzAbbr ? ' ' + tzAbbr : ''}`;
+            const elUtc = document.getElementById('time-utc-text');
+            if (elUtc) elUtc.textContent = utcTimeStr;
+            const elLocalLbl = document.getElementById('player-time-local-label');
+            if (elLocalLbl) elLocalLbl.textContent = tzAbbr || 'UTC';
+            const elLocalText = document.getElementById('time-local-text');
+            if (elLocalText) elLocalText.textContent = localTimeStr;
 
             const speedBadge = document.getElementById('speed-indicator-badge');
             if (speedBadge) speedBadge.textContent = isLiveMode ? '1x' : `${simSpeedMultiplier}x`;

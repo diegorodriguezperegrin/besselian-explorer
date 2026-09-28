@@ -743,6 +743,12 @@ const EclipseMap2D = (() => {
      * Evento al hacer clic en el mapa: calcula circunstancias y abre cuadro NASA
      */
     function onMapClick(e) {
+        if (e.originalEvent && e.originalEvent.target) {
+            const t = e.originalEvent.target;
+            if (t.closest('#map-search-container') || t.closest('#map-bottom-controls') || t.closest('.floating-top-search-container') || t.closest('#map-ui-overlay')) {
+                return;
+            }
+        }
         const { lat, lng } = e.latlng;
         inspectLocation(lat, lng, null, false);
     }
@@ -904,7 +910,7 @@ const EclipseMap2D = (() => {
             : false;
         const btnText = isCurrentObs
             ? '<i class="fa-solid fa-check"></i> Ubicación actual'
-            : '<i class="fa-solid fa-location-crosshairs"></i> Fijar como mi ubicación';
+            : '<i class="fa-solid fa-location-crosshairs"></i> Fijar como ubicación';
         const btnBg = isCurrentObs
             ? 'rgba(34, 197, 94, 0.25)'
             : 'rgba(56, 189, 248, 0.18)';
@@ -948,11 +954,72 @@ const EclipseMap2D = (() => {
                     </tbody>
                 </table>
 
-                <button type="button" class="btn-set-obs-map" onclick="EclipseMap2D.setAsActiveObserver(${lat}, ${lon}, '${(locationName || '').replace(/'/g, "\\'")}')" style="width: 100%; height: 28px; background: ${btnBg}; border: 1px solid ${btnBorder}; border-radius: 6px; color: ${btnColor}; font-size: 0.74rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.2s; margin-top: 4px;">
+                <button type="button" class="btn-set-obs-map" onclick="EclipseMap2D.setAsActiveObserver(${lat}, ${lon}, '${(locationName || '').replace(/'/g, "\\'")}')" style="width: 100%; height: 28px; background: ${btnBg}; border: 1px solid ${btnBorder}; border-radius: 6px; color: ${btnColor}; font-size: 0.74rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.2s; margin-top: 4px; ${isCurrentObs ? 'pointer-events: none;' : ''}">
                     ${btnText}
                 </button>
             </div>
         `;
+    }
+
+    /**
+     * Confirma "Ubicación fijada" en el botón, lanza el destello verde en Visibilidad Local
+     * y cierra con suavidad la ventana flotante tras unos instantes.
+     */
+    function animateLocationFixedDisplacement(btn) {
+        if (!btn || !document.body.contains(btn)) return;
+
+        btn.style.pointerEvents = 'none';
+
+        // 1. Mostrar estado "Ubicación fijada" en el botón de la ventana flotante
+        btn.innerHTML = '<i class="fa-solid fa-check"></i> Ubicación fijada';
+        btn.style.background = 'rgba(34, 197, 94, 0.25)';
+        btn.style.borderColor = '#22c55e';
+        btn.style.color = '#22c55e';
+        btn.style.boxShadow = '0 0 14px rgba(34, 197, 94, 0.5)';
+
+        // 2. Disparar el destello verde en la ventana de Visibilidad Local (o botón si está minimizada)
+        const setPanel = document.getElementById('settings-panel');
+        const isPanelCollapsed = !setPanel || setPanel.classList.contains('collapsed');
+
+        let targetEl = null;
+        if (isPanelCollapsed) {
+            targetEl = document.getElementById('btn-reopen-right');
+        } else {
+            targetEl = document.querySelector('#settings-panel .observer-card') ||
+                       document.getElementById('observer-contacts-table') ||
+                       setPanel;
+        }
+
+        if (targetEl) {
+            targetEl.classList.remove('location-target-pulse');
+            void targetEl.offsetWidth; // Forzar reflujo para reiniciar la animación
+            targetEl.classList.add('location-target-pulse');
+            setTimeout(() => targetEl.classList.remove('location-target-pulse'), 1200);
+        }
+
+        // 3. Tras unos segundos (~800ms), desvanecer y cerrar con suavidad la ventana flotante
+        setTimeout(() => {
+            const popupContainer = btn.closest('.leaflet-popup') ||
+                                   btn.closest('.nasa-eclipse-popup') ||
+                                   btn.closest('#globe-3d-popup') ||
+                                   document.querySelector('.nasa-eclipse-popup') ||
+                                   document.getElementById('globe-3d-popup');
+
+            if (popupContainer) {
+                popupContainer.style.transition = 'opacity 0.35s ease, transform 0.35s ease';
+                popupContainer.style.opacity = '0';
+                popupContainer.style.pointerEvents = 'none';
+            }
+
+            setTimeout(() => {
+                if (map) map.closePopup();
+                if (typeof closeGlobe3DPopup === 'function') {
+                    closeGlobe3DPopup();
+                } else if (typeof window !== 'undefined' && typeof window.closeGlobe3DPopup === 'function') {
+                    window.closeGlobe3DPopup();
+                }
+            }, 350);
+        }, 800);
     }
 
     /**
@@ -981,10 +1048,7 @@ const EclipseMap2D = (() => {
             setObserverMarker(lat, lon, finalName);
         }
         document.querySelectorAll('.btn-set-obs-map').forEach(btn => {
-            btn.innerHTML = '<i class="fa-solid fa-check"></i> Ubicación fijada';
-            btn.style.background = 'rgba(34, 197, 94, 0.25)';
-            btn.style.borderColor = '#22c55e';
-            btn.style.color = '#22c55e';
+            animateLocationFixedDisplacement(btn);
         });
         document.querySelectorAll('.nasa-popup-inner').forEach(card => {
             card.classList.remove('is-preview-obs');
@@ -1177,17 +1241,18 @@ const EclipseMap2D = (() => {
 
         overlay.innerHTML = `
             <!-- BARRA SUPERIOR CENTRADA (Buscador de Dirección y Coordenadas con Acciones Rápidas) -->
-            <div id="map-search-container" class="floating-top-search-container" style="position: absolute; top: 16px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; justify-content: center; pointer-events: auto; max-width: calc(100vw - 32px); width: max-content; z-index: 500;">
+            <div id="map-search-container" class="floating-top-search-container" style="position: absolute; top: 16px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; justify-content: center; pointer-events: auto; max-width: calc(100vw - 20px); width: min(calc(100vw - 20px), 350px); z-index: 500;">
                 <!-- Buscador de Dirección y Coordenadas -->
-                <div style="position: relative; width: 440px; max-width: calc(100vw - 32px);">
+                <div style="position: relative; width: 100%; max-width: 100%;">
                     <div style="display: flex; align-items: center; background: rgba(11, 19, 41, 0.92); backdrop-filter: blur(16px); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 10px; height: 35px; padding: 0 6px 0 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.65); gap: 4px;">
                         <i class="fa-solid fa-magnifying-glass" style="color: #38bdf8; font-size: 0.78rem; margin-right: 4px; flex-shrink: 0;"></i>
                         <input type="text" id="map-search-input" placeholder="Buscar municipio o coordenadas..." autocomplete="off" style="flex: 1; min-width: 0; background: transparent; border: none; outline: none; color: #f8fafc; font-size: 0.78rem; font-family: var(--font-body, system-ui);">
                         <button type="button" id="map-search-clear" style="display: none; background: none; border: none; color: #94a3b8; cursor: pointer; padding: 0 4px; font-size: 0.78rem; flex-shrink: 0;" title="Limpiar"><i class="fa-solid fa-xmark"></i></button>
-                        <div style="width: 1px; height: 16px; background: rgba(255, 255, 255, 0.15); margin: 0 2px; flex-shrink: 0;"></div>
-                        <button type="button" class="capsule-action-btn btn-observer-gps" id="btn-map-gps" onclick="detectUserLocation()" title="Detectar mi ubicación actual (GPS)" aria-label="Usar GPS"><i class="fa-solid fa-location-crosshairs"></i></button>
-                        <button type="button" class="capsule-action-btn btn-obs-ge" id="btn-map-ge" onclick="switchObserverExtreme('GE')" title="Mayor Eclipse (GE): Mínima distancia del eje de sombra al centro de la Tierra" aria-label="Mayor Eclipse">GE</button>
-                        <button type="button" class="capsule-action-btn btn-obs-gd" id="btn-map-gd" onclick="switchObserverExtreme('GD')" title="Máxima Duración (GD): Punto de mayor duración de la fase central" aria-label="Máxima Duración">GD</button>
+                        <div class="search-actions-segmented-group" role="group" aria-label="Acciones rápidas de ubicación">
+                            <button type="button" class="search-action-segment-btn btn-observer-gps" id="btn-map-gps" onclick="detectUserLocation()" title="Detectar mi ubicación actual (GPS)" aria-label="Usar GPS"><i class="fa-solid fa-location-crosshairs"></i></button>
+                            <button type="button" class="search-action-segment-btn btn-obs-ge" id="btn-map-ge" onclick="switchObserverExtreme('GE')" title="Mayor Eclipse (GE): Mínima distancia del eje de sombra al centro de la Tierra" aria-label="Mayor Eclipse">GE</button>
+                            <button type="button" class="search-action-segment-btn btn-obs-gd" id="btn-map-gd" onclick="switchObserverExtreme('GD')" title="Máxima Duración (GD): Punto de mayor duración de la fase central" aria-label="Máxima Duración">GD</button>
+                        </div>
                     </div>
                     <!-- Dropdown de resultados de autocompletado -->
                     <div id="map-search-dropdown" style="display: none; position: absolute; top: calc(100% + 4px); left: 0; width: 100%; background: rgba(11, 19, 41, 0.96); backdrop-filter: blur(16px); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 10px; box-shadow: 0 12px 28px rgba(0,0,0,0.85); max-height: 230px; overflow-y: auto; font-size: 0.78rem; padding: 4px 0; z-index: 1005;">
@@ -1209,6 +1274,33 @@ const EclipseMap2D = (() => {
         `;
 
         container.appendChild(overlay);
+
+        // Evitar que cualquier clic, interacción o scroll en los controles flotantes se propague al mapa Leaflet
+        const searchContainer = document.getElementById('map-search-container');
+        if (searchContainer) {
+            if (typeof L !== 'undefined' && L.DomEvent) {
+                L.DomEvent.disableClickPropagation(searchContainer);
+                L.DomEvent.disableScrollPropagation(searchContainer);
+            }
+            ['click', 'dblclick', 'mousedown', 'mouseup', 'pointerdown', 'pointerup', 'touchstart', 'touchend'].forEach(evt => {
+                searchContainer.addEventListener(evt, (e) => {
+                    e.stopPropagation();
+                });
+            });
+        }
+
+        const bottomCtrlsEl = document.getElementById('map-bottom-controls');
+        if (bottomCtrlsEl) {
+            if (typeof L !== 'undefined' && L.DomEvent) {
+                L.DomEvent.disableClickPropagation(bottomCtrlsEl);
+                L.DomEvent.disableScrollPropagation(bottomCtrlsEl);
+            }
+            ['click', 'dblclick', 'mousedown', 'mouseup', 'pointerdown', 'pointerup', 'touchstart', 'touchend'].forEach(evt => {
+                bottomCtrlsEl.addEventListener(evt, (e) => {
+                    e.stopPropagation();
+                });
+            });
+        }
 
         // Sincronizar estado inicial de botones GE / GD y nombre del observador
         if (typeof activeExtremeMode !== 'undefined' && activeExtremeMode) {
@@ -1569,6 +1661,7 @@ const EclipseMap2D = (() => {
         get umbraPolygonClone() { return umbraPolygonClone; },
         setObserverMarker,
         setAsActiveObserver,
+        animateLocationFixedDisplacement,
         selectSearchResult,
         goToCoords,
         fitEclipse,
@@ -1595,5 +1688,6 @@ if (typeof window !== 'undefined') {
     window.buildNasaPopupHtml = EclipseMap2D.buildNasaPopupHtml;
     window.formatUtTimeFromT = EclipseMap2D.formatUtTimeFromT;
     window.setAsActiveObserver = EclipseMap2D.setAsActiveObserver;
+    window.animateLocationFixedDisplacement = EclipseMap2D.animateLocationFixedDisplacement;
     window.setEclipseMap2D = EclipseMap2D.setEclipse;
 }

@@ -401,8 +401,8 @@
         return new THREE.Points(geom, mat);
     }
 
-    // Función constructora principal de la Esfera Celeste 3D
-    function createCelestialSphere3D(radius = 10000) {
+    // Función constructora principal de la Esfera Celeste 3D (escala cósmica envolvente)
+    function createCelestialSphere3D(radius = 3000000) {
         const sphereGroup = new THREE.Group();
         sphereGroup.name = "CelestialSphere3D";
         sphereGroup.renderOrder = 1;

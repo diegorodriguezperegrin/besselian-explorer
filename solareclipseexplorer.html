@@ -248,60 +248,126 @@
             white-space: nowrap;
         }
 
-        /* Botones de Exportación Directa Unificados (iCal, KML, GPX) */
-        .export-buttons-group {
+        /* Cartucho Unificado de Exportación (iCal, KML, GPX) */
+        .export-segmented-group {
             display: inline-flex;
             align-items: center;
-            gap: 6px;
+            height: 18px;
+            background: rgba(56, 189, 248, 0.06);
+            border: 1px solid rgba(56, 189, 248, 0.28);
+            border-radius: 5px;
+            overflow: hidden;
             flex-shrink: 0;
+            box-sizing: border-box;
         }
 
-        .btn-export-chip {
+        .btn-export-segment {
             display: inline-flex !important;
             align-items: center !important;
-            gap: 4px !important;
-            background: rgba(56, 189, 248, 0.08) !important;
-            border: 1px solid rgba(56, 189, 248, 0.3) !important;
-            border-radius: 6px !important;
-            padding: 3px 8px !important;
+            justify-content: center !important;
+            gap: 3px !important;
+            height: 100% !important;
+            padding: 0 5px !important;
+            background: transparent !important;
+            border: none !important;
+            border-right: 1px solid rgba(56, 189, 248, 0.20) !important;
             color: #38bdf8 !important;
-            font-size: 0.68rem !important;
+            font-size: 0.64rem !important;
             font-family: var(--font-heading, system-ui) !important;
             font-weight: 600 !important;
             cursor: pointer !important;
             text-decoration: none !important;
-            transition: all 0.15s ease !important;
             white-space: nowrap !important;
-            line-height: 1.2 !important;
+            line-height: 1 !important;
             user-select: none !important;
             box-sizing: border-box !important;
+            transition: background 0.15s ease, color 0.15s ease !important;
         }
 
-        .btn-export-chip:hover {
+        .btn-export-segment:last-child {
+            border-right: none !important;
+        }
+
+        .btn-export-segment:hover {
             background: rgba(56, 189, 248, 0.22) !important;
-            border-color: #38bdf8 !important;
             color: #ffffff !important;
-            text-decoration: none !important;
         }
 
-        .btn-export-chip i {
-            font-size: 0.70rem !important;
+        .btn-export-segment:active {
+            background: rgba(56, 189, 248, 0.35) !important;
+        }
+
+        .btn-export-segment i {
+            font-size: 0.60rem !important;
             pointer-events: none !important;
             color: inherit !important;
-            width: auto !important;
-            text-align: center !important;
-            text-decoration: none !important;
-            display: inline-block !important;
+            line-height: 1 !important;
         }
 
-        .btn-export-chip span {
+        .btn-export-segment span {
             pointer-events: none !important;
             color: inherit !important;
             font-size: inherit !important;
             font-weight: inherit !important;
-            text-decoration: none !important;
-            flex: none !important;
             letter-spacing: 0.02em !important;
+            line-height: 1 !important;
+        }
+
+        /* Cartucho Segmentado de Acciones de Búsqueda (GPS, GE, GD) al estilo de iCal/KML/GPX */
+        .search-actions-segmented-group {
+            display: inline-flex;
+            align-items: center;
+            height: 22px;
+            background: rgba(56, 189, 248, 0.06);
+            border: 1px solid rgba(56, 189, 248, 0.28);
+            border-radius: 6px;
+            overflow: hidden;
+            flex-shrink: 0;
+            box-sizing: border-box;
+        }
+
+        .search-action-segment-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            padding: 0 6px;
+            background: transparent;
+            border: none;
+            border-right: 1px solid rgba(56, 189, 248, 0.20);
+            color: #94a3b8;
+            font-size: 0.66rem;
+            font-family: var(--font-heading, system-ui);
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+            white-space: nowrap;
+            line-height: 1;
+            user-select: none;
+            box-sizing: border-box;
+            transition: background 0.15s ease, color 0.15s ease;
+        }
+
+        .search-action-segment-btn:last-child {
+            border-right: none;
+        }
+
+        .search-action-segment-btn:hover {
+            background: rgba(56, 189, 248, 0.22);
+            color: #ffffff;
+        }
+
+        .search-action-segment-btn.active {
+            background: rgba(56, 189, 248, 0.25) !important;
+            color: var(--accent-blue, #38bdf8) !important;
+            box-shadow: inset 0 0 6px rgba(56, 189, 248, 0.3) !important;
+        }
+
+        .search-action-segment-btn i {
+            font-size: 0.65rem;
+            pointer-events: none;
+            color: inherit;
+            line-height: 1;
         }
 
         /* Deslizadores compactos de intensidad en Capas y Opciones */
@@ -349,6 +415,78 @@
             cursor: pointer;
             border: none;
             box-shadow: 0 0 3px rgba(0, 0, 0, 0.6);
+        }
+
+        /* Botón Modo Realista en la cabecera de Capas y Opciones */
+        .btn-realistic-mode {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.20);
+            border-radius: 5px;
+            height: 18px;
+            padding: 0 6px;
+            color: #cbd5e1;
+            font-size: 0.64rem;
+            font-family: var(--font-heading, system-ui);
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            line-height: 1;
+            user-select: none;
+            box-sizing: border-box;
+            flex-shrink: 0;
+        }
+
+        .btn-realistic-mode:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.35);
+            color: #ffffff;
+        }
+
+        .btn-realistic-mode.active {
+            background: rgba(56, 189, 248, 0.18) !important;
+            border-color: var(--accent-blue, #38bdf8) !important;
+            color: var(--accent-blue, #38bdf8) !important;
+            box-shadow: 0 0 6px rgba(56, 189, 248, 0.30) !important;
+        }
+
+        .btn-realistic-mode i {
+            font-size: 0.60rem;
+            pointer-events: none;
+            color: inherit;
+            line-height: 1;
+        }
+
+        .btn-realistic-mode span {
+            pointer-events: none;
+            color: inherit;
+            font-size: inherit;
+            font-weight: inherit;
+            letter-spacing: 0.02em;
+            line-height: 1;
+        }
+
+        /* Altura fija idéntica garantizada en todos los títulos de sección con o sin botones */
+        .section-title {
+            min-height: 20px !important;
+            height: 20px !important;
+            box-sizing: border-box !important;
+        }
+
+        .section-title-between {
+            min-height: 20px !important;
+            height: 20px !important;
+            box-sizing: border-box !important;
+        }
+
+        .section-title-between > span:first-child {
+            white-space: nowrap !important;
+            flex-shrink: 0 !important;
+            flex: 0 0 auto !important;
         }
 
         .mini-toggle-btn:hover {
@@ -488,10 +626,11 @@
                 <i class="fa-solid fa-magnifying-glass" style="color: #38bdf8; font-size: 0.78rem; margin-right: 4px; flex-shrink: 0;"></i>
                 <input type="text" id="space-3d-search-input" placeholder="Buscar municipio o coordenadas..." autocomplete="off" style="flex: 1; min-width: 0; background: transparent; border: none; outline: none; color: #f8fafc; font-size: 0.78rem; font-family: var(--font-body, system-ui);">
                 <button type="button" id="space-3d-search-clear" style="display: none; background: none; border: none; color: #94a3b8; cursor: pointer; padding: 0 4px; font-size: 0.78rem; flex-shrink: 0;" title="Limpiar"><i class="fa-solid fa-xmark"></i></button>
-                <div style="width: 1px; height: 16px; background: rgba(255, 255, 255, 0.15); margin: 0 2px; flex-shrink: 0;"></div>
-                <button type="button" class="capsule-action-btn btn-observer-gps" id="btn-space-gps" onclick="detectUserLocation()" title="Detectar mi ubicación actual (GPS)" aria-label="Usar GPS"><i class="fa-solid fa-location-crosshairs"></i></button>
-                <button type="button" class="capsule-action-btn btn-obs-ge" id="btn-space-ge" onclick="switchObserverExtreme('GE')" title="Mayor Eclipse (GE): Mínima distancia del eje de sombra al centro de la Tierra" aria-label="Mayor Eclipse">GE</button>
-                <button type="button" class="capsule-action-btn btn-obs-gd" id="btn-space-gd" onclick="switchObserverExtreme('GD')" title="Máxima Duración (GD): Punto de mayor duración de la fase central" aria-label="Máxima Duración">GD</button>
+                <div class="search-actions-segmented-group" role="group" aria-label="Acciones rápidas de ubicación">
+                    <button type="button" class="search-action-segment-btn btn-observer-gps" id="btn-space-gps" onclick="detectUserLocation()" title="Detectar mi ubicación actual (GPS)" aria-label="Usar GPS"><i class="fa-solid fa-location-crosshairs"></i></button>
+                    <button type="button" class="search-action-segment-btn btn-obs-ge" id="btn-space-ge" onclick="switchObserverExtreme('GE')" title="Mayor Eclipse (GE): Mínima distancia del eje de sombra al centro de la Tierra" aria-label="Mayor Eclipse">GE</button>
+                    <button type="button" class="search-action-segment-btn btn-obs-gd" id="btn-space-gd" onclick="switchObserverExtreme('GD')" title="Máxima Duración (GD): Punto de mayor duración de la fase central" aria-label="Máxima Duración">GD</button>
+                </div>
             </div>
             <!-- Dropdown de resultados de autocompletado en 3D -->
             <div id="space-3d-search-dropdown" style="display: none; position: absolute; top: calc(100% + 4px); left: 0; width: 100%; background: rgba(11, 19, 41, 0.96); backdrop-filter: blur(16px); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 10px; box-shadow: 0 12px 28px rgba(0,0,0,0.85); max-height: 230px; overflow-y: auto; font-size: 0.78rem; padding: 4px 0; z-index: 1005;">
@@ -694,10 +833,10 @@
         <!-- Visibilidad y Fases Locales -->
         <div class="section-title section-title-between" style="margin-top: 4px;">
             <span><i class="fa-solid fa-eye"></i> Visibilidad Local</span>
-            <div class="export-buttons-group">
-                <button type="button" onclick="exportSelectedEclipseToICal()" class="btn-export-chip" title="Exportar evento al calendario (.ics)"><i class="fa-solid fa-calendar-plus"></i><span>iCal</span></button>
-                <button type="button" onclick="exportSelectedEclipseToKML()" class="btn-export-chip" title="Exportar franja y ubicación a Google Earth (.kml)"><i class="fa-solid fa-earth-americas"></i><span>KML</span></button>
-                <button type="button" onclick="exportSelectedEclipseToGPX()" class="btn-export-chip" title="Exportar franja y ubicación a GPS / Navegador (.gpx)"><i class="fa-solid fa-location-arrow"></i><span>GPX</span></button>
+            <div class="export-segmented-group" role="group" aria-label="Exportar evento y circunstancias locales">
+                <button type="button" onclick="exportSelectedEclipseToICal()" class="btn-export-segment" title="Exportar evento al calendario (.ics)"><i class="fa-solid fa-calendar-plus" aria-hidden="true"></i><span>iCal</span></button>
+                <button type="button" onclick="exportSelectedEclipseToKML()" class="btn-export-segment" title="Exportar franja y ubicación a Google Earth (.kml)"><i class="fa-solid fa-earth-americas" aria-hidden="true"></i><span>KML</span></button>
+                <button type="button" onclick="exportSelectedEclipseToGPX()" class="btn-export-segment" title="Exportar franja y ubicación a GPS / Navegador (.gpx)"><i class="fa-solid fa-location-arrow" aria-hidden="true"></i><span>GPX</span></button>
             </div>
         </div>
         <div class="observer-card" style="margin-top: 0;">
@@ -750,8 +889,11 @@
         </div>
 
         <!-- 4. Capas y Opciones -->
-        <div class="section-title">
-            <i class="fa-solid fa-layer-group"></i> Capas y opciones
+        <div class="section-title section-title-between" id="section-title-layers">
+            <span><i class="fa-solid fa-layer-group"></i> Capas y opciones</span>
+            <button type="button" id="btn-realistic-mode" class="btn-realistic-mode" onclick="toggleRealisticMode()" title="Modo Realista: Desactiva todas las capas auxiliares excepto conos de sombra, gradiente penumbral y estrellas" aria-label="Modo Realista" aria-pressed="false">
+                <i class="fa-solid fa-circle-half-stroke" aria-hidden="true"></i><span>Realista</span>
+            </button>
         </div>
         <div class="panel-section" style="display: flex; flex-direction: column; gap: 0.35rem; background: rgba(255,255,255,0.03); padding: 0.4rem 0.6rem; border-radius: 12px; border: 1px solid var(--border-color);">
             <!-- GRUPO 1: CONTROLES PARA MODO ESPACIO 3D Y RUTA -->
@@ -773,6 +915,10 @@
                 <label class="checkbox-row" id="lbl-show-penumbra-rings" title="Curvas concéntricas de magnitud instantánea (0 a 80%) sobre la superficie">
                     <input type="checkbox" id="chk-show-penumbra-rings">
                     <span>Anillos de penumbra (0–80%)</span>
+                </label>
+                <label class="checkbox-row" id="lbl-ecliptic-orientation" title="Nivelar la vista respecto al plano de la Eclíptica (horizontal), mostrando la Tierra inclinada 23,44°">
+                    <input type="checkbox" id="chk-ecliptic-orientation">
+                    <span>Orientación eclíptica</span>
                 </label>
 
                 <!-- Botón Desplegable de Más Opciones 3D -->
@@ -815,10 +961,17 @@
                         <input type="checkbox" id="chk-show-limits-labels">
                         <span>Rótulos</span>
                     </label>
-                    <label class="checkbox-row" id="lbl-show-ecliptic">
-                        <input type="checkbox" id="chk-show-ecliptic" checked>
-                        <span>Plano eclíptico</span>
+                    <label class="checkbox-row" id="lbl-show-earth-orbit" title="Arco curvo inercial de la órbita de la Tierra alrededor del Sol en el plano eclíptico">
+                        <input type="checkbox" id="chk-show-earth-orbit" checked>
+                        <span>Órbita terrestre</span>
                     </label>
+                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
+                        <label class="checkbox-row" id="lbl-show-ecliptic" title="Cuadrícula y plano inercial de la Eclíptica" style="flex: 1; min-width: 0;">
+                            <input type="checkbox" id="chk-show-ecliptic" checked>
+                            <span>Plano eclíptico</span>
+                        </label>
+                        <input type="range" id="slider-ecliptic-intensity" min="0.05" max="1.0" step="0.05" value="0.35" class="mini-layer-slider" title="Intensidad y brillo del plano eclíptico" aria-label="Intensidad del plano eclíptico">
+                    </div>
                     <label class="checkbox-row" id="lbl-show-stars">
                         <input type="checkbox" id="chk-show-stars" checked>
                         <span>Estrellas</span>
@@ -992,11 +1145,10 @@
     <!-- BARRA / CÁPSULA DE REPRODUCCIÓN FLOTANTE INFERIOR (PLAYBACK DOCK) -->
     <aside class="playback-dock" id="playback-dock">
         <!-- Fila Superior: Tipo/Fase de eclipse, Hora Local / UTC y Botón de Cierre -->
-        <div class="playback-dock-top">
+        <div class="playback-dock-top" title="Arrastrar para mover reproductor (Doble clic para centrar abajo)">
             <div class="player-phase-badge" id="player-phase-label"></div>
             <div class="player-time-display">
-                <span class="player-time-local-box"><span id="player-time-local-label">Obs.</span> <strong id="time-local-text">--:--:--</strong></span>
-                <span class="player-time-utc-box"><span id="player-time-utc-label">UTC</span> <strong id="time-utc-text">--:--:--</strong></span>
+                <span class="player-time-local-box"><span id="player-time-local-label">UTC</span> <strong id="time-local-text">--:--:--</strong></span>
             </div>
             <div class="panel-toggle" onclick="togglePlaybackDock(false)" role="button" tabindex="0" title="Minimizar reproductor" aria-label="Minimizar reproductor temporal" style="width: 24px; height: 24px; font-size: 0.75rem; border-radius: 6px;"><i class="fa-solid fa-chevron-left" aria-hidden="true"></i></div>
         </div>
@@ -1014,21 +1166,21 @@
         <!-- Fila Inferior: Indicador de velocidad, Botonera Centrada compacta y Recentrado -->
         <div class="playback-dock-bottom">
             <div class="playback-dock-bottom-left">
-                <span id="speed-indicator-badge" style="font-family: var(--font-mono); font-size: 0.78rem; color: var(--accent-blue); font-weight: 600; padding: 0 4px; width: 44px; display: inline-block; text-align: center;">1x</span>
-                <label class="checkbox-row" style="margin: 0; font-size: 0.74rem; white-space: nowrap; gap: 5px;" title="Sincronizar simulación en tiempo real con el reloj de la máquina">
-                    <input type="checkbox" id="chk-live-mode" onchange="toggleLiveModeCheckbox(this.checked)">
-                    <span>En vivo</span>
-                </label>
+                <span id="speed-indicator-badge" style="font-family: var(--font-mono); font-size: 0.74rem; color: var(--accent-blue); font-weight: 600; padding: 0 3px; min-width: 26px; display: inline-block; text-align: center;">1x</span>
             </div>
-            <div class="player-ctrls-compact">
-                <button class="ctrl-btn" id="btn-prev-contact" onclick="jumpContactStep(-1)" title="Momento anterior del eclipse (C1, C2, Máx, C3, C4)" aria-label="Contacto anterior"><i class="fa-solid fa-step-backward" aria-hidden="true"></i></button>
-                <button class="ctrl-btn" id="btn-rewind" onclick="changeSpeedStep(-1)" title="Reducir velocidad (1/2x a 1200x)" aria-label="Reducir velocidad"><i class="fa-solid fa-backward" aria-hidden="true"></i></button>
-                <button class="ctrl-btn play-main" id="btn-play-pause" onclick="toggleSimulation()" title="Reproducir / Pausar" aria-label="Reproducir o pausar simulación"><i class="fa-solid fa-play" aria-hidden="true"></i></button>
-                <button class="ctrl-btn" id="btn-fast-forward" onclick="changeSpeedStep(1)" title="Aumentar velocidad (1/2x a 1200x)" aria-label="Aumentar velocidad"><i class="fa-solid fa-forward" aria-hidden="true"></i></button>
-                <button class="ctrl-btn" id="btn-next-contact" onclick="jumpContactStep(1)" title="Momento siguiente del eclipse (C1, C2, Máx, C3, C4)" aria-label="Contacto siguiente"><i class="fa-solid fa-step-forward" aria-hidden="true"></i></button>
+            <div class="player-segmented-group" role="group" aria-label="Controles de reproducción">
+                <button type="button" class="player-segment-btn" id="btn-prev-contact" onclick="jumpContactStep(-1)" title="Momento anterior del eclipse (C1, C2, Máx, C3, C4)" aria-label="Contacto anterior"><i class="fa-solid fa-step-backward" aria-hidden="true"></i></button>
+                <button type="button" class="player-segment-btn" id="btn-rewind" onclick="changeSpeedStep(-1)" title="Reducir velocidad (1/2x a 1200x)" aria-label="Reducir velocidad"><i class="fa-solid fa-backward" aria-hidden="true"></i></button>
+                <button type="button" class="player-segment-btn play-main" id="btn-play-pause" onclick="toggleSimulation()" title="Reproducir / Pausar" aria-label="Reproducir o pausar simulación"><i class="fa-solid fa-play" aria-hidden="true"></i></button>
+                <button type="button" class="player-segment-btn" id="btn-fast-forward" onclick="changeSpeedStep(1)" title="Aumentar velocidad (1/2x a 1200x)" aria-label="Aumentar velocidad"><i class="fa-solid fa-forward" aria-hidden="true"></i></button>
+                <button type="button" class="player-segment-btn" id="btn-next-contact" onclick="jumpContactStep(1)" title="Momento siguiente del eclipse (C1, C2, Máx, C3, C4)" aria-label="Contacto siguiente"><i class="fa-solid fa-step-forward" aria-hidden="true"></i></button>
             </div>
+            <label class="checkbox-row player-dock-live-control" style="margin: 0; font-size: 0.74rem; white-space: nowrap; gap: 5px;" title="Sincronizar simulación en tiempo real con el reloj de la máquina">
+                <input type="checkbox" id="chk-live-mode" onchange="toggleLiveModeCheckbox(this.checked)">
+                <span>En vivo</span>
+            </label>
             <div class="playback-dock-bottom-right">
-                <button type="button" class="ctrl-btn" id="btn-recenter" onclick="handleRecenterClick()" title="Centrar eclipse" style="width: 30px; height: 30px; padding: 0; border-radius: 7px;" aria-label="Centrar eclipse">
+                <button type="button" class="ctrl-btn" id="btn-recenter" onclick="handleRecenterClick()" title="Centrar eclipse" style="width: 24px; height: 24px; padding: 0; border-radius: 6px;" aria-label="Centrar eclipse">
                     <i class="fa-solid fa-crosshairs" aria-hidden="true"></i>
                 </button>
             </div>
@@ -1170,16 +1322,18 @@
 
         function updateObserverHeaderTz() {
             const tzEl = getDOM('observer-header-tz');
-            if (!tzEl) return;
+            const playerTzEl = getDOM('player-time-local-label');
             if (activeExtremeMode) {
-                tzEl.textContent = 'UT1';
+                if (tzEl) tzEl.textContent = 'UT1';
+                if (playerTzEl) playerTzEl.textContent = 'UT1';
                 return;
             }
             const sampleDate = currentEclipse
                 ? new Date(Date.UTC(currentEclipse.year || 2026, (currentEclipse.month || 8) - 1, currentEclipse.day || 12, 12, 0, 0))
                 : new Date();
             const tzStr = getUtcOffsetString(currentObserver.tz || "Europe/Madrid", sampleDate);
-            tzEl.textContent = tzStr;
+            if (tzEl) tzEl.textContent = tzStr;
+            if (playerTzEl) playerTzEl.textContent = tzStr;
         }
 
         function isPureCoordinates(str) {
@@ -1707,6 +1861,8 @@
             if (popupEl) {
                 popupEl.style.display = 'none';
                 popupEl.style.visibility = 'hidden';
+                popupEl.style.opacity = '1';
+                popupEl.style.pointerEvents = 'auto';
             }
         }
         window.closeGlobe3DPopup = closeGlobe3DPopup;
@@ -1729,6 +1885,8 @@
             isGlobePopupOpen = true;
             popupEl.style.display = 'block';
             popupEl.style.visibility = 'visible';
+            popupEl.style.opacity = '1';
+            popupEl.style.pointerEvents = 'auto';
             updateGlobe3DPopupPosition();
             requestRender();
         }
@@ -2321,6 +2479,11 @@
             if (typeof activeExtremeMode !== 'undefined') {
                 document.querySelectorAll('.btn-obs-ge').forEach(b => b.classList.toggle('active', activeExtremeMode === 'GE'));
                 document.querySelectorAll('.btn-obs-gd').forEach(b => b.classList.toggle('active', activeExtremeMode === 'GD'));
+            }
+
+            const btnRealistic = getDOM('btn-realistic-mode');
+            if (btnRealistic) {
+                btnRealistic.style.display = (mode === '3d' || mode === 'route') ? 'inline-flex' : 'none';
             }
 
             const popupEl = getDOM('globe-3d-popup');
@@ -4852,7 +5015,7 @@
         function updateRecenterBtnState() {
             const btn = getDOM('btn-recenter');
             if (!btn) return;
-            if (currentActiveView === 'map') {
+            if (currentActiveView === 'map' || currentActiveView === 'telescopic') {
                 btn.style.display = 'none';
                 return;
             }
@@ -5010,8 +5173,39 @@
             }
             requestRender();
         });
+        getDOM('chk-show-earth-orbit')?.addEventListener('change', (e) => {
+            const vis = e.target.checked;
+            if (typeof earthOrbitLine3D !== 'undefined' && earthOrbitLine3D) {
+                earthOrbitLine3D.visible = vis;
+                if (vis && (!earthOrbitLine3D.geometry.attributes.position || earthOrbitLine3D.geometry.attributes.position.count === 0)) {
+                    if (typeof updateShadowAtTime === 'function' && currentEclipse) {
+                        updateShadowAtTime(typeof simCurrentT !== 'undefined' ? simCurrentT : 0);
+                    }
+                }
+            }
+            requestRender();
+        });
+        getDOM('chk-ecliptic-orientation')?.addEventListener('change', (e) => {
+            if (typeof setScene3DOrientation === 'function') {
+                setScene3DOrientation(e.target.checked, true);
+            }
+        });
         getDOM('chk-show-ecliptic')?.addEventListener('change', (e) => {
             if (eclipticPlaneGroup3D) eclipticPlaneGroup3D.visible = e.target.checked;
+            requestRender();
+        });
+        getDOM('slider-ecliptic-intensity')?.addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value);
+            const chk = getDOM('chk-show-ecliptic');
+            if (chk && !chk.checked && val > 0.05) {
+                chk.checked = true;
+                if (typeof eclipticPlaneGroup3D !== 'undefined' && eclipticPlaneGroup3D) {
+                    eclipticPlaneGroup3D.visible = true;
+                }
+            }
+            if (typeof updateEclipticIntensity === 'function') {
+                updateEclipticIntensity(val);
+            }
             requestRender();
         });
         function updateStarsSubordinatesState() {
@@ -5336,6 +5530,105 @@
 
         getDOM('chk-show-lunar-limb')?.addEventListener('change', (e) => {
             toggleLunarLimbPanel(e.target.checked);
+        });
+
+        // =========================================================================
+        // MODO REALISTA (Desactiva de una sola vez todas las capas excepto conos, gradiente y estrellas)
+        // =========================================================================
+        let isRealisticModeActive = false;
+        let preRealisticSavedStates = null;
+
+        function toggleRealisticMode(forceState = null) {
+            const btn = getDOM('btn-realistic-mode');
+            const group3D = getDOM('layers-group-3d');
+            if (!group3D) return;
+
+            const targetState = (forceState !== null) ? forceState : !isRealisticModeActive;
+
+            const chkSpaceCones = getDOM('chk-show-space-cones');
+            const chkShadow = getDOM('chk-show-shadow');
+            const chkStars = getDOM('chk-show-stars');
+
+            if (targetState) {
+                // Guardar estado previo de todos los checkboxes en layers-group-3d
+                preRealisticSavedStates = {};
+                const checkboxes = group3D.querySelectorAll('input[type="checkbox"]');
+                checkboxes.forEach(chk => {
+                    preRealisticSavedStates[chk.id] = chk.checked;
+                });
+
+                // Asegurar que "Conos de sombra", "Gradiente penumbral" y "Estrellas" quedan activos
+                if (chkSpaceCones && !chkSpaceCones.checked) {
+                    chkSpaceCones.checked = true;
+                    chkSpaceCones.dispatchEvent(new Event('change'));
+                }
+                if (chkShadow && !chkShadow.checked) {
+                    chkShadow.checked = true;
+                    chkShadow.dispatchEvent(new Event('change'));
+                }
+                if (chkStars && !chkStars.checked) {
+                    chkStars.checked = true;
+                    chkStars.dispatchEvent(new Event('change'));
+                }
+
+                // Desactivar de una sola vez todos los demás controles auxiliares
+                checkboxes.forEach(chk => {
+                    if (chk.id !== 'chk-show-space-cones' && chk.id !== 'chk-show-shadow' && chk.id !== 'chk-show-stars') {
+                        if (chk.checked) {
+                            chk.checked = false;
+                            chk.dispatchEvent(new Event('change'));
+                        }
+                    }
+                });
+
+                isRealisticModeActive = true;
+                if (btn) {
+                    btn.classList.add('active');
+                    btn.setAttribute('aria-pressed', 'true');
+                }
+            } else {
+                // Restaurar estado previo
+                if (preRealisticSavedStates) {
+                    const checkboxes = group3D.querySelectorAll('input[type="checkbox"]');
+                    checkboxes.forEach(chk => {
+                        if (preRealisticSavedStates.hasOwnProperty(chk.id)) {
+                            const desired = preRealisticSavedStates[chk.id];
+                            if (chk.checked !== desired) {
+                                chk.checked = desired;
+                                chk.dispatchEvent(new Event('change'));
+                            }
+                        }
+                    });
+                }
+                isRealisticModeActive = false;
+                if (btn) {
+                    btn.classList.remove('active');
+                    btn.setAttribute('aria-pressed', 'false');
+                }
+            }
+
+            if (typeof updateShadowAtTime === 'function' && currentEclipse) {
+                updateShadowAtTime(typeof simCurrentT !== 'undefined' ? simCurrentT : 0);
+            }
+            if (typeof requestRender === 'function') {
+                requestRender();
+            }
+        }
+        window.toggleRealisticMode = toggleRealisticMode;
+
+        // Si el usuario activa manualmente cualquier otra capa auxiliar, salimos visualmente del modo realista
+        getDOM('layers-group-3d')?.addEventListener('change', (e) => {
+            if (!isRealisticModeActive) return;
+            if (e.target && e.target.type === 'checkbox') {
+                if (e.target.id !== 'chk-show-space-cones' && e.target.id !== 'chk-show-shadow' && e.target.id !== 'chk-show-stars' && e.target.checked) {
+                    isRealisticModeActive = false;
+                    const btn = getDOM('btn-realistic-mode');
+                    if (btn) {
+                        btn.classList.remove('active');
+                        btn.setAttribute('aria-pressed', 'false');
+                    }
+                }
+            }
         });
 
 
@@ -5975,15 +6268,23 @@
                 const curTarget = (controls && controls.target) ? controls.target : new THREE.Vector3(0, 0, 0);
                 camera.position.copy(curTarget).addScaledVector(curDir, curDist);
 
+                // Interpolar suavemente camera.up si se definió orientación
+                if (cameraTransition.startUp && cameraTransition.endUp) {
+                    camera.up.copy(cameraTransition.startUp).lerp(cameraTransition.endUp, ease).normalize();
+                }
+                camera.lookAt(curTarget);
+
                 if (p >= 1.0) {
                     if (controls && controls.target) controls.target.copy(cameraTransition.endTarget);
                     camera.position.copy(cameraTransition.endCamPos);
+                    if (cameraTransition.endUp) camera.up.copy(cameraTransition.endUp);
+                    if (controls) controls.update();
                     cameraTransition = null;
                 }
                 timeOrSceneChanged = true;
             }
 
-            const controlsMoved = (controls && (!isRouteActive || !isRoutePlaying)) ? controls.update() : false;
+            const controlsMoved = (controls && (!isRouteActive || !isRoutePlaying) && !cameraTransition) ? controls.update() : false;
 
             if (timeOrSceneChanged || controlsMoved || needsRender) {
                 if (currentActiveView === '3d' || currentActiveView === 'route') {

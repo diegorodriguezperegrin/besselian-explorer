@@ -129,10 +129,11 @@ function updateTopNavButtonsState() {
             panel.style.right = panelId === 'lunar-limb-panel' ? '375px' : '';
             panel.style.bottom = '';
             panel.style.margin = '';
+            panel.style.transform = '';
         }
 
         function resetAllPanelsPositions() {
-            ['sidebar-panel', 'settings-panel', 'lunar-limb-panel'].forEach(id => {
+            ['sidebar-panel', 'settings-panel', 'lunar-limb-panel', 'playback-dock'].forEach(id => {
                 resetPanelDefaultPosition(id);
             });
         }
@@ -141,11 +142,12 @@ function updateTopNavButtonsState() {
             const panels = [
                 getDOM('sidebar-panel'),
                 getDOM('settings-panel'),
-                getDOM('lunar-limb-panel')
+                getDOM('lunar-limb-panel'),
+                getDOM('playback-dock')
             ].filter(Boolean);
 
             panels.forEach(panel => {
-                const header = panel.querySelector('.panel-header');
+                const header = panel.querySelector('.panel-header') || panel.querySelector('.playback-dock-top');
                 if (!header) return;
 
                 // Elevar al frente al hacer clic en cualquier parte del panel
@@ -189,6 +191,7 @@ function updateTopNavButtonsState() {
                     panel.style.top = `${startTop}px`;
                     panel.style.right = 'auto';
                     panel.style.bottom = 'auto';
+                    panel.style.transform = 'none';
                     panel.style.margin = '0';
 
                     e.preventDefault();
@@ -200,10 +203,11 @@ function updateTopNavButtonsState() {
                     const dy = e.clientY - startY;
 
                     const panelW = panel.offsetWidth;
+                    const panelH = panel.offsetHeight;
                     const minLeft = 10;
                     const maxLeft = Math.max(10, window.innerWidth - panelW - 10);
                     const minTop = 10;
-                    const maxTop = Math.max(10, window.innerHeight - 60); // Cabecera siempre accesible
+                    const maxTop = Math.max(10, window.innerHeight - (panel.id === 'playback-dock' ? panelH + 10 : 60)); // Cabecera siempre accesible
 
                     let newLeft = startLeft + dx;
                     let newTop = startTop + dy;
@@ -426,7 +430,7 @@ function updateTopNavButtonsState() {
 // Contención y recentrado en redimensionamiento de ventana
 window.addEventListener('resize', () => {
     const isSmall = window.innerWidth <= 900;
-    const panelIds = ['sidebar-panel', 'settings-panel', 'lunar-limb-panel'];
+    const panelIds = ['sidebar-panel', 'settings-panel', 'lunar-limb-panel', 'playback-dock'];
     
     panelIds.forEach(id => {
         const p = _getDOM(id);
@@ -438,9 +442,11 @@ window.addEventListener('resize', () => {
             p.style.right = '';
             p.style.bottom = '';
             p.style.margin = '';
+            p.style.transform = '';
         } else {
+            if (id === 'playback-dock' && !p.style.top) return;
             const maxL = Math.max(10, window.innerWidth - p.offsetWidth - 10);
-            const maxT = Math.max(10, window.innerHeight - 60);
+            const maxT = Math.max(10, window.innerHeight - (id === 'playback-dock' ? p.offsetHeight + 10 : 60));
             if (p.offsetLeft > maxL) p.style.left = `${maxL}px`;
             if (p.offsetTop > maxT) p.style.top = `${maxT}px`;
         }

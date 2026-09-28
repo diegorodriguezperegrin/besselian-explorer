@@ -201,7 +201,9 @@ body {
 }
 
 .panel-header:active,
-.panel-header.is-dragging {
+.panel-header.is-dragging,
+.playback-dock-top:active,
+.playback-dock-top.is-dragging {
     cursor: grabbing;
 }
 
@@ -213,6 +215,13 @@ body.is-dragging-panel {
 body.is-dragging-panel * {
     user-select: none !important;
     cursor: grabbing !important;
+}
+
+body.is-dragging-panel .playback-dock,
+body.is-dragging-panel .sidebar-panel,
+body.is-dragging-panel .settings-panel,
+body.is-dragging-panel #lunar-limb-panel {
+    transition: none !important;
 }
 
 .panel-header h1,
@@ -279,6 +288,9 @@ body.is-dragging-panel * {
     margin-top: 1px;
     margin-bottom: 0;
     line-height: 1.2;
+    min-height: 20px;
+    height: 20px;
+    box-sizing: border-box;
 }
 
 .section-title i {
@@ -286,6 +298,7 @@ body.is-dragging-panel * {
     color: var(--accent-blue);
     width: 14px;
     text-align: center;
+    flex-shrink: 0;
 }
 
 .section-title span {
@@ -297,12 +310,18 @@ body.is-dragging-panel * {
     justify-content: space-between;
     align-items: center;
     width: 100%;
+    min-height: 20px;
+    height: 20px;
+    box-sizing: border-box;
 }
 
 .section-title-between > span:first-child {
     display: flex;
     align-items: center;
     gap: 8px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    flex: 0 0 auto;
 }
 
 /* Cabecera del buscador general y badge de catálogo unificado en LEE y SEE */
@@ -451,6 +470,63 @@ body.is-dragging-panel * {
     color: var(--accent-blue);
     border-color: rgba(56, 189, 248, 0.4);
     box-shadow: 0 0 8px rgba(56, 189, 248, 0.2);
+}
+
+/* Cartucho Segmentado de Acciones de Búsqueda (GPS, GE, GD) al estilo de iCal/KML/GPX */
+.search-actions-segmented-group {
+    display: inline-flex;
+    align-items: center;
+    height: 22px;
+    background: rgba(56, 189, 248, 0.06);
+    border: 1px solid rgba(56, 189, 248, 0.28);
+    border-radius: 6px;
+    overflow: hidden;
+    flex-shrink: 0;
+    box-sizing: border-box;
+}
+
+.search-action-segment-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: 0 6px;
+    background: transparent;
+    border: none;
+    border-right: 1px solid rgba(56, 189, 248, 0.20);
+    color: #94a3b8;
+    font-size: 0.66rem;
+    font-family: var(--font-heading, system-ui);
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: none;
+    white-space: nowrap;
+    line-height: 1;
+    user-select: none;
+    box-sizing: border-box;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.search-action-segment-btn:last-child {
+    border-right: none;
+}
+
+.search-action-segment-btn:hover {
+    background: rgba(56, 189, 248, 0.22);
+    color: #ffffff;
+}
+
+.search-action-segment-btn.active {
+    background: rgba(56, 189, 248, 0.25) !important;
+    color: var(--accent-blue, #38bdf8) !important;
+    box-shadow: inset 0 0 6px rgba(56, 189, 248, 0.3) !important;
+}
+
+.search-action-segment-btn i {
+    font-size: 0.65rem;
+    pointer-events: none;
+    color: inherit;
+    line-height: 1;
 }
 
 .capsule-action-btn {
@@ -644,8 +720,8 @@ input:focus, select:focus {
     bottom: calc(12px + env(safe-area-inset-bottom, 0px));
     left: 50%;
     transform: translateX(-50%);
-    width: min(calc(100vw - 20px), 460px);
-    max-width: 460px;
+    width: min(calc(100vw - 20px), 350px);
+    max-width: 350px;
     z-index: var(--z-nav);
     background: var(--bg-panel);
     backdrop-filter: blur(16px);
@@ -661,43 +737,65 @@ input:focus, select:focus {
 }
 
 .playback-dock.collapsed {
-    transform: translate(-50%, calc(100% + 50px));
-    opacity: 0;
-    pointer-events: none;
+    transform: translate(-50%, calc(100% + 50px)) !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
 }
 
 .playback-dock-top {
     display: flex;
     justify-content: space-between;
-    align-items: baseline;
-    gap: 10px;
+    align-items: center;
+    gap: 8px;
     width: 100%;
+    cursor: grab;
+    user-select: none;
+    touch-action: none;
 }
 
 .playback-dock-top .panel-toggle {
     align-self: center;
+    cursor: pointer;
+    touch-action: auto;
 }
 
 .playback-dock-bottom {
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
+    position: relative;
+    display: flex;
     align-items: center;
+    justify-content: space-between;
     width: 100%;
-    gap: 6px;
+    min-height: 24px;
+    gap: 4px;
 }
 
 .playback-dock-bottom-left {
     display: flex;
     align-items: center;
     justify-content: flex-start;
-    gap: 8px;
+    gap: 5px;
+    flex-shrink: 0;
+    z-index: 1;
+}
+
+.player-dock-live-control {
+    position: absolute;
+    left: calc(50% + 68px);
+    display: inline-flex;
+    align-items: center;
+    user-select: none;
+    z-index: 2;
 }
 
 .playback-dock-bottom-right {
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    gap: 8px;
+    margin-left: auto;
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+    z-index: 1;
 }
 
 /* Indicador Flotante EN VIVO con LED y texto rojo de parpadeo nítido */
@@ -917,26 +1015,93 @@ input:focus, select:focus {
     width: 2px;
 }
 
-/* Botones de Control de Reproduccion */
-.player-ctrls-compact {
-    display: flex;
+/* Botones de Control de Reproduccion - Cartucho Segmentado Unificado */
+.player-segmented-group {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    display: inline-flex;
     align-items: center;
-    gap: 6px;
+    height: 24px;
+    background: rgba(56, 189, 248, 0.06);
+    border: 1px solid rgba(56, 189, 248, 0.28);
+    border-radius: 6px;
+    overflow: hidden;
+    flex-shrink: 0;
+    box-sizing: border-box;
+    z-index: 2;
+}
+
+.player-segment-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    width: 22px;
+    background: transparent;
+    border: none;
+    border-right: 1px solid rgba(56, 189, 248, 0.20);
+    color: #94a3b8;
+    font-size: 0.65rem;
+    cursor: pointer;
+    padding: 0;
+    margin: 0;
+    user-select: none;
+    box-sizing: border-box;
+    transition: background 0.15s ease, color 0.15s ease;
+    flex-shrink: 0;
+}
+
+.player-segment-btn:last-child {
+    border-right: none;
+}
+
+.player-segment-btn:hover {
+    background: rgba(56, 189, 248, 0.20);
+    color: #ffffff;
+}
+
+.player-segment-btn:active {
+    background: rgba(56, 189, 248, 0.35);
+}
+
+.player-segment-btn.play-main {
+    width: 28px;
+    background: var(--accent-blue);
+    color: #060911;
+    font-size: 0.76rem;
+}
+
+.player-segment-btn.play-main:hover {
+    background: #7dd3fc;
+    color: #060911;
+}
+
+.player-segment-btn.play-main:active {
+    background: #38bdf8;
+    color: #060911;
+}
+
+.player-segment-btn i {
+    pointer-events: none;
+    line-height: 1;
 }
 
 .ctrl-btn {
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid var(--border-color);
     color: #fff;
-    width: 30px;
-    height: 30px;
-    border-radius: 7px;
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.78rem;
+    font-size: 0.68rem;
     transition: var(--transition-smooth);
+    padding: 0;
+    flex-shrink: 0;
 }
 
 .ctrl-btn:hover {
@@ -953,12 +1118,12 @@ input:focus, select:focus {
 }
 
 .ctrl-btn.play-main {
-    width: 34px;
-    height: 34px;
+    width: 28px;
+    height: 28px;
     background: var(--accent-blue);
     color: #060911;
     border: none;
-    font-size: 0.9rem;
+    font-size: 0.78rem;
 }
 
 .ctrl-btn.play-main:hover {
@@ -1383,14 +1548,14 @@ input:focus, select:focus {
     white-space: pre;
 }
 
-/* Barra de búsqueda flotante superior (Modos 3D y Mapa) - Ancho sincronizado con el reproductor (460px) */
+/* Barra de búsqueda flotante superior (Modos 3D y Mapa) - Ancho sincronizado con los paneles laterales (350px) */
 .floating-top-search-container {
     position: absolute;
     top: 16px;
     left: 50%;
     transform: translateX(-50%);
-    width: min(calc(100vw - 20px), 460px);
-    max-width: 460px;
+    width: min(calc(100vw - 20px), 350px);
+    max-width: 350px;
     box-sizing: border-box;
     display: flex;
     align-items: center;
@@ -1490,8 +1655,8 @@ body.view-route .floating-top-search-container {
     }
 
     .floating-top-search-container {
-        width: min(calc(100vw - 20px), calc(100dvw - 20px), 460px) !important;
-        max-width: 460px !important;
+        width: min(calc(100vw - 20px), calc(100dvw - 20px), 350px) !important;
+        max-width: 350px !important;
     }
 
     .playback-dock {
@@ -1501,8 +1666,8 @@ body.view-route .floating-top-search-container {
         left: 50% !important;
         right: auto !important;
         transform: translateX(-50%) !important;
-        width: min(calc(100vw - 20px), calc(100dvw - 20px), 460px) !important;
-        max-width: 460px !important;
+        width: min(calc(100vw - 20px), calc(100dvw - 20px), 350px) !important;
+        max-width: 350px !important;
         padding: 8px 12px;
         gap: 5px;
         z-index: var(--z-nav) !important;
@@ -1529,4 +1694,32 @@ body.view-route .floating-top-search-container {
         min-width: 44px;
         min-height: 44px;
     }
+
+    .playback-dock .ctrl-btn,
+    .playback-dock .player-segment-btn {
+        min-width: unset !important;
+        min-height: unset !important;
+    }
+}
+
+/* Animación de destello verde en Visibilidad Local o Panel de Navegación */
+@keyframes locationTargetPulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.9), 0 0 18px rgba(34, 197, 94, 0.75);
+        border-color: #22c55e !important;
+    }
+    30% {
+        box-shadow: 0 0 32px 6px rgba(34, 197, 94, 0.8), 0 0 50px 12px rgba(34, 197, 94, 0.45);
+        border-color: #22c55e !important;
+        transform: scale(1.02);
+    }
+    100% {
+        box-shadow: none;
+        transform: scale(1);
+    }
+}
+
+.location-target-pulse {
+    animation: locationTargetPulse 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+    transition: transform 0.25s ease, border-color 0.25s ease;
 }

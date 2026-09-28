@@ -48,8 +48,10 @@ var celestialGraticuleGroup3D = null;
         var isPlaybackCentered = false;
         var playbackCenteredPref = true;
         var lastShadowEclipseCat = null;
+        var currentNormEcliptic = new THREE.Vector3(0, 1, 0);
+        var isEclipticOrientation = false;
 
-        function transitionCamera(targetLookAt, targetCamPos, durationMs = 700) {
+        function transitionCamera(targetLookAt, targetCamPos, durationMs = 700, targetUp = null) {
             const startTarget = controls ? controls.target.clone() : new THREE.Vector3(0, 0, 0);
             const startCamPos = camera.position.clone();
             const startOffset = startCamPos.clone().sub(startTarget);
@@ -58,6 +60,8 @@ var celestialGraticuleGroup3D = null;
             const endDist = endOffset.length() || startDist;
             const startDir = startOffset.clone().normalize();
             const endDir = endOffset.clone().normalize();
+            const startUp = camera.up.clone();
+            const endUp = targetUp ? targetUp.clone().normalize() : startUp.clone();
             const startTime = performance.now();
 
             cameraTransition = {
@@ -69,9 +73,45 @@ var celestialGraticuleGroup3D = null;
                 endDir: endDir,
                 startDist: startDist,
                 endDist: endDist,
+                startUp: startUp,
+                endUp: endUp,
                 startTime: startTime,
                 duration: durationMs
             };
+        }
+
+        function setScene3DOrientation(isEcliptic, animate = true) {
+            isEclipticOrientation = !!isEcliptic;
+            if (!camera || !controls) return;
+
+            const targetLookAt = controls.target ? controls.target.clone() : new THREE.Vector3(0, 0, 0);
+            const curCamPos = camera.position.clone();
+            const offset = curCamPos.clone().sub(targetLookAt);
+            const dist = offset.length() || 210;
+
+            const equatorialUp = new THREE.Vector3(0, 1, 0);
+            const eclipticUp = (currentNormEcliptic && currentNormEcliptic.lengthSq() > 0.5)
+                ? currentNormEcliptic.clone().normalize()
+                : new THREE.Vector3(0, 1, 0);
+
+            const targetUp = isEcliptic ? eclipticUp : equatorialUp;
+            const sourceUp = isEcliptic ? equatorialUp : eclipticUp;
+
+            // Calcular rotación entre la orientación de origen y la de destino
+            const rotQ = new THREE.Quaternion().setFromUnitVectors(sourceUp, targetUp);
+            const targetOffset = offset.clone().applyQuaternion(rotQ).normalize().multiplyScalar(dist);
+            const targetCamPos = targetLookAt.clone().add(targetOffset);
+
+            if (animate) {
+                transitionCamera(targetLookAt, targetCamPos, 800, targetUp);
+            } else {
+                camera.up.copy(targetUp);
+                camera.position.copy(targetCamPos);
+                camera.lookAt(targetLookAt);
+                controls.target.copy(targetLookAt);
+                controls.update();
+                needsRender = true;
+            }
         }
 
         const OrbitControlsClass = THREE.OrbitControls || window.OrbitControls;
@@ -525,8 +565,34 @@ var celestialGraticuleGroup3D = null;
         moonOrbitLine3D.renderOrder = 5;
         scene.add(moonOrbitLine3D);
 
+        // 🌍 Órbita Terrestre 3D en el Espacio (curva inercial en el plano eclíptico alrededor del Sol)
+        var earthOrbitLine3D;
+        const earthOrbitGeo = new THREE.BufferGeometry();
+        const earthOrbitMat = new THREE.LineBasicMaterial({
+            color: 0x34d399,
+            transparent: true,
+            opacity: 0.75,
+            depthWrite: false
+        });
+        earthOrbitLine3D = new THREE.Line(earthOrbitGeo, earthOrbitMat);
+        earthOrbitLine3D.frustumCulled = false;
+        earthOrbitLine3D.renderOrder = 5;
+        scene.add(earthOrbitLine3D);
+
         // 🌐 Malla y Plano Eclíptico 3D de Referencia
         var eclipticPlaneGroup3D;
+
+        function updateEclipticIntensity(factor) {
+            const k = (factor != null) ? factor : (typeof getDOM === 'function' ? parseFloat(getDOM('slider-ecliptic-intensity')?.value || 0.35) : 0.35);
+            if (eclipticPlaneGroup3D) {
+                eclipticPlaneGroup3D.traverse((child) => {
+                    if (child.material) {
+                        child.material.opacity = k;
+                    }
+                });
+            }
+        }
+        window.updateEclipticIntensity = updateEclipticIntensity;
 
         function createEclipticPlane3D() {
             const group = new THREE.Group();
@@ -537,7 +603,8 @@ var celestialGraticuleGroup3D = null;
             // Ejes orientadores en Amarillo dorado (0xfacc15) y líneas secundarias en ámbar cálido (0xa16207)
             const gridHelper = new THREE.GridHelper(10000, 100, 0xfacc15, 0xa16207);
             gridHelper.material.transparent = true;
-            gridHelper.material.opacity = 0.50;
+            const initOpacity = typeof getDOM === 'function' ? parseFloat(getDOM('slider-ecliptic-intensity')?.value || 0.35) : 0.35;
+            gridHelper.material.opacity = initOpacity;
             gridHelper.material.depthWrite = false;
 
             // Shader de difuminado radial suave más allá de la órbita lunar (446.000 - 637.000 km = 3500 - 5000 unidades)
@@ -572,12 +639,14 @@ var celestialGraticuleGroup3D = null;
         }
 
         eclipticPlaneGroup3D = createEclipticPlane3D();
+        const chkEcliptic = (typeof getDOM === 'function' ? getDOM('chk-show-ecliptic') : document.getElementById('chk-show-ecliptic'));
+        if (chkEcliptic) eclipticPlaneGroup3D.visible = chkEcliptic.checked;
         scene.add(eclipticPlaneGroup3D);
 
         // Esfera Celeste 3D: Estrellas de referencia J2000, fondo cósmico, red astronómica y constelaciones
         try {
             if (typeof createCelestialSphere3D === 'function') {
-                celestialSphereGroup3D = createCelestialSphere3D(10000);
+                celestialSphereGroup3D = createCelestialSphere3D(3000000);
                 constellationsGroup3D = celestialSphereGroup3D ? (celestialSphereGroup3D.constellationsGroup || null) : null;
                 celestialGraticuleGroup3D = celestialSphereGroup3D ? (celestialSphereGroup3D.graticuleGroup || null) : null;
 
@@ -2166,6 +2235,14 @@ var celestialGraticuleGroup3D = null;
 
             // Vector unitario normal a la Eclíptica (N_ecl):
             const normEcliptic = latLngToVector3(latEclPole, -muEclPole, 1.0).normalize();
+            currentNormEcliptic.copy(normEcliptic);
+
+            if (isEclipticOrientation && !cameraTransition) {
+                if (camera && camera.up.distanceTo(currentNormEcliptic) > 0.001) {
+                    camera.up.copy(currentNormEcliptic);
+                    if (controls) controls.update();
+                }
+            }
 
             if (eclipticPlaneGroup3D && showEcliptic) {
                 eclipticPlaneGroup3D.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), normEcliptic);
@@ -2254,6 +2331,32 @@ var celestialGraticuleGroup3D = null;
                     }
                     moonOrbitLine3D.geometry.setFromPoints(pts);
                     moonOrbitLine3D.geometry.computeBoundingSphere();
+                }
+            }
+
+            // Actualizar Órbita Terrestre 3D curva inercial alrededor del Sol en el plano eclíptico
+            if (earthOrbitLine3D) {
+                const showEarthOrbit = getDOM('chk-show-earth-orbit')?.checked ?? true;
+                earthOrbitLine3D.visible = showEarthOrbit;
+                const hasEarthOrbitPoints = earthOrbitLine3D.geometry.attributes.position && earthOrbitLine3D.geometry.attributes.position.count > 0;
+                if (isEclipseGeometryDirty || !hasEarthOrbitPoints) {
+                    const pts = [];
+                    const segments = 300;
+                    // Arco de órbita terrestre alrededor del Sol: +/- 20 grados (~40 días de trayectoria heliocéntrica)
+                    const maxAngleRad = 20.0 * Math.PI / 180;
+                    for (let i = 0; i <= segments; i++) {
+                        const phi = -maxAngleRad + (2 * maxAngleRad * (i / segments));
+                        // Vector desde el Sol hacia la posición orbital terrestre a ángulo phi:
+                        // C_sol = wCanon * SUN_DIST
+                        // P(phi) = C_sol + SUN_DIST * (-wCanon * cos(phi) - uLambda * sin(phi))
+                        // P(phi) = SUN_DIST * ( (1 - cos(phi)) * wCanon - sin(phi) * uLambda )
+                        const p = new THREE.Vector3()
+                            .addScaledVector(wCanon, SUN_DIST * (1.0 - Math.cos(phi)))
+                            .addScaledVector(uLambda, -SUN_DIST * Math.sin(phi));
+                        pts.push(p);
+                    }
+                    earthOrbitLine3D.geometry.setFromPoints(pts);
+                    earthOrbitLine3D.geometry.computeBoundingSphere();
                 }
             }
 
@@ -2453,37 +2556,38 @@ var celestialGraticuleGroup3D = null;
 
                 if (isExtreme) {
                     if (_elPlayerTimeLocalLabel && _elPlayerTimeLocalLabel.textContent !== 'UT1') _elPlayerTimeLocalLabel.textContent = 'UT1';
-                    if (_elPlayerTimeUtcLabel && _elPlayerTimeUtcLabel.textContent !== 'TT') _elPlayerTimeUtcLabel.textContent = 'TT';
                     if (_elTimeLocalText && _elTimeLocalText.textContent !== utTimeStr) _elTimeLocalText.textContent = utTimeStr;
 
-                    const ttDecHour = (e.t0 || 12) + t;
-                    const ttDateObj = new Date(baseMidnightUtc + Math.round(ttDecHour * 3600 * 1000));
-                    const ttH = ttDateObj.getUTCHours();
-                    const ttM = ttDateObj.getUTCMinutes();
-                    const ttS = ttDateObj.getUTCSeconds();
-                    const ttTimeStr = `${String(ttH).padStart(2,'0')}:${String(ttM).padStart(2,'0')}:${String(ttS).padStart(2,'0')}`;
-                    if (_elTimeUtcText && _elTimeUtcText.textContent !== ttTimeStr) {
-                        _elTimeUtcText.textContent = ttTimeStr;
+                    if (_elTimeUtcText) {
+                        const ttDecHour = (e.t0 || 12) + t;
+                        const ttDateObj = new Date(baseMidnightUtc + Math.round(ttDecHour * 3600 * 1000));
+                        const ttH = ttDateObj.getUTCHours();
+                        const ttM = ttDateObj.getUTCMinutes();
+                        const ttS = ttDateObj.getUTCSeconds();
+                        const ttTimeStr = `${String(ttH).padStart(2,'0')}:${String(ttM).padStart(2,'0')}:${String(ttS).padStart(2,'0')}`;
+                        if (_elTimeUtcText.textContent !== ttTimeStr) {
+                            _elTimeUtcText.textContent = ttTimeStr;
+                        }
                     }
                 } else {
-                    if (_elPlayerTimeLocalLabel && _elPlayerTimeLocalLabel.textContent !== 'Obs.') _elPlayerTimeLocalLabel.textContent = 'Obs.';
-                    if (_elPlayerTimeUtcLabel && _elPlayerTimeUtcLabel.textContent !== 'UTC') _elPlayerTimeUtcLabel.textContent = 'UTC';
+                    const tz = (currentObserver && currentObserver.tz) || (currentObserver ? getTimeZoneFromLon(currentObserver.lon || 0) : "Europe/Madrid");
+                    const tzStr = (typeof getUtcOffsetString === 'function') ? getUtcOffsetString(tz, utDateObj) : 'UTC';
+                    if (_elPlayerTimeLocalLabel && _elPlayerTimeLocalLabel.textContent !== tzStr) {
+                        _elPlayerTimeLocalLabel.textContent = tzStr;
+                    }
                     if (_elTimeUtcText && _elTimeUtcText.textContent !== utTimeStr) {
                         _elTimeUtcText.textContent = utTimeStr;
                     }
 
                     if (_elTimeLocalText && currentObserver) {
-                        const tz = currentObserver.tz || getTimeZoneFromLon(currentObserver.lon || 0);
                         try {
                             const localTimeStr = getCachedTimeFormatter(tz).format(utDateObj);
-                            const tzOffsetStr = getUtcOffsetString(tz, utDateObj);
-                            const fullLocalStr = `${localTimeStr} ${tzOffsetStr}`;
-                            if (_elTimeLocalText.textContent !== fullLocalStr) {
-                                _elTimeLocalText.textContent = fullLocalStr;
+                            if (_elTimeLocalText.textContent !== localTimeStr) {
+                                _elTimeLocalText.textContent = localTimeStr;
                             }
                         } catch(err) {
-                            if (_elTimeLocalText.textContent !== `${utTimeStr} UTC`) {
-                                _elTimeLocalText.textContent = `${utTimeStr} UTC`;
+                            if (_elTimeLocalText.textContent !== utTimeStr) {
+                                _elTimeLocalText.textContent = utTimeStr;
                             }
                         }
                     }
@@ -2741,6 +2845,7 @@ if (typeof window !== 'undefined') {
     window.umbraConeMesh3D = umbraConeMesh3D;
     window.penumbraConeMesh3D = penumbraConeMesh3D;
     window.moonOrbitLine3D = moonOrbitLine3D;
+    window.earthOrbitLine3D = earthOrbitLine3D;
     window.eclipticPlaneGroup3D = eclipticPlaneGroup3D;
     window.celestialSphereGroup3D = celestialSphereGroup3D;
     window.constellationsGroup3D = constellationsGroup3D;
@@ -2748,6 +2853,8 @@ if (typeof window !== 'undefined') {
     window.observerMarkerGroup3D = observerMarkerGroup3D;
     window.subsolarMarkerGroup = subsolarMarkerGroup;
     window.sublunarMarkerGroup = sublunarMarkerGroup;
+    window.currentNormEcliptic = currentNormEcliptic;
+    window.setScene3DOrientation = setScene3DOrientation;
     window.pathLine = pathLine;
     window.totalityNorthLine = totalityNorthLine;
     window.totalitySouthLine = totalitySouthLine;
@@ -2769,6 +2876,8 @@ if (typeof window !== 'undefined') {
         controls,
         updateDynamicControlsSensitivity,
         transitionCamera,
+        setScene3DOrientation,
+        currentNormEcliptic,
         handle3DSpaceClick,
         latLngToVector3,
         vector3ToLatLng,
@@ -2776,6 +2885,10 @@ if (typeof window !== 'undefined') {
         updateShadowAtTime,
         updateUmbraMesh3D,
         updateMoonOrbit,
+        earthOrbitLine3D,
+        moonOrbitLine3D,
+        eclipticPlaneGroup3D,
+        updateEclipticIntensity,
         updateGraticule,
         recenterEarth,
         recenterEclipseGE,
