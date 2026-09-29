@@ -865,9 +865,9 @@ input:focus, select:focus {
 
 @media (max-width: 900px) {
     .live-indicator-badge {
-        top: 56px;
+        top: 12px;
         right: 12px !important;
-        padding: 4px 10px;
+        padding: 4px 8px;
     }
     .live-text {
         font-size: 0.70rem;
@@ -1743,12 +1743,12 @@ body.view-route .floating-top-search-container {
 
 @media (max-width: 900px) {
     .top-nav-bar {
-        top: 15px;
-        left: 15px;
+        top: 12px;
+        left: 12px;
         display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 8px;
+        flex-direction: row;
+        align-items: center;
+        gap: 6px;
         z-index: var(--z-nav) !important;
     }
 
@@ -1758,10 +1758,10 @@ body.view-route .floating-top-search-container {
     }
 
     .reopen-btn {
-        padding: 0 13px;
-        font-size: 0.82rem;
-        height: 38px;
-        border-radius: 16px;
+        padding: 0 10px;
+        font-size: 0.74rem;
+        height: 32px;
+        border-radius: 12px;
     }
 
     .sidebar-panel {
@@ -1812,14 +1812,24 @@ body.view-route .floating-top-search-container {
         display: none !important;
     }
 
+    .floating-top-search-container {
+        top: 50px !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+    }
+
     .floating-top-search-container.is-collapsed {
         width: auto !important;
-        max-width: min(calc(100vw - 20px), 340px) !important;
+        max-width: calc(100vw - 20px) !important;
+    }
+
+    .floating-top-search-container.is-collapsed .pill-label-text {
+        max-width: 115px;
     }
 
     .floating-top-search-container:not(.is-collapsed) {
-        width: min(calc(100vw - 20px), calc(100dvw - 20px), 350px) !important;
-        max-width: 350px !important;
+        width: calc(100vw - 20px) !important;
+        max-width: 360px !important;
     }
 
     .playback-dock {
