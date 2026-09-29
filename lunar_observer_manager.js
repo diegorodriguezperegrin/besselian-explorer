@@ -199,6 +199,7 @@ function _getDOM(id) {
             }
             updateObserverPosition(preset.lat, preset.lon, preset.name, preset.tz);
             closeObserverDropdown();
+            triggerLocationConfirmationPulse();
         }
 
         function onObserverInputKeyDown(e) {
@@ -318,6 +319,7 @@ function _getDOM(id) {
                         recenterEarth(lat, lon);
                     }
                     collapseLocationSearch();
+                    triggerLocationConfirmationPulse();
 
                     gpsBtns.forEach(b => b.innerHTML = '<i class="fa-solid fa-crosshairs" style="color: #4ade80;"></i>');
                     setTimeout(() => {
@@ -392,6 +394,86 @@ function _getDOM(id) {
             scene3DNeedsRender = true;
         }
 
+        /**
+         * Dispara la animación de confirmación de ubicación (idéntica a SEE):
+         * - Muestra estado "Ubicación fijada" con verde esmeralda y destello en el botón de confirmación si existe.
+         * - Genera un pulso verde (location-target-pulse) en la tarjeta de Visibilidad Local (o en el botón de reapertura si está colapsado).
+         * - Genera un pulso suave en la píldora flotante superior de búsqueda.
+         * - Hace rebotar el marcador del observador 3D (pin bounce).
+         */
+        function triggerLocationConfirmationPulse(btn = null) {
+            // 1. Efecto en el botón (si fue accionado directamente o pasado como parámetro)
+            if (btn && document.body.contains(btn)) {
+                btn.style.pointerEvents = 'none';
+                btn.innerHTML = '<i class="fa-solid fa-check"></i> Ubicación fijada';
+                btn.style.background = 'rgba(34, 197, 94, 0.25)';
+                btn.style.borderColor = '#22c55e';
+                btn.style.color = '#22c55e';
+                btn.style.boxShadow = '0 0 14px rgba(34, 197, 94, 0.5)';
+            }
+
+            // 2. Destello verde en la tarjeta de Visibilidad Local o botón de reapertura
+            const setPanel = document.getElementById('settings-panel');
+            const isPanelCollapsed = !setPanel || setPanel.classList.contains('collapsed');
+
+            let targetEl = null;
+            if (isPanelCollapsed) {
+                targetEl = document.getElementById('btn-reopen-right');
+            } else {
+                targetEl = document.querySelector('#settings-panel .observer-card') ||
+                           document.getElementById('observer-contacts-table') ||
+                           setPanel;
+            }
+
+            if (targetEl) {
+                targetEl.classList.remove('location-target-pulse');
+                void targetEl.offsetWidth; // Forzar reflujo para reiniciar la animación
+                targetEl.classList.add('location-target-pulse');
+                setTimeout(() => {
+                    if (targetEl && targetEl.classList) {
+                        targetEl.classList.remove('location-target-pulse');
+                    }
+                }, 1200);
+            }
+
+            // 3. Destello sutil en el botón / píldora de búsqueda flotante
+            const pillToggle = document.getElementById('search-pill-toggle');
+            if (pillToggle) {
+                pillToggle.classList.remove('location-target-pulse');
+                void pillToggle.offsetWidth;
+                pillToggle.classList.add('location-target-pulse');
+                setTimeout(() => {
+                    if (pillToggle && pillToggle.classList) {
+                        pillToggle.classList.remove('location-target-pulse');
+                    }
+                }, 1200);
+            }
+
+            // 4. Animación de rebote (bounce / pulse) en el pin 3D del observador
+            if (typeof observerMarkerGroup3D !== 'undefined' && observerMarkerGroup3D) {
+                const startScale = 1.0;
+                const peakScale = 1.65;
+                const dur = 600;
+                const t0 = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+                function pulsePin(now) {
+                    const elapsed = now - t0;
+                    if (elapsed < dur) {
+                        const progress = elapsed / dur;
+                        const s = startScale + (peakScale - startScale) * Math.sin(progress * Math.PI);
+                        observerMarkerGroup3D.scale.set(s, s, s);
+                        if (typeof scene3DNeedsRender !== 'undefined') scene3DNeedsRender = true;
+                        if (typeof requestRender3D === 'function') requestRender3D();
+                        requestAnimationFrame(pulsePin);
+                    } else {
+                        observerMarkerGroup3D.scale.set(startScale, startScale, startScale);
+                        if (typeof scene3DNeedsRender !== 'undefined') scene3DNeedsRender = true;
+                        if (typeof requestRender3D === 'function') requestRender3D();
+                    }
+                }
+                requestAnimationFrame(pulsePin);
+            }
+        }
+
 
         // =========================================================================
         // MODO SELECCIÓN INTERACTIVA DE UBICACIÓN EN EL GLOBO TERRÁQUEO 3D
@@ -446,7 +528,21 @@ function _getDOM(id) {
             updateTopNavButtonsState();
 
             const banner = document.getElementById('globe-picking-banner');
-            if (banner) banner.style.display = 'flex';
+            if (banner) {
+                banner.style.transition = '';
+                banner.style.opacity = '';
+                banner.style.transform = '';
+                banner.style.display = 'flex';
+                const confirmBtn = banner.querySelector('.primary-btn');
+                if (confirmBtn) {
+                    confirmBtn.innerHTML = '<i class="fa-solid fa-check"></i> Listo';
+                    confirmBtn.style.pointerEvents = '';
+                    confirmBtn.style.background = '';
+                    confirmBtn.style.borderColor = '';
+                    confirmBtn.style.color = '';
+                    confirmBtn.style.boxShadow = '';
+                }
+            }
             const coordsText = document.getElementById('globe-picking-coords-text');
             if (coordsText) coordsText.textContent = formatLatLonString(currentObserver.lat, currentObserver.lon);
 
@@ -511,16 +607,11 @@ function _getDOM(id) {
             }
         }
 
-        function confirmGlobePicking() {
+        function confirmGlobePicking(btn = null) {
             if (!isGlobePickingMode) return;
-            isGlobePickingMode = false;
 
             const banner = document.getElementById('globe-picking-banner');
-            if (banner) banner.style.display = 'none';
-
-            if (renderer3D && renderer3D.domElement) {
-                renderer3D.domElement.style.cursor = '';
-            }
+            const confirmBtn = btn || (banner ? banner.querySelector('.primary-btn') : null);
 
             if (tempPickedLat !== null && tempPickedLon !== null) {
                 let matchedPreset = null;
@@ -541,18 +632,51 @@ function _getDOM(id) {
                 updateObserverPosition(tempPickedLat, tempPickedLon, name, tz);
             }
 
-            if (preGlobePickingState) {
-                if (controls3D) {
-                    controls3D.minDistance = preGlobePickingState.minDist;
-                    controls3D.maxDistance = preGlobePickingState.maxDist;
+            // Disparar animación de confirmación idéntica a SEE (botón, tarjeta Visibilidad Local, píldora, pin 3D)
+            triggerLocationConfirmationPulse(confirmBtn);
+
+            // Desvanecer el banner con suavidad y restablecer estado de la cámara
+            setTimeout(() => {
+                isGlobePickingMode = false;
+                if (banner) {
+                    banner.style.transition = 'opacity 0.35s ease, transform 0.35s ease';
+                    banner.style.opacity = '0';
+                    banner.style.transform = 'translate(-50%, -10px)';
                 }
-                if (preGlobePickingState.sideOpen) toggleSidebar(true);
-                if (preGlobePickingState.setOpen) toggleSettingsPanel(true);
-                if (preGlobePickingState.dockOpen) togglePlaybackDock(true);
-                transitionCamera3D(preGlobePickingState.camTarget, preGlobePickingState.camPos, preGlobePickingState.minDist, 700);
-                preGlobePickingState = null;
-            }
-            requestRender3D();
+
+                setTimeout(() => {
+                    if (banner) {
+                        banner.style.display = 'none';
+                        banner.style.opacity = '';
+                        banner.style.transform = '';
+                    }
+                    if (confirmBtn) {
+                        confirmBtn.innerHTML = '<i class="fa-solid fa-check"></i> Listo';
+                        confirmBtn.style.pointerEvents = '';
+                        confirmBtn.style.background = '';
+                        confirmBtn.style.borderColor = '';
+                        confirmBtn.style.color = '';
+                        confirmBtn.style.boxShadow = '';
+                    }
+
+                    if (renderer3D && renderer3D.domElement) {
+                        renderer3D.domElement.style.cursor = '';
+                    }
+
+                    if (preGlobePickingState) {
+                        if (controls3D) {
+                            controls3D.minDistance = preGlobePickingState.minDist;
+                            controls3D.maxDistance = preGlobePickingState.maxDist;
+                        }
+                        if (preGlobePickingState.sideOpen) toggleSidebar(true);
+                        if (preGlobePickingState.setOpen) toggleSettingsPanel(true);
+                        if (preGlobePickingState.dockOpen) togglePlaybackDock(true);
+                        transitionCamera3D(preGlobePickingState.camTarget, preGlobePickingState.camPos, preGlobePickingState.minDist, 700);
+                        preGlobePickingState = null;
+                    }
+                    requestRender3D();
+                }, 350);
+            }, 500);
         }
 
         function cancelGlobePicking() {
@@ -878,6 +1002,7 @@ function _getDOM(id) {
                 recenterEarth(lat, lon);
             }
             collapseLocationSearch();
+            triggerLocationConfirmationPulse();
         }
 
         function select3DSearchCoords(lat, lon) {
@@ -892,6 +1017,7 @@ function _getDOM(id) {
                 recenterEarth(lat, lon);
             }
             collapseLocationSearch();
+            triggerLocationConfirmationPulse();
         }
 
         function selectZenithLocation() {
@@ -904,6 +1030,7 @@ function _getDOM(id) {
                 recenterEarth(lat, lon);
             }
             collapseLocationSearch();
+            triggerLocationConfirmationPulse();
         }
 
 
@@ -925,6 +1052,7 @@ if (typeof window !== 'undefined') {
     window.formatCoordDms = formatCoordDms;
     window.formatLatLonString = formatLatLonString;
     window.updateObserverPosition = updateObserverPosition;
+    window.triggerLocationConfirmationPulse = triggerLocationConfirmationPulse;
     window.isGlobePickingMode = isGlobePickingMode;
     window.toggleGlobePickingMode = toggleGlobePickingMode;
     window.startGlobePickingMode = startGlobePickingMode;
