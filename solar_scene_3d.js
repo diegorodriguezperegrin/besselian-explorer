@@ -568,12 +568,36 @@ var celestialGraticuleGroup3D = null;
         // 🌍 Órbita Terrestre 3D en el Espacio (curva inercial en el plano eclíptico alrededor del Sol)
         var earthOrbitLine3D;
         const earthOrbitGeo = new THREE.BufferGeometry();
+        earthOrbitGeo.setAttribute('alpha', new THREE.Float32BufferAttribute([1.0], 1));
         const earthOrbitMat = new THREE.LineBasicMaterial({
             color: 0x34d399,
             transparent: true,
-            opacity: 0.75,
+            opacity: 0.85,
             depthWrite: false
         });
+        earthOrbitMat.onBeforeCompile = (shader) => {
+            shader.vertexShader = `
+                attribute float alpha;
+                varying float vAlpha;
+                ${shader.vertexShader}
+            `.replace(
+                '#include <begin_vertex>',
+                `
+                #include <begin_vertex>
+                vAlpha = alpha;
+                `
+            );
+            shader.fragmentShader = `
+                varying float vAlpha;
+                ${shader.fragmentShader}
+            `.replace(
+                '#include <dithering_fragment>',
+                `
+                #include <dithering_fragment>
+                gl_FragColor.a *= vAlpha;
+                `
+            );
+        };
         earthOrbitLine3D = new THREE.Line(earthOrbitGeo, earthOrbitMat);
         earthOrbitLine3D.frustumCulled = false;
         earthOrbitLine3D.renderOrder = 5;
@@ -642,6 +666,305 @@ var celestialGraticuleGroup3D = null;
         const chkEcliptic = (typeof getDOM === 'function' ? getDOM('chk-show-ecliptic') : document.getElementById('chk-show-ecliptic'));
         if (chkEcliptic) eclipticPlaneGroup3D.visible = chkEcliptic.checked;
         scene.add(eclipticPlaneGroup3D);
+
+        // =============================================================
+        // 📐 ESQUEMA VECTORIAL DE PIZARRA BESSELIANO (besselElementsGroup3D)
+        // =============================================================
+        var besselElementsGroup3D = null;
+        var besselPlaneGroup = null;
+        var besselAxesGroup = null;
+        var besselShadowGroup = null;
+        var besselTrajectoryLine = null;
+        var _lastBesselEclipseCat = null;
+
+        function createChalkTextSprite(text, fontSize = 24) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const fontStr = `bold ${fontSize}px 'Courier New', 'Consolas', monospace`;
+            ctx.font = fontStr;
+            const textMetrics = ctx.measureText(text);
+            const textWidth = Math.ceil(textMetrics.width);
+
+            const padX = 24;
+            const padY = 14;
+            const cWidth = Math.max(96, textWidth + padX * 2);
+            const cHeight = Math.max(40, fontSize + padY * 2);
+
+            // Supersampling 2x para máxima nitidez sin pixelado en Three.js
+            const dpr = 2;
+            canvas.width = cWidth * dpr;
+            canvas.height = cHeight * dpr;
+
+            ctx.scale(dpr, dpr);
+            ctx.font = fontStr;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.95)';
+            ctx.shadowBlur = 8;
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText(text, cWidth / 2, cHeight / 2);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            const mat = new THREE.SpriteMaterial({ map: texture, transparent: true, depthTest: false, depthWrite: false });
+            const sprite = new THREE.Sprite(mat);
+
+            const worldHeight = fontSize * 0.30;
+            const aspect = cWidth / cHeight;
+            sprite.scale.set(worldHeight * aspect, worldHeight, 1);
+            sprite.renderOrder = 20;
+            sprite.frustumCulled = false;
+            return sprite;
+        }
+
+        function createBesselElementsGroup() {
+            const group = new THREE.Group();
+            group.renderOrder = 8;
+            group.visible = false;
+
+            // 1. PLANO FUNDAMENTAL DE BESSEL (z = 0)
+            besselPlaneGroup = new THREE.Group();
+            besselPlaneGroup.name = 'besselPlaneGroup';
+
+            const R_FUND = EARTH_RADIUS * 1.65; // ~82.5 unidades
+            const planeGeo = new THREE.CircleGeometry(R_FUND, 64);
+            const planeMat = new THREE.MeshBasicMaterial({
+                color: 0xffffff,
+                transparent: true,
+                opacity: 0.05,
+                side: THREE.DoubleSide,
+                depthWrite: false
+            });
+            const planeMesh = new THREE.Mesh(planeGeo, planeMat);
+            besselPlaneGroup.add(planeMesh);
+
+            // Borde exterior del plano fundamental
+            const outerCirclePts = [];
+            for (let i = 0; i <= 64; i++) {
+                const a = (i / 64) * Math.PI * 2;
+                outerCirclePts.push(new THREE.Vector3(Math.cos(a) * R_FUND, Math.sin(a) * R_FUND, 0));
+            }
+            const outerCircleGeo = new THREE.BufferGeometry().setFromPoints(outerCirclePts);
+            const outerCircleMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.65 });
+            besselPlaneGroup.add(new THREE.Line(outerCircleGeo, outerCircleMat));
+
+            // Círculo de corte de la Tierra (Radio = 1.0 = EARTH_RADIUS)
+            const earthCirclePts = [];
+            for (let i = 0; i <= 64; i++) {
+                const a = (i / 64) * Math.PI * 2;
+                earthCirclePts.push(new THREE.Vector3(Math.cos(a) * EARTH_RADIUS, Math.sin(a) * EARTH_RADIUS, 0));
+            }
+            const earthCircleGeo = new THREE.BufferGeometry().setFromPoints(earthCirclePts);
+            const earthCircleMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.35 });
+            besselPlaneGroup.add(new THREE.Line(earthCircleGeo, earthCircleMat));
+
+            // Ejes cartesianos cruzados en el plano fundamental
+            const axesGridPts = [
+                new THREE.Vector3(-R_FUND, 0, 0), new THREE.Vector3(R_FUND, 0, 0),
+                new THREE.Vector3(0, -R_FUND, 0), new THREE.Vector3(0, R_FUND, 0)
+            ];
+            const axesGridGeo = new THREE.BufferGeometry().setFromPoints(axesGridPts);
+            const axesGridMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.3 });
+            besselPlaneGroup.add(new THREE.LineSegments(axesGridGeo, axesGridMat));
+
+            // Rótulo del Plano Fundamental
+            const planeLabelSprite = createChalkTextSprite('Plano Fundamental (z = 0)', 18);
+            planeLabelSprite.position.set(0, -R_FUND - 6.0, 0);
+            besselPlaneGroup.add(planeLabelSprite);
+
+            group.add(besselPlaneGroup);
+
+            // 2. TRIEDRO ORTONORMAL DE BESSEL (u, v, w)
+            besselAxesGroup = new THREE.Group();
+            besselAxesGroup.name = 'besselAxesGroup';
+
+            const arrowLenUV = R_FUND * 1.1; // ~90 unidades
+            const arrowLenW = EARTH_RADIUS * 2.3; // ~115 unidades
+            const headLen = 6.0;
+            const headRad = 2.2;
+
+            function makeAxis(dir, len, labelText) {
+                const axGrp = new THREE.Group();
+                const lineGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), dir.clone().multiplyScalar(len)]);
+                const lineMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.95 });
+                axGrp.add(new THREE.Line(lineGeo, lineMat));
+
+                const coneGeo = new THREE.ConeGeometry(headRad, headLen, 16);
+                const coneMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.95 });
+                const cone = new THREE.Mesh(coneGeo, coneMat);
+                cone.position.copy(dir.clone().multiplyScalar(len - headLen * 0.5));
+                cone.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
+                axGrp.add(cone);
+
+                const sprite = createChalkTextSprite(labelText, 24);
+                sprite.position.copy(dir.clone().multiplyScalar(len + 7.5));
+                axGrp.add(sprite);
+
+                return axGrp;
+            }
+
+            besselAxesGroup.add(makeAxis(new THREE.Vector3(1, 0, 0), arrowLenUV, 'u (X)'));
+            besselAxesGroup.add(makeAxis(new THREE.Vector3(0, 1, 0), arrowLenUV, 'v (Y)'));
+            besselAxesGroup.add(makeAxis(new THREE.Vector3(0, 0, 1), arrowLenW, 'w (Z)'));
+            group.add(besselAxesGroup);
+
+            // 3. TRAYECTORIA DE LA SOMBRA EN EL PLANO FUNDAMENTAL
+            const trajGeo = new THREE.BufferGeometry();
+            const trajMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.65 });
+            besselTrajectoryLine = new THREE.Line(trajGeo, trajMat);
+            group.add(besselTrajectoryLine);
+
+            // 4. VECTOR DE POSICIÓN DE LA SOMBRA r(x, y), CÍRCULOS l1, l2 Y EJE DE LA SOMBRA
+            besselShadowGroup = new THREE.Group();
+            besselShadowGroup.name = 'besselShadowGroup';
+
+            const sVecGeo = new THREE.BufferGeometry();
+            const sVecMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.95 });
+            const sVecLine = new THREE.Line(sVecGeo, sVecMat);
+            sVecLine.name = 'sVecLine';
+            besselShadowGroup.add(sVecLine);
+
+            const sConeGeo = new THREE.ConeGeometry(headRad * 0.85, headLen * 0.85, 16);
+            const sConeMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.95 });
+            const sConeMesh = new THREE.Mesh(sConeGeo, sConeMat);
+            sConeMesh.name = 'sConeMesh';
+            besselShadowGroup.add(sConeMesh);
+
+            const sPointGeo = new THREE.SphereGeometry(1.2, 16, 16);
+            const sPointMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.95 });
+            const sPointMesh = new THREE.Mesh(sPointGeo, sPointMat);
+            sPointMesh.name = 'sPointMesh';
+            besselShadowGroup.add(sPointMesh);
+
+            const sTextSprite = createChalkTextSprite('r (x, y)', 22);
+            sTextSprite.name = 'sTextSprite';
+            besselShadowGroup.add(sTextSprite);
+
+            const unitCirclePts = [];
+            for (let i = 0; i <= 64; i++) {
+                const a = (i / 64) * Math.PI * 2;
+                unitCirclePts.push(new THREE.Vector3(Math.cos(a), Math.sin(a), 0));
+            }
+            const l1Geo = new THREE.BufferGeometry().setFromPoints(unitCirclePts);
+            const l1Mat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.65 });
+            const l1Line = new THREE.LineLoop(l1Geo, l1Mat);
+            l1Line.name = 'l1Line';
+            besselShadowGroup.add(l1Line);
+
+            const l2Geo = new THREE.BufferGeometry().setFromPoints(unitCirclePts);
+            const l2Mat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.85 });
+            const l2Line = new THREE.LineLoop(l2Geo, l2Mat);
+            l2Line.name = 'l2Line';
+            besselShadowGroup.add(l2Line);
+
+            const axisLineGeo = new THREE.BufferGeometry();
+            const axisLineMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.45 });
+            const axisLine = new THREE.Line(axisLineGeo, axisLineMat);
+            axisLine.name = 'shadowAxisLine';
+            besselShadowGroup.add(axisLine);
+
+            group.add(besselShadowGroup);
+
+            return group;
+        }
+
+        function updateBesselElements3D(e, t, uCanon, vCanon, wCanon, x, y, l1, l2, moonPos) {
+            if (!besselElementsGroup3D || !e) return;
+
+            const besselBasis = new THREE.Matrix4().makeBasis(uCanon, vCanon, wCanon);
+
+            if (besselPlaneGroup) {
+                besselPlaneGroup.quaternion.setFromRotationMatrix(besselBasis);
+            }
+            if (besselAxesGroup) {
+                besselAxesGroup.quaternion.setFromRotationMatrix(besselBasis);
+            }
+
+            if (besselTrajectoryLine && (_lastBesselEclipseCat !== e.cat_no || !besselTrajectoryLine.geometry.attributes.position)) {
+                _lastBesselEclipseCat = e.cat_no;
+                const bounds = (typeof getEclipseTimeBounds === 'function')
+                    ? getEclipseTimeBounds(e)
+                    : (typeof BesselianEngine !== 'undefined' && typeof BesselianEngine.getEclipseTimeBounds === 'function')
+                        ? BesselianEngine.getEclipseTimeBounds(e)
+                        : null;
+                const t0 = bounds ? (bounds.tClosest - bounds.deltaT) : -3.0;
+                const t1 = bounds ? (bounds.tClosest + bounds.deltaT) : 3.0;
+                const segs = 100;
+                const trajPts = [];
+                for (let i = 0; i <= segs; i++) {
+                    const ti = t0 + (t1 - t0) * (i / segs);
+                    const xi = (e.x0 || 0) + (e.x1 || 0) * ti + (e.x2 || 0) * ti * ti + (e.x3 || 0) * ti * ti * ti;
+                    const yi = (e.y0 || 0) + (e.y1 || 0) * ti + (e.y2 || 0) * ti * ti + (e.y3 || 0) * ti * ti * ti;
+                    trajPts.push(
+                        new THREE.Vector3()
+                            .addScaledVector(uCanon, xi * EARTH_RADIUS)
+                            .addScaledVector(vCanon, yi * EARTH_RADIUS)
+                    );
+                }
+                besselTrajectoryLine.geometry.setFromPoints(trajPts);
+                besselTrajectoryLine.geometry.computeBoundingSphere();
+            }
+
+            const pShadow = new THREE.Vector3()
+                .addScaledVector(uCanon, x * EARTH_RADIUS)
+                .addScaledVector(vCanon, y * EARTH_RADIUS);
+
+            if (besselShadowGroup) {
+                const sVecLine = besselShadowGroup.getObjectByName('sVecLine');
+                if (sVecLine) {
+                    sVecLine.geometry.setFromPoints([new THREE.Vector3(0, 0, 0), pShadow]);
+                }
+
+                const sConeMesh = besselShadowGroup.getObjectByName('sConeMesh');
+                const sDist = pShadow.length();
+                if (sConeMesh) {
+                    if (sDist > 2.0) {
+                        sConeMesh.visible = true;
+                        const sDir = pShadow.clone().normalize();
+                        sConeMesh.position.copy(pShadow.clone().sub(sDir.clone().multiplyScalar(2.0)));
+                        sConeMesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), sDir);
+                    } else {
+                        sConeMesh.visible = false;
+                    }
+                }
+
+                const sPointMesh = besselShadowGroup.getObjectByName('sPointMesh');
+                if (sPointMesh) {
+                    sPointMesh.position.copy(pShadow);
+                }
+
+                const sTextSprite = besselShadowGroup.getObjectByName('sTextSprite');
+                if (sTextSprite) {
+                    sTextSprite.position.copy(pShadow).addScaledVector(uCanon, 5.0).addScaledVector(vCanon, 5.0);
+                }
+
+                const l1Line = besselShadowGroup.getObjectByName('l1Line');
+                if (l1Line) {
+                    l1Line.position.copy(pShadow);
+                    l1Line.quaternion.setFromRotationMatrix(besselBasis);
+                    const l1R = Math.max(0.1, l1 * EARTH_RADIUS);
+                    l1Line.scale.set(l1R, l1R, 1.0);
+                }
+
+                const l2Line = besselShadowGroup.getObjectByName('l2Line');
+                if (l2Line) {
+                    l2Line.position.copy(pShadow);
+                    l2Line.quaternion.setFromRotationMatrix(besselBasis);
+                    const l2R = Math.max(0.1, l2 * EARTH_RADIUS);
+                    l2Line.scale.set(l2R, l2R, 1.0);
+                }
+
+                const shadowAxisLine = besselShadowGroup.getObjectByName('shadowAxisLine');
+                if (shadowAxisLine && moonPos) {
+                    const pBeyond = pShadow.clone().addScaledVector(wCanon, -EARTH_RADIUS * 1.5);
+                    shadowAxisLine.geometry.setFromPoints([moonPos, pShadow, pBeyond]);
+                }
+            }
+        }
+
+        besselElementsGroup3D = createBesselElementsGroup();
+        const chkBessel = (typeof getDOM === 'function' ? getDOM('chk-show-bessel') : document.getElementById('chk-show-bessel'));
+        if (chkBessel) besselElementsGroup3D.visible = chkBessel.checked;
+        scene.add(besselElementsGroup3D);
 
         // Esfera Celeste 3D: Estrellas de referencia J2000, fondo cósmico, red astronómica y constelaciones
         try {
@@ -2341,11 +2664,13 @@ var celestialGraticuleGroup3D = null;
                 const hasEarthOrbitPoints = earthOrbitLine3D.geometry.attributes.position && earthOrbitLine3D.geometry.attributes.position.count > 0;
                 if (isEclipseGeometryDirty || !hasEarthOrbitPoints) {
                     const pts = [];
+                    const alphas = [];
                     const segments = 300;
                     // Arco de órbita terrestre alrededor del Sol: +/- 20 grados (~40 días de trayectoria heliocéntrica)
                     const maxAngleRad = 20.0 * Math.PI / 180;
                     for (let i = 0; i <= segments; i++) {
-                        const phi = -maxAngleRad + (2 * maxAngleRad * (i / segments));
+                        const u = i / segments;
+                        const phi = -maxAngleRad + (2 * maxAngleRad * u);
                         // Vector desde el Sol hacia la posición orbital terrestre a ángulo phi:
                         // C_sol = wCanon * SUN_DIST
                         // P(phi) = C_sol + SUN_DIST * (-wCanon * cos(phi) - uLambda * sin(phi))
@@ -2354,8 +2679,15 @@ var celestialGraticuleGroup3D = null;
                             .addScaledVector(wCanon, SUN_DIST * (1.0 - Math.cos(phi)))
                             .addScaledVector(uLambda, -SUN_DIST * Math.sin(phi));
                         pts.push(p);
+
+                        // Difuminar suavemente los extremos del segmento orbital (fade in / fade out con smoothstep)
+                        const edgeNorm = Math.min(u, 1.0 - u);
+                        const tFade = Math.min(1.0, edgeNorm / 0.22);
+                        const alphaVal = tFade * tFade * (3.0 - 2.0 * tFade);
+                        alphas.push(alphaVal);
                     }
                     earthOrbitLine3D.geometry.setFromPoints(pts);
+                    earthOrbitLine3D.geometry.setAttribute('alpha', new THREE.Float32BufferAttribute(alphas, 1));
                     earthOrbitLine3D.geometry.computeBoundingSphere();
                 }
             }
@@ -2485,6 +2817,15 @@ var celestialGraticuleGroup3D = null;
 
                     penumbraConeMesh3D.position.copy(midPos);
                     penumbraConeMesh3D.quaternion.copy(coneQuat);
+                }
+            }
+
+            // 5b. Esquema Vectorial de Pizarra Besseliano 3D (triedro ortonormal, plano fundamental y vector sombra)
+            const showBessel = getDOM('chk-show-bessel')?.checked ?? false;
+            if (besselElementsGroup3D) {
+                besselElementsGroup3D.visible = showBessel;
+                if (showBessel) {
+                    updateBesselElements3D(e, t, uCanon, vCanon, wCanon, x, y, l1, l2, moonPos);
                 }
             }
 
@@ -2889,6 +3230,7 @@ if (typeof window !== 'undefined') {
         moonOrbitLine3D,
         eclipticPlaneGroup3D,
         updateEclipticIntensity,
+        besselElementsGroup3D,
         updateGraticule,
         recenterEarth,
         recenterEclipseGE,
@@ -2900,4 +3242,5 @@ if (typeof window !== 'undefined') {
         SUN_RADIUS,
         SUN_DIST
     };
+    window.besselElementsGroup3D = besselElementsGroup3D;
 }

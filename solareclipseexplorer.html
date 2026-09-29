@@ -619,18 +619,35 @@
         <span class="live-text">EN VIVO</span>
     </div>
 
-    <!-- Buscador Superior Flotante en Modo 3D (Idéntico y unificado con Modo Mapa) -->
-    <div id="space-3d-search-container" class="floating-top-search-container">
+    <!-- Buscador Superior Flotante: Píldora Inteligente Colapsable -->
+    <div id="space-3d-search-container" class="floating-top-search-container is-collapsed">
         <div style="position: relative; width: 100%;">
-            <div style="display: flex; align-items: center; background: rgba(11, 19, 41, 0.92); backdrop-filter: blur(16px); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 10px; height: 35px; padding: 0 6px 0 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.65); gap: 4px;">
-                <i class="fa-solid fa-magnifying-glass" style="color: #38bdf8; font-size: 0.78rem; margin-right: 4px; flex-shrink: 0;"></i>
-                <input type="text" id="space-3d-search-input" placeholder="Buscar municipio o coordenadas..." autocomplete="off" style="flex: 1; min-width: 0; background: transparent; border: none; outline: none; color: #f8fafc; font-size: 0.78rem; font-family: var(--font-body, system-ui);">
-                <button type="button" id="space-3d-search-clear" style="display: none; background: none; border: none; color: #94a3b8; cursor: pointer; padding: 0 4px; font-size: 0.78rem; flex-shrink: 0;" title="Limpiar"><i class="fa-solid fa-xmark"></i></button>
+            <div class="search-box-unified">
+                <!-- Botón Píldora: visible en reposo con nombre de la ubicación activa -->
+                <button type="button" id="search-pill-toggle" class="search-pill-btn" onclick="expandLocationSearch()" title="Clic para buscar municipio o coordenadas...">
+                    <i class="fa-solid fa-location-dot pill-pin-icon" aria-hidden="true"></i>
+                    <span id="search-pill-label" class="pill-label-text">Elegir ubicación...</span>
+                    <i class="fa-solid fa-magnifying-glass pill-search-icon" aria-hidden="true"></i>
+                </button>
+
+                <!-- Input de búsqueda y botón limpiar: visible al expandirse -->
+                <div id="search-input-wrapper" class="search-input-wrapper">
+                    <i class="fa-solid fa-magnifying-glass search-input-icon" aria-hidden="true"></i>
+                    <input type="text" id="space-3d-search-input" placeholder="Buscar municipio o coordenadas..." autocomplete="off">
+                    <button type="button" id="space-3d-search-clear" style="display: none; background: none; border: none; color: #94a3b8; cursor: pointer; padding: 0 4px; font-size: 0.78rem; flex-shrink: 0;" title="Limpiar"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+
+                <!-- Botonera de acciones rápidas (GPS, GE, GD): accesible siempre -->
                 <div class="search-actions-segmented-group" role="group" aria-label="Acciones rápidas de ubicación">
                     <button type="button" class="search-action-segment-btn btn-observer-gps" id="btn-space-gps" onclick="detectUserLocation()" title="Detectar mi ubicación actual (GPS)" aria-label="Usar GPS"><i class="fa-solid fa-location-crosshairs"></i></button>
                     <button type="button" class="search-action-segment-btn btn-obs-ge" id="btn-space-ge" onclick="switchObserverExtreme('GE')" title="Mayor Eclipse (GE): Mínima distancia del eje de sombra al centro de la Tierra" aria-label="Mayor Eclipse">GE</button>
                     <button type="button" class="search-action-segment-btn btn-obs-gd" id="btn-space-gd" onclick="switchObserverExtreme('GD')" title="Máxima Duración (GD): Punto de mayor duración de la fase central" aria-label="Máxima Duración">GD</button>
                 </div>
+
+                <!-- Botón de cierre para plegar a la píldora -->
+                <button type="button" id="space-3d-search-close" class="search-close-btn" onclick="collapseLocationSearch()" title="Plegar buscador" aria-label="Plegar buscador">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
             </div>
             <!-- Dropdown de resultados de autocompletado en 3D -->
             <div id="space-3d-search-dropdown" style="display: none; position: absolute; top: calc(100% + 4px); left: 0; width: 100%; background: rgba(11, 19, 41, 0.96); backdrop-filter: blur(16px); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 10px; box-shadow: 0 12px 28px rgba(0,0,0,0.85); max-height: 230px; overflow-y: auto; font-size: 0.78rem; padding: 4px 0; z-index: 1005;">
@@ -916,9 +933,9 @@
                     <input type="checkbox" id="chk-show-penumbra-rings">
                     <span>Anillos de penumbra (0–80%)</span>
                 </label>
-                <label class="checkbox-row" id="lbl-ecliptic-orientation" title="Nivelar la vista respecto al plano de la Eclíptica (horizontal), mostrando la Tierra inclinada 23,44°">
-                    <input type="checkbox" id="chk-ecliptic-orientation">
-                    <span>Orientación eclíptica</span>
+                <label class="checkbox-row" id="lbl-show-bessel" title="Esquema vectorial en pizarra blanca: triedro de Bessel (u, v, w), plano fundamental y vector de sombra (x, y)">
+                    <input type="checkbox" id="chk-show-bessel">
+                    <span>Elementos de Bessel</span>
                 </label>
 
                 <!-- Botón Desplegable de Más Opciones 3D -->
@@ -949,6 +966,10 @@
                         <input type="checkbox" id="chk-show-isomagnitudes-labels" checked>
                         <span>Rótulos</span>
                     </label>
+                    <label class="checkbox-row" id="lbl-show-horizon-lobes">
+                        <input type="checkbox" id="chk-show-horizon-lobes" checked>
+                        <span>Lóbulos de ocultación y horizonte</span>
+                    </label>
                     <label class="checkbox-row" id="lbl-show-moon-orbit">
                         <input type="checkbox" id="chk-show-moon-orbit" checked>
                         <span>Órbita de la Luna</span>
@@ -972,6 +993,10 @@
                         </label>
                         <input type="range" id="slider-ecliptic-intensity" min="0.05" max="1.0" step="0.05" value="0.35" class="mini-layer-slider" title="Intensidad y brillo del plano eclíptico" aria-label="Intensidad del plano eclíptico">
                     </div>
+                    <label class="checkbox-row" id="lbl-ecliptic-orientation" title="Nivelar la vista respecto al plano de la Eclíptica (horizontal), mostrando la Tierra inclinada 23,44°">
+                        <input type="checkbox" id="chk-ecliptic-orientation">
+                        <span>Orientación eclíptica</span>
+                    </label>
                     <label class="checkbox-row" id="lbl-show-stars">
                         <input type="checkbox" id="chk-show-stars" checked>
                         <span>Estrellas</span>
@@ -1007,10 +1032,6 @@
                     <label class="checkbox-row" id="lbl-daylight-mode">
                         <input type="checkbox" id="chk-daylight-mode">
                         <span>Iluminación global</span>
-                    </label>
-                    <label class="checkbox-row" id="lbl-show-horizon-lobes">
-                        <input type="checkbox" id="chk-show-horizon-lobes" checked>
-                        <span>Lóbulos de ocultación y horizonte</span>
                     </label>
                     <label class="checkbox-row" id="lbl-show-ut-lines">
                         <input type="checkbox" id="chk-show-ut-lines" checked>
@@ -1398,6 +1419,7 @@
             activeExtremeMode = null;
             document.querySelectorAll('.btn-obs-ge').forEach(b => b.classList.remove('active'));
             document.querySelectorAll('.btn-obs-gd').forEach(b => b.classList.remove('active'));
+            if (typeof updatePillLabel === 'function') updatePillLabel();
         }
 
         // [calculateGreatestEclipseCoords, calculateGreatestDurationCoords] Extraído a besselian_engine.js
@@ -1506,6 +1528,9 @@
             }
             updateObserverHeaderTz();
             updateSidePanelLocationName();
+            if (typeof updatePillLabel === 'function') {
+                updatePillLabel(currentObserver.name);
+            }
 
             if (currentEclipse) {
                 renderLocalSolarCircumstances();
@@ -1954,10 +1979,56 @@
                 }
                 inspectGlobeLocation(currentObserver.lat, currentObserver.lon, currentObserver.name || null, false);
             }
-            const sInput = getDOM('space-3d-search-input');
-            if (sInput) sInput.focus();
+            expandLocationSearch();
         }
         window.toggleGlobePickingMode = toggleGlobePickingMode;
+
+        function expandLocationSearch() {
+            const container = getDOM('space-3d-search-container');
+            const input = getDOM('space-3d-search-input');
+            if (!container) return;
+            container.classList.remove('is-collapsed');
+            if (input) {
+                const curName = (currentObserver && currentObserver.name && !currentObserver.name.startsWith('Mayor') && !currentObserver.name.startsWith('Máxima')) ? currentObserver.name : '';
+                input.value = curName;
+                const clearBtn = getDOM('space-3d-search-clear');
+                if (clearBtn) clearBtn.style.display = curName.length > 0 ? 'block' : 'none';
+                setTimeout(() => {
+                    input.focus();
+                    input.select();
+                }, 40);
+            }
+        }
+        window.expandLocationSearch = expandLocationSearch;
+
+        function collapseLocationSearch() {
+            const container = getDOM('space-3d-search-container');
+            const dropdown = getDOM('space-3d-search-dropdown');
+            if (container) container.classList.add('is-collapsed');
+            if (dropdown) dropdown.style.display = 'none';
+            updatePillLabel();
+        }
+        window.collapseLocationSearch = collapseLocationSearch;
+
+        function updatePillLabel(customName = null) {
+            const pillLabel = getDOM('search-pill-label');
+            if (!pillLabel) return;
+            let label = customName;
+            if (!label) {
+                if (typeof activeExtremeMode !== 'undefined' && activeExtremeMode === 'GE') {
+                    label = 'Mayor Eclipse (GE)';
+                } else if (typeof activeExtremeMode !== 'undefined' && activeExtremeMode === 'GD') {
+                    label = 'Máx. Duración (GD)';
+                } else if (currentObserver && currentObserver.name) {
+                    label = currentObserver.name;
+                } else {
+                    label = 'Elegir ubicación...';
+                }
+            }
+            pillLabel.textContent = label;
+            pillLabel.title = `Ubicación activa: ${label} (Clic para buscar)`;
+        }
+        window.updatePillLabel = updatePillLabel;
 
         function setupSpace3DSearchListeners() {
             const input = getDOM('space-3d-search-input');
@@ -2064,7 +2135,7 @@
                         if (firstItem) firstItem.click();
                     }
                 } else if (e.key === 'Escape') {
-                    dropdown.style.display = 'none';
+                    collapseLocationSearch();
                 }
             });
 
@@ -2079,9 +2150,15 @@
 
             document.addEventListener('click', (e) => {
                 if (!e.target.closest('#space-3d-search-container')) {
-                    dropdown.style.display = 'none';
+                    if (dropdown) dropdown.style.display = 'none';
+                    const container = getDOM('space-3d-search-container');
+                    if (container && !container.classList.contains('is-collapsed')) {
+                        collapseLocationSearch();
+                    }
                 }
             });
+
+            updatePillLabel();
         }
 
         function render3DSearchResults(features, originalQuery, matchedPresets = []) {
@@ -2145,6 +2222,7 @@
                 recenterEarth(lat, lon);
             }
             inspectGlobeLocation(lat, lon, null, false);
+            collapseLocationSearch();
         }
         window.select3DSearchCoords = select3DSearchCoords;
 
@@ -2158,6 +2236,7 @@
                 recenterEarth(lat, lon);
             }
             inspectGlobeLocation(lat, lon, name, false);
+            collapseLocationSearch();
         }
         window.select3DSearchResult = select3DSearchResult;
 
@@ -5189,6 +5268,16 @@
             if (typeof setScene3DOrientation === 'function') {
                 setScene3DOrientation(e.target.checked, true);
             }
+        });
+        getDOM('chk-show-bessel')?.addEventListener('change', (e) => {
+            const vis = e.target.checked;
+            if (typeof besselElementsGroup3D !== 'undefined' && besselElementsGroup3D) {
+                besselElementsGroup3D.visible = vis;
+                if (vis && typeof updateShadowAtTime === 'function' && currentEclipse) {
+                    updateShadowAtTime(typeof simCurrentT !== 'undefined' ? simCurrentT : 0);
+                }
+            }
+            requestRender();
         });
         getDOM('chk-show-ecliptic')?.addEventListener('change', (e) => {
             if (eclipticPlaneGroup3D) eclipticPlaneGroup3D.visible = e.target.checked;
