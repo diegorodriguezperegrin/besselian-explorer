@@ -4,6 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Solar Eclipse Explorer - Cosmos Mataró</title>
+    <script>
+        (function() {
+            try {
+                var isEmbedded = (window.self !== window.top) ||
+                                 (document.referrer && (document.referrer.indexOf('cosmosmataro') !== -1 || document.referrer.indexOf('wordpress') !== -1)) ||
+                                 (window.location.search && window.location.search.indexOf('embed') !== -1);
+                if (isEmbedded) {
+                    document.documentElement.classList.add('is-embedded-iframe');
+                }
+            } catch(e) {
+                document.documentElement.classList.add('is-embedded-iframe');
+            }
+        })();
+    </script>
     <meta name="description" content="Explorador interactivo de elementos besselianos y trayectorias de eclipses solares históricos y futuros (del -1999 al +3000) por Cosmos Mataró.">
     <meta name="theme-color" content="#060911">
     <meta name="author" content="Cosmos Mataró">
@@ -42,7 +56,7 @@
     <!-- FontAwesome icons (CDN con Fallback local offline) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha384-iw3OoTErCYJJB9mCa8LNS2hbsQ7M3C0EpIsO/H5+EGAkPGc6rk+V8i04oW/K5xq0" crossorigin="anonymous" onerror="this.onerror=null;this.href='vendor/fontawesome/css/all.min.css';">
     <!-- Tokens de diseño compartidos -->
-    <link rel="stylesheet" href="shared.css?v=20260916_v14">
+    <link rel="stylesheet" href="shared.css?v=20260929_v1">
     <!-- Precarga de textura terrestre 2K -->
     <link rel="preload" as="image" href="earth_topo_2048.jpg">
 
@@ -1215,7 +1229,7 @@
     <script src="celestial_sphere_3d.js?v=20260916_v14"></script>
     <script src="solar_scene_3d.js?v=20260920_v6"></script>
     <script src="eclipse_map_2d.js?v=20260920_v4"></script>
-    <script src="shared_ui_panels.js?v=20260916_v14"></script>
+    <script src="shared_ui_panels.js?v=20260929_v1"></script>
     <script>
         // RAD y DEG definidos en besselian_engine.js
 

@@ -736,6 +736,15 @@ input:focus, select:focus {
     pointer-events: auto;
 }
 
+.playback-dock.is-user-dragged {
+    bottom: auto !important;
+    transform: none !important;
+}
+
+.is-embedded-iframe .playback-dock:not(.is-user-dragged) {
+    bottom: calc(65px + env(safe-area-inset-bottom, 0px)) !important;
+}
+
 .playback-dock.collapsed {
     transform: translate(-50%, calc(100% + 50px)) !important;
     opacity: 0 !important;
@@ -1833,17 +1842,23 @@ body.view-route .floating-top-search-container {
     }
 
     .playback-dock {
+        width: min(calc(100vw - 20px), calc(100dvw - 20px), 350px) !important;
+        max-width: 350px !important;
+        padding: 6px 10px;
+        gap: 4px;
+        z-index: var(--z-nav) !important;
+    }
+
+    .playback-dock:not(.is-user-dragged) {
         position: fixed !important;
-        bottom: 12px !important;
-        bottom: calc(12px + env(safe-area-inset-bottom, 0px)) !important;
+        bottom: calc(24px + env(safe-area-inset-bottom, 0px)) !important;
         left: 50% !important;
         right: auto !important;
         transform: translateX(-50%) !important;
-        width: min(calc(100vw - 20px), calc(100dvw - 20px), 350px) !important;
-        max-width: 350px !important;
-        padding: 8px 12px;
-        gap: 5px;
-        z-index: var(--z-nav) !important;
+    }
+
+    .is-embedded-iframe .playback-dock:not(.is-user-dragged) {
+        bottom: calc(75px + env(safe-area-inset-bottom, 0px)) !important;
     }
 
     .playback-dock.collapsed {
@@ -1853,8 +1868,8 @@ body.view-route .floating-top-search-container {
     }
 
     .playback-dock-top {
-        flex-wrap: wrap;
-        gap: 4px;
+        flex-wrap: nowrap;
+        gap: 6px;
     }
 
     .playback-dock-bottom {

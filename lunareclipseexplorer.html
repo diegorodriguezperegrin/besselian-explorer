@@ -4,6 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lunar Eclipse Explorer - Cosmos Mataró</title>
+    <script>
+        (function() {
+            try {
+                var isEmbedded = (window.self !== window.top) ||
+                                 (document.referrer && (document.referrer.indexOf('cosmosmataro') !== -1 || document.referrer.indexOf('wordpress') !== -1)) ||
+                                 (window.location.search && window.location.search.indexOf('embed') !== -1);
+                if (isEmbedded) {
+                    document.documentElement.classList.add('is-embedded-iframe');
+                }
+            } catch(e) {
+                document.documentElement.classList.add('is-embedded-iframe');
+            }
+        })();
+    </script>
     <meta name="description" content="Explorador y simulador telescópico de eclipses lunares con datos del catálogo de 5 milenios de la NASA (Espenak & Meeus) por Cosmos Mataró.">
     <meta name="theme-color" content="#060911">
     <meta name="author" content="Cosmos Mataró">

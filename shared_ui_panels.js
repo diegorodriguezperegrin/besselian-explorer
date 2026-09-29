@@ -124,6 +124,7 @@ function updateTopNavButtonsState() {
         function resetPanelDefaultPosition(panelId) {
             const panel = getDOM(panelId);
             if (!panel) return;
+            panel.classList.remove('is-user-dragged');
             panel.style.left = '';
             panel.style.top = '';
             panel.style.right = panelId === 'lunar-limb-panel' ? '375px' : '';
@@ -157,24 +158,39 @@ function updateTopNavButtonsState() {
 
                 // Doble clic en la cabecera restablece su posición original anclada
                 header.addEventListener('dblclick', (e) => {
-                    if (window.innerWidth <= 900) return;
+                    if (window.innerWidth <= 900 && panel.id !== 'playback-dock') return;
                     if (e.target.closest('.panel-toggle') || e.target.closest('button') || e.target.closest('a')) return;
                     resetPanelDefaultPosition(panel.id);
                 });
+
+                // Doble toque táctil para restablecer posición en móviles
+                let lastTapTime = 0;
+                header.addEventListener('touchend', (e) => {
+                    if (panel.id !== 'playback-dock') return;
+                    if (e.target.closest('.panel-toggle') || e.target.closest('button') || e.target.closest('a')) return;
+                    const now = Date.now();
+                    if (now - lastTapTime < 350) {
+                        resetPanelDefaultPosition(panel.id);
+                        lastTapTime = 0;
+                    } else {
+                        lastTapTime = now;
+                    }
+                }, { passive: true });
 
                 let isDragging = false;
                 let startX = 0, startY = 0;
                 let startLeft = 0, startTop = 0;
 
                 header.addEventListener('pointerdown', (e) => {
-                    // Desactivar arrastre libre en móviles o pantallas táctiles pequeñas
-                    if (window.innerWidth <= 900) return;
+                    // Desactivar arrastre libre en móviles para paneles laterales, pero permitirlo en playback-dock
+                    if (window.innerWidth <= 900 && panel.id !== 'playback-dock') return;
                     // Evitar arrastre si se pulsa el botón de cerrar u otros controles interactivos
                     if (e.target.closest('.panel-toggle') || e.target.closest('button') || e.target.closest('input') || e.target.closest('select') || e.target.closest('a')) return;
                     // Solo responder al botón principal del ratón (0) o contacto táctil
-                    if (e.button !== 0) return;
+                    if (e.pointerType === 'mouse' && e.button !== 0) return;
 
                     isDragging = true;
+                    panel.classList.add('is-user-dragged');
                     header.setPointerCapture(e.pointerId);
                     header.classList.add('is-dragging');
                     document.body.classList.add('is-dragging-panel');
@@ -437,6 +453,13 @@ window.addEventListener('resize', () => {
         if (!p || p.classList.contains('collapsed')) return;
         
         if (isSmall) {
+            if (id === 'playback-dock' && p.classList.contains('is-user-dragged')) {
+                const maxL = Math.max(10, window.innerWidth - p.offsetWidth - 10);
+                const maxT = Math.max(10, window.innerHeight - p.offsetHeight - 10);
+                if (p.offsetLeft > maxL) p.style.left = `${maxL}px`;
+                if (p.offsetTop > maxT) p.style.top = `${maxT}px`;
+                return;
+            }
             p.style.left = '';
             p.style.top = '';
             p.style.right = '';
