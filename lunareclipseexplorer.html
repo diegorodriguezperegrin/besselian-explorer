@@ -8,7 +8,7 @@
         (function() {
             try {
                 var isEmbedded = (window.self !== window.top) ||
-                                 (document.referrer && (document.referrer.indexOf('cosmosmataro') !== -1 || document.referrer.indexOf('wordpress') !== -1)) ||
+                                 (document.referrer && (document.referrer.indexOf('cosmosmataro') !== -1 || document.referrer.indexOf('google') !== -1)) ||
                                  (window.location.search && window.location.search.indexOf('embed') !== -1);
                 if (isEmbedded) {
                     document.documentElement.classList.add('is-embedded-iframe');
