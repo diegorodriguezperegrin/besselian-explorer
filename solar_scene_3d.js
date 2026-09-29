@@ -603,7 +603,7 @@ var celestialGraticuleGroup3D = null;
         earthOrbitLine3D.renderOrder = 5;
         scene.add(earthOrbitLine3D);
 
-        // 🌐 Malla y Plano Eclíptico 3D de Referencia
+        // 🌐 Plano Eclíptico 3D Semitransparente de Referencia
         var eclipticPlaneGroup3D;
 
         function updateEclipticIntensity(factor) {
@@ -611,7 +611,8 @@ var celestialGraticuleGroup3D = null;
             if (eclipticPlaneGroup3D) {
                 eclipticPlaneGroup3D.traverse((child) => {
                     if (child.material) {
-                        child.material.opacity = k;
+                        const base = (child.userData && child.userData.baseOpacity !== undefined) ? child.userData.baseOpacity : 1.0;
+                        child.material.opacity = k * base;
                     }
                 });
             }
@@ -620,45 +621,78 @@ var celestialGraticuleGroup3D = null;
 
         function createEclipticPlane3D() {
             const group = new THREE.Group();
+            group.name = 'eclipticPlaneGroup3D';
+            group.renderOrder = 3;
 
-            // GridHelper 3D vectorial en el plano de la Eclíptica
-            // Escala Unificada: 100 Diámetros Terrestres (1.274.200 km = 10.000 unidades)
-            // 100 divisiones -> Cada celda mide exactamente 1 Diámetro Terrestre (2 R_E = 100u = 12.742 km)
-            // Ejes orientadores en Amarillo dorado (0xfacc15) y líneas secundarias en ámbar cálido (0xa16207)
-            const gridHelper = new THREE.GridHelper(10000, 100, 0xfacc15, 0xa16207);
-            gridHelper.material.transparent = true;
-            const initOpacity = typeof getDOM === 'function' ? parseFloat(getDOM('slider-ecliptic-intensity')?.value || 0.35) : 0.35;
-            gridHelper.material.opacity = initOpacity;
-            gridHelper.material.depthWrite = false;
+            // Escala del plano eclíptico: radio 5.000 unidades (engloba la Tierra y toda la órbita lunar con holgura)
+            const R_ECLIPTIC = 5000.0;
+            const initFactor = typeof getDOM === 'function' ? parseFloat(getDOM('slider-ecliptic-intensity')?.value || 0.35) : 0.35;
 
-            // Shader de difuminado radial suave más allá de la órbita lunar (446.000 - 637.000 km = 3500 - 5000 unidades)
-            gridHelper.material.onBeforeCompile = (shader) => {
-                shader.vertexShader = `
-                    varying vec3 vWorldPos;
-                    ${shader.vertexShader}
-                `.replace(
-                    '#include <begin_vertex>',
-                    `
-                    #include <begin_vertex>
-                    vWorldPos = (modelMatrix * vec4(position, 1.0)).xyz;
-                    `
-                );
-                
-                shader.fragmentShader = `
-                    varying vec3 vWorldPos;
-                    ${shader.fragmentShader}
-                `.replace(
-                    '#include <dithering_fragment>',
-                    `
-                    #include <dithering_fragment>
-                    float dist = length(vWorldPos);
-                    float fade = 1.0 - smoothstep(3500.0, 5000.0, dist);
-                    gl_FragColor.a *= fade;
-                    `
-                );
-            };
+            // 1. Superficie de plano semitransparente (disco circular horizontal en plano XZ, normal +Y)
+            const planeGeo = new THREE.CircleGeometry(R_ECLIPTIC, 128);
+            planeGeo.rotateX(-Math.PI / 2);
+            const planeMat = new THREE.MeshBasicMaterial({
+                color: 0xfacc15,
+                transparent: true,
+                opacity: 0.10 * initFactor,
+                side: THREE.DoubleSide,
+                depthWrite: false
+            });
+            planeMat.userData = { baseOpacity: 0.10 };
+            const planeMesh = new THREE.Mesh(planeGeo, planeMat);
+            planeMesh.name = 'eclipticPlaneMesh';
+            group.add(planeMesh);
 
-            group.add(gridHelper);
+            // 2. Borde exterior perimétrico del plano eclíptico
+            const outerCirclePts = [];
+            for (let i = 0; i <= 128; i++) {
+                const a = (i / 128) * Math.PI * 2;
+                outerCirclePts.push(new THREE.Vector3(Math.cos(a) * R_ECLIPTIC, 0, Math.sin(a) * R_ECLIPTIC));
+            }
+            const outerCircleGeo = new THREE.BufferGeometry().setFromPoints(outerCirclePts);
+            const outerCircleMat = new THREE.LineBasicMaterial({
+                color: 0xfacc15,
+                transparent: true,
+                opacity: 0.50 * initFactor,
+                depthWrite: false
+            });
+            outerCircleMat.userData = { baseOpacity: 0.50 };
+            const outerCircleLine = new THREE.Line(outerCircleGeo, outerCircleMat);
+            group.add(outerCircleLine);
+
+            // 3. Círculo de corte de la Tierra en el plano eclíptico (Radio = EARTH_RADIUS = 50.0)
+            const earthCirclePts = [];
+            for (let i = 0; i <= 64; i++) {
+                const a = (i / 64) * Math.PI * 2;
+                earthCirclePts.push(new THREE.Vector3(Math.cos(a) * EARTH_RADIUS, 0, Math.sin(a) * EARTH_RADIUS));
+            }
+            const earthCircleGeo = new THREE.BufferGeometry().setFromPoints(earthCirclePts);
+            const earthCircleMat = new THREE.LineBasicMaterial({
+                color: 0xfacc15,
+                transparent: true,
+                opacity: 0.35 * initFactor,
+                depthWrite: false
+            });
+            earthCircleMat.userData = { baseOpacity: 0.35 };
+            const earthCircleLine = new THREE.Line(earthCircleGeo, earthCircleMat);
+            group.add(earthCircleLine);
+
+            // 4. Ejes cartesianos cruzados en el plano eclíptico
+            const axesGridPts = [
+                new THREE.Vector3(-R_ECLIPTIC, 0, 0), new THREE.Vector3(R_ECLIPTIC, 0, 0),
+                new THREE.Vector3(0, 0, -R_ECLIPTIC), new THREE.Vector3(0, 0, R_ECLIPTIC)
+            ];
+            const axesGridGeo = new THREE.BufferGeometry().setFromPoints(axesGridPts);
+            const axesGridMat = new THREE.LineBasicMaterial({
+                color: 0xfacc15,
+                transparent: true,
+                opacity: 0.25 * initFactor,
+                depthWrite: false
+            });
+            axesGridMat.userData = { baseOpacity: 0.25 };
+            const axesLine = new THREE.LineSegments(axesGridGeo, axesGridMat);
+            group.add(axesLine);
+
             return group;
         }
 
