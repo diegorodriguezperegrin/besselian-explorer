@@ -499,22 +499,10 @@
         <div class="panel-section" style="display: flex; flex-direction: column; gap: 0.35rem; background: rgba(255,255,255,0.03); padding: 0.4rem 0.6rem; border-radius: 12px; border: 1px solid var(--border-color);">
             <!-- GRUPO 1: CONTROLES PARA MODO ESPACIO 3D -->
             <div id="layers-group-3d" style="display: flex; flex-direction: column; gap: 0.45rem;">
-                <!-- Opciones Principales Siempre Visibles -->
+                <!-- 4 Opciones Principales Siempre Visibles -->
                 <label class="checkbox-row" id="lbl-show-cones">
                     <input type="checkbox" id="chk-show-cones" checked onchange="toggle3DCones(this.checked)">
                     <span>Conos de sombra</span>
-                </label>
-                <label class="checkbox-row" id="lbl-show-stars">
-                    <input type="checkbox" id="chk-show-stars" checked>
-                    <span>Estrellas</span>
-                </label>
-                <label class="checkbox-row" id="lbl-show-celestial-graticule" style="padding-left: 24px; transition: var(--transition-smooth);">
-                    <input type="checkbox" id="chk-show-celestial-graticule" checked>
-                    <span>Red astronómica</span>
-                </label>
-                <label class="checkbox-row" id="lbl-show-constellations" style="padding-left: 24px; transition: var(--transition-smooth);">
-                    <input type="checkbox" id="chk-show-constellations" checked>
-                    <span>Constelaciones</span>
                 </label>
                 <label class="checkbox-row" id="lbl-show-observer">
                     <input type="checkbox" id="chk-show-observer" checked>
@@ -537,6 +525,18 @@
 
                 <!-- Contenedor Desplegable de Opciones Secundarias -->
                 <div class="more-layers-container" id="more-layers-container">
+                    <label class="checkbox-row" id="lbl-show-stars">
+                        <input type="checkbox" id="chk-show-stars" checked>
+                        <span>Estrellas</span>
+                    </label>
+                    <label class="checkbox-row" id="lbl-show-celestial-graticule" style="padding-left: 24px; transition: var(--transition-smooth);">
+                        <input type="checkbox" id="chk-show-celestial-graticule" checked>
+                        <span>Red astronómica</span>
+                    </label>
+                    <label class="checkbox-row" id="lbl-show-constellations" style="padding-left: 24px; transition: var(--transition-smooth);">
+                        <input type="checkbox" id="chk-show-constellations" checked>
+                        <span>Constelaciones</span>
+                    </label>
                     <label class="checkbox-row" id="lbl-show-subsolar">
                         <input type="checkbox" id="chk-show-subsolar" checked>
                         <span>Punto subsolar (Sol en el cenit)</span>
