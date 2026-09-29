@@ -499,10 +499,22 @@
         <div class="panel-section" style="display: flex; flex-direction: column; gap: 0.35rem; background: rgba(255,255,255,0.03); padding: 0.4rem 0.6rem; border-radius: 12px; border: 1px solid var(--border-color);">
             <!-- GRUPO 1: CONTROLES PARA MODO ESPACIO 3D -->
             <div id="layers-group-3d" style="display: flex; flex-direction: column; gap: 0.45rem;">
-                <!-- 3 Opciones Principales Siempre Visibles -->
+                <!-- Opciones Principales Siempre Visibles -->
                 <label class="checkbox-row" id="lbl-show-cones">
                     <input type="checkbox" id="chk-show-cones" checked onchange="toggle3DCones(this.checked)">
                     <span>Conos de sombra</span>
+                </label>
+                <label class="checkbox-row" id="lbl-show-stars">
+                    <input type="checkbox" id="chk-show-stars" checked>
+                    <span>Estrellas</span>
+                </label>
+                <label class="checkbox-row" id="lbl-show-celestial-graticule" style="padding-left: 24px; transition: var(--transition-smooth);">
+                    <input type="checkbox" id="chk-show-celestial-graticule" checked>
+                    <span>Red astronómica</span>
+                </label>
+                <label class="checkbox-row" id="lbl-show-constellations" style="padding-left: 24px; transition: var(--transition-smooth);">
+                    <input type="checkbox" id="chk-show-constellations" checked>
+                    <span>Constelaciones</span>
                 </label>
                 <label class="checkbox-row" id="lbl-show-observer">
                     <input type="checkbox" id="chk-show-observer" checked>
@@ -622,7 +634,8 @@
     <!-- SCRIPT PRINCIPAL DE LA APLICACIÓN -->
     <script src="lunar_observer_manager.js?v=20260929_v2"></script>
     <script src="shared_ui_panels.js?v=20260929_v1"></script>
-    <script src="lunar_scene_3d.js?v=20260929_v2"></script>
+    <script src="celestial_sphere_3d.js?v=20260929_v1"></script>
+    <script src="lunar_scene_3d.js?v=20260929_v3"></script>
     <script src="lunar_telescopic.js"></script>
     <script>
         var RAD = Math.PI / 180, DEG = 180 / Math.PI;
@@ -718,6 +731,9 @@ END:VCALENDAR`;
             }
             initTelescopicCanvas();
             initThreeJS();
+            if (typeof updateStarsSubordinatesState === 'function') {
+                updateStarsSubordinatesState();
+            }
             
             // Seleccionar por defecto el eclipse de 28 Ago 2026
             const defaultEc = NASA_LUNAR_ECLIPSES.find(e => e.dateStr === '2026-08-28') || NASA_LUNAR_ECLIPSES[0];

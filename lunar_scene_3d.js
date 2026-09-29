@@ -27,6 +27,9 @@ var graticuleGroup = null;
 var moonPolarAxisGroup = null;
 var orbitalLimitMarkers = null;
 var cameraTransition3D = null;
+var celestialSphereGroup3D = null;
+var constellationsGroup3D = null;
+var celestialGraticuleGroup3D = null;
 // Constantes Físicas Globales 3D (1 unidad = 1.000 km)
 var EARTH_RADIUS = 6.371;      // Radio Terrestre: 6.371 km
 var MOON_RADIUS = 1.7374;     // Radio Lunar: 1.737,4 km (0,2727 R_Tierra)
@@ -431,7 +434,7 @@ var SUN_DIST = 149598.0;      // Distancia Tierra-Sol (1 UA): 149.597.870 km
             const w = window.innerWidth, h = window.innerHeight;
 
             scene3D = new THREE.Scene();
-            camera3D = new THREE.PerspectiveCamera(45, w / h, 1.0, 500000);
+            camera3D = new THREE.PerspectiveCamera(45, w / h, 1.0, 5000000);
             camera3D.position.set(0, 130, 300);
 
             renderer3D = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -447,7 +450,7 @@ var SUN_DIST = 149598.0;      // Distancia Tierra-Sol (1 UA): 149.597.870 km
             controls3D.dampingFactor = 0.05;
             controls3D.target.set(0, -10, -190);
             controls3D.minDistance = 2.0;
-            controls3D.maxDistance = 450000;
+            controls3D.maxDistance = 4500000;
             controls3D.enablePan = true;
             controls3D.screenSpacePanning = true;
             controls3D.panSpeed = 1.2;
@@ -957,6 +960,83 @@ var SUN_DIST = 149598.0;      // Distancia Tierra-Sol (1 UA): 149.597.870 km
                 if (renderer3D && scene3D && camera3D) renderer3D.render(scene3D, camera3D);
             });
 
+            // Esfera Celeste 3D: Estrellas de referencia J2000, fondo cósmico, red astronómica y constelaciones (Estilo SEE)
+            try {
+                if (typeof createCelestialSphere3D === 'function') {
+                    celestialSphereGroup3D = createCelestialSphere3D(3000000);
+                    constellationsGroup3D = celestialSphereGroup3D ? (celestialSphereGroup3D.constellationsGroup || null) : null;
+                    celestialGraticuleGroup3D = celestialSphereGroup3D ? (celestialSphereGroup3D.graticuleGroup || null) : null;
+
+                    const chkStars = document.getElementById('chk-show-stars');
+                    const chkGraticule = document.getElementById('chk-show-celestial-graticule');
+                    const chkConst = document.getElementById('chk-show-constellations');
+
+                    if (celestialSphereGroup3D) {
+                        const starsOn = chkStars ? chkStars.checked : true;
+                        celestialSphereGroup3D.visible = starsOn;
+                        if (celestialSphereGroup3D.starfieldGroup) celestialSphereGroup3D.starfieldGroup.visible = starsOn;
+                        if (celestialSphereGroup3D.refStarsGroup) celestialSphereGroup3D.refStarsGroup.visible = starsOn;
+                        if (celestialGraticuleGroup3D) celestialGraticuleGroup3D.visible = starsOn && (chkGraticule ? chkGraticule.checked : true);
+                        if (constellationsGroup3D) constellationsGroup3D.visible = starsOn && (chkConst ? chkConst.checked : true);
+                        scene3D.add(celestialSphereGroup3D);
+                    }
+                }
+            } catch (err) {
+                console.error("Error al inicializar esfera celeste 3D:", err);
+            }
+
+            function updateStarsSubordinatesState() {
+                const chkStars = document.getElementById('chk-show-stars');
+                const chkGraticule = document.getElementById('chk-show-celestial-graticule');
+                const lblGraticule = document.getElementById('lbl-show-celestial-graticule');
+                const chkConst = document.getElementById('chk-show-constellations');
+                const lblConst = document.getElementById('lbl-show-constellations');
+                if (!chkStars) return;
+
+                const isStars = chkStars.checked;
+                if (celestialSphereGroup3D) {
+                    celestialSphereGroup3D.visible = isStars;
+                    if (celestialSphereGroup3D.starfieldGroup) celestialSphereGroup3D.starfieldGroup.visible = isStars;
+                    if (celestialSphereGroup3D.refStarsGroup) celestialSphereGroup3D.refStarsGroup.visible = isStars;
+                    if (celestialGraticuleGroup3D) celestialGraticuleGroup3D.visible = isStars && (chkGraticule ? chkGraticule.checked : true);
+                    if (constellationsGroup3D) constellationsGroup3D.visible = isStars && (chkConst ? chkConst.checked : true);
+                }
+                if (chkGraticule) chkGraticule.disabled = !isStars;
+                if (lblGraticule) {
+                    lblGraticule.style.opacity = isStars ? '1' : '0.4';
+                    lblGraticule.style.pointerEvents = isStars ? 'auto' : 'none';
+                }
+                if (chkConst) chkConst.disabled = !isStars;
+                if (lblConst) {
+                    lblConst.style.opacity = isStars ? '1' : '0.4';
+                    lblConst.style.pointerEvents = isStars ? 'auto' : 'none';
+                }
+            }
+
+            document.getElementById('chk-show-stars')?.addEventListener('change', () => {
+                updateStarsSubordinatesState();
+                scene3DNeedsRender = true;
+                if (renderer3D && scene3D && camera3D) renderer3D.render(scene3D, camera3D);
+            });
+
+            document.getElementById('chk-show-celestial-graticule')?.addEventListener('change', (e) => {
+                const isStarsActive = document.getElementById('chk-show-stars')?.checked ?? true;
+                if (celestialGraticuleGroup3D) {
+                    celestialGraticuleGroup3D.visible = isStarsActive && e.target.checked;
+                }
+                scene3DNeedsRender = true;
+                if (renderer3D && scene3D && camera3D) renderer3D.render(scene3D, camera3D);
+            });
+
+            document.getElementById('chk-show-constellations')?.addEventListener('change', (e) => {
+                const isStarsActive = document.getElementById('chk-show-stars')?.checked ?? true;
+                if (constellationsGroup3D) {
+                    constellationsGroup3D.visible = isStarsActive && e.target.checked;
+                }
+                scene3DNeedsRender = true;
+                if (renderer3D && scene3D && camera3D) renderer3D.render(scene3D, camera3D);
+            });
+
             // Grupo 3D de Marcas de Límites de Eclipse sobre la Órbita Lunar
             eclipseLimitsGroup3D = new THREE.Group();
             eclipseLimitsGroup3D.renderOrder = 10;
@@ -1218,6 +1298,9 @@ var SUN_DIST = 149598.0;      // Distancia Tierra-Sol (1 UA): 149.597.870 km
                 earthGroup.rotation.x = coords.subsolar.lat * RAD;
                 earthGroup.rotation.z = 0;
             }
+            if (celestialSphereGroup3D) {
+                celestialSphereGroup3D.rotation.x = coords.subsolar.lat * RAD;
+            }
             // 2. Rotación diurna en tiempo real: orienta el meridiano subsolar hacia el Sol (+Z) y el sublunar hacia la Luna (-Z)
             if (earthMesh3D) {
                 earthMesh3D.rotation.y = (-90 - coords.subsolar.lon) * RAD;
@@ -1326,4 +1409,8 @@ if (typeof window !== 'undefined') {
     window.getSubsolarAndSublunarCoords = getSubsolarAndSublunarCoords;
     window.recenterLunarScene = recenterLunarScene;
     window.recenterEarth = recenterEarth;
+    window.celestialSphereGroup3D = celestialSphereGroup3D;
+    window.constellationsGroup3D = constellationsGroup3D;
+    window.celestialGraticuleGroup3D = celestialGraticuleGroup3D;
+    window.updateStarsSubordinatesState = updateStarsSubordinatesState;
 }
