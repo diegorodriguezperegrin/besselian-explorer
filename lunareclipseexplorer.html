@@ -268,18 +268,14 @@
         <span class="live-text">EN VIVO</span>
     </div>
 
-    <!-- Banner Flotante para Modo Selección en el Globo 3D -->
-    <div id="globe-picking-banner" style="display: none; position: absolute; top: 18px; left: 50%; transform: translateX(-50%); z-index: var(--z-banner); align-items: center; gap: 12px; background: rgba(11, 19, 41, 0.95); border: 1px solid var(--accent-blue); padding: 7px 14px; border-radius: 16px; box-shadow: 0 10px 32px rgba(0,0,0,0.85); backdrop-filter: blur(16px); pointer-events: auto; max-width: calc(100vw - 30px); box-sizing: border-box;">
-        <div style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: #f8fafc; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-            <i class="fa-solid fa-location-dot" style="color: var(--accent-blue); font-size: 0.95rem; flex-shrink: 0;"></i>
-            <span>Toca en la Tierra: <strong id="globe-picking-coords-text" style="color: var(--accent-blue);">--</strong></span>
+    <!-- Popup Flotante Interactivo 3D Estilo NASA (Idéntico a SEE) -->
+    <div id="globe-3d-popup" style="display: none; position: absolute; z-index: 520; pointer-events: auto; transform: translate(-50%, -100%); margin-top: -14px;">
+        <div class="globe-3d-popup-card" style="background: linear-gradient(135deg, rgba(14, 165, 233, 0.08), rgba(249, 115, 22, 0.06)), rgba(11, 19, 41, 0.96); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 12px; box-shadow: 0 12px 36px rgba(0,0,0,0.75); padding: 8px 10px; position: relative; width: 320px; box-sizing: border-box;">
+            <button type="button" onclick="closeGlobe3DPopup()" style="position: absolute; top: 8px; right: 8px; background: none; border: none; color: #94a3b8; font-size: 0.85rem; cursor: pointer; padding: 2px 6px; z-index: 20;" title="Cerrar"><i class="fa-solid fa-xmark"></i></button>
+            <div id="globe-3d-popup-content"></div>
         </div>
-        <button class="primary-btn" onclick="confirmGlobePicking()" style="height: 32px; padding: 0 13px; font-size: 0.76rem; border-radius: 10px; background: var(--accent-blue); color: #020617; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; border: none; flex-shrink: 0;">
-            <i class="fa-solid fa-check" aria-hidden="true"></i> Listo
-        </button>
-        <button class="ctrl-btn" onclick="cancelGlobePicking()" style="height: 32px; width: 32px; padding: 0; font-size: 0.80rem; border-radius: 10px; flex-shrink: 0;" title="Cancelar (Escape)">
-            <i class="fa-solid fa-xmark" aria-hidden="true"></i>
-        </button>
+        <!-- Puntero / Flecha inferior hacia el marcador -->
+        <div style="position: absolute; bottom: -7px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 8px solid transparent; border-right: 8px solid transparent; border-top: 8px solid rgba(11, 19, 41, 0.96);"></div>
     </div>
 
     <!-- Buscador Superior Flotante: Píldora Inteligente Colapsable (Estilo SEE) -->
@@ -632,10 +628,10 @@
     </aside>
 
     <!-- SCRIPT PRINCIPAL DE LA APLICACIÓN -->
-    <script src="lunar_observer_manager.js?v=20260929_v3"></script>
+    <script src="lunar_observer_manager.js?v=20260930_v1"></script>
     <script src="shared_ui_panels.js?v=20260929_v1"></script>
     <script src="celestial_sphere_3d.js?v=20260929_v1"></script>
-    <script src="lunar_scene_3d.js?v=20260929_v3"></script>
+    <script src="lunar_scene_3d.js?v=20260930_v1"></script>
     <script src="lunar_telescopic.js"></script>
     <script>
         var RAD = Math.PI / 180, DEG = 180 / Math.PI;
@@ -1116,6 +1112,9 @@ END:VCALENDAR`;
                         update3DEclipseGeometry();
                         if (renderer3D && scene3D && camera3D) renderer3D.render(scene3D, camera3D);
                         scene3DNeedsRender = false;
+                        if (typeof updateGlobe3DPopupPosition === 'function') {
+                            updateGlobe3DPopupPosition();
+                        }
                     }
                 }
             } catch (err) {

@@ -483,6 +483,9 @@ var SUN_DIST = 149598.0;      // Distancia Tierra-Sol (1 UA): 149.597.870 km
             });
             controls3D.addEventListener('change', () => {
                 scene3DNeedsRender = true;
+                if (typeof updateGlobe3DPopupPosition === 'function') {
+                    updateGlobe3DPopupPosition();
+                }
             });
 
             // Soporte de flechas del teclado y teclas WASD para desplazamiento fino
@@ -537,14 +540,41 @@ var SUN_DIST = 149598.0;      // Distancia Tierra-Sol (1 UA): 149.597.870 km
             renderer3D.domElement.addEventListener('pointerup', (e) => {
                 const dist = Math.hypot(e.clientX - globePointerStartX, e.clientY - globePointerStartY);
                 const time = Date.now() - globePointerStartTime;
-                if (isGlobePickingMode && dist < 6 && time < 450 && e.button === 0) {
-                    handleGlobePickingClick(e.clientX, e.clientY);
+                if (dist < 6 && time < 450 && (e.button === 0 || e.pointerType === 'touch')) {
+                    if (currentActiveView === '3d' && earthMesh3D && camera3D) {
+                        const rect = renderer3D.domElement.getBoundingClientRect();
+                        const mouse = new THREE.Vector2(
+                            ((e.clientX - rect.left) / rect.width) * 2 - 1,
+                            -((e.clientY - rect.top) / rect.height) * 2 + 1
+                        );
+                        const raycaster = new THREE.Raycaster();
+                        raycaster.setFromCamera(mouse, camera3D);
+                        const intersects = raycaster.intersectObject(earthMesh3D, false);
+                        if (intersects.length > 0) {
+                            const hit = intersects[0];
+                            const localPoint = hit.point.clone();
+                            earthMesh3D.worldToLocal(localPoint);
+                            const coords = vector3ToLatLng(localPoint);
+                            const lat = parseFloat(coords.lat.toFixed(4));
+                            const lon = parseFloat(coords.lon.toFixed(4));
+                            if (typeof inspectGlobeLocation === 'function') {
+                                inspectGlobeLocation(lat, lon, null, false, localPoint);
+                            }
+                            return;
+                        } else {
+                            if (typeof closeGlobe3DPopup === 'function') {
+                                closeGlobe3DPopup();
+                            }
+                        }
+                    }
                 }
             });
 
             window.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape' && isGlobePickingMode) {
-                    cancelGlobePicking();
+                if (e.key === 'Escape') {
+                    if (typeof closeGlobe3DPopup === 'function') {
+                        closeGlobe3DPopup();
+                    }
                 }
             });
 
@@ -1071,6 +1101,9 @@ var SUN_DIST = 149598.0;      // Distancia Tierra-Sol (1 UA): 149.597.870 km
             camera3D.aspect = w / h;
             camera3D.updateProjectionMatrix();
             renderer3D.setSize(w, h);
+            if (typeof updateGlobe3DPopupPosition === 'function') {
+                updateGlobe3DPopupPosition();
+            }
         }
 
         function update3DEclipseGeometry() {

@@ -476,236 +476,300 @@ function _getDOM(id) {
 
 
         // =========================================================================
-        // MODO SELECCIÓN INTERACTIVA DE UBICACIÓN EN EL GLOBO TERRÁQUEO 3D
+        // POPUP FLOTANTE INTERACTIVO 3D EN EL GLOBO TERRÁQUEO (Estilo SEE / NASA)
         // =========================================================================
-        var isGlobePickingMode = false;
-        var preGlobePickingState = null;
-        var tempPickedLat = null;
-        var tempPickedLon = null;
+        var isGlobePopupOpen = false;
+        var activeGlobePopupPoint = null;
+        var lastInspectedLocation3D = null;
 
-        function toggleGlobePickingMode(enable = null) {
-            const target = (enable !== null) ? enable : !isGlobePickingMode;
-            if (target) {
-                startGlobePickingMode();
-            } else {
-                confirmGlobePicking();
+        function closeGlobe3DPopup() {
+            isGlobePopupOpen = false;
+            activeGlobePopupPoint = null;
+            lastInspectedLocation3D = null;
+            const popupEl = document.getElementById('globe-3d-popup');
+            if (popupEl) {
+                popupEl.style.display = 'none';
+                popupEl.style.visibility = 'hidden';
+                popupEl.style.opacity = '1';
+                popupEl.style.pointerEvents = 'auto';
             }
+            if (typeof requestRender3D === 'function') requestRender3D();
         }
 
-        function startGlobePickingMode() {
-            if (isGlobePickingMode) return;
-            isGlobePickingMode = true;
+        function showGlobe3DPopup(lat, lon, locationName = null) {
+            const popupEl = document.getElementById('globe-3d-popup');
+            const contentEl = document.getElementById('globe-3d-popup-content');
+            if (!popupEl || !contentEl) return;
 
-            const sidePanel = document.getElementById('sidebar-panel');
-            const setPanel = document.getElementById('settings-panel');
-            const dockPanel = document.getElementById('playback-dock');
+            contentEl.innerHTML = buildGlobe3DPopupHtml(lat, lon, locationName);
 
-            preGlobePickingState = {
-                view: currentActiveView,
-                camPos: camera3D ? camera3D.position.clone() : new THREE.Vector3(0, 130, 300),
-                camTarget: controls3D ? controls3D.target.clone() : new THREE.Vector3(0, -10, -190),
-                minDist: controls3D ? controls3D.minDistance : 2.0,
-                maxDist: controls3D ? controls3D.maxDistance : 450000,
-                sideOpen: sidePanel && !sidePanel.classList.contains('collapsed'),
-                setOpen: setPanel && !setPanel.classList.contains('collapsed'),
-                dockOpen: dockPanel && !dockPanel.classList.contains('collapsed'),
-                prevLat: currentObserver.lat,
-                prevLon: currentObserver.lon,
-                prevName: currentObserver.name,
-                prevTz: currentObserver.tz
-            };
-
-            tempPickedLat = currentObserver.lat;
-            tempPickedLon = currentObserver.lon;
-
-            if (currentActiveView !== '3d') {
-                switchMainView('3d');
-            }
-
-            if (sidePanel) sidePanel.classList.add('collapsed');
-            if (setPanel) setPanel.classList.add('collapsed');
-            if (dockPanel) dockPanel.classList.add('collapsed');
-            updateTopNavButtonsState();
-
-            const banner = document.getElementById('globe-picking-banner');
-            if (banner) {
-                banner.style.transition = '';
-                banner.style.opacity = '';
-                banner.style.transform = '';
-                banner.style.display = 'flex';
-                const confirmBtn = banner.querySelector('.primary-btn');
-                if (confirmBtn) {
-                    confirmBtn.innerHTML = '<i class="fa-solid fa-check"></i> Listo';
-                    confirmBtn.style.pointerEvents = '';
-                    confirmBtn.style.background = '';
-                    confirmBtn.style.borderColor = '';
-                    confirmBtn.style.color = '';
-                    confirmBtn.style.boxShadow = '';
-                }
-            }
-            const coordsText = document.getElementById('globe-picking-coords-text');
-            if (coordsText) coordsText.textContent = formatLatLonString(currentObserver.lat, currentObserver.lon);
-
-            if (renderer3D && renderer3D.domElement) {
-                renderer3D.domElement.style.cursor = 'crosshair';
-            }
-
-            let camDir = new THREE.Vector3(0, 0.4, 1);
-            if (earthMesh3D && observerMarkerGroup3D) {
-                const obsWorldPos = new THREE.Vector3();
-                observerMarkerGroup3D.getWorldPosition(obsWorldPos);
-                if (obsWorldPos.lengthSq() > 0.1) {
-                    camDir.copy(obsWorldPos).normalize();
-                }
-            }
-            const targetCamPos = camDir.multiplyScalar(15.5);
-            if (controls3D) {
-                controls3D.minDistance = 7.0;
-                controls3D.maxDistance = 60.0;
-            }
-            transitionCamera3D(new THREE.Vector3(0, 0, 0), targetCamPos, 7.0, 800);
-            requestRender3D();
+            isGlobePopupOpen = true;
+            popupEl.style.display = 'block';
+            popupEl.style.visibility = 'visible';
+            popupEl.style.opacity = '1';
+            popupEl.style.pointerEvents = 'auto';
+            updateGlobe3DPopupPosition();
+            if (typeof requestRender3D === 'function') requestRender3D();
         }
 
-        function handleGlobePickingClick(clientX, clientY) {
-            if (!camera3D || !earthMesh3D) return;
-
-            const rect = renderer3D.domElement.getBoundingClientRect();
-            const mouse = new THREE.Vector2(
-                ((clientX - rect.left) / rect.width) * 2 - 1,
-                -((clientY - rect.top) / rect.height) * 2 + 1
-            );
-
-            const raycaster = new THREE.Raycaster();
-            raycaster.setFromCamera(mouse, camera3D);
-
-            const intersects = raycaster.intersectObject(earthMesh3D, false);
-            if (intersects.length > 0) {
-                const hitPoint = intersects[0].point;
-                const localPoint = earthMesh3D.worldToLocal(hitPoint.clone());
-                const { lat, lon } = vector3ToLatLng(localPoint);
-
-                tempPickedLat = Math.round(lat * 100) / 100;
-                tempPickedLon = Math.round(lon * 100) / 100;
-
-                if (observerMarkerGroup3D) {
-                    observerMarkerGroup3D.position.copy(latLngToVector3(tempPickedLat, tempPickedLon, EARTH_RADIUS * 1.004));
-                    observerMarkerGroup3D.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), latLngToVector3(tempPickedLat, tempPickedLon, 1.0).normalize());
-                }
-
-                const coordsText = document.getElementById('globe-picking-coords-text');
-                if (coordsText) {
-                    coordsText.textContent = formatLatLonString(tempPickedLat, tempPickedLon);
-                }
-
-                const latIn = document.getElementById('custom-obs-lat');
-                const lonIn = document.getElementById('custom-obs-lon');
-                if (latIn) latIn.value = tempPickedLat;
-                if (lonIn) lonIn.value = tempPickedLon;
-
-                requestRender3D();
+        function updateGlobe3DPopupPosition() {
+            const popupEl = document.getElementById('globe-3d-popup');
+            if (!popupEl || popupEl.style.display === 'none' || !activeGlobePopupPoint || typeof earthMesh3D === 'undefined' || !earthMesh3D || typeof camera3D === 'undefined' || !camera3D) {
+                return;
             }
+
+            // Convertir punto local a coordenadas de mundo
+            const worldPos = activeGlobePopupPoint.clone();
+            earthMesh3D.localToWorld(worldPos);
+
+            // Comprobar si el punto está de espaldas a la cámara (horizon culling)
+            const earthCenter = new THREE.Vector3();
+            earthMesh3D.getWorldPosition(earthCenter);
+            const surfaceNormal = worldPos.clone().sub(earthCenter).normalize();
+            const toCamera = camera3D.position.clone().sub(worldPos).normalize();
+            const dot = surfaceNormal.dot(toCamera);
+
+            // Proyectar a coordenadas de pantalla
+            const proj = worldPos.clone().project(camera3D);
+
+            if (proj.z > 1.0 || dot <= 0.05) {
+                popupEl.style.visibility = 'hidden';
+                return;
+            }
+
+            popupEl.style.visibility = 'visible';
+            const screenX = (proj.x * 0.5 + 0.5) * window.innerWidth;
+            const screenY = (-(proj.y * 0.5) + 0.5) * window.innerHeight;
+
+            popupEl.style.left = `${Math.round(screenX)}px`;
+            popupEl.style.top = `${Math.round(screenY)}px`;
         }
 
-        function confirmGlobePicking(btn = null) {
-            if (!isGlobePickingMode) return;
+        function inspectGlobeLocation(lat, lon, locationName = null, autoSetObserver = false, localPoint = null) {
+            if (autoSetObserver) {
+                const coordsStr = formatLatLonString(lat, lon, 4);
+                updateObserverPosition(lat, lon, locationName || coordsStr, null);
+            }
 
-            const banner = document.getElementById('globe-picking-banner');
-            const confirmBtn = btn || (banner ? banner.querySelector('.primary-btn') : null);
+            if (!localPoint && typeof latLngToVector3 === 'function') {
+                localPoint = latLngToVector3(lat, lon, EARTH_RADIUS * 1.004);
+            }
+            activeGlobePopupPoint = localPoint ? localPoint.clone() : null;
+            lastInspectedLocation3D = { lat, lon, locationName };
+            isGlobePopupOpen = true;
 
-            if (tempPickedLat !== null && tempPickedLon !== null) {
-                let matchedPreset = null;
+            showGlobe3DPopup(lat, lon, locationName);
+        }
+
+        function buildGlobe3DPopupHtml(lat, lon, locationName = null) {
+            const ec = currentEclipse;
+            const latStr = `${Math.abs(lat).toFixed(4)}° ${lat >= 0 ? 'N' : 'S'}`;
+            const lonStr = `${Math.abs(lon).toFixed(4)}° ${lon >= 0 ? 'E' : 'O'}`;
+            const locTitle = locationName
+                ? `<div style="font-weight: 700; color: #38bdf8; font-size: 0.84rem; padding-right: 22px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${locationName}">${locationName}</div>`
+                : '';
+
+            let badgeText = 'NO VISIBLE';
+            let badgeClass = 'vis-none';
+            let rowsHtml = '';
+
+            if (ec) {
+                const contacts = [
+                    { key: 'P1', name: 'Inicio Penumbra', jumpKey: 'p1', ms: ec.p1Ms },
+                    { key: 'U1', name: 'Inicio Umbra (Parcial)', jumpKey: 'u1', ms: ec.u1Ms },
+                    { key: 'U2', name: 'Inicio Totalidad', jumpKey: 'u2', ms: ec.u2Ms },
+                    { key: 'MÁX', name: 'Máximo Eclipse', jumpKey: 'max', ms: ec.maxMs },
+                    { key: 'U3', name: 'Fin Totalidad', jumpKey: 'u3', ms: ec.u3Ms },
+                    { key: 'U4', name: 'Fin Umbra (Parcial)', jumpKey: 'u4', ms: ec.u4Ms },
+                    { key: 'P4', name: 'Fin Penumbra', jumpKey: 'p4', ms: ec.p4Ms }
+                ].filter(c => c.ms !== null);
+
+                let visibleCount = 0;
+                contacts.forEach(c => {
+                    const coords = (typeof getMoonHorizontalCoords === 'function')
+                        ? getMoonHorizontalCoords(ec.zenLat, ec.zenLon, c.ms, ec.maxMs, lat, lon)
+                        : { alt: 0, az: 0 };
+                    const isAbove = coords.alt > 0;
+                    if (isAbove) visibleCount++;
+
+                    const nextCoords = (typeof getMoonHorizontalCoords === 'function')
+                        ? getMoonHorizontalCoords(ec.zenLat, ec.zenLon, c.ms + 60000, ec.maxMs, lat, lon)
+                        : coords;
+                    const isRising = nextCoords.alt >= coords.alt;
+                    const arrowClass = isRising ? 'arrow-rising' : 'arrow-setting';
+                    const arrowUnicode = `<span class="popup-alt-arrow ${arrowClass}" style="font-weight: 700; margin-right: 3px;">${isRising ? '↗' : '↘'}</span>`;
+                    const timeStr = new Date(c.ms).toISOString().slice(11, 19);
+                    const altStr = `${arrowUnicode}${coords.alt.toFixed(1)}°`;
+                    const azStr = `${coords.az.toFixed(0)}°`;
+
+                    rowsHtml += `
+                        <tr id="row-popup-contact-${c.key}" onclick="if(typeof jumpToContact==='function') jumpToContact('${c.jumpKey}')" style="cursor: pointer;" title="Clic para saltar a ${c.key} (${c.name})">
+                            <td><strong class="popup-phase-key" style="font-weight: 600;">${c.key}</strong></td>
+                            <td class="popup-time-cell">${timeStr}</td>
+                            <td class="popup-alt-cell" style="font-weight: 500;">${altStr}</td>
+                            <td class="popup-az-cell">${azStr}</td>
+                        </tr>
+                    `;
+                });
+
+                if (visibleCount === contacts.length) {
+                    badgeClass = 'vis-total';
+                    badgeText = (ec.type === 'T') ? 'TOTAL VISIBLE' : 'VISIBLE COMPLETO';
+                } else if (visibleCount > 0) {
+                    const firstCoords = (typeof getMoonHorizontalCoords === 'function')
+                        ? getMoonHorizontalCoords(ec.zenLat, ec.zenLon, contacts[0].ms, ec.maxMs, lat, lon)
+                        : { alt: 0 };
+                    badgeClass = 'vis-partial';
+                    badgeText = (firstCoords.alt <= 0) ? 'VISIBLE AL ORTO' : 'VISIBLE AL OCASO';
+                } else {
+                    badgeClass = 'vis-none';
+                    badgeText = 'BAJO EL HORIZONTE';
+                }
+            }
+
+            const isCurrentObs = (typeof currentObserver !== 'undefined' && currentObserver && currentObserver.lat != null)
+                ? (Math.abs(currentObserver.lat - lat) < 0.005 && Math.abs(currentObserver.lon - lon) < 0.005)
+                : false;
+            const btnText = isCurrentObs
+                ? '<i class="fa-solid fa-check"></i> Ubicación actual'
+                : '<i class="fa-solid fa-location-crosshairs"></i> Fijar como ubicación';
+            const btnBg = isCurrentObs
+                ? 'rgba(34, 197, 94, 0.25)'
+                : 'rgba(56, 189, 248, 0.18)';
+            const btnBorder = isCurrentObs
+                ? '#22c55e'
+                : 'var(--accent-blue, #38bdf8)';
+            const btnColor = isCurrentObs
+                ? '#22c55e'
+                : '#38bdf8';
+            const obsClass = isCurrentObs ? 'is-active-obs' : 'is-preview-obs';
+            const safeName = (locationName || '').replace(/'/g, "\\'");
+
+            return `
+                <div class="nasa-popup-inner ${obsClass}" style="font-family: var(--font-body, system-ui); width: 100%; box-sizing: border-box; display: flex; flex-direction: column; gap: 4px; padding: 0; margin: 0;">
+                    ${locTitle}
+                    <div style="font-size: 0.74rem; font-family: var(--font-mono, monospace); display: flex; align-items: center; gap: 5px; padding-right: 22px;">
+                        <i class="fa-solid fa-location-crosshairs" style="color: var(--accent-blue, #38bdf8); font-size: 0.70rem;"></i>
+                        <span class="popup-coords-val">${latStr} · ${lonStr}</span>
+                    </div>
+
+                    <div class="observer-badge-header">
+                        <span class="vis-badge-tag ${badgeClass}">${badgeText}</span>
+                    </div>
+
+                    <table class="contacts-table" style="width: 100%; border-collapse: collapse; font-size: 0.76rem; font-family: var(--font-mono, monospace); table-layout: fixed;">
+                        <colgroup>
+                            <col style="width: 17%;">
+                            <col style="width: 37%;">
+                            <col style="width: 26%;">
+                            <col style="width: 20%;">
+                        </colgroup>
+                        <thead>
+                            <tr>
+                                <th>Fase</th>
+                                <th>Hora (UT)</th>
+                                <th>Altitud</th>
+                                <th>Azimut</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rowsHtml}
+                        </tbody>
+                    </table>
+
+                    <button type="button" class="btn-set-obs-map" onclick="setAsActiveObserver(${lat}, ${lon}, '${safeName}')" style="width: 100%; height: 28px; background: ${btnBg}; border: 1px solid ${btnBorder}; border-radius: 6px; color: ${btnColor}; font-size: 0.74rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.2s; margin-top: 4px; ${isCurrentObs ? 'pointer-events: none;' : ''}">
+                        ${btnText}
+                    </button>
+                </div>
+            `;
+        }
+
+        function setAsActiveObserver(lat, lon, name = null) {
+            let matchedPreset = null;
+            if (!name) {
                 for (const p of OBSERVER_PRESETS) {
-                    const dLat = (p.lat - tempPickedLat) * 111.0;
-                    const dLon = (p.lon - tempPickedLon) * 111.0 * Math.cos(tempPickedLat * RAD);
-                    const distKm = Math.hypot(dLat, dLon);
-                    if (distKm < 40) {
+                    const dLat = (p.lat - lat) * 111.0;
+                    const dLon = (p.lon - lon) * 111.0 * Math.cos(lat * RAD);
+                    if (Math.hypot(dLat, dLon) < 40) {
                         matchedPreset = p;
                         break;
                     }
                 }
-                const name = matchedPreset ? matchedPreset.name : formatLatLonString(tempPickedLat, tempPickedLon, 2);
-                const tz = matchedPreset ? matchedPreset.tz : (Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC");
-                
-                const input = document.getElementById('observer-location-input');
-                if (input) input.value = name;
-                updateObserverPosition(tempPickedLat, tempPickedLon, name, tz);
             }
+            const finalName = name || (matchedPreset ? matchedPreset.name : formatLatLonString(lat, lon, 2));
+            const tz = matchedPreset ? matchedPreset.tz : (currentObserver.tz || Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC");
 
-            // Disparar animación de confirmación idéntica a SEE (botón, tarjeta Visibilidad Local, píldora, pin 3D)
-            triggerLocationConfirmationPulse(confirmBtn);
+            const input = document.getElementById('observer-location-input');
+            if (input) input.value = finalName;
+            const spaceInput = document.getElementById('space-3d-search-input');
+            if (spaceInput) spaceInput.value = finalName;
 
-            // Desvanecer el banner con suavidad y restablecer estado de la cámara
+            updateObserverPosition(lat, lon, finalName, tz);
+
+            document.querySelectorAll('.btn-set-obs-map').forEach(btn => {
+                animateLocationFixedDisplacement(btn);
+            });
+            document.querySelectorAll('.nasa-popup-inner').forEach(card => {
+                card.classList.remove('is-preview-obs');
+                card.classList.add('is-active-obs');
+            });
+        }
+
+        function animateLocationFixedDisplacement(btn) {
+            if (!btn || !document.body.contains(btn)) return;
+
+            btn.style.pointerEvents = 'none';
+
+            // 1. Mostrar estado "Ubicación fijada" en el botón
+            btn.innerHTML = '<i class="fa-solid fa-check"></i> Ubicación fijada';
+            btn.style.background = 'rgba(34, 197, 94, 0.25)';
+            btn.style.borderColor = '#22c55e';
+            btn.style.color = '#22c55e';
+            btn.style.boxShadow = '0 0 14px rgba(34, 197, 94, 0.5)';
+
+            // 2. Disparar el destello verde en Visibilidad Local y píldora flotante
+            triggerLocationConfirmationPulse(null);
+
+            // 3. Tras ~800ms, desvanecer y cerrar con suavidad el popup flotante
             setTimeout(() => {
-                isGlobePickingMode = false;
-                if (banner) {
-                    banner.style.transition = 'opacity 0.35s ease, transform 0.35s ease';
-                    banner.style.opacity = '0';
-                    banner.style.transform = 'translate(-50%, -10px)';
+                const popupContainer = btn.closest('#globe-3d-popup') || document.getElementById('globe-3d-popup');
+
+                if (popupContainer) {
+                    popupContainer.style.transition = 'opacity 0.35s ease, transform 0.35s ease';
+                    popupContainer.style.opacity = '0';
+                    popupContainer.style.pointerEvents = 'none';
                 }
 
                 setTimeout(() => {
-                    if (banner) {
-                        banner.style.display = 'none';
-                        banner.style.opacity = '';
-                        banner.style.transform = '';
+                    closeGlobe3DPopup();
+                    if (popupContainer) {
+                        popupContainer.style.transition = '';
+                        popupContainer.style.opacity = '1';
+                        popupContainer.style.pointerEvents = 'auto';
                     }
-                    if (confirmBtn) {
-                        confirmBtn.innerHTML = '<i class="fa-solid fa-check"></i> Listo';
-                        confirmBtn.style.pointerEvents = '';
-                        confirmBtn.style.background = '';
-                        confirmBtn.style.borderColor = '';
-                        confirmBtn.style.color = '';
-                        confirmBtn.style.boxShadow = '';
-                    }
-
-                    if (renderer3D && renderer3D.domElement) {
-                        renderer3D.domElement.style.cursor = '';
-                    }
-
-                    if (preGlobePickingState) {
-                        if (controls3D) {
-                            controls3D.minDistance = preGlobePickingState.minDist;
-                            controls3D.maxDistance = preGlobePickingState.maxDist;
-                        }
-                        if (preGlobePickingState.sideOpen) toggleSidebar(true);
-                        if (preGlobePickingState.setOpen) toggleSettingsPanel(true);
-                        if (preGlobePickingState.dockOpen) togglePlaybackDock(true);
-                        transitionCamera3D(preGlobePickingState.camTarget, preGlobePickingState.camPos, preGlobePickingState.minDist, 700);
-                        preGlobePickingState = null;
-                    }
-                    requestRender3D();
                 }, 350);
-            }, 500);
+            }, 800);
+        }
+
+        function toggleGlobePickingMode(enable = null) {
+            if (typeof currentActiveView !== 'undefined' && currentActiveView !== '3d') {
+                if (typeof switchMainView === 'function') switchMainView('3d');
+            }
+            if (currentObserver && currentObserver.lat != null && currentObserver.lon != null) {
+                if (typeof recenterEarth === 'function') {
+                    recenterEarth(currentObserver.lat, currentObserver.lon);
+                }
+                inspectGlobeLocation(currentObserver.lat, currentObserver.lon, currentObserver.name || null, false);
+            }
+            expandLocationSearch();
+        }
+
+        function confirmGlobePicking() {
+            closeGlobe3DPopup();
         }
 
         function cancelGlobePicking() {
-            if (!isGlobePickingMode) return;
-            isGlobePickingMode = false;
-
-            const banner = document.getElementById('globe-picking-banner');
-            if (banner) banner.style.display = 'none';
-
-            if (renderer3D && renderer3D.domElement) {
-                renderer3D.domElement.style.cursor = '';
-            }
-
-            if (preGlobePickingState) {
-                updateObserverPosition(preGlobePickingState.prevLat, preGlobePickingState.prevLon, preGlobePickingState.prevName, preGlobePickingState.prevTz);
-                const input = document.getElementById('observer-location-input');
-                if (input) input.value = preGlobePickingState.prevName;
-
-                if (controls3D) {
-                    controls3D.minDistance = preGlobePickingState.minDist;
-                    controls3D.maxDistance = preGlobePickingState.maxDist;
-                }
-                if (preGlobePickingState.sideOpen) toggleSidebar(true);
-                if (preGlobePickingState.setOpen) toggleSettingsPanel(true);
-                if (preGlobePickingState.dockOpen) togglePlaybackDock(true);
-                transitionCamera3D(preGlobePickingState.camTarget, preGlobePickingState.camPos, preGlobePickingState.minDist, 700);
-                preGlobePickingState = null;
-            }
-            requestRender3D();
+            closeGlobe3DPopup();
         }
 
 
@@ -829,6 +893,11 @@ function _getDOM(id) {
             if (container) {
                 container.addEventListener('pointerdown', (e) => e.stopPropagation());
                 container.addEventListener('wheel', (e) => e.stopPropagation(), { passive: true });
+            }
+            const popupEl = document.getElementById('globe-3d-popup');
+            if (popupEl) {
+                popupEl.addEventListener('pointerdown', (e) => e.stopPropagation());
+                popupEl.addEventListener('wheel', (e) => e.stopPropagation(), { passive: true });
             }
 
             let debounceTimer = null;
@@ -992,17 +1061,11 @@ function _getDOM(id) {
             if (dropdown) dropdown.style.display = 'none';
             if (input) input.value = name;
 
-            let tz = null;
-            const cleanN = (name || '').toLowerCase();
-            const found = OBSERVER_PRESETS.find(p => p.name.toLowerCase() === cleanN || (Math.abs(p.lat - lat) < 0.1 && Math.abs(p.lon - lon) < 0.1));
-            if (found && found.tz) tz = found.tz;
-
-            updateObserverPosition(lat, lon, name, tz);
             if (typeof recenterEarth === 'function') {
                 recenterEarth(lat, lon);
             }
+            inspectGlobeLocation(lat, lon, name, false);
             collapseLocationSearch();
-            triggerLocationConfirmationPulse();
         }
 
         function select3DSearchCoords(lat, lon) {
@@ -1012,12 +1075,11 @@ function _getDOM(id) {
             const coordsStr = `${lat.toFixed(4)}°, ${lon.toFixed(4)}°`;
             if (input) input.value = coordsStr;
 
-            updateObserverPosition(lat, lon, coordsStr, null);
             if (typeof recenterEarth === 'function') {
                 recenterEarth(lat, lon);
             }
+            inspectGlobeLocation(lat, lon, null, false);
             collapseLocationSearch();
-            triggerLocationConfirmationPulse();
         }
 
         function selectZenithLocation() {
@@ -1025,12 +1087,11 @@ function _getDOM(id) {
             const lat = currentEclipse.zenLat;
             const lon = currentEclipse.zenLon;
             const name = `Punto Sublunar (${formatCoordDms(lat, true)}, ${formatCoordDms(lon, false)})`;
-            updateObserverPosition(lat, lon, name, 'UTC');
             if (typeof recenterEarth === 'function') {
                 recenterEarth(lat, lon);
             }
+            inspectGlobeLocation(lat, lon, name, false);
             collapseLocationSearch();
-            triggerLocationConfirmationPulse();
         }
 
 
@@ -1053,10 +1114,15 @@ if (typeof window !== 'undefined') {
     window.formatLatLonString = formatLatLonString;
     window.updateObserverPosition = updateObserverPosition;
     window.triggerLocationConfirmationPulse = triggerLocationConfirmationPulse;
-    window.isGlobePickingMode = isGlobePickingMode;
+    window.isGlobePopupOpen = isGlobePopupOpen;
+    window.closeGlobe3DPopup = closeGlobe3DPopup;
+    window.showGlobe3DPopup = showGlobe3DPopup;
+    window.updateGlobe3DPopupPosition = updateGlobe3DPopupPosition;
+    window.inspectGlobeLocation = inspectGlobeLocation;
+    window.buildGlobe3DPopupHtml = buildGlobe3DPopupHtml;
+    window.setAsActiveObserver = setAsActiveObserver;
+    window.animateLocationFixedDisplacement = animateLocationFixedDisplacement;
     window.toggleGlobePickingMode = toggleGlobePickingMode;
-    window.startGlobePickingMode = startGlobePickingMode;
-    window.handleGlobePickingClick = handleGlobePickingClick;
     window.confirmGlobePicking = confirmGlobePicking;
     window.cancelGlobePicking = cancelGlobePicking;
     window.parseCoordinatesInput = parseCoordinatesInput;
