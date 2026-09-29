@@ -246,70 +246,46 @@ var SUN_DIST = 149598.0;      // Distancia Tierra-Sol (1 UA): 149.597.870 km
 
         // 5. Construcción del Plano Eclíptico 3D de Referencia (Idéntico a Simulador 3D)
         function createEclipticPlane3D() {
-            const group = new THREE.Group();
-            group.name = 'eclipticPlaneGroup3D';
-            group.renderOrder = 3;
+            const gridGroup = new THREE.Group();
+            
+            // GridHelper 3D vectorial en el plano horizontal Y = 0 (Eclíptica)
+            // Escala Unificada: 100 Diámetros Terrestres (1.274.200 km = 1.274,2 unidades)
+            // 100 divisiones -> Cada celda mide exactamente 1 Diámetro Terrestre (12,742 km)
+            // Ejes orientadores en Amarillo dorado (0xfacc15) y líneas secundarias en ámbar cálido (0xa16207)
+            const gridHelper = new THREE.GridHelper(1274.2, 100, 0xfacc15, 0xa16207);
+            gridHelper.material.transparent = true;
+            gridHelper.material.opacity = 0.50;
+            gridHelper.material.depthWrite = false;
 
-            const R_ECLIPTIC = 637.1;
-            const R_EARTH = typeof EARTH_RADIUS !== 'undefined' ? EARTH_RADIUS : 6.371;
+            // Inyección GLSL: Difumina suavemente la opacidad más allá de la órbita lunar (446.000 - 637.000 km = 446 - 637 unidades)
+            gridHelper.material.onBeforeCompile = (shader) => {
+                shader.vertexShader = `
+                    varying vec3 vWorldPos;
+                    ${shader.vertexShader}
+                `.replace(
+                    '#include <begin_vertex>',
+                    `
+                    #include <begin_vertex>
+                    vWorldPos = (modelMatrix * vec4(position, 1.0)).xyz;
+                    `
+                );
+                
+                shader.fragmentShader = `
+                    varying vec3 vWorldPos;
+                    ${shader.fragmentShader}
+                `.replace(
+                    '#include <dithering_fragment>',
+                    `
+                    #include <dithering_fragment>
+                    float dist = length(vWorldPos.xz);
+                    float fade = 1.0 - smoothstep(446.0, 637.0, dist);
+                    gl_FragColor.a *= fade;
+                    `
+                );
+            };
 
-            // 1. Superficie de plano semitransparente (disco circular horizontal en plano XZ, normal +Y)
-            const planeGeo = new THREE.CircleGeometry(R_ECLIPTIC, 128);
-            planeGeo.rotateX(-Math.PI / 2);
-            const planeMat = new THREE.MeshBasicMaterial({
-                color: 0xfacc15,
-                transparent: true,
-                opacity: 0.08,
-                side: THREE.DoubleSide,
-                depthWrite: false
-            });
-            group.add(new THREE.Mesh(planeGeo, planeMat));
-
-            // 2. Borde exterior perimétrico del plano eclíptico
-            const outerCirclePts = [];
-            for (let i = 0; i <= 128; i++) {
-                const a = (i / 128) * Math.PI * 2;
-                outerCirclePts.push(new THREE.Vector3(Math.cos(a) * R_ECLIPTIC, 0, Math.sin(a) * R_ECLIPTIC));
-            }
-            const outerCircleGeo = new THREE.BufferGeometry().setFromPoints(outerCirclePts);
-            const outerCircleMat = new THREE.LineBasicMaterial({
-                color: 0xfacc15,
-                transparent: true,
-                opacity: 0.45,
-                depthWrite: false
-            });
-            group.add(new THREE.Line(outerCircleGeo, outerCircleMat));
-
-            // 3. Círculo de corte de la Tierra en el plano eclíptico
-            const earthCirclePts = [];
-            for (let i = 0; i <= 48; i++) {
-                const a = (i / 48) * Math.PI * 2;
-                earthCirclePts.push(new THREE.Vector3(Math.cos(a) * R_EARTH, 0, Math.sin(a) * R_EARTH));
-            }
-            const earthCircleGeo = new THREE.BufferGeometry().setFromPoints(earthCirclePts);
-            const earthCircleMat = new THREE.LineBasicMaterial({
-                color: 0xfacc15,
-                transparent: true,
-                opacity: 0.35,
-                depthWrite: false
-            });
-            group.add(new THREE.Line(earthCircleGeo, earthCircleMat));
-
-            // 4. Ejes cartesianos cruzados en el plano eclíptico
-            const axesGridPts = [
-                new THREE.Vector3(-R_ECLIPTIC, 0, 0), new THREE.Vector3(R_ECLIPTIC, 0, 0),
-                new THREE.Vector3(0, 0, -R_ECLIPTIC), new THREE.Vector3(0, 0, R_ECLIPTIC)
-            ];
-            const axesGridGeo = new THREE.BufferGeometry().setFromPoints(axesGridPts);
-            const axesGridMat = new THREE.LineBasicMaterial({
-                color: 0xfacc15,
-                transparent: true,
-                opacity: 0.25,
-                depthWrite: false
-            });
-            group.add(new THREE.LineSegments(axesGridGeo, axesGridMat));
-
-            return group;
+            gridGroup.add(gridHelper);
+            return gridGroup;
         }
 
         // Rótulos vectoriales sutiles para los Límites de Eclipse
