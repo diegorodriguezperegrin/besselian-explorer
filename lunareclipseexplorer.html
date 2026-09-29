@@ -50,8 +50,9 @@
 
     <!-- Tokens de diseño compartidos -->
     <link rel="stylesheet" href="shared.css?v=20260929_v1">
-    <!-- Precarga de textura terrestre 2K -->
+    <!-- Precarga de texturas terrestres y lunares 2K -->
     <link rel="preload" as="image" href="earth_topo_2048.jpg">
+    <link rel="preload" as="image" href="moon_topo_2048.jpg">
 
     <style>
         /* =========================================================================
@@ -242,6 +243,7 @@
 <body>
     <!-- Precarga nativa decodificada en paralelo para renderizado instantáneo sin boceto en fotograma 1 -->
     <img id="preload-earth-topo" src="earth_topo_2048.jpg" style="display:none;" alt="" decoding="async">
+    <img id="preload-moon-topo" src="moon_topo_2048.jpg" style="display:none;" alt="" decoding="async">
 
     <!-- Capa de Viewports (3D Espacial y 2D Telescópico) -->
     <main id="viewports-container">
@@ -278,6 +280,42 @@
         <button class="ctrl-btn" onclick="cancelGlobePicking()" style="height: 32px; width: 32px; padding: 0; font-size: 0.80rem; border-radius: 10px; flex-shrink: 0;" title="Cancelar (Escape)">
             <i class="fa-solid fa-xmark" aria-hidden="true"></i>
         </button>
+    </div>
+
+    <!-- Buscador Superior Flotante: Píldora Inteligente Colapsable (Estilo SEE) -->
+    <div id="space-3d-search-container" class="floating-top-search-container is-collapsed">
+        <div style="position: relative; width: 100%;">
+            <div class="search-box-unified">
+                <!-- Botón Píldora: visible en reposo con nombre de la ubicación activa -->
+                <button type="button" id="search-pill-toggle" class="search-pill-btn" onclick="expandLocationSearch()" title="Clic para buscar municipio o coordenadas...">
+                    <i class="fa-solid fa-location-dot pill-pin-icon" aria-hidden="true"></i>
+                    <span id="search-pill-label" class="pill-label-text">Mataró (Cosmos Mataró, ES)</span>
+                    <i class="fa-solid fa-magnifying-glass pill-search-icon" aria-hidden="true"></i>
+                </button>
+
+                <!-- Input de búsqueda y botón limpiar: visible al expandirse -->
+                <div id="search-input-wrapper" class="search-input-wrapper">
+                    <i class="fa-solid fa-magnifying-glass search-input-icon" aria-hidden="true"></i>
+                    <input type="text" id="space-3d-search-input" placeholder="Buscar municipio o coordenadas..." autocomplete="off">
+                    <button type="button" id="space-3d-search-clear" style="display: none; background: none; border: none; color: #94a3b8; cursor: pointer; padding: 0 4px; font-size: 0.78rem; flex-shrink: 0;" title="Limpiar"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+
+                <!-- Botonera de acciones rápidas (GPS, Globo, Cenit) -->
+                <div class="search-actions-segmented-group" role="group" aria-label="Acciones rápidas de ubicación">
+                    <button type="button" class="search-action-segment-btn btn-observer-gps" id="btn-space-gps" onclick="detectUserLocation()" title="Detectar mi ubicación actual (GPS)" aria-label="Usar GPS"><i class="fa-solid fa-location-crosshairs"></i></button>
+                    <button type="button" class="search-action-segment-btn" id="btn-space-globe" onclick="toggleGlobePickingMode(true)" title="Marcar en el globo terráqueo 3D" aria-label="Marcar en el globo"><i class="fa-solid fa-earth-americas"></i></button>
+                    <button type="button" class="search-action-segment-btn" id="btn-space-zenith" onclick="selectZenithLocation()" title="Punto Sublunar (Cenit de la Luna en el máximo)" aria-label="Punto Sublunar">🌕</button>
+                </div>
+
+                <!-- Botón de cierre para plegar a la píldora -->
+                <button type="button" id="space-3d-search-close" class="search-close-btn" onclick="collapseLocationSearch()" title="Plegar buscador" aria-label="Plegar buscador">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <!-- Dropdown de resultados de autocompletado en 3D -->
+            <div id="space-3d-search-dropdown" style="display: none; position: absolute; top: calc(100% + 4px); left: 0; width: 100%; background: rgba(11, 19, 41, 0.96); backdrop-filter: blur(16px); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 10px; box-shadow: 0 12px 28px rgba(0,0,0,0.85); max-height: 230px; overflow-y: auto; font-size: 0.78rem; padding: 4px 0; z-index: 1005;">
+            </div>
+        </div>
     </div>
 
     <!-- Barra Flotante de Paneles Minimizados (Apilados a la izquierda) -->
@@ -404,67 +442,24 @@
             <div class="panel-toggle" onclick="toggleSettingsPanel(false)" title="Minimizar panel"><i class="fa-solid fa-chevron-left"></i></div>
         </div>
 
-        <!-- 1. Selector de Ubicación del Observador -->
-        <div class="section-title">
-            <i class="fa-solid fa-location-dot"></i> Ubicación
-        </div>
-        <div style="display: flex; gap: 8px; align-items: center;">
-            <div class="custom-combobox-container" id="observer-combobox-container" style="position: relative; flex: 1; min-width: 0;">
-                <input type="text" class="search-select custom-combobox-input" id="observer-location-input" placeholder="Buscar o elegir ciudad..." value="Mataró (Cosmos Mataró, ES)" style="width: 100%; height: 32px; box-sizing: border-box; padding: 0 32px 0 12px; font-family: var(--font-mono); font-size: 0.80rem; font-weight: 400; background-color: #0f172a; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 10px; color: #f8fafc; cursor: text; outline: none; text-overflow: ellipsis;" autocomplete="off" onfocus="openObserverDropdown(); this.select();" oninput="filterObserverDropdown(this.value, true)" onkeydown="onObserverInputKeyDown(event)">
-                <span style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; color: #94a3b8; font-size: 0.72rem;"><i class="fa-solid fa-chevron-down"></i></span>
-                
-                <!-- Desplegable Filtrable Flotante Estilizado Adaptativo -->
-                <div id="observer-dropdown-menu" class="custom-dropdown-menu" style="display: none; position: absolute; top: calc(100% + 4px); left: 0; min-width: 100%; width: max-content; max-width: calc(100% + 116px); box-sizing: border-box; max-height: 230px; overflow-y: auto; background: #0b1329; border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 10px; box-shadow: 0 12px 30px rgba(0,0,0,0.85); z-index: 1000; padding: 4px; font-family: var(--font-mono);">
-                    <!-- Poblado dinámicamente con filtrado sucesivo -->
-                </div>
-            </div>
-            
-            <!-- Pulsador Único Segmentado de 3 Posiciones: [ 🌍 Marcar | 🎛️ Ajustar | 🎯 GPS ] -->
-            <div class="location-tools-group" id="location-tools-group">
-                <button type="button" class="location-tool-btn" id="btn-pick-on-globe" onclick="toggleGlobePickingMode(true)" title="Marcar en el globo terráqueo 3D">
-                    <i class="fa-solid fa-earth-americas" aria-hidden="true"></i>
-                </button>
-                <button type="button" class="location-tool-btn" id="btn-toggle-custom-coords" onclick="toggleCustomCoords()" title="Introducir coordenadas">
-                    <i class="fa-solid fa-sliders" aria-hidden="true"></i>
-                </button>
-                <button type="button" class="location-tool-btn" id="btn-observer-gps" onclick="detectUserLocation()" title="Detectar mi ubicación actual (GPS)">
-                    <i class="fa-solid fa-crosshairs" aria-hidden="true"></i>
-                </button>
-            </div>
-        </div>
-        
-        <!-- Inputs para Coordenadas Personalizadas -->
-        <div id="observer-custom-coords" style="display: none; gap: 6px; align-items: center;">
-            <div style="flex: 1; display: flex; align-items: center; background: rgba(0,0,0,0.3); border: 1px solid rgba(56,189,248,0.25); border-radius: 6px; padding: 0 6px;">
-                <span style="font-size: 0.68rem; color: var(--text-secondary); margin-right: 4px; font-family: var(--font-mono);">Lat:</span>
-                <input type="number" id="custom-obs-lat" min="-90" max="90" step="0.01" value="41.54" aria-label="Latitud del observador" style="width: 100%; background: transparent; border: none; color: #fff; font-family: var(--font-mono); font-size: 0.75rem; padding: 4px 0;" oninput="onCustomCoordsChange()" onchange="onCustomCoordsChange()">
-            </div>
-            <div style="flex: 1; display: flex; align-items: center; background: rgba(0,0,0,0.3); border: 1px solid rgba(56,189,248,0.25); border-radius: 6px; padding: 0 6px;">
-                <span style="font-size: 0.68rem; color: var(--text-secondary); margin-right: 4px; font-family: var(--font-mono);">Lon:</span>
-                <input type="number" id="custom-obs-lon" min="-180" max="180" step="0.01" value="2.44" aria-label="Longitud del observador" style="width: 100%; background: transparent; border: none; color: #fff; font-family: var(--font-mono); font-size: 0.75rem; padding: 4px 0;" oninput="onCustomCoordsChange()" onchange="onCustomCoordsChange()">
-            </div>
-            <button class="ctrl-btn" onclick="toggleGlobePickingMode(true)" title="Marcar en el globo 3D" style="height: 28px; padding: 0 8px; font-size: 0.72rem; gap: 4px; border-radius: 6px; flex-shrink: 0;">
-                <i class="fa-solid fa-earth-americas" aria-hidden="true"></i>
-            </button>
-        </div>
-
-        <!-- Indicador de la Ubicación Seleccionada Activa y Zona Horaria -->
-        <div style="margin-top: 2px; margin-bottom: 2px; font-size: 0.74rem; color: #f8fafc; font-family: var(--font-mono); display: flex; justify-content: space-between; align-items: center; padding: 0 16px;">
-            <div style="display: flex; align-items: center; gap: 6px;">
-                <i class="fa-solid fa-location-crosshairs" style="font-size: 0.72rem; color: var(--accent-blue);"></i>
-                <span id="observer-header-subtitle" style="font-family: var(--font-mono); font-size: 0.75rem; color: #f8fafc; font-weight: 400; letter-spacing: 0;">41° 32' 58" N  2° 26' 53" E</span>
-            </div>
-            <span id="observer-header-tz" style="font-family: var(--font-mono); font-size: 0.72rem; color: #f8fafc; font-weight: 600;">UTC+2</span>
-        </div>
-
-        <!-- 2. Visibilidad y Fases Locales -->
-        <div class="section-title section-title-between">
+        <!-- Visibilidad y Fases Locales -->
+        <div class="section-title section-title-between" style="margin-top: 4px;">
             <span><i class="fa-solid fa-eye"></i> Visibilidad Local</span>
-            <div class="export-segmented-group">
+            <div class="export-segmented-group" role="group" aria-label="Exportar evento y circunstancias locales">
                 <button type="button" onclick="exportSelectedEclipseToICal()" class="btn-export-segment" title="Añadir a calendario (.ics / iCal)"><i class="fa-solid fa-calendar-plus" aria-hidden="true"></i><span>iCal</span></button>
             </div>
         </div>
         <div class="observer-card" style="margin-top: 0;">
+            <!-- Nombre de la ubicación activa si existe (estilo idéntico a SEE) -->
+            <div id="side-panel-location-name" style="font-weight: 700; color: #38bdf8; font-size: 0.84rem; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: var(--font-body, system-ui);" title="Mataró (Cosmos Mataró, ES)">Mataró (Cosmos Mataró, ES)</div>
+            <!-- Coordenadas del Observador y Zona Horaria -->
+            <div style="font-size: 0.74rem; font-family: var(--font-mono); margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 5px;">
+                    <i class="fa-solid fa-location-crosshairs" style="color: var(--accent-blue, #38bdf8); font-size: 0.70rem;"></i>
+                    <span id="observer-header-subtitle" style="color: #f8fafc; font-weight: 400;">41° 32' 58" N  2° 26' 53" E</span>
+                </div>
+                <span id="observer-header-tz" style="color: #f8fafc; font-weight: 600;">UTC+2</span>
+            </div>
             <div class="observer-badge-header">
                 <span class="vis-badge-tag vis-full" id="observer-vis-badge">Visible al orto</span>
             </div>
@@ -625,9 +620,9 @@
     </aside>
 
     <!-- SCRIPT PRINCIPAL DE LA APLICACIÓN -->
-    <script src="lunar_observer_manager.js"></script>
+    <script src="lunar_observer_manager.js?v=20260929_v2"></script>
     <script src="shared_ui_panels.js?v=20260929_v1"></script>
-    <script src="lunar_scene_3d.js?v=20260929_v1"></script>
+    <script src="lunar_scene_3d.js?v=20260929_v2"></script>
     <script src="lunar_telescopic.js"></script>
     <script>
         var RAD = Math.PI / 180, DEG = 180 / Math.PI;
@@ -714,7 +709,13 @@ END:VCALENDAR`;
         // Inicialización al cargar DOM
         window.addEventListener('DOMContentLoaded', () => {
             initSearchListeners();
+            if (typeof setupSpace3DSearchListeners === 'function') {
+                setupSpace3DSearchListeners();
+            }
             populateObserverSelect();
+            if (typeof updatePillLabel === 'function') {
+                updatePillLabel();
+            }
             initTelescopicCanvas();
             initThreeJS();
             

@@ -291,36 +291,41 @@ function _getDOM(id) {
                 alert("La geolocalización no está soportada por su navegador.");
                 return;
             }
-            const gpsBtn = document.getElementById('btn-observer-gps');
-            if (gpsBtn) gpsBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+            const gpsBtns = document.querySelectorAll('.btn-observer-gps');
+            gpsBtns.forEach(b => b.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>');
 
             navigator.geolocation.getCurrentPosition(
                 (pos) => {
-                    const lat = parseFloat(pos.coords.latitude.toFixed(2));
-                    const lon = parseFloat(pos.coords.longitude.toFixed(2));
+                    const lat = parseFloat(pos.coords.latitude.toFixed(4));
+                    const lon = parseFloat(pos.coords.longitude.toFixed(4));
                     let userTz = 'UTC';
                     try {
                         userTz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
                     } catch(e) {}
 
-                    const coordsStr = formatLatLonString(lat, lon, 2);
+                    const coordsStr = `GPS (${formatLatLonString(lat, lon, 2)})`;
                     const input = document.getElementById('observer-location-input');
                     if (input) input.value = coordsStr;
-                    toggleCustomCoords(true);
+                    const spaceInput = document.getElementById('space-3d-search-input');
+                    if (spaceInput) spaceInput.value = coordsStr;
                     const latIn = document.getElementById('custom-obs-lat');
                     const lonIn = document.getElementById('custom-obs-lon');
                     if (latIn) latIn.value = lat;
                     if (lonIn) lonIn.value = lon;
 
                     updateObserverPosition(lat, lon, coordsStr, userTz);
+                    if (typeof recenterEarth === 'function') {
+                        recenterEarth(lat, lon);
+                    }
+                    collapseLocationSearch();
 
-                    if (gpsBtn) gpsBtn.innerHTML = '<i class="fa-solid fa-crosshairs" style="color: #4ade80;"></i>';
+                    gpsBtns.forEach(b => b.innerHTML = '<i class="fa-solid fa-crosshairs" style="color: #4ade80;"></i>');
                     setTimeout(() => {
-                        if (gpsBtn) gpsBtn.innerHTML = '<i class="fa-solid fa-crosshairs"></i>';
+                        gpsBtns.forEach(b => b.innerHTML = '<i class="fa-solid fa-crosshairs"></i>');
                     }, 2000);
                 },
                 (err) => {
-                    if (gpsBtn) gpsBtn.innerHTML = '<i class="fa-solid fa-crosshairs"></i>';
+                    gpsBtns.forEach(b => b.innerHTML = '<i class="fa-solid fa-crosshairs"></i>');
                     alert(`No se pudo obtener la ubicación GPS: ${err.message || 'Permiso denegado'}`);
                 },
                 { timeout: 10000, maximumAge: 60000 }
@@ -354,6 +359,14 @@ function _getDOM(id) {
             if (subtitleEl) {
                 subtitleEl.textContent = `${formatCoordDms(lat, true)}  ${formatCoordDms(lon, false)}`;
             }
+
+            const sideLocName = document.getElementById('side-panel-location-name');
+            if (sideLocName) {
+                sideLocName.textContent = currentObserver.name || 'Ubicación activa';
+                sideLocName.title = currentObserver.name || '';
+                sideLocName.style.display = 'block';
+            }
+            updatePillLabel(currentObserver.name);
 
             const obsChkLbl = document.querySelector('#lbl-show-observer span');
             if (obsChkLbl) {
@@ -572,6 +585,328 @@ function _getDOM(id) {
         }
 
 
+        // =========================================================================
+        // BUSCADOR SUPERIOR FLOTANTE: PÍLDORA INTELIGENTE COLAPSABLE (Estilo SEE)
+        // =========================================================================
+
+        function parseCoordinatesInput(str) {
+            if (!str || typeof str !== 'string') return null;
+            const s = str.trim();
+            if (!s) return null;
+
+            // 1. Decimal simple (ej: 41.54, 2.44 o 41.54 -2.44)
+            const decSimple = s.match(/^\s*([+-]?\d+(?:\.\d+)?)\s*[,;\s]\s*([+-]?\d+(?:\.\d+)?)\s*$/);
+            if (decSimple) {
+                const lat = parseFloat(decSimple[1]);
+                const lon = parseFloat(decSimple[2]);
+                if (!isNaN(lat) && !isNaN(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180) {
+                    return { lat, lon };
+                }
+            }
+
+            // 2. Decimal con hemisferios (Lat, Lon)
+            const decHemi1 = s.match(/^\s*([+-]?\d+(?:\.\d+)?)\s*°?\s*([NSns])\s*[,;\s]\s*([+-]?\d+(?:\.\d+)?)\s*°?\s*([EWewOo])\s*$/);
+            if (decHemi1) {
+                let lat = parseFloat(decHemi1[1]);
+                if (/s/i.test(decHemi1[2])) lat = -Math.abs(lat);
+                let lon = parseFloat(decHemi1[3]);
+                if (/w|o/i.test(decHemi1[4])) lon = -Math.abs(lon);
+                if (!isNaN(lat) && !isNaN(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180) {
+                    return { lat, lon };
+                }
+            }
+
+            // 2b. Decimal con hemisferios invertido (Lon, Lat)
+            const decHemi2 = s.match(/^\s*([+-]?\d+(?:\.\d+)?)\s*°?\s*([EWewOo])\s*[,;\s]\s*([+-]?\d+(?:\.\d+)?)\s*°?\s*([NSns])\s*$/);
+            if (decHemi2) {
+                let lon = parseFloat(decHemi2[1]);
+                if (/w|o/i.test(decHemi2[2])) lon = -Math.abs(lon);
+                let lat = parseFloat(decHemi2[3]);
+                if (/s/i.test(decHemi2[4])) lat = -Math.abs(lat);
+                if (!isNaN(lat) && !isNaN(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180) {
+                    return { lat, lon };
+                }
+            }
+
+            // 3. DMS estándar: 41° 29' 43" N, 2° 22' 45" E
+            const dms1 = s.match(/^\s*(\d{1,2})[°\s]+(\d{1,2})['\s]+(?:(\d+(?:\.\d+)?)["]?\s*)?([NSns])\s*[,;\s]\s*(\d{1,3})[°\s]+(\d{1,2})['\s]+(?:(\d+(?:\.\d+)?)["]?\s*)?([EWewOo])\s*$/);
+            if (dms1) {
+                let lat = parseFloat(dms1[1]) + parseFloat(dms1[2]) / 60 + (dms1[3] ? parseFloat(dms1[3]) / 3600 : 0);
+                if (/s/i.test(dms1[4])) lat = -lat;
+                let lon = parseFloat(dms1[5]) + parseFloat(dms1[6]) / 60 + (dms1[7] ? parseFloat(dms1[7]) / 3600 : 0);
+                if (/w|o/i.test(dms1[8])) lon = -lon;
+                if (!isNaN(lat) && !isNaN(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180) {
+                    return { lat, lon };
+                }
+            }
+
+            // 3b. DMS invertido
+            const dms2 = s.match(/^\s*(\d{1,3})[°\s]+(\d{1,2})['\s]+(?:(\d+(?:\.\d+)?)["]?\s*)?([EWewOo])\s*[,;\s]\s*(\d{1,2})[°\s]+(\d{1,2})['\s]+(?:(\d+(?:\.\d+)?)["]?\s*)?([NSns])\s*$/);
+            if (dms2) {
+                let lon = parseFloat(dms2[1]) + parseFloat(dms2[2]) / 60 + (dms2[3] ? parseFloat(dms2[3]) / 3600 : 0);
+                if (/w|o/i.test(dms2[4])) lon = -lon;
+                let lat = parseFloat(dms2[5]) + parseFloat(dms2[6]) / 60 + (dms2[7] ? parseFloat(dms2[7]) / 3600 : 0);
+                if (/s/i.test(dms2[8])) lat = -lat;
+                if (!isNaN(lat) && !isNaN(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180) {
+                    return { lat, lon };
+                }
+            }
+
+            return null;
+        }
+
+        function expandLocationSearch() {
+            const container = document.getElementById('space-3d-search-container');
+            const input = document.getElementById('space-3d-search-input');
+            if (!container) return;
+            container.classList.remove('is-collapsed');
+            if (input) {
+                const curName = (currentObserver && currentObserver.name && !currentObserver.name.startsWith('Punto Sublunar')) ? currentObserver.name : '';
+                input.value = curName;
+                const clearBtn = document.getElementById('space-3d-search-clear');
+                if (clearBtn) clearBtn.style.display = curName.length > 0 ? 'block' : 'none';
+                setTimeout(() => {
+                    input.focus();
+                    input.select();
+                }, 40);
+            }
+        }
+
+        function collapseLocationSearch() {
+            const container = document.getElementById('space-3d-search-container');
+            const dropdown = document.getElementById('space-3d-search-dropdown');
+            if (container) container.classList.add('is-collapsed');
+            if (dropdown) dropdown.style.display = 'none';
+            updatePillLabel();
+        }
+
+        function updatePillLabel(customName = null) {
+            const pillLabel = document.getElementById('search-pill-label');
+            if (!pillLabel) return;
+            let label = customName;
+            if (!label) {
+                if (currentObserver && currentObserver.name) {
+                    label = currentObserver.name;
+                } else {
+                    label = 'Elegir ubicación...';
+                }
+            }
+            pillLabel.textContent = label;
+            pillLabel.title = `Ubicación activa: ${label} (Clic para buscar)`;
+        }
+
+        function setupSpace3DSearchListeners() {
+            const input = document.getElementById('space-3d-search-input');
+            const clearBtn = document.getElementById('space-3d-search-clear');
+            const dropdown = document.getElementById('space-3d-search-dropdown');
+            const container = document.getElementById('space-3d-search-container');
+            if (!input || !dropdown) return;
+
+            if (container) {
+                container.addEventListener('pointerdown', (e) => e.stopPropagation());
+                container.addEventListener('wheel', (e) => e.stopPropagation(), { passive: true });
+            }
+
+            let debounceTimer = null;
+
+            input.addEventListener('input', (e) => {
+                const val = e.target.value.trim();
+                if (clearBtn) clearBtn.style.display = val.length > 0 ? 'block' : 'none';
+                clearTimeout(debounceTimer);
+
+                if (val.length < 2) {
+                    dropdown.style.display = 'none';
+                    return;
+                }
+
+                // 1. Coordenadas numéricas directas
+                const parsedCoords = parseCoordinatesInput(val);
+                if (parsedCoords) {
+                    dropdown.innerHTML = `
+                        <div class="space-3d-search-result-item" onclick="select3DSearchCoords(${parsedCoords.lat}, ${parsedCoords.lon})">
+                            <i class="fa-solid fa-location-dot" style="color: #38bdf8;"></i>
+                            <div>
+                                <div>Ir a coordenadas: <strong>${parsedCoords.lat.toFixed(4)}°, ${parsedCoords.lon.toFixed(4)}°</strong></div>
+                                <div style="font-size: 0.68rem; color: #94a3b8;">Presiona Enter o haz clic para enfocar este punto en el globo</div>
+                            </div>
+                        </div>
+                    `;
+                    dropdown.style.display = 'block';
+                    return;
+                }
+
+                // 2. Presets locales del catálogo
+                const cleanQ = val.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                const catalog = (typeof OBSERVER_PRESETS !== 'undefined' && OBSERVER_PRESETS) ||
+                                (typeof window !== 'undefined' && window.OBSERVER_LOCATIONS_CATALOG) || [];
+                const matchedPresets = catalog.filter(p => {
+                    const pName = (p.name || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                    return pName.includes(cleanQ);
+                }).slice(0, 3);
+
+                // 3. Geocoder Photon con sesgo geográfico
+                debounceTimer = setTimeout(async () => {
+                    try {
+                        const center = (currentObserver && currentObserver.lat != null)
+                            ? { lat: currentObserver.lat, lng: currentObserver.lon }
+                            : { lat: 40.0, lng: -3.5 };
+                        const res = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(val)}&lat=${center.lat}&lon=${center.lng}&limit=12`);
+                        if (!res.ok) {
+                            if (matchedPresets.length > 0) render3DSearchResults([], val, matchedPresets);
+                            return;
+                        }
+                        const data = await res.json();
+                        const rawFeatures = data.features || [];
+
+                        rawFeatures.sort((a, b) => {
+                            const score = f => {
+                                const p = f.properties || {};
+                                let s = 1;
+                                if (p.countrycode === 'ES') s *= 6;
+                                if (['city', 'town', 'municipality', 'administrative'].includes(p.osm_value) || ['city', 'town'].includes(p.type)) s *= 5;
+                                if (p.osm_value === 'isolated_dwelling') s *= 0.2;
+                                return s;
+                            };
+                            const dA = Math.hypot(a.geometry.coordinates[1] - center.lat, a.geometry.coordinates[0] - center.lng) / score(a);
+                            const dB = Math.hypot(b.geometry.coordinates[1] - center.lat, b.geometry.coordinates[0] - center.lng) / score(b);
+                            return dA - dB;
+                        });
+
+                        render3DSearchResults(rawFeatures.slice(0, 6), val, matchedPresets);
+                    } catch(err) {
+                        console.warn('[Espacio 3D] Error en geocoder Photon:', err);
+                        render3DSearchResults([], val, matchedPresets);
+                    }
+                }, 180);
+            });
+
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    const val = input.value.trim();
+                    const parsedCoords = parseCoordinatesInput(val);
+                    if (parsedCoords) {
+                        select3DSearchCoords(parsedCoords.lat, parsedCoords.lon);
+                    } else {
+                        const firstItem = dropdown.querySelector('.space-3d-search-result-item');
+                        if (firstItem) firstItem.click();
+                    }
+                } else if (e.key === 'Escape') {
+                    collapseLocationSearch();
+                }
+            });
+
+            if (clearBtn) {
+                clearBtn.addEventListener('click', () => {
+                    input.value = '';
+                    clearBtn.style.display = 'none';
+                    dropdown.style.display = 'none';
+                    input.focus();
+                });
+            }
+
+            document.addEventListener('click', (e) => {
+                if (container && !container.contains(e.target)) {
+                    collapseLocationSearch();
+                }
+            });
+        }
+
+        function render3DSearchResults(features, originalQuery, matchedPresets = []) {
+            const dropdown = document.getElementById('space-3d-search-dropdown');
+            if (!dropdown) return;
+
+            if ((!features || features.length === 0) && matchedPresets.length === 0) {
+                const offlineNotice = (!navigator.onLine)
+                    ? `<div style="font-size: 0.70rem; color: #f59e0b; margin-top: 4px; display: flex; align-items: center; gap: 5px;"><i class="fa-solid fa-triangle-exclamation"></i> Sin conexión: escribe coordenadas (ej: 41.54, 2.44) o una ciudad del catálogo.</div>`
+                    : '';
+                dropdown.innerHTML = `<div style="padding: 8px 12px; color: #94a3b8; font-size: 0.74rem;">No se encontraron localidades para "${originalQuery}"${offlineNotice}</div>`;
+                dropdown.style.display = 'block';
+                return;
+            }
+
+            let html = '';
+
+            matchedPresets.forEach(preset => {
+                const safeName = (preset.name || '').replace(/'/g, "\\'");
+                html += `
+                    <div class="space-3d-search-result-item" onclick="select3DSearchResult(${preset.lat}, ${preset.lon}, '${safeName}')" style="background: rgba(56, 189, 248, 0.08);">
+                        <i class="fa-solid fa-star" style="color: #facc15; font-size: 0.80rem; flex-shrink: 0;"></i>
+                        <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                            <div style="font-weight: 600; color: #f8fafc;">${preset.name}</div>
+                            <div style="font-size: 0.68rem; color: #38bdf8;">Ubicación destacada · ${preset.lat.toFixed(2)}°, ${preset.lon.toFixed(2)}°</div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            (features || []).forEach(f => {
+                const props = f.properties || {};
+                const name = props.name || props.street || originalQuery;
+                const contextParts = [props.city, props.state, props.country].filter(Boolean);
+                const context = contextParts.join(', ') || props.country || '';
+                const lon = f.geometry.coordinates[0];
+                const lat = f.geometry.coordinates[1];
+                const safeName = name.replace(/'/g, "\\'");
+                html += `
+                    <div class="space-3d-search-result-item" onclick="select3DSearchResult(${lat}, ${lon}, '${safeName}')">
+                        <i class="fa-solid fa-location-dot" style="color: #38bdf8; font-size: 0.80rem; flex-shrink: 0;"></i>
+                        <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                            <div style="font-weight: 600; color: #f8fafc;">${name}</div>
+                            <div style="font-size: 0.68rem; color: #94a3b8;">${context}</div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            dropdown.innerHTML = html;
+            dropdown.style.display = 'block';
+        }
+
+        function select3DSearchResult(lat, lon, name) {
+            const dropdown = document.getElementById('space-3d-search-dropdown');
+            const input = document.getElementById('space-3d-search-input');
+            if (dropdown) dropdown.style.display = 'none';
+            if (input) input.value = name;
+
+            let tz = null;
+            const cleanN = (name || '').toLowerCase();
+            const found = OBSERVER_PRESETS.find(p => p.name.toLowerCase() === cleanN || (Math.abs(p.lat - lat) < 0.1 && Math.abs(p.lon - lon) < 0.1));
+            if (found && found.tz) tz = found.tz;
+
+            updateObserverPosition(lat, lon, name, tz);
+            if (typeof recenterEarth === 'function') {
+                recenterEarth(lat, lon);
+            }
+            collapseLocationSearch();
+        }
+
+        function select3DSearchCoords(lat, lon) {
+            const dropdown = document.getElementById('space-3d-search-dropdown');
+            const input = document.getElementById('space-3d-search-input');
+            if (dropdown) dropdown.style.display = 'none';
+            const coordsStr = `${lat.toFixed(4)}°, ${lon.toFixed(4)}°`;
+            if (input) input.value = coordsStr;
+
+            updateObserverPosition(lat, lon, coordsStr, null);
+            if (typeof recenterEarth === 'function') {
+                recenterEarth(lat, lon);
+            }
+            collapseLocationSearch();
+        }
+
+        function selectZenithLocation() {
+            if (!currentEclipse || currentEclipse.zenLat == null) return;
+            const lat = currentEclipse.zenLat;
+            const lon = currentEclipse.zenLon;
+            const name = `Punto Sublunar (${formatCoordDms(lat, true)}, ${formatCoordDms(lon, false)})`;
+            updateObserverPosition(lat, lon, name, 'UTC');
+            if (typeof recenterEarth === 'function') {
+                recenterEarth(lat, lon);
+            }
+            collapseLocationSearch();
+        }
+
+
 // Exposición global
 if (typeof window !== 'undefined') {
     window.getUtcOffsetString = getUtcOffsetString;
@@ -596,4 +931,13 @@ if (typeof window !== 'undefined') {
     window.handleGlobePickingClick = handleGlobePickingClick;
     window.confirmGlobePicking = confirmGlobePicking;
     window.cancelGlobePicking = cancelGlobePicking;
+    window.parseCoordinatesInput = parseCoordinatesInput;
+    window.expandLocationSearch = expandLocationSearch;
+    window.collapseLocationSearch = collapseLocationSearch;
+    window.updatePillLabel = updatePillLabel;
+    window.setupSpace3DSearchListeners = setupSpace3DSearchListeners;
+    window.render3DSearchResults = render3DSearchResults;
+    window.select3DSearchResult = select3DSearchResult;
+    window.select3DSearchCoords = select3DSearchCoords;
+    window.selectZenithLocation = selectZenithLocation;
 }

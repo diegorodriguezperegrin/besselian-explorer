@@ -410,6 +410,18 @@ var SUN_DIST = 149598.0;      // Distancia Tierra-Sol (1 UA): 149.597.870 km
             );
         }
 
+        function recenterEarth(lat, lng) {
+            focusedBody3D = 'earth';
+            const center = (controls3D && controls3D.target) ? controls3D.target : new THREE.Vector3(0, 0, 0);
+            const currentDist = (camera3D)
+                ? Math.max(20.0, Math.min(60.0, camera3D.position.distanceTo(center) || 30.0))
+                : 30.0;
+            const targetPosLocal = latLngToVector3(lat, lng, currentDist);
+            const rotY = (earthMesh3D && earthMesh3D.rotation) ? earthMesh3D.rotation.y : 0;
+            const targetPos = targetPosLocal.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), rotY);
+            transitionCamera3D(new THREE.Vector3(0, 0, 0), targetPos, 7.0, 750);
+        }
+
         // [Globe picking mode] Extraído a lunar_observer_manager.js
 
         function initThreeJS() {
@@ -786,6 +798,9 @@ var SUN_DIST = 149598.0;      // Distancia Tierra-Sol (1 UA): 149.597.870 km
             // Luna 3D con Textura Equirrectangular Oficial NASA LRO (2048x1024) y Shader Volumétrico de Sombra
             const moonGeo = new THREE.SphereGeometry(MOON_RADIUS, 64, 64);
             moonMat = new THREE.MeshPhongMaterial({
+                color: 0xd8dde6, // Base plateada clara para garantizar visibilidad luminosa en el espacio
+                emissive: new THREE.Color(0x222834), // Luz tenue cenicienta de relleno para evitar que se vuelva negra
+                emissiveIntensity: 0.30,
                 shininess: 6
             });
             moonMat.userData = {
@@ -822,18 +837,51 @@ var SUN_DIST = 149598.0;      // Distancia Tierra-Sol (1 UA): 149.597.870 km
                 );
             };
 
-            const texLoader = new THREE.TextureLoader();
-            const moonSrc = 'moon_topo_2048.jpg';
-            const moonTexture3D = texLoader.load(moonSrc, function(tex) {
-                tex.needsUpdate = true;
-                if (moonMat) {
-                    moonMat.map = tex;
-                    moonMat.needsUpdate = true;
+            const MOON_TEX_LOCAL = 'moon_topo_2048.jpg';
+            const MOON_TEX_CDN = 'https://cdn.jsdelivr.net/gh/diegorodriguezperegrin/besselian-explorer@main/moon_topo_2048.jpg';
+            const moonTexLoader = new THREE.TextureLoader();
+            let isMoonTexLoaded = false;
+
+            function applyMoonTexture(texture) {
+                if (!texture || isMoonTexLoaded) return;
+                isMoonTexLoaded = true;
+                texture.needsUpdate = true;
+                if (moonMat.map && moonMat.map !== texture && moonMat.map.dispose) {
+                    moonMat.map.dispose();
                 }
+                moonMat.map = texture;
+                moonMat.needsUpdate = true;
                 requestRender3D();
-            });
-            moonMat.map = moonTexture3D;
+            }
+
+            const preloadMoonImg = document.getElementById('preload-moon-topo');
+            if (!isLocalFile && preloadMoonImg && preloadMoonImg.complete && preloadMoonImg.naturalWidth > 0) {
+                applyMoonTexture(new THREE.Texture(preloadMoonImg));
+            } else if (!isLocalFile && preloadMoonImg) {
+                if (preloadMoonImg.decode) {
+                    preloadMoonImg.decode().then(() => {
+                        applyMoonTexture(new THREE.Texture(preloadMoonImg));
+                    }).catch(() => {
+                        moonTexLoader.load(MOON_TEX_LOCAL, applyMoonTexture, undefined, () => {
+                            moonTexLoader.load(MOON_TEX_CDN, applyMoonTexture);
+                        });
+                    });
+                } else {
+                    preloadMoonImg.onload = () => applyMoonTexture(new THREE.Texture(preloadMoonImg));
+                    preloadMoonImg.onerror = () => {
+                        moonTexLoader.load(MOON_TEX_LOCAL, applyMoonTexture, undefined, () => {
+                            moonTexLoader.load(MOON_TEX_CDN, applyMoonTexture);
+                        });
+                    };
+                }
+            } else {
+                moonTexLoader.load(MOON_TEX_LOCAL, applyMoonTexture, undefined, () => {
+                    moonTexLoader.load(MOON_TEX_CDN, applyMoonTexture);
+                });
+            }
+
             moonMesh3D = new THREE.Mesh(moonGeo, moonMat);
+            moonMesh3D.renderOrder = 3;
             scene3D.add(moonMesh3D);
 
             moonPolarAxisGroup = createMoonPolarAxis();
@@ -1277,4 +1325,5 @@ if (typeof window !== 'undefined') {
     window.toggle3DCones = toggle3DCones;
     window.getSubsolarAndSublunarCoords = getSubsolarAndSublunarCoords;
     window.recenterLunarScene = recenterLunarScene;
+    window.recenterEarth = recenterEarth;
 }

@@ -1803,6 +1803,21 @@ input:focus, select:focus {
     background: rgba(255, 255, 255, 0.1);
 }
 
+.space-3d-search-result-item {
+    padding: 7px 12px;
+    cursor: pointer;
+    color: #f8fafc;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    transition: background 0.15s ease;
+}
+
+.space-3d-search-result-item:hover {
+    background: rgba(56, 189, 248, 0.18) !important;
+}
+
 /* La barra de búsqueda flotante NO debe aparecer ni en MODO Telescopio ni en MODO Ruta */
 body[data-view-mode="telescopic"] .floating-top-search-container,
 body[data-view-mode="route"] .floating-top-search-container,
