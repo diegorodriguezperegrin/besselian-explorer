@@ -400,6 +400,16 @@ var SUN_DIST = 149598.0;      // Distancia Tierra-Sol (1 UA): 149.597.870 km
             }
         }
 
+        function recenterLunarScene() {
+            focusedBody3D = null;
+            transitionCamera3D(
+                new THREE.Vector3(0, -10, -190),
+                new THREE.Vector3(0, 130, 300),
+                7.0,
+                750
+            );
+        }
+
         // [Globe picking mode] Extraído a lunar_observer_manager.js
 
         function initThreeJS() {
@@ -1266,4 +1276,5 @@ if (typeof window !== 'undefined') {
     window.update3DEclipseGeometry = update3DEclipseGeometry;
     window.toggle3DCones = toggle3DCones;
     window.getSubsolarAndSublunarCoords = getSubsolarAndSublunarCoords;
+    window.recenterLunarScene = recenterLunarScene;
 }

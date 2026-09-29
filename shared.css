@@ -1142,6 +1142,71 @@ input:focus, select:focus {
     color: #060911;
 }
 
+/* Cartucho Unificado de Exportación (iCal, KML, GPX) */
+.export-segmented-group {
+    display: inline-flex;
+    align-items: center;
+    height: 18px;
+    background: rgba(56, 189, 248, 0.06);
+    border: 1px solid rgba(56, 189, 248, 0.28);
+    border-radius: 5px;
+    overflow: hidden;
+    flex-shrink: 0;
+    box-sizing: border-box;
+}
+
+.btn-export-segment {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 3px !important;
+    height: 100% !important;
+    padding: 0 5px !important;
+    background: transparent !important;
+    border: none !important;
+    border-right: 1px solid rgba(56, 189, 248, 0.20) !important;
+    color: #38bdf8 !important;
+    font-size: 0.64rem !important;
+    font-family: var(--font-heading, system-ui) !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    text-decoration: none !important;
+    white-space: nowrap !important;
+    line-height: 1 !important;
+    user-select: none !important;
+    box-sizing: border-box !important;
+    transition: background 0.15s ease, color 0.15s ease !important;
+}
+
+.btn-export-segment:last-child {
+    border-right: none !important;
+}
+
+.btn-export-segment:hover {
+    background: rgba(56, 189, 248, 0.22) !important;
+    color: #ffffff !important;
+}
+
+.btn-export-segment:active {
+    background: rgba(56, 189, 248, 0.35) !important;
+}
+
+.btn-export-segment i {
+    font-size: 0.60rem !important;
+    pointer-events: none !important;
+    color: inherit !important;
+    line-height: 1 !important;
+}
+
+.btn-export-segment span {
+    pointer-events: none !important;
+    color: inherit !important;
+    font-size: inherit !important;
+    font-weight: inherit !important;
+    letter-spacing: 0.02em !important;
+    line-height: 1 !important;
+}
+
 
 /* =========================================================================
    FICHA DE CIRCUNSTANCIAS LOCALES Y DATOS ASTRONOMICOS

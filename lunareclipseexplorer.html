@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Lunar Eclipse Explorer - Cosmos Mataró</title>
     <script>
         (function() {
@@ -21,6 +21,9 @@
     <meta name="description" content="Explorador y simulador telescópico de eclipses lunares con datos del catálogo de 5 milenios de la NASA (Espenak & Meeus) por Cosmos Mataró.">
     <meta name="theme-color" content="#060911">
     <meta name="author" content="Cosmos Mataró">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     
     <!-- Open Graph / Social -->
     <meta property="og:type" content="website">
@@ -46,7 +49,7 @@
     <script src="observer_locations.js"></script>
 
     <!-- Tokens de diseño compartidos -->
-    <link rel="stylesheet" href="shared.css">
+    <link rel="stylesheet" href="shared.css?v=20260929_v1">
     <!-- Precarga de textura terrestre 2K -->
     <link rel="preload" as="image" href="earth_topo_2048.jpg">
 
@@ -56,10 +59,23 @@
            (Los estilos y componentes comunes se cargan desde shared.css)
            ========================================================================= */
 
-        #canvas-telescopic, #canvas-map {
+        /* Canvas de telescopio interactivo */
+        #canvas-telescopic {
             width: 100%;
             height: 100%;
             display: block;
+            cursor: grab;
+        }
+        #canvas-telescopic:active {
+            cursor: grabbing;
+        }
+
+        /* Rótulo de telemetría numérica en HUD Telescópico con cifras tabulares fijas */
+        #hud-pill-coords {
+            font-family: var(--font-mono, monospace);
+            font-variant-numeric: tabular-nums;
+            font-feature-settings: "tnum" 1;
+            white-space: pre;
         }
 
         /* Buscador General de Eclipses */
@@ -265,17 +281,17 @@
     </div>
 
     <!-- Barra Flotante de Paneles Minimizados (Apilados a la izquierda) -->
-    <nav class="top-nav-bar" id="top-nav-bar">
-        <button class="reopen-btn" id="btn-reopen-left" onclick="toggleSidebar(null)" title="Abrir/Cerrar panel de Eclipses">
+    <nav class="top-nav-bar" id="top-nav-bar" aria-label="Controles de navegación de paneles">
+        <button class="reopen-btn" id="btn-reopen-left" onclick="toggleSidebar(null)" title="Abrir/Cerrar panel de Eclipses" aria-label="Abrir o cerrar panel de Eclipses">
             <i class="fa-solid fa-moon" aria-hidden="true"></i>
             <span>Eclipses</span>
         </button>
-        <button class="reopen-btn" id="btn-reopen-right" onclick="toggleSettingsPanel(null)" title="Abrir/Cerrar panel de Visualización">
+        <button class="reopen-btn" id="btn-reopen-right" onclick="toggleSettingsPanel(null)" title="Abrir/Cerrar panel de Visualización" aria-label="Abrir o cerrar panel de Visualización">
             <i class="fa-solid fa-sliders" aria-hidden="true"></i>
             <span>Visualización</span>
         </button>
-        <button class="reopen-btn" id="btn-reopen-dock" onclick="togglePlaybackDock(null)" title="Abrir/Cerrar Reproductor">
-            <i class="fa-solid fa-circle-play" aria-hidden="true"></i>
+        <button class="reopen-btn" id="btn-reopen-dock" onclick="togglePlaybackDock(null)" title="Abrir/Cerrar Reproductor" aria-label="Abrir o cerrar reproductor temporal">
+            <i class="fa-solid fa-play" aria-hidden="true"></i>
             <span>Reproducción</span>
         </button>
     </nav>
@@ -309,10 +325,10 @@
         </div>
         <div class="search-row" style="display: flex; gap: 8px; align-items: center; margin-bottom: 0;">
             <div style="width: 85px; flex-shrink: 0;">
-                <input type="number" class="search-input" id="year-input" placeholder="Año" value="2026" min="1801" max="2200" style="width: 100%; height: 36px; box-sizing: border-box; padding: 0 6px; font-size: 0.88rem; font-weight: 400; text-align: center; background: #0f172a; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 10px;">
+                <input type="number" class="search-input" id="year-input" placeholder="Año" value="2026" min="1801" max="2200" aria-label="Año del eclipse lunar" style="width: 100%; height: 32px; box-sizing: border-box; padding: 0 6px; font-size: 0.88rem; font-weight: 400; text-align: center; background: #0f172a; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 10px;">
             </div>
             <div style="flex: 1; min-width: 0;">
-                <select class="search-select" id="eclipse-select" style="width: 100%; height: 36px; box-sizing: border-box; padding: 0 30px 0 12px; font-size: 0.84rem; font-weight: 400; background-color: #0f172a; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 10px; color: #f8fafc;">
+                <select class="search-select" id="eclipse-select" aria-label="Seleccionar eclipse lunar" style="width: 100%; height: 32px; box-sizing: border-box; padding: 0 30px 0 12px; font-size: 0.84rem; font-weight: 400; background-color: #0f172a; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 10px; color: #f8fafc;">
                     <!-- Poblado dinámicamente -->
                 </select>
             </div>
@@ -444,7 +460,9 @@
         <!-- 2. Visibilidad y Fases Locales -->
         <div class="section-title section-title-between">
             <span><i class="fa-solid fa-eye"></i> Visibilidad Local</span>
-            <button onclick="exportSelectedEclipseToICal()" style="background: none; border: none; color: var(--accent-blue); font-size: 0.72rem; cursor: pointer; text-decoration: underline;"><i class="fa-solid fa-calendar-plus" aria-hidden="true"></i> iCal</button>
+            <div class="export-segmented-group">
+                <button type="button" onclick="exportSelectedEclipseToICal()" class="btn-export-segment" title="Añadir a calendario (.ics / iCal)"><i class="fa-solid fa-calendar-plus" aria-hidden="true"></i><span>iCal</span></button>
+            </div>
         </div>
         <div class="observer-card" style="margin-top: 0;">
             <div class="observer-badge-header">
@@ -582,30 +600,34 @@
             <div class="contact-marker" id="marker-p4" title="P4: Fin Penumbra"></div>
         </div>
 
-        <!-- Fila Inferior: Botonera centrada y Selector de Velocidad -->
+        <!-- Fila Inferior: Indicador de velocidad, Botonera Centrada compacta y Recentrado -->
         <div class="playback-dock-bottom">
             <div class="playback-dock-bottom-left">
-                <span id="speed-indicator-badge" style="font-family: var(--font-mono); font-size: 0.78rem; color: var(--accent-blue); font-weight: 600; padding: 0 4px; min-width: 28px; display: inline-block;">1x</span>
+                <span id="speed-indicator-badge" style="font-family: var(--font-mono); font-size: 0.74rem; color: var(--accent-blue); font-weight: 600; padding: 0 3px; min-width: 26px; display: inline-block; text-align: center;">1x</span>
             </div>
-            <div class="player-ctrls-compact">
-                <button class="ctrl-btn" id="btn-rewind" onclick="changeSpeedStep(-1)" title="Retroceder / Aumentar velocidad atrás (1x a 1200x)"><i class="fa-solid fa-backward" aria-hidden="true"></i></button>
-                <button class="ctrl-btn" id="btn-prev-contact" onclick="jumpContactStep(-1)" title="Momento anterior del eclipse (P1, U1, Máx, U4, P4)"><i class="fa-solid fa-step-backward" aria-hidden="true"></i></button>
-                <button class="ctrl-btn play-main" id="btn-play-pause" onclick="togglePlayPause()" title="Reproducir / Pausar"><i class="fa-solid fa-play" aria-hidden="true"></i></button>
-                <button class="ctrl-btn" id="btn-next-contact" onclick="jumpContactStep(1)" title="Momento siguiente del eclipse (P1, U1, Máx, U4, P4)"><i class="fa-solid fa-step-forward" aria-hidden="true"></i></button>
-                <button class="ctrl-btn" id="btn-fast-forward" onclick="changeSpeedStep(1)" title="Avanzar / Aumentar velocidad adelante (1x a 1200x)"><i class="fa-solid fa-forward" aria-hidden="true"></i></button>
+            <div class="player-segmented-group" role="group" aria-label="Controles de reproducción">
+                <button type="button" class="player-segment-btn" id="btn-prev-contact" onclick="jumpContactStep(-1)" title="Momento anterior del eclipse (P1, U1, Máx, U4, P4)" aria-label="Contacto anterior"><i class="fa-solid fa-step-backward" aria-hidden="true"></i></button>
+                <button type="button" class="player-segment-btn" id="btn-rewind" onclick="changeSpeedStep(-1)" title="Reducir velocidad (1x a 1200x)" aria-label="Reducir velocidad"><i class="fa-solid fa-backward" aria-hidden="true"></i></button>
+                <button type="button" class="player-segment-btn play-main" id="btn-play-pause" onclick="togglePlayPause()" title="Reproducir / Pausar" aria-label="Reproducir o pausar simulación"><i class="fa-solid fa-play" aria-hidden="true"></i></button>
+                <button type="button" class="player-segment-btn" id="btn-fast-forward" onclick="changeSpeedStep(1)" title="Aumentar velocidad (1x a 1200x)" aria-label="Aumentar velocidad"><i class="fa-solid fa-forward" aria-hidden="true"></i></button>
+                <button type="button" class="player-segment-btn" id="btn-next-contact" onclick="jumpContactStep(1)" title="Momento siguiente del eclipse (P1, U1, Máx, U4, P4)" aria-label="Contacto siguiente"><i class="fa-solid fa-step-forward" aria-hidden="true"></i></button>
             </div>
             <label class="checkbox-row player-dock-live-control" style="margin: 0; font-size: 0.74rem; white-space: nowrap; gap: 5px;" title="Sincronizar simulación en tiempo real con el reloj de la máquina">
                 <input type="checkbox" id="chk-live-mode" onchange="toggleLiveModeCheckbox(this.checked)">
                 <span>En vivo</span>
             </label>
-            <div class="playback-dock-bottom-right"></div>
+            <div class="playback-dock-bottom-right">
+                <button type="button" class="ctrl-btn" id="btn-recenter" onclick="recenterLunarScene()" title="Centrar escena 3D" style="width: 24px; height: 24px; padding: 0; border-radius: 6px;" aria-label="Centrar escena 3D">
+                    <i class="fa-solid fa-crosshairs" aria-hidden="true"></i>
+                </button>
+            </div>
         </div>
     </aside>
 
     <!-- SCRIPT PRINCIPAL DE LA APLICACIÓN -->
     <script src="lunar_observer_manager.js"></script>
-    <script src="shared_ui_panels.js"></script>
-    <script src="lunar_scene_3d.js"></script>
+    <script src="shared_ui_panels.js?v=20260929_v1"></script>
+    <script src="lunar_scene_3d.js?v=20260929_v1"></script>
     <script src="lunar_telescopic.js"></script>
     <script>
         var RAD = Math.PI / 180, DEG = 180 / Math.PI;
