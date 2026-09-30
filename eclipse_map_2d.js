@@ -1069,12 +1069,12 @@ const EclipseMap2D = (() => {
                     100% { transform: scale(1.8); opacity: 0; }
                 }
                 .nasa-eclipse-popup .leaflet-popup-content-wrapper {
-                    background: linear-gradient(135deg, rgba(14, 165, 233, 0.08), rgba(249, 115, 22, 0.06)), rgba(11, 19, 41, 0.96) !important;
-                    backdrop-filter: blur(16px) !important;
-                    -webkit-backdrop-filter: blur(16px) !important;
-                    border: 1px solid rgba(56, 189, 248, 0.25) !important;
+                    background: linear-gradient(135deg, rgba(14, 165, 233, 0.06), rgba(249, 115, 22, 0.04)), rgba(11, 19, 41, 0.72) !important;
+                    backdrop-filter: blur(10px) !important;
+                    -webkit-backdrop-filter: blur(10px) !important;
+                    border: 1px solid rgba(56, 189, 248, 0.3) !important;
                     border-radius: 12px !important;
-                    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.75) !important;
+                    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6) !important;
                     padding: 8px 10px !important;
                     width: 320px !important;
                     box-sizing: border-box !important;
@@ -1087,8 +1087,8 @@ const EclipseMap2D = (() => {
                     line-height: 1.35 !important;
                 }
                 .nasa-eclipse-popup .leaflet-popup-tip {
-                    background: rgba(11, 19, 41, 0.96) !important;
-                    border: 1px solid rgba(56, 189, 248, 0.25) !important;
+                    background: rgba(11, 19, 41, 0.72) !important;
+                    border: 1px solid rgba(56, 189, 248, 0.3) !important;
                 }
                 .nasa-eclipse-popup a.leaflet-popup-close-button {
                     color: #94a3b8 !important;

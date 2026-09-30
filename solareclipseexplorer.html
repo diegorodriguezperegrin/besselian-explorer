@@ -56,7 +56,7 @@
     <!-- FontAwesome icons (CDN con Fallback local offline) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha384-iw3OoTErCYJJB9mCa8LNS2hbsQ7M3C0EpIsO/H5+EGAkPGc6rk+V8i04oW/K5xq0" crossorigin="anonymous" onerror="this.onerror=null;this.href='vendor/fontawesome/css/all.min.css';">
     <!-- Tokens de diseño compartidos -->
-    <link rel="stylesheet" href="shared.css?v=20260929_v1">
+    <link rel="stylesheet" href="shared.css?v=20260930_v2">
     <!-- Precarga de textura terrestre 2K -->
     <link rel="preload" as="image" href="earth_topo_2048.jpg">
 
@@ -671,12 +671,12 @@
 
     <!-- Popup Flotante Interactivo 3D Estilo NASA (Idéntico a Modo Mapa y a la cápsula de circunstancias locales) -->
     <div id="globe-3d-popup" style="display: none; position: absolute; z-index: 520; pointer-events: auto; transform: translate(-50%, -100%); margin-top: -14px;">
-        <div class="globe-3d-popup-card" style="background: linear-gradient(135deg, rgba(14, 165, 233, 0.08), rgba(249, 115, 22, 0.06)), rgba(11, 19, 41, 0.96); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 12px; box-shadow: 0 12px 36px rgba(0,0,0,0.75); padding: 8px 10px; position: relative; width: 320px; box-sizing: border-box;">
+        <div class="globe-3d-popup-card" style="background: linear-gradient(135deg, rgba(14, 165, 233, 0.06), rgba(249, 115, 22, 0.04)), rgba(11, 19, 41, 0.72); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 12px; box-shadow: 0 12px 36px rgba(0,0,0,0.6); padding: 8px 10px; position: relative; width: 320px; box-sizing: border-box;">
             <button type="button" onclick="closeGlobe3DPopup()" style="position: absolute; top: 8px; right: 8px; background: none; border: none; color: #94a3b8; font-size: 0.85rem; cursor: pointer; padding: 2px 6px; z-index: 20;" title="Cerrar"><i class="fa-solid fa-xmark"></i></button>
             <div id="globe-3d-popup-content"></div>
         </div>
         <!-- Puntero / Flecha inferior hacia el marcador -->
-        <div style="position: absolute; bottom: -7px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 8px solid transparent; border-right: 8px solid transparent; border-top: 8px solid rgba(11, 19, 41, 0.96);"></div>
+        <div style="position: absolute; bottom: -7px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 8px solid transparent; border-right: 8px solid transparent; border-top: 8px solid rgba(11, 19, 41, 0.72);"></div>
     </div>
 
     <!-- Ventana Flotante Minimalista de Vista Telescópica (#floating-telescope-window) -->
@@ -1228,7 +1228,7 @@
     <script src="besselian_engine.js?v=20260920_v5"></script>
     <script src="celestial_sphere_3d.js?v=20260916_v14"></script>
     <script src="solar_scene_3d.js?v=20260929_v3"></script>
-    <script src="eclipse_map_2d.js?v=20260920_v4"></script>
+    <script src="eclipse_map_2d.js?v=20260930_v2"></script>
     <script src="shared_ui_panels.js?v=20260929_v1"></script>
     <script>
         // RAD y DEG definidos en besselian_engine.js
