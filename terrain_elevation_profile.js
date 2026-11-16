@@ -11,7 +11,7 @@
  * 2. Fallback resiliente: Open-Meteo Global Elevation API (COP-DEM / SRTM) para máxima estabilidad.
  *
  * Cosmología y Óptica:
- * - Curvatura terrestre y refracción atmosférica estándar (k = 0.13, R_eff ≈ 7.433 km).
+ * - Curvatura terrestre y refracción atmosférica estándar (k = 0.13, R_eff ≈ 7.323 km).
  * - Detección de colisiones/obstrucciones orográficas con el rayo visual del Sol.
  * - Margen angular libre sobre el relieve y localización de obstáculos críticos.
  * =========================================================================================
@@ -23,7 +23,7 @@
     // Constantes geodésicas y físicas
     const EARTH_RADIUS = 6371000; // Radio medio WGS84 en metros
     const REFRACTION_K = 0.13;
-    const R_EFF = EARTH_RADIUS / (1 - REFRACTION_K); // ~7.433.000 m
+    const R_EFF = EARTH_RADIUS / (1 - REFRACTION_K); // ~7.323.000 m (7.322.989 m con k = 0.13)
     const EYE_HEIGHT = 2.0; // Altura estándar de los ojos / trípode sobre el suelo (metros)
 
     // Configuración de Teselas DEM
@@ -272,7 +272,7 @@
 
         points.forEach((p, idx) => {
             const d = p.distance;
-            // Curvatura terrestre y refracción geodésica efectiva (R_EFF ≈ 7.433.000 m con k = 0.13):
+            // Curvatura terrestre y refracción geodésica efectiva (R_EFF ≈ 7.323.000 m con k = 0.13):
             // En un perfil rectificado con nivel del mar horizontal (estilo IGN), la curvatura terrestre
             // hace caer la superficie del geoide respecto a la tangente del observador.
             // Por consiguiente, la cota del rayo solar sobre el nivel del mar a distancia d aumenta:
