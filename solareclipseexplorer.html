@@ -790,7 +790,7 @@
                 <!-- Columna 1 (6 elementos) -->
                 <div class="stat-row">
                     <span class="stat-lbl">Tipo</span>
-                    <span class="stat-val type-badge-sm type-T" id="card-type">TOTAL</span>
+                    <span class="stat-val" id="card-type">TOTAL</span>
                 </div>
                 <div class="stat-row">
                     <span class="stat-lbl">Saros</span>
@@ -898,6 +898,31 @@
                     <!-- Filas pobladas dinámicamente -->
                 </tbody>
             </table>
+        </div>
+
+        <!-- PERFIL DE RELIEVE Y VISIBILIDAD -->
+        <!-- Exclusivo para los modos Mapa y Telescopio, ubicado justo debajo del panel de horarios -->
+        <div id="visibility-profile-card" style="margin-top: 14px; display: none;">
+            <div class="section-title section-title-between" style="margin: 0 0 8px 0;">
+                <span style="display: inline-flex; align-items: center; gap: 6px;">
+                    <i class="fa-solid fa-mountain-sun" style="font-size: 0.70rem; color: var(--accent-blue, #38bdf8);"></i> 
+                    <span>Perfil de visibilidad</span>
+                </span>
+                <div class="dist-segmented-group" role="group" aria-label="Distancia del perfil topográfico">
+                    <button type="button" class="btn-dist-segment active" data-dist="10" onclick="TerrainElevationProfile.setDistance(10)" title="Analizar relieve en un radio de 10 km">10 km</button>
+                    <button type="button" class="btn-dist-segment" data-dist="20" onclick="TerrainElevationProfile.setDistance(20)" title="Analizar relieve en un radio de 20 km">20 km</button>
+                    <button type="button" class="btn-dist-segment" data-dist="30" onclick="TerrainElevationProfile.setDistance(30)" title="Analizar relieve en un radio de 30 km">30 km</button>
+                </div>
+            </div>
+
+            <!-- Estado de visibilidad estilo IGN -->
+            <div id="profile-visibility-status" style="margin: 0 0 6px 2px; font-size: 0.72rem; font-weight: 600; line-height: 1.3; min-height: 18px;"></div>
+
+            <!-- Contenedor del gráfico Canvas con borde idéntico a .observer-card -->
+            <div style="position: relative; width: 100%; height: 160px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 12px; overflow: hidden; box-sizing: border-box;">
+                <canvas id="canvas-elevation-profile" style="width: 100%; height: 100%; display: block;"></canvas>
+                <div id="elevation-profile-tooltip" style="display: none; position: absolute; pointer-events: none; background: rgba(11, 19, 41, 0.95); border: 1px solid #38bdf8; border-radius: 6px; padding: 4px 8px; font-size: 0.70rem; font-family: var(--font-mono, monospace); color: #f8fafc; box-shadow: 0 4px 12px rgba(0,0,0,0.6); z-index: 10;"></div>
+            </div>
         </div>
 
         <!-- 3. Modos de Vista -->
@@ -1119,6 +1144,10 @@
                     <input type="checkbox" id="chk-map-path-shade" checked onchange="EclipseMap2D.toggleLayer('shade', this.checked)">
                     <span>Franja de totalidad / anularidad</span>
                 </label>
+                <label class="checkbox-row" id="lbl-map-sightline" title="Trazar la línea de dirección hacia el Sol (azimut) en el máximo del eclipse">
+                    <input type="checkbox" id="chk-map-sightline" checked onchange="TerrainElevationProfile.toggleSightlineOnMap(this.checked)">
+                    <span>Dirección del Sol (azimut)</span>
+                </label>
                 <label class="checkbox-row" id="lbl-auto-zoom-map">
                     <input type="checkbox" id="chk-auto-zoom-map">
                     <span>Zoom automático al cambiar de eclipse</span>
@@ -1230,6 +1259,7 @@
     <script src="solar_scene_3d.js?v=20260929_v3"></script>
     <script src="eclipse_map_2d.js?v=20260930_v2"></script>
     <script src="shared_ui_panels.js?v=20260929_v1"></script>
+    <script src="terrain_elevation_profile.js?v=20261116_v1"></script>
     <script>
         // RAD y DEG definidos en besselian_engine.js
 
@@ -2275,7 +2305,7 @@
             const badge = getDOM('observer-vis-badge');
             const thTime = getDOM('th-local-time');
             if (!tbody || !currentEclipse) return;
-            activeContactRowId = null;
+            if (!activeContactRowId) activeContactRowId = 'MÁX';
 
             const res = calculateLocalSolarCircumstances(currentEclipse, currentObserver.lat, currentObserver.lon);
             localCircumstancesCache = res;
@@ -2330,6 +2360,11 @@
                 if (badge) {
                     badge.className = 'vis-badge-tag vis-none';
                     badge.textContent = 'No Visible';
+                }
+                const visCanvas = getDOM('canvas-elevation-profile');
+                if (visCanvas) {
+                    const ctx = visCanvas.getContext('2d');
+                    ctx.clearRect(0, 0, visCanvas.width, visCanvas.height);
                 }
                 return;
             }
@@ -2407,8 +2442,9 @@
                 const arrowUnicode = `<span class="contact-arrow" style="color: ${strokeColor}; font-weight: 700; margin-right: 3px;">${isRising ? '↗' : '↘'}</span>`;
                 const textColor = isAbove ? '#f8fafc' : 'var(--text-dim)';
 
+                const isActive = (c.key === (activeContactRowId || 'MÁX'));
                 rowsHtml += `
-                    <tr id="row-contact-${c.key}" onclick="jumpToContact('${c.key}', ${c.data.t})" style="cursor: pointer;" title="Clic para saltar a ${c.key} (${c.name})">
+                    <tr id="row-contact-${c.key}" class="${isActive ? 'active' : ''}" onclick="jumpToContact('${c.key}', ${c.data.t})" style="cursor: pointer;" title="Ver perfil topográfico y saltar a ${c.key} (${c.name})">
                         <td><strong style="color: #f8fafc; font-weight: 600;">${c.key}</strong></td>
                         <td>${localTimeStr}</td>
                         <td style="color: ${textColor}; font-weight: 500;">
@@ -2441,6 +2477,10 @@
             }
 
             positionDockMarkers(currentEclipse);
+
+            if (typeof TerrainElevationProfile !== 'undefined' && currentObserver && currentEclipse) {
+                TerrainElevationProfile.updateForCircumstances(currentObserver, currentEclipse, res, activeContactRowId || 'MÁX');
+            }
         }
 
         function jumpToContact(key, tVal) {
@@ -2449,6 +2489,24 @@
                 if (timeSlider) timeSlider.value = tVal;
                 updateShadowAtTime(tVal);
                 if (isPlaying) toggleSimulation();
+            }
+
+            activeContactRowId = key;
+            const tbody = getDOM('observer-contacts-tbody');
+            if (tbody) {
+                tbody.querySelectorAll('tr').forEach(r => r.classList.remove('active'));
+                const activeRow = getDOM(`row-contact-${key}`);
+                if (activeRow) activeRow.classList.add('active');
+            }
+
+            // Actualizar perfil de relieve para la fase seleccionada
+            if (typeof TerrainElevationProfile !== 'undefined' && currentObserver && currentEclipse) {
+                const circ = (typeof localCircumstancesCache !== 'undefined' && localCircumstancesCache) 
+                    ? localCircumstancesCache 
+                    : calculateLocalSolarCircumstances(currentEclipse, currentObserver.lat, currentObserver.lon);
+                if (circ) {
+                    TerrainElevationProfile.updateForCircumstances(currentObserver, currentEclipse, circ, key);
+                }
             }
         }
 
@@ -2577,6 +2635,18 @@
             const btnRealistic = getDOM('btn-realistic-mode');
             if (btnRealistic) {
                 btnRealistic.style.display = (mode === '3d' || mode === 'route') ? 'inline-flex' : 'none';
+            }
+
+            // Visibilidad del panel de perfil topográfico (exclusivo para los modos Mapa y Telescopio)
+            const visProfileCard = getDOM('visibility-profile-card');
+            if (visProfileCard) {
+                const showProfile = (mode === 'map' || mode === 'telescopic');
+                visProfileCard.style.display = showProfile ? 'block' : 'none';
+                if (showProfile && typeof TerrainElevationProfile !== 'undefined' && currentObserver && currentEclipse) {
+                    if (typeof localCircumstancesCache !== 'undefined' && localCircumstancesCache) {
+                        TerrainElevationProfile.updateForCircumstances(currentObserver, currentEclipse, localCircumstancesCache);
+                    }
+                }
             }
 
             const popupEl = getDOM('globe-3d-popup');
@@ -4911,7 +4981,7 @@
             const typeElem = getDOM('card-type');
             if (typeElem) {
                 typeElem.innerText = shortInfo.label;
-                typeElem.className = `stat-val type-badge-sm ${shortInfo.className}`;
+                typeElem.className = 'stat-val';
             }
 
             const sarosElem = getDOM('card-saros');

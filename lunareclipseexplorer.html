@@ -374,7 +374,7 @@
                 <!-- Columna 1 (6 elementos) -->
                 <div class="stat-row">
                     <span class="stat-lbl">Tipo</span>
-                    <span class="stat-val type-badge-sm type-P" id="card-type">PARCIAL</span>
+                    <span class="stat-val" id="card-type">PARCIAL</span>
                 </div>
                 <div class="stat-row">
                     <span class="stat-lbl">Saros</span>
@@ -851,8 +851,7 @@ END:VCALENDAR`;
             // Actualizar tarjeta de parámetros estilo Besselian Explorer
             const typeBadge = document.getElementById('card-type');
             if (typeBadge) {
-                const tCode = ec.type === 'T' ? 'T' : (ec.type === 'P' ? 'P' : 'N');
-                typeBadge.className = `stat-val type-badge-sm type-${tCode}`;
+                typeBadge.className = 'stat-val';
                 typeBadge.textContent = ec.type === 'T' ? 'TOTAL' : (ec.type === 'P' ? 'PARCIAL' : 'PENUMBRAL');
             }
 

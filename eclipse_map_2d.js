@@ -1676,6 +1676,8 @@ const EclipseMap2D = (() => {
             currentInspectedLocation = null;
             if (map) map.closePopup();
         },
+        get map() { return map; },
+        getMap: () => map,
         get isLoaded() { return isLoaded; }
     };
 })();

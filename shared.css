@@ -1991,3 +1991,94 @@ body.view-route .floating-top-search-container {
     animation: locationTargetPulse 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
     transition: transform 0.25s ease, border-color 0.25s ease;
 }
+
+/* ==========================================================================
+   PERFIL DE VISIBILIDAD TOPOGRÁFICA Y RELIEVE (ESTILO IGN)
+   ========================================================================== */
+/* Selector Segmentado de Distancia de Perfil (10 km, 20 km, 30 km) */
+.dist-segmented-group {
+    display: inline-flex;
+    align-items: center;
+    height: 18px;
+    background: rgba(56, 189, 248, 0.06);
+    border: 1px solid rgba(56, 189, 248, 0.28);
+    border-radius: 5px;
+    overflow: hidden;
+    flex-shrink: 0;
+    box-sizing: border-box;
+}
+
+.btn-dist-segment {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    height: 100% !important;
+    padding: 0 6px !important;
+    background: transparent !important;
+    border: none !important;
+    border-right: 1px solid rgba(56, 189, 248, 0.20) !important;
+    color: #94a3b8 !important;
+    font-size: 0.65rem !important;
+    font-family: var(--font-heading, system-ui) !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    text-decoration: none !important;
+    white-space: nowrap !important;
+    line-height: 1 !important;
+    user-select: none !important;
+    box-sizing: border-box !important;
+    transition: background 0.15s ease, color 0.15s ease !important;
+}
+
+.btn-dist-segment:last-child {
+    border-right: none !important;
+}
+
+.btn-dist-segment:hover {
+    background: rgba(56, 189, 248, 0.22) !important;
+    color: #ffffff !important;
+}
+
+.btn-dist-segment.active {
+    background: rgba(56, 189, 248, 0.32) !important;
+    color: #38bdf8 !important;
+    font-weight: 700 !important;
+}
+
+.btn-dist-chip {
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(56, 189, 248, 0.2);
+    border-radius: 4px;
+    color: #94a3b8;
+    font-size: 0.68rem;
+    font-family: var(--font-mono, monospace);
+    font-weight: 500;
+    padding: 1px 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.btn-dist-chip:hover {
+    background: rgba(56, 189, 248, 0.15);
+    color: #f8fafc;
+    border-color: rgba(56, 189, 248, 0.4);
+}
+
+.btn-dist-chip.active {
+    background: rgba(56, 189, 248, 0.25);
+    color: #38bdf8;
+    border-color: #38bdf8;
+    font-weight: 700;
+}
+
+/* Visibilidad del perfil topográfico: exclusivo para modos Mapa y Telescopio */
+#visibility-profile-card {
+    display: none;
+}
+
+body.view-map #visibility-profile-card,
+body.view-telescopic #visibility-profile-card {
+    display: block;
+}
+
+
