@@ -311,6 +311,10 @@
         });
 
         const marginDeg = apparentAltitude - maxObstacleAngle;
+        const allTerrainAlts = points.map(p => p.terrainAlt);
+        const minTerrainAlt = Math.min(...allTerrainAlts, observerGroundAlt);
+        const rayEndAlt = points[points.length - 1].rayAlt;
+        const scale = computeVerticalScale(minTerrainAlt, maxTerrainAlt, rayEndAlt);
 
         const result = {
             observerLat: lat,
@@ -323,7 +327,10 @@
             distanceKm,
             observerGroundAlt,
             observerEyeAlt,
+            minTerrainAlt,
             maxTerrainAlt,
+            minY: scale.minY,
+            maxY: scale.maxY,
             isObstructed: isObstructed && apparentAltitude > 0,
             isSunBelowHorizon: apparentAltitude <= 0,
             worstClearance,
@@ -340,6 +347,45 @@
         profileCache.set(cacheKey, result);
 
         return result;
+    }
+
+    /**
+     * Calcula los límites del eje vertical (minY, maxY) según el relieve y la geometría solar
+     */
+    function computeVerticalScale(minTerrainAlt, maxTerrainAlt, rayEndAlt) {
+        let minY;
+        if (minTerrainAlt <= 100) {
+            minY = 0;
+        } else if (minTerrainAlt < 1000) {
+            minY = Math.max(0, Math.floor((minTerrainAlt - 50) / 100) * 100);
+        } else {
+            minY = Math.max(0, Math.floor((minTerrainAlt - 100) / 250) * 250);
+        }
+
+        const localReliefSpan = Math.max(100, maxTerrainAlt - minY);
+        const maxAllowedRayAlt = maxTerrainAlt + Math.max(350, localReliefSpan * 0.65);
+
+        let maxY;
+        if (rayEndAlt <= maxAllowedRayAlt) {
+            const peakVal = Math.max(maxTerrainAlt, rayEndAlt);
+            const span = peakVal - minY;
+            const rawMax = peakVal + Math.max(120, span * 0.12);
+
+            let step = 100;
+            if (rawMax - minY > 5000) step = 1000;
+            else if (rawMax - minY > 2500) step = 500;
+            else if (rawMax - minY > 800) step = 250;
+
+            maxY = Math.ceil(rawMax / step) * step;
+            if (maxY - minY < 200) maxY = minY + 200;
+        } else {
+            const rawMax = Math.max(minY + 350, maxTerrainAlt + Math.max(250, localReliefSpan * 0.35));
+            let step = (rawMax - minY > 2000) ? 500 : 250;
+            if (rawMax - minY <= 800) step = 100;
+            maxY = Math.ceil(rawMax / step) * step;
+        }
+
+        return { minY, maxY };
     }
 
     /**
@@ -433,49 +479,23 @@
         const points = profileData.points;
 
         // Determinar límites del eje Y (Altitud) según el modelo oficial IGN:
-        // Acomoda la altura máxima dentro del rango horizontal (terreno o cota del eclipse).
-        const allTerrainAlts = points.map(p => p.terrainAlt);
-        const minTerrainAlt = Math.min(...allTerrainAlts, profileData.observerGroundAlt);
-        const maxTerrainAlt = Math.max(...allTerrainAlts, profileData.observerEyeAlt);
+        // Se aplica como escala la mayor altura calculada a 30 km en la dirección del Sol,
+        // manteniéndola constante en 10, 20 y 30 km para que el relieve no sufra saltos de proporción.
+        let minY = (profileData.referenceMinY != null) ? profileData.referenceMinY : profileData.minY;
+        let maxY = (profileData.referenceMaxY != null) ? profileData.referenceMaxY : profileData.maxY;
+
+        if (minY == null || maxY == null) {
+            const allTerrainAlts = points.map(p => p.terrainAlt);
+            const minTerrainAlt = Math.min(...allTerrainAlts, profileData.observerGroundAlt);
+            const maxTerrainAlt = Math.max(...allTerrainAlts, profileData.observerEyeAlt);
+            const rayEndAlt = points[points.length - 1].rayAlt;
+            const scale = computeVerticalScale(minTerrainAlt, maxTerrainAlt, rayEndAlt);
+            minY = scale.minY;
+            maxY = scale.maxY;
+        }
+
         const rayEndAlt = points[points.length - 1].rayAlt;
-
-        // Base del eje Y (minY):
-        let minY;
-        if (minTerrainAlt <= 100) {
-            minY = 0;
-        } else if (minTerrainAlt < 1000) {
-            minY = Math.max(0, Math.floor((minTerrainAlt - 50) / 100) * 100);
-        } else {
-            minY = Math.max(0, Math.floor((minTerrainAlt - 100) / 250) * 250);
-        }
-
-        // Techo del eje Y (maxY):
-        // En la Tierra, la montaña más alta del planeta es el Everest (~8.848 m).
-        let maxY;
-        let rayExitsTop = false;
-
-        // Si el rayo solar a la distancia máxima está dentro del rango terrestre / de colisión potencial (<= 10.000 m):
-        if (rayEndAlt <= Math.max(maxTerrainAlt + 500, 10000)) {
-            const peakVal = Math.max(maxTerrainAlt, rayEndAlt);
-            const span = peakVal - minY;
-            const rawMax = peakVal + Math.max(120, span * 0.12);
-
-            let step = 100;
-            if (rawMax - minY > 5000) step = 1000;
-            else if (rawMax - minY > 2500) step = 500;
-            else if (rawMax - minY > 800) step = 250;
-
-            maxY = Math.ceil(rawMax / step) * step;
-            if (maxY - minY < 200) maxY = minY + 200;
-        } else {
-            // Cuando el Sol está muy alto (cenit, p. ej. 45° u 81°), el rayo a 10 km sube a decenas de km.
-            // Es físicamente imposible que ninguna montaña del planeta (ni el Himalaya) pueda alcanzarlo.
-            // Para no colapsar el relieve contra el suelo, adaptamos el eje Y al relieve local con un margen cómodo.
-            const rawMax = Math.max(minY + 400, maxTerrainAlt + Math.max(300, (maxTerrainAlt - minY) * 0.35));
-            let step = (rawMax - minY > 2000) ? 500 : 250;
-            maxY = Math.ceil(rawMax / step) * step;
-            rayExitsTop = true;
-        }
+        const rayExitsTop = (rayEndAlt > maxY);
 
         // Funciones de mapeo de coordenadas mundo a pantalla
         function toScreenX(dist) {
@@ -941,7 +961,21 @@
 
         isFetching = true;
         try {
-            const profile = await computeProfileData(observer.lat, observer.lon, solarAz, solarAlt, activeDistanceKm, 80);
+            // 1. Obtener siempre el perfil de referencia a 30 km en dirección al Sol para la fase seleccionada
+            const profile30 = await computeProfileData(observer.lat, observer.lon, solarAz, solarAlt, 30, 80);
+
+            // 2. Obtener el perfil para la distancia activa (10, 20 o 30 km)
+            let profile;
+            if (activeDistanceKm === 30) {
+                profile = profile30;
+            } else {
+                profile = await computeProfileData(observer.lat, observer.lon, solarAz, solarAlt, activeDistanceKm, 80);
+            }
+
+            // 3. Aplicar como escala vertical la mayor altura a 30 km y mantenerla constante en 10, 20 y 30 km
+            profile.referenceMinY = profile30.minY;
+            profile.referenceMaxY = profile30.maxY;
+            profile.maxTerrainAlt30 = profile30.maxTerrainAlt;
             profile.phaseLabel = phaseLabel;
             currentProfileData = profile;
             isFetching = false;
@@ -958,8 +992,10 @@
                 const phaseName = profile.phaseLabel || 'El eclipse';
                 if (profile.isSunBelowHorizon) {
                     statusEl.innerHTML = `<span style="color: #f87171;"><i class="fa-solid fa-triangle-exclamation" style="margin-right: 5px;"></i>${phaseName} está <strong>bajo el horizonte</strong> astronómico</span>`;
-                } else if (profile.isObstructed) {
-                    const obstM = profile.criticalObstacle ? ` (obstáculo a ${Math.round(profile.criticalObstacle.terrainAlt)} m)` : '';
+                } else if (profile.isObstructed || (profile30 && profile30.isObstructed)) {
+                    const crit = profile.isObstructed ? profile.criticalObstacle : profile30.criticalObstacle;
+                    const distKm = (crit && crit.distance) ? (crit.distance / 1000).toFixed(1) : '';
+                    const obstM = crit ? ` (obstáculo a ${distKm} km · cota ${Math.round(crit.terrainAlt)} m)` : '';
                     statusEl.innerHTML = `<span style="color: #f87171;"><i class="fa-solid fa-circle-xmark" style="margin-right: 5px;"></i>${phaseName} <strong>NO es visible</strong> desde el punto de observación${obstM}</span>`;
                 } else {
                     statusEl.innerHTML = `<span style="color: #4ade80;"><i class="fa-solid fa-circle-check" style="margin-right: 5px;"></i>${phaseName} <strong>ES visible</strong> desde el punto de observación</span>`;
@@ -1048,7 +1084,17 @@
         const solarAz = circ.maxParams.az;
 
         try {
-            const profile = await computeProfileData(lat, lon, solarAz, solarAlt, activeDistanceKm, 80);
+            const profile30 = await computeProfileData(lat, lon, solarAz, solarAlt, 30, 80);
+            let profile;
+            if (activeDistanceKm === 30) {
+                profile = profile30;
+            } else {
+                profile = await computeProfileData(lat, lon, solarAz, solarAlt, activeDistanceKm, 80);
+            }
+            profile.referenceMinY = profile30.minY;
+            profile.referenceMaxY = profile30.maxY;
+            profile.maxTerrainAlt30 = profile30.maxTerrainAlt;
+
             if (modalCanvas) {
                 renderProfileChart(modalCanvas, profile);
                 setupCanvasInteractions(modalCanvas, modalTooltip);
