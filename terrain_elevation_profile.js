@@ -924,10 +924,27 @@
      */
     async function updateForCircumstances(observer, eclipse, circumstances, targetPhaseKey = null) {
         if (targetPhaseKey) activePhaseKey = targetPhaseKey;
-        if (!observer || observer.lat == null || observer.lon == null || !circumstances) return;
+        if (!observer || observer.lat == null || observer.lon == null) return;
 
         const canvas = document.getElementById('canvas-elevation-profile');
         const tooltipEl = document.getElementById('elevation-profile-tooltip');
+        const statusEl = document.getElementById('profile-visibility-status');
+
+        // Si no hay circunstancias o el eclipse no es visible desde este punto
+        if (!circumstances || !circumstances.isEclipsed || (circumstances.maxMag != null && circumstances.maxMag <= 0.001)) {
+            currentProfileData = null;
+            if (canvas) {
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+            if (statusEl) {
+                statusEl.innerHTML = `<span style="color: #94a3b8;"><i class="fa-solid fa-ban" style="margin-right: 5px;"></i>Eclipse <strong>no visible</strong> desde esta ubicación</span>`;
+            }
+            if (typeof EclipseMap2D !== 'undefined' && EclipseMap2D.map) {
+                updateMapSightline(EclipseMap2D.map, null);
+            }
+            return;
+        }
 
         // Determinar qué fase inspeccionar
         const normKey = (activePhaseKey || 'MÁX').toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");

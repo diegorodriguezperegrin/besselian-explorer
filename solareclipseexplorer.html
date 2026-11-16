@@ -2361,10 +2361,12 @@
                     badge.className = 'vis-badge-tag vis-none';
                     badge.textContent = 'No Visible';
                 }
-                const visCanvas = getDOM('canvas-elevation-profile');
-                if (visCanvas) {
-                    const ctx = visCanvas.getContext('2d');
-                    ctx.clearRect(0, 0, visCanvas.width, visCanvas.height);
+                const visProfileCard = getDOM('visibility-profile-card');
+                if (visProfileCard) {
+                    visProfileCard.style.display = 'none';
+                }
+                if (typeof TerrainElevationProfile !== 'undefined' && currentObserver && currentEclipse) {
+                    TerrainElevationProfile.updateForCircumstances(currentObserver, currentEclipse, res);
                 }
                 return;
             }
@@ -2477,6 +2479,12 @@
             }
 
             positionDockMarkers(currentEclipse);
+
+            const visProfileCard = getDOM('visibility-profile-card');
+            if (visProfileCard) {
+                const showProfile = (typeof currentActiveView !== 'undefined') && (currentActiveView === 'map' || currentActiveView === 'telescopic');
+                visProfileCard.style.display = showProfile ? 'block' : 'none';
+            }
 
             if (typeof TerrainElevationProfile !== 'undefined' && currentObserver && currentEclipse) {
                 TerrainElevationProfile.updateForCircumstances(currentObserver, currentEclipse, res, activeContactRowId || 'MÁX');
@@ -2640,7 +2648,8 @@
             // Visibilidad del panel de perfil topográfico (exclusivo para los modos Mapa y Telescopio)
             const visProfileCard = getDOM('visibility-profile-card');
             if (visProfileCard) {
-                const showProfile = (mode === 'map' || mode === 'telescopic');
+                const isEclipsed = localCircumstancesCache && localCircumstancesCache.isEclipsed && localCircumstancesCache.maxMag > 0.001;
+                const showProfile = (mode === 'map' || mode === 'telescopic') && isEclipsed;
                 visProfileCard.style.display = showProfile ? 'block' : 'none';
                 if (showProfile && typeof TerrainElevationProfile !== 'undefined' && currentObserver && currentEclipse) {
                     if (typeof localCircumstancesCache !== 'undefined' && localCircumstancesCache) {
