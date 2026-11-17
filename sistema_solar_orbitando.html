@@ -1018,42 +1018,9 @@
     }
 
   
-    /* Selector de idioma dentro del panel de controles (i18n: ES / CA / EN) */
-    .lang-btn-group {
-      display: flex;
-      background: rgba(5, 8, 17, 0.7);
-      border: 1px solid var(--card-border);
-      border-radius: var(--cosmos-radius-control, 8px);
-      padding: 3px;
-      gap: 4px;
-    }
-
-    .lang-btn {
-      flex: 1;
-      background: transparent;
-      border: none;
-      color: var(--text-muted);
-      font-family: var(--cosmos-font-heading, 'Outfit', sans-serif);
-      font-size: 11.5px;
-      font-weight: 600;
-      padding: 5px 4px;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      text-align: center;
-      letter-spacing: 0.3px;
-    }
-
-    .lang-btn:hover:not(.active) {
-      color: #ffffff;
-      background: rgba(255, 255, 255, 0.08);
-    }
-
-    .lang-btn.active {
-      color: var(--bg-space);
-      background: var(--accent-blue);
-      font-weight: 700;
-      box-shadow: 0 2px 10px var(--cosmos-accent-blue-glow, rgba(56, 189, 248, 0.25));
+    /* Espacio bajo la fila superior unificada (Idioma + Guía) */
+    .cosmos-panel-toprow {
+      margin-bottom: 10px;
     }
 
   </style>
@@ -1207,16 +1174,20 @@
       </div>
 
       <div class="panel-body">
-      <!-- Selector de Idioma (i18n) -->
-      <div class="control-group">
-        <div class="control-group-title">
-          <span data-i18n="langGroupTitle">Idioma</span>
+      <!-- Fila superior unificada: Idioma (ES/CA/EN) + Guía Didáctica -->
+      <div class="cosmos-panel-toprow">
+        <div class="cosmos-lang-group" id="lang-selector" role="group" aria-label="Idioma">
+          <button type="button" class="cosmos-lang-btn lang-btn active" data-lang="es" onclick="setLanguage('es')" title="Español">ES</button>
+          <button type="button" class="cosmos-lang-btn lang-btn" data-lang="ca" onclick="setLanguage('ca')" title="Català">CA</button>
+          <button type="button" class="cosmos-lang-btn lang-btn" data-lang="en" onclick="setLanguage('en')" title="English">EN</button>
         </div>
-        <div class="lang-btn-group" id="lang-selector">
-          <button class="lang-btn active" data-lang="es" onclick="setLanguage('es')">Español</button>
-          <button class="lang-btn" data-lang="ca" onclick="setLanguage('ca')">Català</button>
-          <button class="lang-btn" data-lang="en" onclick="setLanguage('en')">English</button>
-        </div>
+        <button type="button" class="cosmos-guide-btn" onclick="openDidacticModal()" data-i18n-title="didacticBtnTitle" title="Sobre la Escala y el Mito del Vórtice">
+          <svg class="guide-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+          </svg>
+          <span data-i18n="didacticBtnShort">Guía Didáctica</span>
+        </button>
       </div>
 
       <!-- Simulación y Tiempo -->
@@ -1371,15 +1342,6 @@
           </div>
         </label>
       </div>
-
-
-
-      <!-- Didáctica y Escalas -->
-      <div class="control-group" style="margin-bottom: 0;">
-        <button class="didactic-trigger-btn" onclick="openDidacticModal()" data-i18n-html="didacticModalBtn">
-          <span>💡</span> Sobre la Escala y el "Mito del Vórtice"
-        </button>
-      </div>
     </div>
   </div>
 </div>
@@ -1470,6 +1432,8 @@
         layerLabels: "Etiquetas de cuerpos celestes",
         layerTelemetry: "Panel de Telemetría (HUD)",
         presentationModeBtn: "<span>📺</span> Modo Presentación (Pantalla Limpia)",
+        didacticBtnShort: "Guía Didáctica",
+        didacticBtnTitle: "Sobre la Escala y el \"Mito del Vórtice\"",
         didacticModalBtn: "<span>💡</span> Sobre la Escala y el \"Mito del Vórtice\"",
         modalCloseTitle: "Cerrar ventana",
         telemetry: {
@@ -1644,6 +1608,8 @@
         layerLabels: "Etiquetes de cossos celestes",
         layerTelemetry: "Panell de Telemetria (HUD)",
         presentationModeBtn: "<span>📺</span> Mode Presentació (Pantalla Neta)",
+        didacticBtnShort: "Guia Didàctica",
+        didacticBtnTitle: "Sobre l'Escala i el \"Mite del Vòrtex\"",
         didacticModalBtn: "<span>💡</span> Sobre l'Escala i el \"Mite del Vòrtex\"",
         modalCloseTitle: "Tancar finestra",
         telemetry: {
@@ -1818,6 +1784,8 @@
         layerLabels: "Celestial Body Labels",
         layerTelemetry: "Telemetry HUD Panel",
         presentationModeBtn: "<span>📺</span> Presentation Mode (Clean Screen)",
+        didacticBtnShort: "Didactic Guide",
+        didacticBtnTitle: "On Scale and the \"Vortex Myth\"",
         didacticModalBtn: "<span>💡</span> On Scale and the \"Vortex Myth\"",
         modalCloseTitle: "Close window",
         telemetry: {

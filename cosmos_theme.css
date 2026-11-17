@@ -147,3 +147,44 @@
   font-weight: 700;
   box-shadow: 0 2px 10px var(--cosmos-accent-blue-glow);
 }
+
+/* Fila superior unificada dentro del panel izquierdo de 350px (Idioma + Guía) */
+.cosmos-panel-toprow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: var(--cosmos-bg-surface-subtle);
+  border: 1px solid var(--cosmos-border);
+  border-radius: var(--cosmos-radius-card);
+  padding: 8px 10px;
+}
+
+.cosmos-guide-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 5px 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--cosmos-border);
+  border-radius: var(--cosmos-radius-control);
+  color: var(--cosmos-text-primary);
+  font-family: var(--cosmos-font-body);
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.cosmos-guide-btn:hover {
+  background: rgba(56, 189, 248, 0.14);
+  border-color: var(--cosmos-border-active);
+  color: #ffffff;
+}
+
+.cosmos-guide-btn .guide-icon {
+  color: var(--cosmos-accent-gold);
+  flex-shrink: 0;
+}
