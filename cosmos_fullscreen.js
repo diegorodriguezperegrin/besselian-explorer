@@ -22,6 +22,13 @@
     '<line x1="3" y1="21" x2="10" y2="14"></line>' +
     '</svg>';
 
+  const ICON_EXTERNAL =
+    '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>' +
+    '<polyline points="15 3 21 3 21 9"></polyline>' +
+    '<line x1="10" y1="14" x2="21" y2="3"></line>' +
+    '</svg>';
+
   const LABELS = {
     es: {
       enter: 'Pantalla completa',
@@ -74,9 +81,10 @@
     const nativeOk = canNativeFullscreen();
     const t = LABELS[getLang()];
     const label = active ? t.exit : (nativeOk ? t.enter : t.newTab);
+    const icon = active ? ICON_COMPRESS : (nativeOk ? ICON_EXPAND : ICON_EXTERNAL);
 
     document.querySelectorAll('.cosmos-fs-btn').forEach((btn) => {
-      btn.innerHTML = active ? ICON_COMPRESS : ICON_EXPAND;
+      btn.innerHTML = icon;
       btn.title = label;
       btn.setAttribute('aria-label', label);
       btn.setAttribute('aria-pressed', active ? 'true' : 'false');
