@@ -8,32 +8,35 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- FontAwesome (CDN con SRI y Fallback local offline) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha384-iw3OoTErCYJJB9mCa8LNS2hbsQ7M3C0EpIsO/H5+EGAkPGc6rk+V8i04oW/K5xq0" crossorigin="anonymous" onerror="this.onerror=null;this.removeAttribute('integrity');this.href='vendor/fontawesome/css/all.min.css';">
+    <!-- Sistema de diseño unificado Cosmos Mataró -->
+    <link rel="stylesheet" href="cosmos_theme.css">
     <style>
         :root {
-            --bg-deep: #080c14;
-            --bg-surface: rgba(15, 23, 42, 0.85);
-            --bg-card: rgba(24, 34, 58, 0.65);
-            --bg-card-hover: rgba(36, 52, 88, 0.85);
-            --border-subtle: rgba(255, 255, 255, 0.08);
-            --border-active: rgba(56, 189, 248, 0.4);
-            --primary: #38bdf8;
-            --primary-glow: rgba(56, 189, 248, 0.25);
-            --accent-gold: #facc15;
-            --accent-purple: #c084fc;
-            --accent-emerald: #34d399;
-            --accent-rose: #fb7185;
+            --bg-deep: var(--cosmos-bg-space, #050811);
+            --bg-surface: var(--cosmos-bg-panel, rgba(12, 16, 25, 0.94));
+            --bg-card: var(--cosmos-bg-card, rgba(13, 18, 28, 0.85));
+            --bg-card-hover: rgba(24, 34, 58, 0.85);
+            --border-subtle: var(--cosmos-border, rgba(255, 255, 255, 0.1));
+            --border-active: var(--cosmos-border-active, rgba(56, 189, 248, 0.5));
+            --primary: var(--cosmos-accent-blue, #38bdf8);
+            --primary-glow: var(--cosmos-accent-blue-glow, rgba(56, 189, 248, 0.25));
+            --accent-gold: var(--cosmos-accent-gold, #facc15);
+            --accent-purple: var(--cosmos-accent-purple, #c084fc);
+            --accent-emerald: var(--cosmos-accent-green, #34d399);
+            --accent-rose: var(--cosmos-accent-rose, #fb7185);
             --accent-orange: #fb923c;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --text-dim: #64748b;
-            --radius-lg: 16px;
-            --radius-md: 12px;
-            --radius-sm: 8px;
-            --font-heading: 'Outfit', sans-serif;
-            --font-main: 'Outfit', sans-serif;
-            --font-body: 'Plus Jakarta Sans', sans-serif;
-            --font-mono: 'JetBrains Mono', monospace;
+            --text-main: var(--cosmos-text-primary, #f8fafc);
+            --text-muted: var(--cosmos-text-secondary, #94a3b8);
+            --text-dim: var(--cosmos-text-dim, #64748b);
+            --radius-lg: var(--cosmos-radius-panel, 16px);
+            --radius-md: var(--cosmos-radius-card, 12px);
+            --radius-sm: var(--cosmos-radius-control, 8px);
+            --font-heading: var(--cosmos-font-heading, 'Outfit', sans-serif);
+            --font-main: var(--cosmos-font-heading, 'Outfit', sans-serif);
+            --font-body: var(--cosmos-font-body, 'Plus Jakarta Sans', sans-serif);
+            --font-mono: var(--cosmos-font-mono, 'JetBrains Mono', monospace);
         }
 
         * {
@@ -1047,11 +1050,11 @@
         /* Selector de idioma (i18n: ES / CA / EN) */
         .lang-btn-group {
             display: inline-flex;
-            background: rgba(8, 12, 20, 0.75);
+            background: rgba(5, 8, 17, 0.7);
             border: 1px solid var(--border-subtle);
             border-radius: var(--radius-sm);
             padding: 3px;
-            gap: 2px;
+            gap: 3px;
         }
         .lang-btn {
             background: transparent;
@@ -1066,15 +1069,15 @@
             font-family: var(--font-main);
             letter-spacing: 0.3px;
         }
-        .lang-btn:hover {
+        .lang-btn:hover:not(.active) {
             color: #fff;
             background: rgba(255, 255, 255, 0.08);
         }
         .lang-btn.active {
-            color: #080c14;
+            color: var(--bg-deep);
             background: var(--primary);
             font-weight: 700;
-            box-shadow: 0 2px 8px var(--primary-glow);
+            box-shadow: 0 2px 10px var(--primary-glow);
         }
     </style>
 </head>

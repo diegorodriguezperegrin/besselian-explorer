@@ -5,6 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Simulación 3D: Movimiento Helicoidal del Sistema Solar en la Vía Láctea</title>
   
+  <!-- Google Fonts (Outfit, Plus Jakarta Sans, JetBrains Mono) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Sistema de diseño unificado Cosmos Mataró -->
+  <link rel="stylesheet" href="cosmos_theme.css">
+
   <!-- Three.js y OrbitControls (CDN con SRI y Fallback local offline) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" integrity="sha384-CI3ELBVUz9XQO+97x6nwMDPosPR5XvsxW2ua7N1Xeygeh1IxtgqtCkGfQY9WWdHu" crossorigin="anonymous"></script>
   <script>window.THREE || document.write('<script src="vendor/three.min.js"><\/script>')</script>
@@ -13,17 +20,17 @@
 
   <style>
     :root {
-      --bg-space: #020306;
-      --card-bg: rgba(9, 14, 26, 0.88);
-      --card-border: rgba(77, 166, 255, 0.24);
-      --accent-cyan: #38d9a9;
-      --accent-blue: #4da6ff;
-      --accent-gold: #ffd43b;
-      --accent-orange: #ff922b;
-      --accent-red: #ff6b6b;
-      --text-main: #e6edf3;
-      --text-muted: #8b949e;
-      --glass-shadow: 0 16px 40px rgba(0, 0, 0, 0.75);
+      --bg-space: var(--cosmos-bg-space, #050811);
+      --card-bg: var(--cosmos-bg-panel, rgba(12, 16, 25, 0.94));
+      --card-border: var(--cosmos-border, rgba(255, 255, 255, 0.1));
+      --accent-cyan: var(--cosmos-accent-green, #34d399);
+      --accent-blue: var(--cosmos-accent-blue, #38bdf8);
+      --accent-gold: var(--cosmos-accent-gold, #facc15);
+      --accent-orange: #f97316;
+      --accent-red: var(--cosmos-accent-rose, #fb7185);
+      --text-main: var(--cosmos-text-primary, #f8fafc);
+      --text-muted: var(--cosmos-text-secondary, #94a3b8);
+      --glass-shadow: var(--cosmos-shadow-panel, 0 12px 36px rgba(0, 0, 0, 0.65));
     }
 
     * {
@@ -36,9 +43,10 @@
     body, html {
       width: 100%;
       height: 100%;
+      height: 100dvh;
       overflow: hidden;
       background-color: var(--bg-space);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-family: var(--cosmos-font-body, 'Plus Jakarta Sans', sans-serif);
       color: var(--text-main);
     }
 
@@ -155,17 +163,18 @@
       pointer-events: none;
     }
 
-    /* Cabecera / Título superior (situada a la derecha para dejar espacio al panel de control) */
+    /* Cabecera / Título superior (situada a la derecha para dejar espacio al panel de control de 350px) */
     #top-header {
-      top: 18px;
-      right: 24px;
+      top: var(--cosmos-sidebar-offset, 15px);
+      right: var(--cosmos-sidebar-offset, 15px);
       pointer-events: auto;
-      max-width: min(580px, calc(100vw - 380px));
+      max-width: min(560px, calc(100dvw - 400px));
       text-align: right;
       transition: opacity 0.3s;
     }
 
     h1.app-title {
+      font-family: var(--cosmos-font-heading, 'Outfit', sans-serif);
       font-size: 21px;
       font-weight: 700;
       letter-spacing: -0.3px;
@@ -183,16 +192,16 @@
 
     /* HUD Telemetría (Inferior Derecha) */
     #hud-telemetry {
-      bottom: 20px;
-      right: 24px;
+      bottom: var(--cosmos-sidebar-offset, 15px);
+      right: var(--cosmos-sidebar-offset, 15px);
       left: auto;
-      width: 340px;
+      width: var(--cosmos-hud-width, 340px);
       pointer-events: auto;
       background: var(--card-bg);
       border: 1px solid var(--card-border);
-      border-radius: 14px;
-      padding: 16px;
-      backdrop-filter: blur(16px);
+      border-radius: var(--cosmos-radius-panel, 16px);
+      padding: 14px 16px;
+      backdrop-filter: blur(var(--cosmos-blur, 16px));
       box-shadow: var(--glass-shadow);
       transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
       z-index: 20;
@@ -339,17 +348,18 @@
       color: #e2e8f0;
     }
 
-    /* Panel de Control Colapsable (Izquierda) */
+    /* Panel de Control Colapsable (Izquierda — Estándar Cosmos Mataró 350px) */
     #panel-controls {
-      top: 18px;
-      left: 24px;
-      width: 325px;
-      max-height: calc(100vh - 36px);
+      top: var(--cosmos-sidebar-offset, 15px);
+      left: var(--cosmos-sidebar-offset, 15px);
+      width: var(--cosmos-sidebar-width, 350px);
+      max-height: calc(100vh - 30px);
+      max-height: calc(100dvh - 30px);
       pointer-events: auto;
       background: var(--card-bg);
       border: 1px solid var(--card-border);
-      border-radius: 14px;
-      backdrop-filter: blur(18px);
+      border-radius: var(--cosmos-radius-panel, 16px);
+      backdrop-filter: blur(var(--cosmos-blur, 16px));
       box-shadow: var(--glass-shadow);
       display: flex;
       flex-direction: column;
@@ -373,7 +383,7 @@
       height: 100%;
     }
 
-    /* Estado Colapsado: se convierte en un botón píldora interactivo (Estilo Solar Eclipse Explorer) */
+    /* Estado Colapsado: se convierte en un botón píldora interactivo (Estilo Cosmos Mataró) */
     #panel-controls.collapsed {
       width: auto;
       max-height: unset;
@@ -391,27 +401,28 @@
     #panel-controls.collapsed .panel-pill-btn {
       display: inline-flex;
       align-items: center;
-      gap: 10px;
-      background: rgba(14, 20, 34, 0.92);
-      border: 1px solid rgba(255, 255, 255, 0.18);
+      gap: 9px;
+      background: var(--cosmos-bg-panel, rgba(12, 16, 25, 0.94));
+      border: 1px solid var(--cosmos-border-strong, rgba(255, 255, 255, 0.16));
       border-radius: 999px;
-      padding: 9px 18px;
-      color: #ffffff;
-      font-size: 13.5px;
+      padding: 9px 16px;
+      color: var(--text-main);
+      font-family: var(--cosmos-font-heading, 'Outfit', sans-serif);
+      font-size: 0.85rem;
       font-weight: 700;
-      letter-spacing: -0.2px;
+      letter-spacing: -0.01em;
       cursor: pointer;
-      backdrop-filter: blur(14px);
-      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(var(--cosmos-blur, 16px));
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.55);
       transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
       user-select: none;
     }
 
     #panel-controls.collapsed .panel-pill-btn:hover {
-      background: rgba(22, 32, 54, 0.96);
-      border-color: var(--accent-cyan);
-      box-shadow: 0 4px 22px rgba(56, 217, 169, 0.3);
-      transform: translateY(-1px) scale(1.02);
+      background: rgba(20, 28, 46, 0.96);
+      border-color: var(--accent-blue);
+      box-shadow: 0 6px 24px var(--cosmos-accent-blue-glow, rgba(56, 189, 248, 0.25));
+      transform: translateY(-1px);
     }
 
     #panel-controls.collapsed .panel-pill-btn:active {
@@ -419,7 +430,7 @@
     }
 
     .pill-icon {
-      color: #ffffff;
+      color: var(--accent-blue);
       display: block;
       flex-shrink: 0;
     }
@@ -428,22 +439,40 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 13px 16px;
-      background: rgba(255, 255, 255, 0.03);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 10px 14px 9px 14px;
+      background: var(--cosmos-bg-panel-header, rgba(12, 16, 25, 0.96));
+      border-bottom: 1px solid var(--card-border);
       cursor: pointer;
       user-select: none;
+      min-height: 50px;
+    }
+
+    .panel-header-brand {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
     }
 
     .panel-title {
-      font-size: 12px;
+      font-family: var(--cosmos-font-heading, 'Outfit', sans-serif);
+      font-size: 1.05rem;
       font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      color: #ffffff;
+      letter-spacing: -0.01em;
+      color: var(--text-main);
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 7px;
+      line-height: 1.15;
+    }
+
+    .panel-brand-sub {
+      font-family: var(--cosmos-font-heading, 'Outfit', sans-serif);
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--accent-blue);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      line-height: 1;
     }
 
     .panel-toggle-btn {
@@ -452,7 +481,7 @@
       color: var(--text-muted);
       cursor: pointer;
       padding: 5px;
-      border-radius: 5px;
+      border-radius: 6px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -474,31 +503,43 @@
     }
 
     .panel-body {
-      padding: 14px 16px;
+      padding: 12px 14px;
       overflow-y: auto;
-      max-height: calc(100vh - 100px);
+      max-height: calc(100vh - 96px);
+      max-height: calc(100dvh - 96px);
+      overscroll-behavior: contain;
       scrollbar-width: thin;
-      scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+      scrollbar-color: var(--cosmos-scrollbar-thumb, rgba(148, 163, 184, 0.55)) transparent;
     }
 
-    .panel-body::-webkit-scrollbar {
-      width: 5px;
-    }
-    .panel-body::-webkit-scrollbar-thumb {
-      background: rgba(255, 255, 255, 0.2);
-      border-radius: 3px;
+    @supports not (scrollbar-color: auto) {
+      .panel-body {
+        scrollbar-width: auto;
+      }
+      .panel-body::-webkit-scrollbar {
+        width: 6px;
+      }
+      .panel-body::-webkit-scrollbar-thumb {
+        background: var(--cosmos-scrollbar-thumb, rgba(148, 163, 184, 0.55));
+        border-radius: 4px;
+      }
     }
 
     .control-group {
-      margin-bottom: 14px;
+      margin-bottom: 10px;
+      background: var(--cosmos-bg-surface-subtle, rgba(255, 255, 255, 0.03));
+      border: 1px solid var(--card-border);
+      border-radius: var(--cosmos-radius-card, 12px);
+      padding: 10px 12px;
     }
 
     .control-group-title {
-      font-size: 10.5px;
+      font-family: var(--cosmos-font-heading, 'Outfit', sans-serif);
+      font-size: 0.76rem;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.8px;
-      color: var(--accent-blue);
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
       margin-bottom: 8px;
       display: flex;
       align-items: center;
@@ -747,13 +788,14 @@
     }
 
     .didactic-modal {
-      background: rgba(11, 17, 32, 0.96);
-      border: 1px solid rgba(77, 166, 255, 0.35);
-      border-radius: 16px;
+      background: var(--cosmos-bg-panel-header, rgba(12, 16, 25, 0.96));
+      border: 1px solid var(--cosmos-border-active, rgba(56, 189, 248, 0.5));
+      border-radius: var(--cosmos-radius-panel, 16px);
       width: 100%;
       max-width: 680px;
-      max-height: 85vh;
+      max-height: 85dvh;
       overflow-y: auto;
+      overscroll-behavior: contain;
       padding: 28px;
       box-shadow: 0 20px 60px rgba(0, 0, 0, 0.88);
       position: relative;
@@ -829,15 +871,15 @@
     /* Modal / Ficha Informativa de Planeta */
     #planet-info-card {
       position: absolute;
-      bottom: 275px;
-      right: 24px;
+      bottom: 270px;
+      right: var(--cosmos-sidebar-offset, 15px);
       width: 300px;
       background: var(--card-bg);
-      border: 1px solid var(--accent-cyan);
-      border-radius: 12px;
+      border: 1px solid var(--cosmos-border-active, rgba(56, 189, 248, 0.5));
+      border-radius: var(--cosmos-radius-card, 12px);
       padding: 16px;
-      backdrop-filter: blur(14px);
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(var(--cosmos-blur, 16px));
+      box-shadow: var(--glass-shadow);
       z-index: 40;
       display: none;
       animation: fadeIn 0.3s ease;
@@ -845,7 +887,7 @@
     }
 
     #hud-telemetry.hidden ~ #planet-info-card {
-      bottom: 24px;
+      bottom: var(--cosmos-sidebar-offset, 15px);
     }
 
     @keyframes fadeIn {
@@ -943,7 +985,7 @@
       #top-header {
         top: 12px;
         right: 12px;
-        max-width: calc(100vw - 160px);
+        max-width: calc(100dvw - 160px);
         text-align: right;
       }
       h1.app-title {
@@ -953,7 +995,7 @@
         font-size: 10.5px;
       }
       #hud-telemetry {
-        width: 270px;
+        width: 280px;
         padding: 11px;
         bottom: 12px;
         right: 12px;
@@ -964,8 +1006,8 @@
         left: 12px;
         right: auto;
         bottom: auto;
-        width: 285px;
-        max-height: 80vh;
+        width: min(var(--cosmos-sidebar-width, 350px), calc(100dvw - 24px));
+        max-height: calc(100dvh - 24px);
       }
       #planet-info-card {
         top: 85px;
@@ -979,9 +1021,9 @@
     /* Selector de idioma dentro del panel de controles (i18n: ES / CA / EN) */
     .lang-btn-group {
       display: flex;
-      background: rgba(0, 0, 0, 0.35);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      border-radius: 9px;
+      background: rgba(5, 8, 17, 0.7);
+      border: 1px solid var(--card-border);
+      border-radius: var(--cosmos-radius-control, 8px);
       padding: 3px;
       gap: 4px;
     }
@@ -991,27 +1033,27 @@
       background: transparent;
       border: none;
       color: var(--text-muted);
+      font-family: var(--cosmos-font-heading, 'Outfit', sans-serif);
       font-size: 11.5px;
       font-weight: 600;
-      padding: 6px 4px;
+      padding: 5px 4px;
       border-radius: 6px;
       cursor: pointer;
       transition: all 0.2s ease;
-      font-family: inherit;
       text-align: center;
       letter-spacing: 0.3px;
     }
 
-    .lang-btn:hover {
+    .lang-btn:hover:not(.active) {
       color: #ffffff;
       background: rgba(255, 255, 255, 0.08);
     }
 
     .lang-btn.active {
-      color: #0b0f19;
-      background: var(--accent-cyan);
+      color: var(--bg-space);
+      background: var(--accent-blue);
       font-weight: 700;
-      box-shadow: 0 0 10px rgba(0, 229, 255, 0.4);
+      box-shadow: 0 2px 10px var(--cosmos-accent-blue-glow, rgba(56, 189, 248, 0.25));
     }
 
   </style>
@@ -1151,8 +1193,11 @@
     <!-- Contenido expandido del panel -->
     <div class="panel-expanded-wrap" id="panel-expanded-wrap">
       <div class="panel-header" onclick="toggleControlPanel(true)">
-        <div class="panel-title" data-i18n-html="panelTitle">
-          <span>🎛️</span> VISUALIZACIÓN
+        <div class="panel-header-brand">
+          <div class="panel-title" data-i18n-html="panelTitle">
+            <span>🎛️</span> VISUALIZACIÓN
+          </div>
+          <div class="panel-brand-sub">COSMOS MATARÓ</div>
         </div>
         <button class="panel-toggle-btn" id="btn-collapse" onclick="event.stopPropagation(); toggleControlPanel(true)" data-i18n-title="collapseTitle" title="Minimizar panel a icono">
           <svg class="chevron-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">

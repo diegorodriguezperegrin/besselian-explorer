@@ -13,226 +13,408 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha384-iw3OoTErCYJJB9mCa8LNS2hbsQ7M3C0EpIsO/H5+EGAkPGc6rk+V8i04oW/K5xq0" crossorigin="anonymous" onerror="this.onerror=null;this.removeAttribute('integrity');this.href='vendor/fontawesome/css/all.min.css';">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Sistema de diseño unificado Cosmos Mataró -->
+  <link rel="stylesheet" href="cosmos_theme.css">
 
   <style>
-    body {
-      font-family: 'Inter', sans-serif;
-      overflow-x: hidden;
+    html, body {
+      width: 100%;
+      height: 100%;
+      height: 100dvh;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background-color: var(--cosmos-bg-space, #050811);
+      color: var(--cosmos-text-primary, #f8fafc);
+      font-family: var(--cosmos-font-body, 'Plus Jakarta Sans', sans-serif);
       user-select: none;
     }
+
+    h1, h2, h3, .font-heading {
+      font-family: var(--cosmos-font-heading, 'Outfit', sans-serif);
+    }
+
     .font-mono-num {
-      font-family: 'JetBrains Mono', monospace;
+      font-family: var(--cosmos-font-mono, 'JetBrains Mono', monospace);
     }
-    .glass-card {
-      background: rgba(15, 23, 42, 0.88);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
-      border: 1px solid rgba(255, 255, 255, 0.12);
+
+    /* Viewport 3D a pantalla completa */
+    #viewport-3d {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      height: 100dvh;
+      z-index: 1;
+      overflow: hidden;
+      background: radial-gradient(circle at 50% 35%, #0c182c 0%, var(--cosmos-bg-space, #050811) 75%);
     }
-    .glass-pill {
-      background: rgba(255, 255, 255, 0.08);
-      backdrop-filter: blur(8px);
-      border: 1px solid rgba(255, 255, 255, 0.14);
-    }
-    input[type=range] {
-      accent-color: #f59e0b;
-    }
+
     #threeCanvas {
       width: 100%;
       height: 100%;
       display: block;
     }
-    .custom-scrollbar::-webkit-scrollbar {
-      width: 6px;
+
+    .glass-card {
+      background: var(--cosmos-bg-panel, rgba(12, 16, 25, 0.94));
+      backdrop-filter: blur(var(--cosmos-blur, 16px));
+      -webkit-backdrop-filter: blur(var(--cosmos-blur, 16px));
+      border: 1px solid var(--cosmos-border, rgba(255, 255, 255, 0.1));
+      box-shadow: var(--cosmos-shadow-panel, 0 12px 36px rgba(0, 0, 0, 0.65));
     }
-    .custom-scrollbar::-webkit-scrollbar-track {
-      background: #0f172a;
+
+    .glass-pill {
+      background: var(--cosmos-bg-panel, rgba(12, 16, 25, 0.94));
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--cosmos-border, rgba(255, 255, 255, 0.1));
     }
-    .custom-scrollbar::-webkit-scrollbar-thumb {
-      background: #334155;
-      border-radius: 4px;
+
+    /* Panel Principal Flotante a la Izquierda (Estándar Cosmos Mataró 350px) */
+    #panel-controls {
+      position: fixed;
+      top: var(--cosmos-sidebar-offset, 15px);
+      left: var(--cosmos-sidebar-offset, 15px);
+      width: var(--cosmos-sidebar-width, 350px);
+      max-height: calc(100vh - 30px);
+      max-height: calc(100dvh - 30px);
+      z-index: 30;
+      background: var(--cosmos-bg-panel, rgba(12, 16, 25, 0.94));
+      border: 1px solid var(--cosmos-border, rgba(255, 255, 255, 0.1));
+      border-radius: var(--cosmos-radius-panel, 16px);
+      backdrop-filter: blur(var(--cosmos-blur, 16px));
+      -webkit-backdrop-filter: blur(var(--cosmos-blur, 16px));
+      box-shadow: var(--cosmos-shadow-panel, 0 12px 36px rgba(0, 0, 0, 0.65));
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transition: width var(--cosmos-transition, 0.25s ease),
+                  background-color var(--cosmos-transition, 0.25s ease),
+                  border-color var(--cosmos-transition, 0.25s ease);
     }
-    /* Selector de idioma (i18n: ES / CA / EN) */
+
+    #panel-controls .panel-pill-btn {
+      display: none;
+    }
+
+    #panel-controls .panel-expanded-wrap {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      width: 100%;
+      height: 100%;
+    }
+
+    #panel-controls.collapsed {
+      width: auto;
+      max-height: unset;
+      background: transparent;
+      border-color: transparent;
+      box-shadow: none;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+      overflow: visible;
+    }
+
+    #panel-controls.collapsed .panel-expanded-wrap {
+      display: none;
+    }
+
+    #panel-controls.collapsed .panel-pill-btn {
+      display: inline-flex;
+    }
+
+    .cosmos-panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 14px 9px 14px;
+      background: var(--cosmos-bg-panel-header, rgba(12, 16, 25, 0.96));
+      border-bottom: 1px solid var(--cosmos-border, rgba(255, 255, 255, 0.1));
+      min-height: 50px;
+      cursor: pointer;
+    }
+
+    .cosmos-panel-header h1 {
+      font-family: var(--cosmos-font-heading, 'Outfit', sans-serif);
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--cosmos-text-primary, #f8fafc);
+      line-height: 1.15;
+      margin: 0;
+    }
+
+    .cosmos-panel-header .brand-sub {
+      font-family: var(--cosmos-font-heading, 'Outfit', sans-serif);
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--cosmos-accent-blue, #38bdf8);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-top: 2px;
+      line-height: 1;
+    }
+
+    .panel-collapse-btn {
+      background: transparent;
+      border: none;
+      color: var(--cosmos-text-secondary, #94a3b8);
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: color 0.2s, background-color 0.2s;
+      flex-shrink: 0;
+    }
+
+    .panel-collapse-btn:hover {
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .cosmos-panel-body {
+      padding: 12px 14px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-height: calc(100vh - 96px);
+      max-height: calc(100dvh - 96px);
+    }
+
+    .cosmos-section {
+      background: var(--cosmos-bg-surface-subtle, rgba(255, 255, 255, 0.03));
+      border: 1px solid var(--cosmos-border, rgba(255, 255, 255, 0.1));
+      border-radius: var(--cosmos-radius-card, 12px);
+      padding: 10px 12px;
+    }
+
+    /* HUD Superior Derecha (Telemetría rápida + Brújula) */
+    #top-right-hud {
+      position: fixed;
+      top: var(--cosmos-sidebar-offset, 15px);
+      right: var(--cosmos-sidebar-offset, 15px);
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+      pointer-events: none;
+      max-width: calc(100dvw - 395px);
+    }
+
+    #top-right-hud > * {
+      pointer-events: auto;
+    }
+
+    /* HUD Inferior Derecha (Comparativa 2D + Telemetría colapsable) */
+    #hud-plot-2d {
+      position: fixed;
+      bottom: var(--cosmos-sidebar-offset, 15px);
+      right: var(--cosmos-sidebar-offset, 15px);
+      width: var(--cosmos-hud-width, 340px);
+      z-index: 25;
+      border-radius: var(--cosmos-radius-panel, 16px);
+      overflow: hidden;
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
+    }
+
+    #hud-plot-2d.collapsed {
+      width: auto;
+      background: transparent;
+      border-color: transparent;
+      box-shadow: none;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+      overflow: visible;
+    }
+
+    #hud-plot-2d .hud-pill-btn {
+      display: none;
+    }
+
+    #hud-plot-2d.collapsed .hud-expanded-wrap {
+      display: none;
+    }
+
+    #hud-plot-2d.collapsed .hud-pill-btn {
+      display: inline-flex;
+    }
+
+    /* Sliders unificados */
+    input[type=range] {
+      accent-color: var(--cosmos-accent-blue, #38bdf8);
+    }
+
+    /* Selector de idioma unificado (ES / CA / EN) */
     .lang-btn-group {
       display: inline-flex;
-      background: rgba(15, 23, 42, 0.9);
-      border: 1px solid rgba(51, 65, 85, 0.8);
-      border-radius: 8px;
-      padding: 2px;
-      gap: 2px;
+      background: rgba(5, 8, 17, 0.7);
+      border: 1px solid var(--cosmos-border, rgba(255, 255, 255, 0.1));
+      border-radius: var(--cosmos-radius-control, 8px);
+      padding: 3px;
+      gap: 3px;
     }
+
     .lang-btn {
       background: transparent;
       border: none;
-      color: #94a3b8;
+      color: var(--cosmos-text-secondary, #94a3b8);
+      font-family: var(--cosmos-font-heading, 'Outfit', sans-serif);
       font-size: 11px;
       font-weight: 600;
       padding: 4px 8px;
       border-radius: 6px;
       cursor: pointer;
       transition: all 0.2s ease;
-      font-family: inherit;
       letter-spacing: 0.3px;
     }
-    .lang-btn:hover {
-      color: #f8fafc;
+
+    .lang-btn:hover:not(.active) {
+      color: var(--cosmos-text-primary, #f8fafc);
       background: rgba(255, 255, 255, 0.08);
     }
+
     .lang-btn.active {
-      color: #0f172a;
-      background: #f59e0b;
+      color: var(--cosmos-bg-space, #050811);
+      background: var(--cosmos-accent-blue, #38bdf8);
       font-weight: 700;
-      box-shadow: 0 0 8px rgba(245, 158, 11, 0.35);
+      box-shadow: 0 2px 10px var(--cosmos-accent-blue-glow, rgba(56, 189, 248, 0.25));
+    }
+
+    @media (max-width: 920px) {
+      #panel-controls {
+        top: 12px;
+        left: 12px;
+        width: min(var(--cosmos-sidebar-width, 350px), calc(100dvw - 24px));
+        max-height: calc(100dvh - 24px);
+      }
+      #top-right-hud {
+        top: 12px;
+        right: 12px;
+        max-width: calc(100dvw - 24px);
+      }
+      #hud-plot-2d {
+        bottom: 12px;
+        right: 12px;
+        width: min(320px, calc(100dvw - 24px));
+      }
     }
   </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-amber-500 selection:text-black">
+<body class="antialiased selection:bg-sky-400 selection:text-slate-950">
 
-  <header class="w-full border-b border-slate-800 bg-slate-900/90 backdrop-blur-md px-4 lg:px-7 py-2.5 flex items-center justify-between gap-2 z-30 sticky top-0">
-    <div class="flex items-center space-x-3">
-      <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 via-orange-500 to-yellow-300 flex items-center justify-center text-slate-950 shadow-md shadow-amber-500/20 shrink-0">
-        <i class="fa-solid fa-atom text-base animate-[spin_24s_linear_infinite]"></i>
-      </div>
-      <div>
-        <h1 class="text-sm sm:text-base font-bold tracking-tight text-white flex items-center gap-2 flex-wrap">
-          <span data-i18n="appTitle">Simulador de sombra en el equinoccio</span>
-          <span data-i18n="appBadge" class="text-[10px] font-semibold tracking-wider uppercase px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30">
-            Curvatura Real en 'S' &amp; Refracción
-          </span>
-        </h1>
-        <p data-i18n="appSubtitle" class="text-xs text-slate-400 hidden sm:block">Modelado de declinación dinámica dδ/dt, refracción de Bennett y penumbra angular</p>
-      </div>
-    </div>
+  <!-- Viewport 3D a Pantalla Completa -->
+  <section id="viewport-3d">
+    <canvas id="threeCanvas"></canvas>
+  </section>
 
-    <!-- Quick Stats & Controls in Header -->
-    <div class="flex items-center gap-2 sm:gap-3">
-      <div class="hidden md:flex items-center gap-3 text-xs bg-slate-800/80 border border-slate-700/60 rounded-xl px-3 py-1 font-mono-num">
-        <span class="text-slate-400"><span data-i18n="headerTimeLabel">Hora:</span> <strong id="headerTime" class="text-amber-300 font-bold">12:00:00</strong></span>
-        <span class="text-slate-600">|</span>
-        <span class="text-slate-400">δ(t): <strong id="headerDeclination" class="text-sky-300 font-bold">0.00'</strong></span>
-        <span class="text-slate-600">|</span>
-        <span class="text-slate-400"><span data-i18n="headerDeltaYLabel">Desviación ΔY:</span> <strong id="headerDeltaY" class="text-rose-400 font-bold">0.0 mm</strong></span>
-      </div>
-      <!-- Selector de Idioma (i18n) -->
-      <div class="lang-btn-group" id="lang-selector" role="group" aria-label="Idioma">
-        <button type="button" class="lang-btn active" data-lang="es" onclick="setLanguage('es')" title="Español">ES</button>
-        <button type="button" class="lang-btn" data-lang="ca" onclick="setLanguage('ca')" title="Català">CA</button>
-        <button type="button" class="lang-btn" data-lang="en" onclick="setLanguage('en')" title="English">EN</button>
-      </div>
-      <button id="infoToggleBtn" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 transition flex items-center gap-1.5 shadow-sm">
-        <i class="fa-solid fa-book-open text-amber-400"></i>
-        <span data-i18n="btnPhysics">Explicación Física</span>
-      </button>
-    </div>
-  </header>
+  <!-- Panel Principal Flotante a la Izquierda (350px — Estándar Cosmos Mataró) -->
+  <aside id="panel-controls" aria-label="Panel de control">
+    <!-- Píldora visible al colapsar -->
+    <button type="button" class="cosmos-pill-btn panel-pill-btn" id="panel-pill-btn" onclick="toggleControlPanel(false)" data-i18n-title="openControlsTitle" title="Abrir panel de control">
+      <i class="fa-solid fa-sliders text-sky-400"></i>
+      <span data-i18n="pillControls">Controles</span>
+    </button>
 
-  <main class="flex-1 flex flex-col lg:flex-row relative overflow-hidden">
-    
-    <!-- 3D Canvas Area (Main viewport) -->
-    <section class="relative flex-1 h-[48vh] sm:h-[52vh] lg:h-auto overflow-hidden bg-gradient-to-b from-sky-950 via-slate-950 to-black">
-      <canvas id="threeCanvas"></canvas>
-
-      <!-- View status badges -->
-      <div class="absolute top-4 left-4 pointer-events-none flex flex-col gap-2">
-        <div class="glass-pill px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-200 flex items-center gap-2 shadow-lg">
-          <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-          <span data-i18n="badge3dHint">Entorno 3D (Orbita arrastrando el ratón o dedo)</span>
+    <!-- Contenido expandido -->
+    <div class="panel-expanded-wrap">
+      <div class="cosmos-panel-header" onclick="toggleControlPanel(true)">
+        <div>
+          <h1 data-i18n="appTitle">Simulador de sombra en el equinoccio</h1>
+          <div class="brand-sub">COSMOS MATARÓ</div>
         </div>
-        <div id="skyStateBadge" data-i18n="skyStateBadge" class="glass-pill px-3 py-1 rounded-md text-[11px] text-amber-200 font-medium">
-          Mediodía Solar • Cielo despejado
-        </div>
+        <button type="button" class="panel-collapse-btn" id="btn-collapse-panel" onclick="event.stopPropagation(); toggleControlPanel(true)" data-i18n-title="collapsePanelTitle" title="Ocultar panel">
+          <i class="fa-solid fa-chevron-left text-xs"></i>
+        </button>
       </div>
 
-      <!-- Exaggeration Watermark Indicator in 3D -->
-      <div id="exaggerationBadge" class="absolute bottom-4 left-4 pointer-events-none">
-        <div class="glass-card px-3 py-2 rounded-xl border-l-4 border-l-rose-500 text-xs shadow-2xl max-w-sm">
-          <div class="font-bold text-rose-400 flex items-center gap-1.5">
-            <i class="fa-solid fa-magnifying-glass-plus"></i>
-            <span><span data-i18n="exagBadgeTitle">Visualizador de Desviación:</span> <span id="badgeExagFactor" class="text-white font-mono-num font-extrabold">10x</span></span>
+      <div class="cosmos-panel-body cosmos-scroll">
+        <!-- Idioma y Guía Física -->
+        <div class="cosmos-section flex items-center justify-between gap-2">
+          <div class="lang-btn-group" id="lang-selector" role="group" aria-label="Idioma">
+            <button type="button" class="lang-btn active" data-lang="es" onclick="setLanguage('es')" title="Español">ES</button>
+            <button type="button" class="lang-btn" data-lang="ca" onclick="setLanguage('ca')" title="Català">CA</button>
+            <button type="button" class="lang-btn" data-lang="en" onclick="setLanguage('en')" title="English">EN</button>
           </div>
-          <p data-i18n="exagBadgeDesc" class="text-[11px] text-slate-300 mt-1 leading-snug">
-            La línea roja discontinua es la recta euclídea teórica. La curva ámbar continua es la trayectoria física real multiplicada por el factor de aumento.
-          </p>
+          <button type="button" id="infoToggleBtn" class="px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-sky-400/15 text-slate-200 hover:text-white text-[11px] font-semibold border border-white/10 hover:border-sky-400/40 transition flex items-center gap-1.5">
+            <i class="fa-solid fa-book-open text-amber-400"></i>
+            <span data-i18n="btnPhysics">Explicación Física</span>
+          </button>
         </div>
-      </div>
 
-      <!-- Compass Legend overlay -->
-      <div class="absolute top-4 right-4 pointer-events-none">
-        <div class="glass-card px-3 py-2 rounded-xl text-xs flex flex-col items-center border border-slate-700/60 shadow-xl">
-          <div data-i18n="compassTitle" class="text-[10px] uppercase tracking-widest text-slate-400 mb-1 font-semibold">Orientación</div>
-          <div class="relative w-12 h-12 flex items-center justify-center">
-            <span class="absolute top-0 text-red-400 font-bold text-[11px]">N</span>
-            <span class="absolute bottom-0 text-slate-400 font-semibold text-[11px]">S</span>
-            <span class="absolute right-0 text-blue-400 font-semibold text-[11px]">E</span>
-            <span id="compassWestLabel" data-i18n="cardinalWestShort" class="absolute left-0 text-amber-400 font-semibold text-[11px]">O</span>
-            <i class="fa-solid fa-compass text-slate-500 text-lg"></i>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <aside class="w-full lg:w-[480px] bg-slate-900 border-t lg:border-t-0 lg:border-l border-slate-800 flex flex-col justify-between overflow-y-auto max-h-[52vh] sm:max-h-[48vh] lg:max-h-[calc(100vh-53px)] custom-scrollbar">
-      
-      <div class="p-4 sm:p-5 space-y-4">
-
-        <!-- Timeline & Playback Controller -->
-        <div class="bg-slate-950/80 p-3.5 rounded-2xl border border-slate-800 space-y-2.5">
+        <!-- Hora Solar y Reproducción -->
+        <div class="cosmos-section space-y-2.5">
           <div class="flex items-center justify-between">
-            <span class="text-xs font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-              <i class="fa-regular fa-clock text-amber-400"></i> <span data-i18n="trueSolarTime">Hora Solar Verdadera</span>
+            <span class="text-[11px] font-heading font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+              <i class="fa-regular fa-clock text-sky-400"></i> <span data-i18n="trueSolarTime">Hora Solar Verdadera</span>
             </span>
-            <span id="timeDisplay" class="text-xl font-bold font-mono-num text-amber-400 tracking-wider">12:00</span>
+            <span id="timeDisplay" class="text-lg font-bold font-mono-num text-amber-400 tracking-wider">12:00</span>
           </div>
 
           <div class="space-y-1">
-            <input id="timeSlider" type="range" min="6.15" max="17.85" step="0.02" value="12" class="w-full h-2.5 bg-slate-800 rounded-lg cursor-pointer">
-            <div class="flex justify-between text-[10px] font-mono-num text-slate-500 px-0.5">
+            <input id="timeSlider" type="range" min="6.15" max="17.85" step="0.02" value="12" class="w-full h-2 bg-slate-800 rounded-lg cursor-pointer">
+            <div class="flex justify-between text-[9.5px] font-mono-num text-slate-500">
               <span data-i18n="timeSunrise">06:15 (Amanecer)</span>
-              <span data-i18n="timeCulmination" class="text-amber-400 font-semibold">12:00 (Culminación)</span>
+              <span data-i18n="timeCulmination" class="text-amber-400 font-semibold">12:00</span>
               <span data-i18n="timeSunset">17:45 (Ocaso)</span>
             </div>
           </div>
 
-          <div class="flex items-center justify-between gap-2 pt-1">
-            <button id="playBtn" class="flex-1 py-2 px-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center justify-center gap-2 transition shadow-md shadow-amber-500/20 active:scale-95">
+          <div class="flex items-center justify-between gap-1.5 pt-0.5">
+            <button type="button" id="playBtn" class="flex-1 py-1.5 px-2.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center justify-center gap-1.5 transition shadow-md shadow-amber-500/20 active:scale-95">
               <i class="fa-solid fa-pause" id="playIcon"></i>
               <span id="playText">Pausar</span>
             </button>
-            <button id="resetBtn" class="py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition border border-slate-700">
+            <button type="button" id="resetBtn" class="py-1.5 px-2.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-semibold transition border border-white/10">
               <i class="fa-solid fa-arrows-rotate"></i> 12:00
             </button>
 
             <!-- Speed selector -->
-            <div class="flex bg-slate-800 rounded-xl p-1 border border-slate-700 text-xs">
-              <button data-speed="1" class="speed-btn px-2.5 py-0.5 rounded-lg font-medium text-slate-400 hover:text-white transition">1x</button>
-              <button data-speed="2" class="speed-btn px-2.5 py-0.5 rounded-lg font-medium text-slate-950 bg-amber-500 font-bold transition">2x</button>
-              <button data-speed="4" class="speed-btn px-2.5 py-0.5 rounded-lg font-medium text-slate-400 hover:text-white transition">4x</button>
+            <div class="flex bg-slate-950/70 rounded-lg p-0.5 border border-white/10 text-[11px]">
+              <button type="button" data-speed="1" class="speed-btn px-2 py-0.5 rounded-md font-medium text-slate-400 hover:text-white transition">1x</button>
+              <button type="button" data-speed="2" class="speed-btn px-2 py-0.5 rounded-md font-medium text-slate-950 bg-amber-500 font-bold transition">2x</button>
+              <button type="button" data-speed="4" class="speed-btn px-2 py-0.5 rounded-md font-medium text-slate-400 hover:text-white transition">4x</button>
             </div>
+          </div>
+
+          <div class="flex items-center justify-between gap-1.5 pt-1 border-t border-white/10">
+            <button type="button" id="toggleLoopBtn" class="flex-1 px-2 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-amber-400 border border-white/10 flex items-center justify-center gap-1.5 text-[11px] font-medium transition">
+              <i class="fa-solid fa-repeat"></i>
+              <span id="loopStatusText">Timelapse: En Bucle</span>
+            </button>
+            <button type="button" id="cameraResetBtn" class="px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 flex items-center gap-1.5 text-[11px] font-medium transition">
+              <i class="fa-solid fa-video text-sky-400"></i>
+              <span data-i18n="btnCenterCam">Centrar Cámara</span>
+            </button>
           </div>
         </div>
 
-        <!-- Physical Perturbations & Controls -->
-        <div class="bg-slate-950/80 p-3.5 rounded-2xl border border-slate-800 space-y-3">
-          <div class="flex items-center justify-between border-b border-slate-800/80 pb-2">
-            <span class="text-xs font-semibold uppercase tracking-wider text-rose-400 flex items-center gap-1.5">
+        <!-- Factores de Deformación Real -->
+        <div class="cosmos-section space-y-2.5">
+          <div class="flex items-center justify-between border-b border-white/10 pb-1.5">
+            <span class="text-[11px] font-heading font-bold uppercase tracking-wider text-rose-400 flex items-center gap-1.5">
               <i class="fa-solid fa-sliders"></i> <span data-i18n="factorsTitle">Factores de Deformación Real</span>
             </span>
-            <span data-i18n="factorsBadge" class="text-[10px] text-slate-400">Efectos reales activos</span>
           </div>
 
           <!-- Equinox Season & Exact Crossing Time -->
-          <div class="grid grid-cols-2 gap-2 text-xs">
+          <div class="grid grid-cols-1 gap-2 text-xs">
             <div>
-              <label data-i18n="seasonLabel" class="block text-[11px] text-slate-400 mb-1">Estación / Declinación</label>
-              <select id="equinoxSeason" class="w-full bg-slate-900 border border-slate-700 text-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-amber-500 text-xs">
+              <label for="equinoxSeason" data-i18n="seasonLabel" class="block text-[10.5px] text-slate-400 mb-1">Estación / Declinación</label>
+              <select id="equinoxSeason" class="w-full bg-slate-950/80 border border-white/10 text-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-sky-400 text-xs">
                 <option value="spring" data-i18n="optSpring">Primavera (Norte ↑ +24'/día)</option>
                 <option value="autumn" data-i18n="optAutumn">Otoño (Sur ↓ -24'/día)</option>
               </select>
             </div>
             <div>
-              <label data-i18n="crossingLabel" class="block text-[11px] text-slate-400 mb-1">Cruce exacto (δ = 0°)</label>
-              <select id="equinoxCrossingTime" class="w-full bg-slate-900 border border-slate-700 text-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-amber-500 text-xs">
+              <label for="equinoxCrossingTime" data-i18n="crossingLabel" class="block text-[10.5px] text-slate-400 mb-1">Cruce exacto (δ = 0°)</label>
+              <select id="equinoxCrossingTime" class="w-full bg-slate-950/80 border border-white/10 text-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-sky-400 text-xs">
                 <option value="12" selected data-i18n="optCrossNoon">Mediodía (Crea forma 'S')</option>
                 <option value="6" data-i18n="optCrossSunrise">Amanecer (Curva asimétrica)</option>
                 <option value="18" data-i18n="optCrossSunset">Atardecer (Curva asimétrica)</option>
@@ -242,114 +424,153 @@
           </div>
 
           <!-- Exaggeration Magnifier Slider -->
-          <div class="space-y-1 pt-1">
-            <div class="flex justify-between items-center text-xs">
-              <span class="text-slate-300 font-medium flex items-center gap-1">
+          <div class="space-y-1 pt-0.5">
+            <div class="flex justify-between items-center text-[11px]">
+              <span class="text-slate-300 font-medium flex items-center gap-1.5">
                 <i class="fa-solid fa-eye text-rose-400"></i> <span data-i18n="exagSliderLabel">Exageración de Curvatura (ΔY):</span>
               </span>
-              <span id="exagValue" class="text-rose-400 font-mono-num font-bold text-sm">15x</span>
+              <span id="exagValue" class="text-rose-400 font-mono-num font-bold text-xs">15x</span>
             </div>
             <input id="exaggerationSlider" type="range" min="1" max="40" step="1" value="15" class="w-full h-2 bg-slate-800 rounded-lg cursor-pointer">
-            <div class="flex justify-between text-[10px] font-mono-num text-slate-500">
-              <span data-i18n="exagMin">1x (Realidad milimétrica)</span>
-              <span data-i18n="exagRec">15x (Recomendado)</span>
-              <span data-i18n="exagMax">40x (Ultra evidente)</span>
+            <div class="grid grid-cols-3 gap-1 text-[9.5px] font-mono-num text-slate-500 leading-tight">
+              <span data-i18n="exagMin" class="text-left">1x</span>
+              <span data-i18n="exagRec" class="text-center">15x</span>
+              <span data-i18n="exagMax" class="text-right">40x</span>
             </div>
           </div>
 
           <!-- Toggles for Physical Effects -->
-          <div class="grid grid-cols-2 gap-2 pt-1">
-            <label class="flex items-center gap-2 p-2 rounded-xl bg-slate-900 border border-slate-800 cursor-pointer text-xs hover:border-slate-700">
-              <input type="checkbox" id="toggleRefraction" checked class="accent-amber-500 rounded">
-              <span data-i18n="toggleRefraction" class="text-slate-300 text-[11px]">Refracción Bennett</span>
+          <div class="grid grid-cols-2 gap-1.5 pt-0.5">
+            <label class="flex items-center gap-1.5 p-2 rounded-lg bg-slate-950/60 border border-white/10 cursor-pointer text-[11px] hover:border-sky-400/40 transition">
+              <input type="checkbox" id="toggleRefraction" checked class="accent-sky-400 rounded shrink-0">
+              <span data-i18n="toggleRefraction" class="text-slate-300 leading-tight">Refracción Bennett</span>
             </label>
-            <label class="flex items-center gap-2 p-2 rounded-xl bg-slate-900 border border-slate-800 cursor-pointer text-xs hover:border-slate-700">
-              <input type="checkbox" id="togglePenumbra" checked class="accent-amber-500 rounded">
-              <span data-i18n="togglePenumbra" class="text-slate-300 text-[11px]">Penumbra 0.53° disco</span>
+            <label class="flex items-center gap-1.5 p-2 rounded-lg bg-slate-950/60 border border-white/10 cursor-pointer text-[11px] hover:border-sky-400/40 transition">
+              <input type="checkbox" id="togglePenumbra" checked class="accent-sky-400 rounded shrink-0">
+              <span data-i18n="togglePenumbra" class="text-slate-300 leading-tight">Penumbra 0.53° disco</span>
             </label>
           </div>
         </div>
 
-        <!-- Latitudinal Configuration -->
-        <div class="bg-slate-950/80 p-3.5 rounded-2xl border border-slate-800 space-y-2">
+        <!-- Latitud del Observador -->
+        <div class="cosmos-section space-y-2">
           <div class="flex items-center justify-between">
-            <label for="latitudeSlider" class="text-xs font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+            <label for="latitudeSlider" class="text-[11px] font-heading font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
               <i class="fa-solid fa-earth-americas text-sky-400"></i> <span data-i18n="latTitle">Latitud del Observador</span>
             </label>
-            <span id="latDisplay" class="text-sm font-bold font-mono-num text-sky-400">40.0° N (Madrid / NY)</span>
+            <span id="latDisplay" class="text-xs font-bold font-mono-num text-sky-400">40.0° N</span>
           </div>
           <input id="latitudeSlider" type="range" min="-65" max="65" step="1" value="40" class="w-full h-2 bg-slate-800 rounded-lg cursor-pointer">
-          <div class="flex flex-wrap gap-1 pt-1 text-[10px]">
-            <button data-i18n="presetEquator" class="lat-preset px-2 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700" data-lat="0">0° Ecuador</button>
-            <button data-i18n="presetCanaries" class="lat-preset px-2 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700" data-lat="28">28° Canarias</button>
-            <button data-i18n="presetMadrid" class="lat-preset px-2 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 active-lat" data-lat="40">40° Madrid</button>
-            <button data-i18n="presetLondon" class="lat-preset px-2 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700" data-lat="51">51° Londres</button>
-            <button data-i18n="presetBA" class="lat-preset px-2 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700" data-lat="-34">-34° B. Aires</button>
+          <div class="flex flex-wrap gap-1 pt-0.5 text-[10px]">
+            <button type="button" data-i18n="presetEquator" class="lat-preset px-2 py-1 rounded-md bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 transition" data-lat="0">0° Ecuador</button>
+            <button type="button" data-i18n="presetCanaries" class="lat-preset px-2 py-1 rounded-md bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 transition" data-lat="28">28° Canarias</button>
+            <button type="button" data-i18n="presetMadrid" class="lat-preset px-2 py-1 rounded-md bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 transition active-lat" data-lat="40">40° Madrid</button>
+            <button type="button" data-i18n="presetLondon" class="lat-preset px-2 py-1 rounded-md bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 transition" data-lat="51">51° Londres</button>
+            <button type="button" data-i18n="presetBA" class="lat-preset px-2 py-1 rounded-md bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 transition" data-lat="-34">-34° B. Aires</button>
           </div>
         </div>
+      </div>
+    </div>
+  </aside>
 
-        <!-- High-Precision 2D Top-Down & Residuals Plot -->
-        <div class="bg-slate-950/80 p-3.5 rounded-2xl border border-slate-800 space-y-2">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-              <i class="fa-solid fa-chart-line text-amber-400"></i> <span data-i18n="plot2dTitle">Comparativa 2D: Recta vs Real</span>
-            </span>
-            <span data-i18n="plot2dBadge" class="text-[10px] text-rose-400 font-mono-num font-semibold">Traza Física en 'S'</span>
+  <!-- HUD Superior Derecha (Telemetría Rápida, Estado y Brújula) -->
+  <div id="top-right-hud">
+    <div class="flex items-start gap-2.5">
+      <div class="hidden sm:flex flex-col items-end gap-1.5">
+        <div class="glass-pill px-3 py-1.5 rounded-xl flex items-center gap-2.5 text-[11px] font-mono-num shadow-lg">
+          <span class="text-slate-400"><span data-i18n="headerTimeLabel">Hora:</span> <strong id="headerTime" class="text-amber-300 font-bold">12:00:00</strong></span>
+          <span class="text-slate-600">|</span>
+          <span class="text-slate-400">δ(t): <strong id="headerDeclination" class="text-sky-300 font-bold">0.00'</strong></span>
+          <span class="text-slate-600">|</span>
+          <span class="text-slate-400"><span data-i18n="headerDeltaYLabel">Desviación ΔY:</span> <strong id="headerDeltaY" class="text-rose-400 font-bold">0.0 mm</strong></span>
+        </div>
+        <div class="flex items-center gap-2">
+          <div class="glass-pill px-2.5 py-1 rounded-lg text-[10.5px] font-medium text-slate-300 flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span data-i18n="badge3dHint">Entorno 3D (Orbita arrastrando el ratón o dedo)</span>
           </div>
-          
-          <div class="w-full aspect-[16/9] bg-slate-900 rounded-xl overflow-hidden relative border border-slate-800">
-            <canvas id="topDownCanvas" class="w-full h-full block"></canvas>
-            <div class="absolute top-2 left-2 text-[10px] font-mono-num bg-slate-950/80 px-2 py-1 rounded border border-slate-800">
-              <span class="inline-block w-2.5 h-0.5 bg-red-400 mr-1 border-t border-dashed"></span> <span data-i18n="legendIdeal">Recta ideal</span>
-              <span class="inline-block w-2.5 h-1 bg-amber-400 ml-2 mr-1 rounded"></span> <span data-i18n="legendReal">Real (Exagerada)</span>
-            </div>
-            <div data-i18n="plotScaleNote" class="absolute bottom-1 right-2 text-[9px] text-slate-500 font-mono-num">
-              Escala métrica cenital (Gnomon = 1.0 m)
-            </div>
-          </div>
-
-          <!-- Real-time Physical Telemetry -->
-          <div class="grid grid-cols-3 gap-2 text-xs font-mono-num pt-1">
-            <div class="bg-slate-900 p-2 rounded-xl border border-slate-800">
-              <div data-i18n="telDeclination" class="text-[10px] text-slate-500 uppercase">Declinación δ</div>
-              <div id="liveDeclinationDisplay" class="text-xs sm:text-sm font-bold text-sky-300 mt-0.5">+0.00'</div>
-            </div>
-            <div class="bg-slate-900 p-2 rounded-xl border border-slate-800">
-              <div data-i18n="telRefraction" class="text-[10px] text-slate-500 uppercase">Refracción Atm.</div>
-              <div id="liveRefractionDisplay" class="text-xs sm:text-sm font-bold text-emerald-300 mt-0.5">0.8'</div>
-            </div>
-            <div class="bg-slate-900 p-2 rounded-xl border border-slate-800">
-              <div data-i18n="telDeltaY" class="text-[10px] text-slate-500 uppercase">Desviación ΔY Real</div>
-              <div id="liveDeltaYDisplay" class="text-xs sm:text-sm font-bold text-rose-400 mt-0.5">0.0 mm</div>
-            </div>
+          <div id="skyStateBadge" data-i18n="skyStateBadge" class="glass-pill px-2.5 py-1 rounded-lg text-[10.5px] text-amber-200 font-medium hidden md:block">
+            Mediodía Solar • Cielo despejado
           </div>
         </div>
-
       </div>
 
-      <div class="p-3.5 border-t border-slate-800/80 bg-slate-950/90 flex items-center justify-between text-xs text-slate-400">
-        <div class="flex items-center gap-2">
-          <button id="toggleLoopBtn" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-700 flex items-center gap-1.5 text-xs">
-            <i class="fa-solid fa-repeat"></i>
-            <span id="loopStatusText">Timelapse: En Bucle</span>
+      <!-- Brújula compacta -->
+      <div class="glass-card px-2.5 py-2 rounded-2xl text-xs flex flex-col items-center">
+        <div data-i18n="compassTitle" class="text-[9px] uppercase tracking-widest text-slate-400 mb-0.5 font-heading font-semibold">Orientación</div>
+        <div class="relative w-11 h-11 flex items-center justify-center">
+          <span class="absolute top-0 text-rose-400 font-bold text-[10px]">N</span>
+          <span class="absolute bottom-0 text-slate-400 font-semibold text-[10px]">S</span>
+          <span class="absolute right-0 text-sky-400 font-semibold text-[10px]">E</span>
+          <span id="compassWestLabel" data-i18n="cardinalWestShort" class="absolute left-0 text-amber-400 font-semibold text-[10px]">O</span>
+          <i class="fa-solid fa-compass text-slate-500 text-base"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HUD Inferior Derecha: Comparativa 2D Cenital + Telemetría (Colapsable) -->
+  <section id="hud-plot-2d" class="glass-card" aria-label="Comparativa 2D y telemetría">
+    <button type="button" class="cosmos-pill-btn hud-pill-btn" id="hud-plot-pill" onclick="togglePlotHud(false)" data-i18n-title="openPlotHudTitle" title="Mostrar comparativa 2D y telemetría">
+      <i class="fa-solid fa-chart-line text-amber-400"></i>
+      <span data-i18n="pillPlot2d">Comparativa 2D</span>
+    </button>
+
+    <div class="hud-expanded-wrap p-3.5 space-y-2.5">
+      <div class="flex items-center justify-between border-b border-white/10 pb-2 gap-2">
+        <div class="flex items-center gap-1.5 min-w-0">
+          <i class="fa-solid fa-chart-line text-amber-400 text-xs shrink-0"></i>
+          <span class="text-[11px] font-heading font-bold uppercase tracking-wider text-sky-400 truncate" data-i18n="plot2dTitle">Comparativa 2D: Recta vs Real</span>
+        </div>
+        <div class="flex items-center gap-1.5 shrink-0">
+          <span id="exaggerationBadge" class="text-[10px] font-mono-num font-bold text-rose-300 bg-rose-500/15 border border-rose-500/30 px-1.5 py-0.5 rounded-md">
+            <span id="badgeExagFactor">15x</span>
+          </span>
+          <button type="button" class="panel-collapse-btn" onclick="togglePlotHud(true)" data-i18n-title="collapsePlotHudTitle" title="Ocultar comparativa 2D">
+            <i class="fa-solid fa-chevron-down text-xs"></i>
           </button>
         </div>
-        <button id="cameraResetBtn" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 flex items-center gap-1.5 text-xs">
-          <i class="fa-solid fa-video"></i>
-          <span data-i18n="btnCenterCam">Centrar Cámara</span>
-        </button>
       </div>
-    </aside>
-  </main>
 
+      <div class="flex items-center justify-between text-[9.5px] font-mono-num text-slate-400">
+        <div class="flex items-center gap-2.5">
+          <span class="inline-flex items-center gap-1"><span class="inline-block w-2.5 h-0.5 bg-rose-400 border-t border-dashed"></span><span data-i18n="legendIdeal">Recta ideal</span></span>
+          <span class="inline-flex items-center gap-1"><span class="inline-block w-2.5 h-1 bg-amber-400 rounded"></span><span data-i18n="legendReal">Real (Exagerada)</span></span>
+        </div>
+        <span data-i18n="plotScaleNote" class="text-[8.5px] text-slate-500 truncate">Gnomon = 1.0 m</span>
+      </div>
+
+      <div class="w-full aspect-[16/9] bg-slate-950/90 rounded-xl overflow-hidden relative border border-white/10">
+        <canvas id="topDownCanvas" class="w-full h-full block"></canvas>
+      </div>
+
+      <!-- Real-time Physical Telemetry -->
+      <div class="grid grid-cols-3 gap-1.5 text-xs font-mono-num">
+        <div class="bg-white/[0.03] p-2 rounded-xl border border-white/10">
+          <div data-i18n="telDeclination" class="text-[9px] text-slate-400 uppercase truncate">Declinación δ</div>
+          <div id="liveDeclinationDisplay" class="text-xs font-bold text-sky-300 mt-0.5">+0.00'</div>
+        </div>
+        <div class="bg-white/[0.03] p-2 rounded-xl border border-white/10">
+          <div data-i18n="telRefraction" class="text-[9px] text-slate-400 uppercase truncate">Refracción Atm.</div>
+          <div id="liveRefractionDisplay" class="text-xs font-bold text-emerald-300 mt-0.5">0.8'</div>
+        </div>
+        <div class="bg-white/[0.03] p-2 rounded-xl border border-white/10">
+          <div data-i18n="telDeltaY" class="text-[9px] text-slate-400 uppercase truncate">Desviación ΔY</div>
+          <div id="liveDeltaYDisplay" class="text-xs font-bold text-rose-400 mt-0.5">0.0 mm</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Modal Explicación Física -->
   <div id="infoModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4">
-    <div class="glass-card max-w-2xl w-full rounded-2xl p-6 border border-slate-700 shadow-2xl relative space-y-4 max-h-[92vh] overflow-y-auto custom-scrollbar">
-      <div class="flex items-center justify-between border-b border-slate-700 pb-3">
+    <div class="glass-card max-w-2xl w-full rounded-2xl p-6 border border-sky-400/35 shadow-2xl relative space-y-4 max-h-[90dvh] overflow-y-auto cosmos-scroll">
+      <div class="flex items-center justify-between border-b border-white/10 pb-3">
         <div class="flex items-center gap-2.5 text-amber-400">
           <i class="fa-solid fa-sun text-xl"></i>
-          <h3 data-i18n="modalTitle" class="text-lg font-bold text-white">Física Detallada: Por qué la sombra NO es una recta</h3>
+          <h3 data-i18n="modalTitle" class="text-lg font-heading font-bold text-white">Física Detallada: Por qué la sombra NO es una recta</h3>
         </div>
-        <button id="closeInfoBtn" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition">
+        <button type="button" id="closeInfoBtn" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/15 text-slate-400 hover:text-white flex items-center justify-center transition border border-white/10">
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
@@ -396,8 +617,8 @@
         </div>
       </div>
 
-      <div class="pt-2 flex justify-end border-t border-slate-800">
-        <button id="closeInfoBtn2" data-i18n="modalClose" class="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs transition">
+      <div class="pt-2 flex justify-end border-t border-white/10">
+        <button type="button" id="closeInfoBtn2" data-i18n="modalClose" class="px-4 py-2 bg-sky-400 hover:bg-sky-300 text-slate-950 font-bold rounded-xl text-xs transition">
           Cerrar e interactuar
         </button>
       </div>
@@ -422,6 +643,12 @@
         headerTimeLabel: "Hora:",
         headerDeltaYLabel: "Desviación ΔY:",
         btnPhysics: "Explicación Física",
+        pillControls: "Controles",
+        openControlsTitle: "Abrir panel de control",
+        collapsePanelTitle: "Ocultar panel",
+        pillPlot2d: "Comparativa 2D",
+        openPlotHudTitle: "Mostrar comparativa 2D y telemetría",
+        collapsePlotHudTitle: "Ocultar comparativa 2D",
         badge3dHint: "Entorno 3D (Orbita arrastrando el ratón o dedo)",
         skyStateBadge: "Mediodía Solar • Cielo despejado",
         exagBadgeTitle: "Visualizador de Desviación:",
@@ -518,6 +745,12 @@
         headerTimeLabel: "Hora:",
         headerDeltaYLabel: "Desviació ΔY:",
         btnPhysics: "Explicació Física",
+        pillControls: "Controls",
+        openControlsTitle: "Obrir panell de control",
+        collapsePanelTitle: "Ocultar panell",
+        pillPlot2d: "Comparativa 2D",
+        openPlotHudTitle: "Mostrar comparativa 2D i telemetria",
+        collapsePlotHudTitle: "Ocultar comparativa 2D",
         badge3dHint: "Entorn 3D (Orbita arrossegant el ratolí o el dit)",
         skyStateBadge: "Migdia Solar • Cel serè",
         exagBadgeTitle: "Visualitzador de Desviació:",
@@ -614,6 +847,12 @@
         headerTimeLabel: "Time:",
         headerDeltaYLabel: "ΔY Deviation:",
         btnPhysics: "Physics Guide",
+        pillControls: "Controls",
+        openControlsTitle: "Open control panel",
+        collapsePanelTitle: "Hide panel",
+        pillPlot2d: "2D Comparison",
+        openPlotHudTitle: "Show 2D comparison and telemetry",
+        collapsePlotHudTitle: "Hide 2D comparison",
         badge3dHint: "3D View (Drag mouse or finger to orbit)",
         skyStateBadge: "Solar Noon • Clear sky",
         exagBadgeTitle: "Deviation Magnifier:",
@@ -919,8 +1158,8 @@
     const canvas3D = document.getElementById('threeCanvas');
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0a101d);
-    scene.fog = new THREE.FogExp2(0x0a101d, 0.012);
+    scene.background = new THREE.Color(0x050811);
+    scene.fog = new THREE.FogExp2(0x050811, 0.012);
 
     const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 500);
     camera.position.set(0, 5.2, 8.5);
@@ -1023,7 +1262,7 @@
       canvas.height = 128;
       const ctx = canvas.getContext('2d');
       ctx.fillStyle = color;
-      ctx.font = 'Bold 72px Inter, sans-serif';
+      ctx.font = "700 72px 'Outfit', sans-serif";
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(text, 64, 64);
@@ -1044,7 +1283,7 @@
       const ctx = canvas.getContext('2d');
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.fillStyle = color;
-      ctx.font = 'Bold 72px Inter, sans-serif';
+      ctx.font = "700 72px 'Outfit', sans-serif";
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(text, 64, 64);
@@ -1185,6 +1424,7 @@
 
     function drawTopDownPlot() {
       const rect = topDownCanvas.getBoundingClientRect();
+      if (!rect.width || !rect.height) return;
       topDownCanvas.width = rect.width * window.devicePixelRatio;
       topDownCanvas.height = rect.height * window.devicePixelRatio;
       
@@ -1217,7 +1457,7 @@
       topCtx.stroke();
 
       // Cardinal Labels
-      topCtx.font = `bold ${11 * window.devicePixelRatio}px Inter, sans-serif`;
+      topCtx.font = `700 ${11 * window.devicePixelRatio}px 'Outfit', sans-serif`;
       topCtx.textAlign = 'center';
       topCtx.textBaseline = 'middle';
       
@@ -1246,7 +1486,7 @@
 
       // Theoretical label
       topCtx.fillStyle = '#f43f5e';
-      topCtx.font = `bold ${9 * window.devicePixelRatio}px Inter`;
+      topCtx.font = `700 ${9 * window.devicePixelRatio}px 'Plus Jakarta Sans', sans-serif`;
       topCtx.textAlign = 'left';
       topCtx.fillText(`${t('canvasTheoreticalLine')} (Y = ${theoNorthMeters.toFixed(2)}m)`, 10 * window.devicePixelRatio, theoLineCanvasY - 6 * window.devicePixelRatio);
 
@@ -1291,11 +1531,14 @@
           topCtx.lineWidth = 1 * window.devicePixelRatio;
           topCtx.stroke();
 
-          // Text time label
-          topCtx.fillStyle = '#e2e8f0';
-          topCtx.font = `${9 * window.devicePixelRatio}px 'JetBrains Mono'`;
-          topCtx.textAlign = 'center';
-          topCtx.fillText(`${hr}h`, px, py + 12 * window.devicePixelRatio);
+          // Text time label (avoid crowding on compact HUD widths)
+          const compactPlot = rect.width < 380;
+          if (!compactPlot || hr % 2 === 0) {
+            topCtx.fillStyle = '#e2e8f0';
+            topCtx.font = `${9 * window.devicePixelRatio}px 'JetBrains Mono'`;
+            topCtx.textAlign = 'center';
+            topCtx.fillText(`${hr}h`, px, py + 12 * window.devicePixelRatio);
+          }
         }
       }
 
@@ -1375,14 +1618,14 @@
       // Light & Sky colors
       const altDeg = sunData.apparentAltDeg;
       if (altDeg <= 0) {
-        scene.background.setHex(0x050b14);
+        scene.background.setHex(0x050811);
         sunLight.intensity = 0.05;
       } else if (altDeg < 10) {
-        scene.background.setHex(0x271933);
+        scene.background.setHex(0x1f142b);
         sunLight.color.setHex(0xfdba74);
         sunLight.intensity = 1.1;
       } else {
-        scene.background.setHex(0x0f233a);
+        scene.background.setHex(0x091628);
         sunLight.color.setHex(0xfffaed);
         sunLight.intensity = 2.0;
       }
@@ -1628,6 +1871,24 @@
       updateLoopStatusUI();
     });
 
+    // Colapso de Panel Izquierdo (350px) y HUD 2D Inferior Derecha
+    function toggleControlPanel(collapse) {
+      const panel = document.getElementById('panel-controls');
+      if (!panel) return;
+      const shouldCollapse = (typeof collapse === 'boolean') ? collapse : !panel.classList.contains('collapsed');
+      panel.classList.toggle('collapsed', shouldCollapse);
+    }
+
+    function togglePlotHud(collapse) {
+      const hud = document.getElementById('hud-plot-2d');
+      if (!hud) return;
+      const shouldCollapse = (typeof collapse === 'boolean') ? collapse : !hud.classList.contains('collapsed');
+      hud.classList.toggle('collapsed', shouldCollapse);
+      if (!shouldCollapse) {
+        requestAnimationFrame(() => drawTopDownPlot());
+      }
+    }
+
     // Modal dialog
     const infoModal = document.getElementById('infoModal');
     const infoToggleBtn = document.getElementById('infoToggleBtn');
@@ -1645,6 +1906,9 @@
     });
 
     window.onload = function () {
+      if (window.innerWidth < 760) {
+        togglePlotHud(true);
+      }
       initLanguage();
       updateLatDisplay();
       updateScene();

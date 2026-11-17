@@ -60,52 +60,59 @@ html, body {
         /* Control Panel (Left Sidebar) */
         .control-panel {
             position: absolute;
-            top: 15px;
-            left: 15px;
-            width: 350px;
+            top: var(--cosmos-sidebar-offset, 15px);
+            left: var(--cosmos-sidebar-offset, 15px);
+            width: var(--cosmos-sidebar-width, 350px);
             max-height: calc(100vh - 30px);
+            max-height: calc(100dvh - 30px);
             background: var(--bg-panel);
             border: 1px solid var(--border-color);
-            border-radius: 16px;
-            padding: 16px 18px;
+            border-radius: var(--cosmos-radius-panel, 16px);
+            padding: 14px 16px;
             z-index: 10;
             display: flex;
             flex-direction: column;
             gap: 12px;
-            backdrop-filter: blur(16px);
-            box-shadow: 0 12px 36px rgba(0, 0, 0, 0.65);
+            backdrop-filter: blur(var(--cosmos-blur, 16px));
+            box-shadow: var(--cosmos-shadow-panel, 0 12px 36px rgba(0, 0, 0, 0.65));
             overflow-y: auto;
+            overscroll-behavior: contain;
             scrollbar-width: thin;
-            scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+            scrollbar-color: var(--cosmos-scrollbar-thumb, rgba(148, 163, 184, 0.55)) transparent;
             transition: var(--transition-smooth);
         }
 
-        .control-panel::-webkit-scrollbar {
-            width: 5px;
-        }
-        .control-panel::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.15);
-            border-radius: 4px;
+        @supports not (scrollbar-color: auto) {
+            .control-panel {
+                scrollbar-width: auto;
+            }
+            .control-panel::-webkit-scrollbar {
+                width: 6px;
+            }
+            .control-panel::-webkit-scrollbar-thumb {
+                background: var(--cosmos-scrollbar-thumb, rgba(148, 163, 184, 0.55));
+                border-radius: 4px;
+            }
         }
 
         /* Sticky Panel Header matching Besselian Explorer */
         .panel-header {
             position: sticky;
-            top: -16px;
-            margin-top: -16px;
-            margin-left: -18px;
-            margin-right: -18px;
-            padding: 14px 18px 10px 18px;
-            background: rgba(12, 16, 25, 0.96);
-            backdrop-filter: blur(16px);
+            top: -14px;
+            margin-top: -14px;
+            margin-left: -16px;
+            margin-right: -16px;
+            padding: 10px 16px 8px 16px;
+            background: var(--cosmos-bg-panel-header, rgba(12, 16, 25, 0.96));
+            backdrop-filter: blur(var(--cosmos-blur, 16px));
             border-bottom: 1px solid var(--border-color);
-            border-top-left-radius: 16px;
-            border-top-right-radius: 16px;
+            border-top-left-radius: var(--cosmos-radius-panel, 16px);
+            border-top-right-radius: var(--cosmos-radius-panel, 16px);
             z-index: 20;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            height: 56px;
+            height: 50px;
             box-sizing: border-box;
         }
 

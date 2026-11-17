@@ -1,0 +1,149 @@
+/* =========================================================================
+   COSMOS MATARÓ - SISTEMA DE DISEÑO UNIFICADO (cosmos_theme.css)
+   Tokens compartidos de color, tipografía, geometría de paneles (350px a la
+   izquierda), glassmorphism, scrollbars y controles comunes para todas las
+   simulaciones y aplicaciones web de Cosmos Mataró.
+   ========================================================================= */
+
+:root {
+  /* --- Superficies y Fondos --- */
+  --cosmos-bg-space: #050811;
+  --cosmos-bg-panel: rgba(12, 16, 25, 0.94);
+  --cosmos-bg-panel-header: rgba(12, 16, 25, 0.96);
+  --cosmos-bg-card: rgba(13, 18, 28, 0.85);
+  --cosmos-bg-surface-subtle: rgba(255, 255, 255, 0.03);
+  --cosmos-border: rgba(255, 255, 255, 0.1);
+  --cosmos-border-strong: rgba(255, 255, 255, 0.16);
+  --cosmos-border-active: rgba(56, 189, 248, 0.5);
+
+  /* --- Geometría Unificada de Paneles --- */
+  --cosmos-sidebar-width: 350px;
+  --cosmos-sidebar-offset: 15px;
+  --cosmos-hud-width: 340px;
+  --cosmos-radius-panel: 16px;
+  --cosmos-radius-card: 12px;
+  --cosmos-radius-control: 8px;
+  --cosmos-blur: 16px;
+  --cosmos-shadow-panel: 0 12px 36px rgba(0, 0, 0, 0.65);
+
+  /* --- Tipografías --- */
+  --cosmos-font-heading: 'Outfit', sans-serif;
+  --cosmos-font-body: 'Plus Jakarta Sans', sans-serif;
+  --cosmos-font-mono: 'JetBrains Mono', monospace;
+
+  /* --- Jerarquía de Texto --- */
+  --cosmos-text-primary: #f8fafc;
+  --cosmos-text-secondary: #94a3b8;
+  --cosmos-text-dim: #64748b;
+
+  /* --- Acentos --- */
+  --cosmos-accent-blue: #38bdf8;
+  --cosmos-accent-blue-glow: rgba(56, 189, 248, 0.25);
+  --cosmos-accent-green: #34d399;
+  --cosmos-accent-gold: #facc15;
+  --cosmos-accent-amber: #f59e0b;
+  --cosmos-accent-purple: #c084fc;
+  --cosmos-accent-rose: #fb7185;
+
+  /* --- Scrollbars (contraste >= 3:1 sobre --cosmos-bg-panel) --- */
+  --cosmos-scrollbar-thumb: rgba(148, 163, 184, 0.55);
+  --cosmos-scrollbar-track: transparent;
+
+  /* --- Transiciones --- */
+  --cosmos-transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+
+  color-scheme: dark;
+}
+
+/* Scrollbar moderno estándar con contención de scroll */
+.cosmos-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--cosmos-scrollbar-thumb) var(--cosmos-scrollbar-track);
+  overscroll-behavior: contain;
+}
+
+@supports not (scrollbar-color: auto) {
+  .cosmos-scroll {
+    scrollbar-width: auto;
+  }
+  .cosmos-scroll::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .cosmos-scroll::-webkit-scrollbar-track {
+    background: var(--cosmos-scrollbar-track);
+  }
+  .cosmos-scroll::-webkit-scrollbar-thumb {
+    background: var(--cosmos-scrollbar-thumb);
+    border-radius: 4px;
+  }
+}
+
+/* Píldora flotante estándar para reabrir paneles colapsados */
+.cosmos-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  background: var(--cosmos-bg-panel);
+  border: 1px solid var(--cosmos-border-strong);
+  border-radius: 999px;
+  padding: 9px 16px;
+  color: var(--cosmos-text-primary);
+  font-family: var(--cosmos-font-heading);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  backdrop-filter: blur(var(--cosmos-blur));
+  -webkit-backdrop-filter: blur(var(--cosmos-blur));
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.55);
+  transition: transform var(--cosmos-transition), border-color var(--cosmos-transition), background-color var(--cosmos-transition), box-shadow var(--cosmos-transition);
+  user-select: none;
+}
+
+.cosmos-pill-btn:hover {
+  background: rgba(20, 28, 46, 0.96);
+  border-color: var(--cosmos-accent-blue);
+  box-shadow: 0 6px 24px var(--cosmos-accent-blue-glow);
+  transform: translateY(-1px);
+}
+
+.cosmos-pill-btn:active {
+  transform: translateY(0) scale(0.98);
+}
+
+/* Selector de idioma unificado (ES / CA / EN) */
+.cosmos-lang-group {
+  display: inline-flex;
+  background: rgba(5, 8, 17, 0.7);
+  border: 1px solid var(--cosmos-border);
+  border-radius: var(--cosmos-radius-control);
+  padding: 3px;
+  gap: 3px;
+}
+
+.cosmos-lang-btn {
+  background: transparent;
+  border: none;
+  color: var(--cosmos-text-secondary);
+  font-family: var(--cosmos-font-heading);
+  font-size: 0.74rem;
+  font-weight: 600;
+  padding: 4px 9px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+  letter-spacing: 0.03em;
+}
+
+.cosmos-lang-btn:hover:not(.active) {
+  color: var(--cosmos-text-primary);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.cosmos-lang-btn.active {
+  color: var(--cosmos-bg-space);
+  background: var(--cosmos-accent-blue);
+  font-weight: 700;
+  box-shadow: 0 2px 10px var(--cosmos-accent-blue-glow);
+}
