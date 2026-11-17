@@ -112,81 +112,91 @@
   transform: translateY(0) scale(0.98);
 }
 
-/* Selector de idioma unificado (ES / CA / EN) */
+/* Selector de idioma unificado y discreto (ES / CA / EN) */
 .cosmos-lang-group {
   display: inline-flex;
-  background: rgba(5, 8, 17, 0.7);
-  border: 1px solid var(--cosmos-border);
-  border-radius: var(--cosmos-radius-control);
-  padding: 3px;
-  gap: 3px;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  padding: 2px;
+  gap: 2px;
+}
+
+.cosmos-lang-icon {
+  color: var(--cosmos-text-dim);
+  font-size: 0.65rem;
+  margin-inline: 4px 2px;
+  opacity: 0.8;
+  flex-shrink: 0;
 }
 
 .cosmos-lang-btn {
   background: transparent;
-  border: none;
-  color: var(--cosmos-text-secondary);
+  border: 1px solid transparent;
+  color: var(--cosmos-text-dim);
   font-family: var(--cosmos-font-heading);
-  font-size: 0.74rem;
+  font-size: 0.65rem;
   font-weight: 600;
-  padding: 4px 9px;
-  border-radius: 6px;
+  padding: 2px 6px;
+  border-radius: 4px;
   cursor: pointer;
-  transition: color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
-  letter-spacing: 0.03em;
+  line-height: 1.25;
+  transition: color 0.18s ease, background-color 0.18s ease, border-color 0.18s ease;
+  letter-spacing: 0.04em;
 }
 
 .cosmos-lang-btn:hover:not(.active) {
   color: var(--cosmos-text-primary);
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .cosmos-lang-btn.active {
-  color: var(--cosmos-bg-space);
-  background: var(--cosmos-accent-blue);
+  color: var(--cosmos-accent-blue);
+  background: rgba(56, 189, 248, 0.16);
+  border-color: rgba(56, 189, 248, 0.35);
   font-weight: 700;
-  box-shadow: 0 2px 10px var(--cosmos-accent-blue-glow);
+  box-shadow: none;
 }
 
-/* Fila superior unificada dentro del panel izquierdo de 350px (Idioma + Guía) */
+/* Fila superior unificada y discreta dentro del panel izquierdo de 350px */
 .cosmos-panel-toprow {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  background: var(--cosmos-bg-surface-subtle);
-  border: 1px solid var(--cosmos-border);
-  border-radius: var(--cosmos-radius-card);
-  padding: 8px 10px;
+  padding: 2px 0;
 }
 
 .cosmos-guide-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  padding: 5px 10px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--cosmos-border);
-  border-radius: var(--cosmos-radius-control);
-  color: var(--cosmos-text-primary);
+  gap: 5px;
+  padding: 3px 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 6px;
+  color: var(--cosmos-text-secondary);
   font-family: var(--cosmos-font-body);
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   font-weight: 600;
+  line-height: 1.25;
   cursor: pointer;
   white-space: nowrap;
-  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+  transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease;
 }
 
 .cosmos-guide-btn:hover {
-  background: rgba(56, 189, 248, 0.14);
-  border-color: var(--cosmos-border-active);
-  color: #ffffff;
+  background: rgba(56, 189, 248, 0.12);
+  border-color: rgba(56, 189, 248, 0.35);
+  color: var(--cosmos-text-primary);
 }
 
 .cosmos-guide-btn .guide-icon {
   color: var(--cosmos-accent-gold);
   flex-shrink: 0;
+  opacity: 0.9;
 }
 
 /* Grupo de acciones en cabecera de panel (Pantalla completa + Colapsar) */
