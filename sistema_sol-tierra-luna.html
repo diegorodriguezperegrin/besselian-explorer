@@ -22,6 +22,8 @@
 
     <link rel="stylesheet" href="simulador3d.css">
     <script src="cosmos_fullscreen.js" defer></script>
+    <script src="cosmos_i18n.js" defer></script>
+    <script src="i18n_sol_tierra_luna.js" defer></script>
 
 </head>
 <body>
@@ -34,12 +36,9 @@
         </h2>
     </div>
 
-    <!-- Help Button -->
-    <button id="help-btn" onclick="toggleHelp()"><i class="fa-solid fa-circle-info" style="margin-right: 5px;"></i> Guía de Fenómenos</button>
-
     <!-- Help Modal -->
     <div id="help-modal-overlay" onclick="if(event.target===this) toggleHelp()">
-      <div id="help-modal">
+      <div id="help-modal" data-i18n-block="help-modal">
         <button id="help-close-btn" onclick="toggleHelp()" title="Cerrar"><i class="fa-solid fa-xmark"></i></button>
         <div>
           <h2><i class="fa-solid fa-book-open" style="margin-right: 8px; color: var(--solar-yellow);"></i> Guía de Fenómenos Físicos</h2>
@@ -138,7 +137,20 @@
             </div>
         </div>
 
-        <div class="section-title" style="margin-top: 4px;">
+        <!-- Fila superior unificada: Idioma (ES/CA/EN) + Guía de Fenómenos -->
+        <div class="cosmos-panel-toprow">
+            <div class="cosmos-lang-group" id="lang-selector" role="group" aria-label="Idioma" data-no-i18n>
+                <button type="button" class="cosmos-lang-btn lang-btn active" data-lang="es" onclick="setLanguage('es')" title="Español">ES</button>
+                <button type="button" class="cosmos-lang-btn lang-btn" data-lang="ca" onclick="setLanguage('ca')" title="Català">CA</button>
+                <button type="button" class="cosmos-lang-btn lang-btn" data-lang="en" onclick="setLanguage('en')" title="English">EN</button>
+            </div>
+            <button type="button" class="cosmos-guide-btn" onclick="toggleHelp()">
+                <i class="fa-solid fa-book-open guide-icon" aria-hidden="true"></i>
+                <span>Guía de Fenómenos</span>
+            </button>
+        </div>
+
+        <div class="section-title" style="margin-top: 0;">
             <i class="fa-solid fa-sliders"></i> Parámetros orbitales
             <span class="info-icon" style="margin-left: auto;" title="Parámetros de inclinación orbital, oblicuidad axial, excentricidad y movimientos de precesión">?</span>
         </div>

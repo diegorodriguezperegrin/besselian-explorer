@@ -612,6 +612,7 @@ html, body {
         .control-panel.collapsed .panel-header h1,
         .control-panel.collapsed .panel-header p,
         .control-panel.collapsed .cosmos-fs-btn,
+        .control-panel.collapsed .cosmos-panel-toprow,
         .control-panel.collapsed #header-logo-container,
         .control-panel.collapsed .panel-section,
         .control-panel.collapsed .btn-group,
