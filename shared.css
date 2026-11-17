@@ -1493,7 +1493,7 @@ input:focus, select:focus {
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid var(--border-color);
     border-radius: 12px;
-    padding: 8px 10px;
+    padding: 8px 8px;
     display: flex;
     flex-direction: column;
     gap: 2px;
@@ -1502,26 +1502,27 @@ input:focus, select:focus {
 .stat-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 2px 10px;
+    gap: 2px 8px;
 }
 
 .stat-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 4px;
     height: 21px;
     max-height: 21px;
     min-height: 21px;
     box-sizing: border-box;
-    padding: 0 4px;
+    padding: 0 2px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-    font-size: 0.76rem;
+    font-size: 0.75rem;
     line-height: 20px;
 }
 
 .stat-lbl {
     color: var(--text-secondary);
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     font-weight: 400;
     line-height: 20px;
     white-space: nowrap;
@@ -1530,10 +1531,11 @@ input:focus, select:focus {
 .stat-val {
     color: #f8fafc;
     font-weight: 400;
-    font-size: 0.78rem;
+    font-size: 0.75rem;
     text-align: right;
     font-family: var(--font-body);
     line-height: 20px;
+    white-space: nowrap;
 }
 
 .type-badge-sm {
