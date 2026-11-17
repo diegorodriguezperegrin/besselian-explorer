@@ -124,10 +124,11 @@
 }
 
 .cosmos-lang-icon {
-  color: var(--cosmos-text-dim);
-  font-size: 0.65rem;
-  margin-inline: 4px 2px;
-  opacity: 0.8;
+  color: var(--cosmos-accent-blue);
+  font-size: 0.85rem;
+  width: 14px;
+  text-align: center;
+  margin-inline: 4px 3px;
   flex-shrink: 0;
 }
 
