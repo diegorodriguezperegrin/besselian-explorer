@@ -16,6 +16,7 @@
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <!-- Sistema de diseño unificado Cosmos Mataró -->
   <link rel="stylesheet" href="cosmos_theme.css">
+  <script src="cosmos_fullscreen.js" defer></script>
 
   <style>
     html, body {
@@ -293,9 +294,12 @@
           <h1 data-i18n="appTitle">Simulador de sombra en el equinoccio</h1>
           <div class="brand-sub">COSMOS MATARÓ</div>
         </div>
-        <button type="button" class="panel-collapse-btn" id="btn-collapse-panel" onclick="event.stopPropagation(); toggleControlPanel(true)" data-i18n-title="collapsePanelTitle" title="Ocultar panel">
-          <i class="fa-solid fa-chevron-left text-xs"></i>
-        </button>
+        <div class="cosmos-header-actions">
+          <button type="button" class="cosmos-fs-btn" onclick="toggleCosmosFullscreen(event)" title="Pantalla completa" aria-label="Pantalla completa"></button>
+          <button type="button" class="panel-collapse-btn" id="btn-collapse-panel" onclick="event.stopPropagation(); toggleControlPanel(true)" data-i18n-title="collapsePanelTitle" title="Ocultar panel">
+            <i class="fa-solid fa-chevron-left text-xs"></i>
+          </button>
+        </div>
       </div>
 
       <div class="cosmos-panel-body cosmos-scroll">

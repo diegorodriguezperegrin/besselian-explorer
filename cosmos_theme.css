@@ -188,3 +188,40 @@
   color: var(--cosmos-accent-gold);
   flex-shrink: 0;
 }
+
+/* Grupo de acciones en cabecera de panel (Pantalla completa + Colapsar) */
+.cosmos-header-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.cosmos-fs-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--cosmos-border);
+  color: var(--cosmos-text-secondary);
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.cosmos-fs-btn:hover {
+  color: var(--cosmos-accent-blue);
+  background: rgba(56, 189, 248, 0.15);
+  border-color: rgba(56, 189, 248, 0.35);
+  transform: scale(1.06);
+}
+
+.cosmos-fs-btn.is-fullscreen {
+  color: var(--cosmos-accent-blue);
+  background: rgba(56, 189, 248, 0.16);
+  border-color: rgba(56, 189, 248, 0.45);
+}

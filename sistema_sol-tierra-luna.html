@@ -21,6 +21,7 @@
     <link rel="stylesheet" href="shared.css">
 
     <link rel="stylesheet" href="simulador3d.css">
+    <script src="cosmos_fullscreen.js" defer></script>
 
 </head>
 <body>
@@ -131,7 +132,10 @@
                 <h1>Simulador 3D</h1>
                 <p>COSMOS MATARÓ</p>
             </div>
-            <div class="panel-toggle" id="btn-toggle-left" onclick="closeLeftPanel()" title="Ocultar Panel"><i class="fa-solid fa-chevron-left"></i></div>
+            <div class="cosmos-header-actions">
+                <button type="button" class="cosmos-fs-btn" onclick="toggleCosmosFullscreen(event)" title="Pantalla completa" aria-label="Pantalla completa"></button>
+                <div class="panel-toggle" id="btn-toggle-left" onclick="closeLeftPanel()" title="Ocultar Panel"><i class="fa-solid fa-chevron-left"></i></div>
+            </div>
         </div>
 
         <div class="section-title" style="margin-top: 4px;">

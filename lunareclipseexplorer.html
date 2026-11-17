@@ -50,6 +50,7 @@
 
     <!-- Tokens de diseño compartidos -->
     <link rel="stylesheet" href="shared.css?v=20260930_v2">
+    <script src="cosmos_fullscreen.js" defer></script>
     <!-- Precarga de texturas terrestres y lunares 2K -->
     <link rel="preload" as="image" href="earth_topo_2048.jpg">
     <link rel="preload" as="image" href="moon_topo_2048.jpg">
@@ -337,7 +338,10 @@
                 <h1>Lunar Eclipse Explorer</h1>
                 <p>COSMOS MATARÓ</p>
             </div>
-            <div class="panel-toggle" onclick="toggleSidebar(false)" title="Minimizar panel"><i class="fa-solid fa-chevron-left"></i></div>
+            <div class="cosmos-header-actions">
+                <button type="button" class="cosmos-fs-btn" onclick="toggleCosmosFullscreen(event)" title="Pantalla completa" aria-label="Pantalla completa"></button>
+                <div class="panel-toggle" onclick="toggleSidebar(false)" title="Minimizar panel"><i class="fa-solid fa-chevron-left"></i></div>
+            </div>
         </div>
 
         <!-- Eclipses Destacados (Limitados a 3) -->

@@ -11,6 +11,7 @@
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <!-- Sistema de diseño unificado Cosmos Mataró -->
   <link rel="stylesheet" href="cosmos_theme.css">
+  <script src="cosmos_fullscreen.js" defer></script>
 
   <!-- Three.js y OrbitControls (CDN con SRI y Fallback local offline) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" integrity="sha384-CI3ELBVUz9XQO+97x6nwMDPosPR5XvsxW2ua7N1Xeygeh1IxtgqtCkGfQY9WWdHu" crossorigin="anonymous"></script>
@@ -1166,11 +1167,14 @@
           </div>
           <div class="panel-brand-sub">COSMOS MATARÓ</div>
         </div>
-        <button class="panel-toggle-btn" id="btn-collapse" onclick="event.stopPropagation(); toggleControlPanel(true)" data-i18n-title="collapseTitle" title="Minimizar panel a icono">
-          <svg class="chevron-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="15 18 9 12 15 6"></polyline>
-          </svg>
-        </button>
+        <div class="cosmos-header-actions">
+          <button type="button" class="cosmos-fs-btn" onclick="toggleCosmosFullscreen(event)" title="Pantalla completa" aria-label="Pantalla completa"></button>
+          <button class="panel-toggle-btn" id="btn-collapse" onclick="event.stopPropagation(); toggleControlPanel(true)" data-i18n-title="collapseTitle" title="Minimizar panel a icono">
+            <svg class="chevron-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+          </button>
+        </div>
       </div>
 
       <div class="panel-body">
