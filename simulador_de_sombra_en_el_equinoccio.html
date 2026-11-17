@@ -159,23 +159,25 @@
     }
 
     .panel-collapse-btn {
-      background: transparent;
-      border: none;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--cosmos-border, rgba(255, 255, 255, 0.1));
       color: var(--cosmos-text-secondary, #94a3b8);
-      width: 28px;
-      height: 28px;
+      width: 26px;
+      height: 26px;
       border-radius: 6px;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      transition: color 0.2s, background-color 0.2s;
+      transition: color 0.2s, background-color 0.2s, border-color 0.2s, transform 0.2s;
       flex-shrink: 0;
     }
 
     .panel-collapse-btn:hover {
-      color: #ffffff;
-      background: rgba(255, 255, 255, 0.1);
+      color: var(--cosmos-accent-blue, #38bdf8);
+      background: rgba(56, 189, 248, 0.15);
+      border-color: rgba(56, 189, 248, 0.35);
+      transform: scale(1.06);
     }
 
     .cosmos-panel-body {

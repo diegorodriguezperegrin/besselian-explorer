@@ -573,13 +573,13 @@ html, body {
             right: 15px;
         }
 
-        /* Collapsed Panel styles */
+        /* Collapsed Panel styles (unificado 26x26px con Solar/Lunar Eclipse Explorer) */
         .panel-toggle {
             cursor: pointer;
-            font-size: 0.95rem;
-            width: 32px;
-            height: 32px;
-            border-radius: 8px;
+            font-size: 0.82rem;
+            width: 26px;
+            height: 26px;
+            border-radius: 6px;
             color: var(--text-secondary);
             transition: var(--transition-smooth);
             background: rgba(255, 255, 255, 0.05);
@@ -625,6 +625,7 @@ html, body {
         /* Help Info Tooltip icon */
         .info-icon {
             display: inline-block;
+            flex: 0 0 14px !important;
             width: 14px;
             height: 14px;
             background: rgba(255, 255, 255, 0.15);
