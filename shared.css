@@ -148,8 +148,6 @@ body {
 
 .sidebar-panel {
     left: var(--cosmos-sidebar-offset, 15px);
-    max-height: calc(100vh - 110px);
-    max-height: calc(100dvh - 110px);
 }
 
 .settings-panel {
