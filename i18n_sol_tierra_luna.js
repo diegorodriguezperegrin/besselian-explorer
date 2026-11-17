@@ -138,6 +138,8 @@
     </div>`;
 
   const EXACT_CA = {
+    'Cargando Sistema Sol-Tierra-Luna...': 'Carregant Sistema Sol-Terra-Lluna...',
+    'Sistema Sol-Tierra-Luna': 'Sistema Sol-Terra-Lluna',
     'Cargando Simulador 3D...': 'Carregant Simulador 3D...',
     'Guía de Fenómenos': 'Guia de Fenòmens',
     'Sol': 'Sol',
@@ -230,6 +232,8 @@
   };
 
   const EXACT_EN = {
+    'Cargando Sistema Sol-Tierra-Luna...': 'Loading Sun-Earth-Moon System...',
+    'Sistema Sol-Tierra-Luna': 'Sun-Earth-Moon System',
     'Cargando Simulador 3D...': 'Loading 3D Simulator...',
     'Guía de Fenómenos': 'Phenomena Guide',
     'Sol': 'Sun',
@@ -324,9 +328,9 @@
   if (window.CosmosI18n) {
     window.CosmosI18n.init({
       pageTitle: {
-        es: 'Simulador de Órbitas 3D Tierra-Luna-Sol - Cosmos Mataró',
-        ca: "Simulador d'Òrbites 3D Terra-Lluna-Sol - Cosmos Mataró",
-        en: '3D Earth-Moon-Sun Orbit Simulator - Cosmos Mataró'
+        es: 'Sistema Sol-Tierra-Luna - Cosmos Mataró',
+        ca: 'Sistema Sol-Terra-Lluna - Cosmos Mataró',
+        en: 'Sun-Earth-Moon System - Cosmos Mataró'
       },
       exact: { ca: EXACT_CA, en: EXACT_EN },
       patterns: {
