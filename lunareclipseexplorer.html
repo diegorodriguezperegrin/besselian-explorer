@@ -346,16 +346,6 @@
             </div>
         </div>
 
-        <!-- Fila superior unificada: Selector de Idioma discreto (ES/CA/EN) -->
-        <div class="cosmos-panel-toprow">
-            <div class="cosmos-lang-group" id="lang-selector" role="group" aria-label="Idioma" data-no-i18n>
-                <i class="fa-solid fa-globe cosmos-lang-icon" aria-hidden="true"></i>
-                <button type="button" class="cosmos-lang-btn lang-btn active" data-lang="es" onclick="setLanguage('es')" title="Español">ES</button>
-                <button type="button" class="cosmos-lang-btn lang-btn" data-lang="ca" onclick="setLanguage('ca')" title="Català">CA</button>
-                <button type="button" class="cosmos-lang-btn lang-btn" data-lang="en" onclick="setLanguage('en')" title="English">EN</button>
-            </div>
-        </div>
-
         <!-- Eclipses Destacados (Limitados a 3) -->
         <div class="section-title">
             <i class="fa-solid fa-star"></i> Eclipses Destacados
@@ -454,8 +444,18 @@
             <div class="panel-toggle" onclick="toggleSettingsPanel(false)" title="Minimizar panel"><i class="fa-solid fa-chevron-left"></i></div>
         </div>
 
+        <!-- Fila superior unificada: Selector de Idioma discreto (ES/CA/EN) -->
+        <div class="cosmos-panel-toprow">
+            <div class="cosmos-lang-group" id="lang-selector" role="group" aria-label="Idioma" data-no-i18n>
+                <i class="fa-solid fa-globe cosmos-lang-icon" aria-hidden="true"></i>
+                <button type="button" class="cosmos-lang-btn lang-btn active" data-lang="es" onclick="setLanguage('es')" title="Español">ES</button>
+                <button type="button" class="cosmos-lang-btn lang-btn" data-lang="ca" onclick="setLanguage('ca')" title="Català">CA</button>
+                <button type="button" class="cosmos-lang-btn lang-btn" data-lang="en" onclick="setLanguage('en')" title="English">EN</button>
+            </div>
+        </div>
+
         <!-- Visibilidad y Fases Locales -->
-        <div class="section-title section-title-between" style="margin-top: 4px;">
+        <div class="section-title section-title-between" style="margin-top: 0;">
             <span><i class="fa-solid fa-eye"></i> Visibilidad Local</span>
             <div class="export-segmented-group" role="group" aria-label="Exportar evento y circunstancias locales">
                 <button type="button" onclick="exportSelectedEclipseToICal()" class="btn-export-segment" title="Añadir a calendario (.ics / iCal)"><i class="fa-solid fa-calendar-plus" aria-hidden="true"></i><span>iCal</span></button>
