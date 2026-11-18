@@ -57,7 +57,7 @@ html, body {
             z-index: 1;
         }
 
-        /* Control Panel (Left Sidebar) */
+        /* Control Panel (Left Sidebar — exact match to Solar Eclipse Explorer shared.css) */
         .control-panel {
             position: absolute;
             top: var(--cosmos-sidebar-offset, 15px);
@@ -68,14 +68,15 @@ html, body {
             background: var(--bg-panel);
             border: 1px solid var(--border-color);
             border-radius: var(--cosmos-radius-panel, 16px);
-            padding: 14px 16px;
+            padding: 12px 14px;
             z-index: 10;
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 8px;
             backdrop-filter: blur(var(--cosmos-blur, 16px));
             box-shadow: var(--cosmos-shadow-panel, 0 12px 36px rgba(0, 0, 0, 0.65));
             overflow-y: auto;
+            overflow-x: hidden;
             overscroll-behavior: contain;
             scrollbar-width: thin;
             scrollbar-color: var(--cosmos-scrollbar-thumb, rgba(148, 163, 184, 0.55)) transparent;
@@ -95,14 +96,14 @@ html, body {
             }
         }
 
-        /* Sticky Panel Header matching Besselian Explorer */
+        /* Sticky Panel Header matching Solar Eclipse Explorer (shared.css) */
         .panel-header {
             position: sticky;
-            top: -14px;
-            margin-top: -14px;
-            margin-left: -16px;
-            margin-right: -16px;
-            padding: 10px 16px 8px 16px;
+            top: -12px;
+            margin-top: -12px;
+            margin-left: -14px;
+            margin-right: -14px;
+            padding: 10px 14px 8px 14px;
             background: var(--cosmos-bg-panel-header, rgba(12, 16, 25, 0.96));
             backdrop-filter: blur(var(--cosmos-blur, 16px));
             border-bottom: 1px solid var(--border-color);
@@ -111,12 +112,13 @@ html, body {
             z-index: 20;
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            height: 50px;
+            align-items: flex-start;
+            height: 46px;
             box-sizing: border-box;
         }
 
-        .panel-header h1 {
+        .panel-header h1,
+        .panel-header h2 {
             font-family: var(--font-heading);
             font-size: 1.15rem;
             font-weight: 700;
@@ -133,6 +135,7 @@ html, body {
             letter-spacing: 0.8px;
             margin-top: 2px;
             margin-bottom: 0;
+            line-height: 1;
         }
 
         /* Group Sections */
@@ -149,20 +152,25 @@ html, body {
 
         .section-title {
             font-family: var(--font-heading);
-            font-size: 0.85rem;
+            font-size: 0.78rem;
             font-weight: 700;
             color: var(--text-secondary);
             text-transform: uppercase;
             letter-spacing: 0.05em;
             display: flex;
             align-items: center;
-            gap: 10px;
-            margin-top: 4px;
+            gap: 8px;
+            margin-top: 1px;
             margin-bottom: 0;
             line-height: 1.2;
+            min-height: 20px;
+            height: 20px;
+            box-sizing: border-box;
         }
 
         .section-title i {
+            font-size: 0.85rem;
+            color: var(--accent-blue);
             width: 14px;
             text-align: center;
             flex-shrink: 0;
@@ -515,10 +523,10 @@ html, body {
             background: var(--bg-panel);
             border: 1px solid var(--border-color);
             border-radius: 16px;
-            padding: 16px 18px;
+            padding: 12px 14px;
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 8px;
             backdrop-filter: blur(16px);
             box-shadow: 0 12px 36px rgba(0, 0, 0, 0.65);
             flex-shrink: 0;
