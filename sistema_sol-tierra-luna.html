@@ -137,21 +137,8 @@
             </div>
         </div>
 
-        <!-- Fila superior unificada: Idioma (ES/CA/EN) + Guía de Fenómenos -->
-        <div class="cosmos-panel-toprow">
-            <div class="cosmos-lang-group" id="lang-selector" role="group" aria-label="Idioma" data-no-i18n>
-                <i class="fa-solid fa-globe cosmos-lang-icon" aria-hidden="true"></i>
-                <button type="button" class="cosmos-lang-btn lang-btn active" data-lang="es" onclick="setLanguage('es')" title="Español">ES</button>
-                <button type="button" class="cosmos-lang-btn lang-btn" data-lang="ca" onclick="setLanguage('ca')" title="Català">CA</button>
-                <button type="button" class="cosmos-lang-btn lang-btn" data-lang="en" onclick="setLanguage('en')" title="English">EN</button>
-            </div>
-            <button type="button" class="cosmos-guide-btn" onclick="toggleHelp()">
-                <i class="fa-solid fa-book-open guide-icon" aria-hidden="true"></i>
-                <span>Guía de Fenómenos</span>
-            </button>
-        </div>
-
-        <div class="section-title" style="margin-top: 0;">
+        <!-- Fila superior movida al panel derecho de Visualización -->
+        <div class="section-title">
             <i class="fa-solid fa-sliders"></i> Parámetros orbitales
             <span class="info-icon" style="margin-left: auto;" title="Parámetros de inclinación orbital, oblicuidad axial, excentricidad y movimientos de precesión">?</span>
         </div>
@@ -236,8 +223,22 @@
                 <div class="panel-toggle" id="btn-toggle-right" onclick="closeRightPanel()" title="Ocultar Panel"><i class="fa-solid fa-chevron-right"></i></div>
             </div>
 
+            <!-- Fila superior unificada: Idioma (ES/CA/EN) + Guía de Fenómenos -->
+            <div class="cosmos-panel-toprow">
+                <div class="cosmos-lang-group" id="lang-selector" role="group" aria-label="Idioma" data-no-i18n>
+                    <i class="fa-solid fa-globe cosmos-lang-icon" aria-hidden="true"></i>
+                    <button type="button" class="cosmos-lang-btn lang-btn active" data-lang="es" onclick="setLanguage('es')" title="Español">ES</button>
+                    <button type="button" class="cosmos-lang-btn lang-btn" data-lang="ca" onclick="setLanguage('ca')" title="Català">CA</button>
+                    <button type="button" class="cosmos-lang-btn lang-btn" data-lang="en" onclick="setLanguage('en')" title="English">EN</button>
+                </div>
+                <button type="button" class="cosmos-guide-btn" onclick="toggleHelp()">
+                    <i class="fa-solid fa-book-open guide-icon" aria-hidden="true"></i>
+                    <span>Guía de Fenómenos</span>
+                </button>
+            </div>
+
             <!-- 1. Reproducción -->
-            <div class="section-title" style="margin-top: 4px;">
+            <div class="section-title" style="margin-top: 0;">
                 <i class="fa-solid fa-circle-play"></i> Reproducción
             </div>
             <div class="panel-section">
