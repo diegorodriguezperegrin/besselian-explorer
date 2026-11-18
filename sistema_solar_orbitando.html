@@ -439,40 +439,39 @@
     .panel-header {
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      padding: 10px 14px 9px 14px;
+      align-items: flex-start;
+      padding: 10px 14px 8px 14px;
       background: var(--cosmos-bg-panel-header, rgba(12, 16, 25, 0.96));
       border-bottom: 1px solid var(--card-border);
       cursor: pointer;
       user-select: none;
-      min-height: 50px;
+      height: 46px;
+      box-sizing: border-box;
     }
 
     .panel-header-brand {
       display: flex;
       flex-direction: column;
-      gap: 2px;
     }
 
     .panel-title {
       font-family: var(--cosmos-font-heading, 'Outfit', sans-serif);
-      font-size: 1.05rem;
+      font-size: 1.15rem;
       font-weight: 700;
-      letter-spacing: -0.01em;
-      color: var(--text-main);
-      display: flex;
-      align-items: center;
-      gap: 7px;
-      line-height: 1.15;
+      color: #f8fafc;
+      line-height: 1.2;
+      margin: 0;
     }
 
     .panel-brand-sub {
-      font-family: var(--cosmos-font-heading, 'Outfit', sans-serif);
-      font-size: 0.7rem;
+      font-family: var(--cosmos-font-body, 'Plus Jakarta Sans', sans-serif);
+      font-size: 0.75rem;
       font-weight: 700;
       color: var(--accent-blue);
       text-transform: uppercase;
       letter-spacing: 0.8px;
+      margin-top: 2px;
+      margin-bottom: 0;
       line-height: 1;
     }
 
@@ -1167,9 +1166,7 @@
     <div class="panel-expanded-wrap" id="panel-expanded-wrap">
       <div class="panel-header" onclick="toggleControlPanel(true)">
         <div class="panel-header-brand">
-          <div class="panel-title" data-i18n-html="panelTitle">
-            <span>🎛️</span> VISUALIZACIÓN
-          </div>
+          <div class="panel-title">Solar System Orbiting</div>
           <div class="panel-brand-sub">COSMOS MATARÓ</div>
         </div>
         <div class="cosmos-header-actions">
@@ -1407,7 +1404,7 @@
         telemetryCloseTitle: "Ocultar panel de telemetría",
         hudScaleNote: "<span>ℹ️</span> <div><strong>Escala didáctica:</strong> 1 Año Galáctico (AG) = <strong>~230 millones de años terrestres</strong>. La traslación solar está acelerada didácticamente respecto a los planetas para permitir contemplar ambos ciclos en una misma animación.</div>",
         controlTimeScaleNote: "<span>⏱️</span> <div><strong>Compresión temporal:</strong> 1 AG = ~230 M de años terrestres. Ambas escalas están desacopladas para hacer visibles las órbitas planetarias y el avance galáctico a la vez.</div>",
-        panelTitle: "<span>🎛️</span> VISUALIZACIÓN",
+        panelTitle: "Solar System Orbiting",
         langGroupTitle: "Idioma",
         collapseTitle: "Minimizar panel a icono",
         pillVisualizacion: "Visualización",
@@ -1583,7 +1580,7 @@
         telemetryCloseTitle: "Amagar panell de telemetria",
         hudScaleNote: "<span>ℹ️</span> <div><strong>Escala didàctica:</strong> 1 Any Galàctic (AG) = <strong>~230 milions d'anys terrestres</strong>. La translació solar està accelerada didàcticament respecte als planetes per permetre contemplar ambdós moviments alhora.</div>",
         controlTimeScaleNote: "<span>⏱️</span> <div><strong>Compressió temporal:</strong> 1 AG = ~230 M d'anys terrestres. Ambdues escales estan desacoblades per fer visibles les òrbites planetàries i l'avanç galàctic alhora.</div>",
-        panelTitle: "<span>🎛️</span> VISUALITZACIÓ",
+        panelTitle: "Solar System Orbiting",
         langGroupTitle: "Idioma / Llengua",
         collapseTitle: "Minimitzar panell a icona",
         pillVisualizacion: "Visualització",
@@ -1759,7 +1756,7 @@
         telemetryCloseTitle: "Hide telemetry panel",
         hudScaleNote: "<span>ℹ️</span> <div><strong>Didactic time scale:</strong> 1 Galactic Year (GY) = <strong>~230 million Earth years</strong>. Solar translation is accelerated relative to planetary orbits so both cycles can be viewed together.</div>",
         controlTimeScaleNote: "<span>💡</span> <div><strong>Time compression:</strong> 1 GY = ~230 M Earth years. Both time scales are decoupled so planetary spirals and galactic motion are visible simultaneously.</div>",
-        panelTitle: "<span>🎛️</span> VISUALIZATION",
+        panelTitle: "Solar System Orbiting",
         langGroupTitle: "Language",
         collapseTitle: "Minimize panel to icon",
         pillVisualizacion: "Visualization",
