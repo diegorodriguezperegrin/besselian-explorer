@@ -2125,7 +2125,7 @@
     controls.enableDamping = true;
     controls.dampingFactor = 0.06;
     controls.maxDistance = 2200;
-    controls.minDistance = 6;
+    controls.minDistance = 2.5;
 
     /* ==========================================================================
        ILUMINACIÓN DE LA ESCENA
@@ -2954,7 +2954,7 @@
       // ========================================================================
       // 1. BULBO GALÁCTICO CENTRAL Y BARRA TRIAXIAL (Población II vieja: K, M, G, Gigantes Rojas)
       // ========================================================================
-      const bulgeCount = 14000;
+      const bulgeCount = 18000;
       const bulgeGeo = new THREE.BufferGeometry();
       const bulgePos = new Float32Array(bulgeCount * 3);
       const bulgeCol = new Float32Array(bulgeCount * 3);
@@ -2963,56 +2963,55 @@
       const bulgeSpike = new Float32Array(bulgeCount);
 
       const bulgeSpectrum = [
-        { c: SPECTRAL.R_G, w: 0.28 },
-        { c: SPECTRAL.K,   w: 0.38 },
-        { c: SPECTRAL.G,   w: 0.24 },
+        { c: SPECTRAL.R_G, w: 0.25 },
+        { c: SPECTRAL.K,   w: 0.36 },
+        { c: SPECTRAL.G,   w: 0.27 },
         { c: SPECTRAL.M,   w: 0.08 },
-        { c: SPECTRAL.F,   w: 0.02 }
+        { c: SPECTRAL.F,   w: 0.04 }
       ];
 
       for (let i = 0; i < bulgeCount; i++) {
         const u = Math.random();
-        // Exclusión estricta del radio de influencia del agujero negro central (r < 26.0)
-        // El bulbo galáctico no debe superponer estrellas de traslación lenta sobre el
-        // horizonte de sucesos, anillo de fotones o el cúmulo relativista de estrellas S.
-        const distR = 26.0 + Math.pow(u, 1.85) * 114.0;
+        // Exclusión reducida al entorno inmediato de Sgr A* (r < 6.5) para que el núcleo
+        // galáctico luzca compacto y luminoso como la Vía Láctea real en vista global.
+        const distR = 6.5 + Math.pow(u, 2.05) * 133.5;
         const theta = Math.random() * Math.PI * 2;
         const barAngle = 0.48; // Inclinación de la barra galáctica (~27.5°)
 
-        // Transición suave: en el borde interno (r ~ 26) el bulbo es esférico; hacia afuera se elonga en barra
-        const barFactor = Math.min(1.0, Math.max(0.0, (distR - 26.0) / 45.0));
-        const sx = 1.0 + 0.38 * barFactor;
-        const sz = 1.0 - 0.26 * barFactor;
+        // Transición suave: en el borde interno el bulbo es esférico; hacia afuera se elonga en barra
+        const barFactor = Math.min(1.0, Math.max(0.0, (distR - 14.0) / 52.0));
+        const sx = 1.0 + 0.42 * barFactor;
+        const sz = 1.0 - 0.28 * barFactor;
 
         const localX = distR * Math.cos(theta) * sx;
         const localZ = distR * Math.sin(theta) * sz;
         const bx = localX * Math.cos(barAngle) - localZ * Math.sin(barAngle);
         const bz = localX * Math.sin(barAngle) + localZ * Math.cos(barAngle);
-        const by = (Math.random() - 0.5) * (Math.random() - 0.5) * (38 * Math.max(0.0, 1 - distR / 142) + 4.5);
+        const by = (Math.random() - 0.5) * (Math.random() - 0.5) * (36 * Math.max(0.0, 1 - distR / 142) + 4.0);
 
         bulgePos[i * 3]     = bx;
         bulgePos[i * 3 + 1] = by;
         bulgePos[i * 3 + 2] = bz;
 
-        const cMix = Math.min(1.0, (distR - 26.0) / 114.0);
+        const cMix = Math.min(1.0, (distR - 6.5) / 133.5);
         const baseCol = sampleStarSpectrum(bulgeSpectrum);
-        // Hacia el núcleo las estrellas son aún más cálidas y doradas
-        const coreTint = new THREE.Color(0xffb85c);
-        baseCol.lerp(coreTint, (1 - cMix) * 0.45);
+        // Hacia el núcleo galáctico las estrellas se vuelven más cálidas, doradas y luminosas
+        const coreTint = new THREE.Color(0xffe0ad);
+        baseCol.lerp(coreTint, Math.pow(1 - cMix, 1.35) * 0.62);
 
         bulgeCol[i * 3]     = baseCol.r;
         bulgeCol[i * 3 + 1] = baseCol.g;
         bulgeCol[i * 3 + 2] = baseCol.b;
 
         // Solo ~6-8 supergigantes destacadas en todo el bulbo tienen rayos
-        const isSpike = Math.random() < 0.0005;
+        const isSpike = Math.random() < 0.00045;
         bulgeSpike[i] = isSpike ? 1.0 : 0.0;
         if (isSpike) {
           bulgeSize[i] = 4.2 + Math.random() * 1.5;
           bulgeAlpha[i] = 1.0;
         } else {
           bulgeSize[i]  = sampleStarSize(1.1, 3.6, 3.2);
-          bulgeAlpha[i] = (0.45 + 0.55 * Math.pow(Math.random(), 1.4)) * (1.1 - cMix * 0.25);
+          bulgeAlpha[i] = (0.48 + 0.52 * Math.pow(Math.random(), 1.35)) * (1.15 - cMix * 0.28);
         }
       }
 
@@ -3022,6 +3021,89 @@
       bulgeGeo.setAttribute('aAlpha', new THREE.BufferAttribute(bulgeAlpha, 1));
       bulgeGeo.setAttribute('aSpike', new THREE.BufferAttribute(bulgeSpike, 1));
       milkyWayGroup.add(new THREE.Points(bulgeGeo, starShaderMat));
+
+      // Resplandor difuso de luz estelar no resuelta del bulbo y barra central de la Vía Láctea
+      // Se atenúa suavemente al acercarse a Sagitario A* para conservar el contraste del horizonte de sucesos
+      const bulgeBarGlowMat = new THREE.ShaderMaterial({
+        uniforms: {
+          uOpacity: { value: 1.0 }
+        },
+        vertexShader: `
+          varying vec2 vUv;
+          void main() {
+            vUv = uv;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }
+        `,
+        fragmentShader: `
+          varying vec2 vUv;
+          uniform float uOpacity;
+          void main() {
+            vec2 p = (vUv - 0.5) * 2.0;
+            // Perfil elíptico de la barra galáctica (más alargado en X)
+            vec2 q = vec2(p.x * 0.85, p.y * 1.35);
+            float r = length(q);
+            if (r > 1.0) discard;
+            float innerCore = exp(-r * r * 14.0) * 0.52;
+            float midBulge  = exp(-r * r * 4.2) * 0.30;
+            float outerBar  = exp(-r * 3.0) * 0.12 * (1.0 - smoothstep(0.65, 1.0, r));
+            float intensity = innerCore + midBulge + outerBar;
+            vec3 col = mix(vec3(1.0, 0.72, 0.36), vec3(1.0, 0.94, 0.80), exp(-r * r * 10.0));
+            float alpha = clamp(intensity * uOpacity * 0.58, 0.0, 1.0);
+            if (alpha < 0.004) discard;
+            gl_FragColor = vec4(col, alpha);
+          }
+        `,
+        transparent: true,
+        depthWrite: false,
+        side: THREE.DoubleSide,
+        blending: THREE.AdditiveBlending
+      });
+      const bulgeBarGlowMesh = new THREE.Mesh(new THREE.PlaneGeometry(310, 310), bulgeBarGlowMat);
+      bulgeBarGlowMesh.rotation.x = -Math.PI / 2;
+      bulgeBarGlowMesh.rotation.z = -0.48;
+      bulgeBarGlowMesh.renderOrder = 4;
+      milkyWayGroup.add(bulgeBarGlowMesh);
+
+      const bulgeHaloMat = new THREE.ShaderMaterial({
+        uniforms: {
+          uOpacity: { value: 1.0 }
+        },
+        vertexShader: `
+          varying vec2 vUv;
+          void main() {
+            vUv = uv;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }
+        `,
+        fragmentShader: `
+          varying vec2 vUv;
+          uniform float uOpacity;
+          void main() {
+            vec2 p = (vUv - 0.5) * 2.0;
+            float r = length(p);
+            if (r > 1.0) discard;
+            // Núcleo luminoso cálido y halo suave sin recortes
+            float core = exp(-r * r * 18.0) * 0.58;
+            float halo = exp(-r * r * 4.8) * 0.24;
+            float fade = 1.0 - smoothstep(0.65, 1.0, r);
+            float intensity = (core + halo) * fade;
+            vec3 col = mix(vec3(1.0, 0.76, 0.42), vec3(1.0, 0.96, 0.86), exp(-r * r * 14.0));
+            float alpha = clamp(intensity * uOpacity * 0.52, 0.0, 1.0);
+            if (alpha < 0.004) discard;
+            gl_FragColor = vec4(col, alpha);
+          }
+        `,
+        transparent: true,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending
+      });
+      const bulgeHaloMesh = new THREE.Mesh(new THREE.PlaneGeometry(170, 170), bulgeHaloMat);
+      bulgeHaloMesh.renderOrder = 5;
+      milkyWayGroup.add(bulgeHaloMesh);
+
+      milkyWayGroup.userData.bulgeHaloMesh = bulgeHaloMesh;
+      milkyWayGroup.userData.bulgeGlowMats = [bulgeBarGlowMat, bulgeHaloMat];
 
       // ========================================================================
       // 2. ESTRUCTURA ESPIRAL (Población I joven en brazos + Nubes HII separadas)
@@ -3471,7 +3553,9 @@
 
     // 1. Sombra central del Agujero Negro (Horizonte de sucesos + región de captura de fotones)
     // Opaca (negro absoluto) para ocluir las estrellas de fondo situadas detrás de Sgr A*
-    const shadowGeo = new THREE.SphereGeometry(9.2, 64, 64);
+    // Escala compacta (0.25×) para que la galaxia muestre su bulbo luminoso clásico en vista global
+    const SGRA_HORIZON_R = 2.3;
+    const shadowGeo = new THREE.SphereGeometry(SGRA_HORIZON_R, 64, 64);
     const shadowMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
     const shadowSphere = new THREE.Mesh(shadowGeo, shadowMat);
     shadowSphere.renderOrder = 10;
@@ -3595,13 +3679,13 @@
       blending: THREE.AdditiveBlending
     });
 
-    const ehtPlaneGeo = new THREE.PlaneGeometry(76, 76);
+    const ehtPlaneGeo = new THREE.PlaneGeometry(19, 19);
     const sgrAEhtMesh = new THREE.Mesh(ehtPlaneGeo, sgrAEhtMaterial);
     sgrAEhtMesh.renderOrder = 11;
     galacticCenterGroup.add(sgrAEhtMesh);
 
     // Disco de contraste opaco sutil tras el anillo de fotones para mantener nitidez frente al bulbo
-    const contrastDiscGeo = new THREE.CircleGeometry(10.2, 48);
+    const contrastDiscGeo = new THREE.CircleGeometry(2.55, 48);
     const contrastDiscMat = new THREE.MeshBasicMaterial({
       color: 0x010102,
       transparent: true,
@@ -3613,7 +3697,7 @@
     galacticCenterGroup.add(contrastDiscMesh);
 
     // 3. Flujo ecuatorial sutil en el plano galáctico (para dar contexto 3D al hacer zoom lateral)
-    const equatorialHazeGeo = new THREE.RingGeometry(12, 54, 64);
+    const equatorialHazeGeo = new THREE.RingGeometry(3.0, 13.5, 64);
     const equatorialHazeMat = new THREE.MeshBasicMaterial({
       color: 0xd94e14,
       transparent: true,
@@ -3644,12 +3728,12 @@
     ];
 
     for (let i = 0; i < S_STAR_COUNT; i++) {
-      // Semieje mayor a: distribuido entre 12.5 y 42.0 (mayor concentración cerca del agujero negro)
-      const a = 12.5 + Math.pow(Math.random(), 1.35) * 28.5;
+      // Semieje mayor a: distribuido entre 3.2 y 10.4 (escala compacta 0.25×)
+      const a = 3.2 + Math.pow(Math.random(), 1.35) * 7.2;
 
       // Excentricidad e: muchas estrellas S reales tienen e > 0.8 (ej. S2 e=0.88, S62 e=0.976).
-      // Limitamos para que el periastro nunca penetre el horizonte de sucesos (rPeri >= 10.2 > 9.2)
-      const maxEcc = Math.min(0.68, (a - 10.2) / a);
+      // Limitamos para que el periastro nunca penetre el horizonte de sucesos (rPeri >= 2.6 > 2.3)
+      const maxEcc = Math.min(0.68, (a - 2.6) / a);
       const e = 0.08 + Math.random() * Math.max(0.01, (maxEcc - 0.08));
       const b = a * Math.sqrt(Math.max(0.001, 1 - e * e));
 
@@ -3667,8 +3751,8 @@
       const Qz = -Math.sin(Omega) * Math.sin(omegaArg) + Math.cos(Omega) * Math.cos(omegaArg) * Math.cos(inc);
 
       // Frecuencia media de Kepler: n = k / a^(1.5)
-      // Cerca del agujero negro (a ~ 13) giran a altísima velocidad orbital relativista
-      const n = (48.0 + Math.random() * 14.0) / Math.pow(a, 1.5);
+      // Cerca del agujero negro (a ~ 3.3) giran a altísima velocidad orbital relativista
+      const n = (6.0 + Math.random() * 1.8) / Math.pow(a, 1.5);
       const M = Math.random() * Math.PI * 2;
 
       const E = solveKepler(M, e);
@@ -3691,7 +3775,7 @@
     sStarGeo.setAttribute('color', new THREE.BufferAttribute(sStarCol, 3));
 
     const sStarMat = new THREE.PointsMaterial({
-      size: 1.85,
+      size: 0.55,
       map: Textures.createStarParticle(),
       vertexColors: true,
       transparent: true,
@@ -3711,7 +3795,7 @@
     const infallMeta = [];
 
     for (let i = 0; i < INFALL_COUNT; i++) {
-      const r = 10.0 + Math.random() * 18.0;
+      const r = 2.5 + Math.random() * 4.5;
       const theta = Math.random() * Math.PI * 2;
       const tilt = (Math.random() - 0.5) * 0.40;
       const node = Math.random() * Math.PI * 2;
@@ -3727,7 +3811,7 @@
       infallPos[i * 3 + 1] = z0 * sinT;
       infallPos[i * 3 + 2] = x0 * sinN + (z0 * cosT) * cosN;
 
-      const heat = Math.max(0.0, Math.min(1.0, (26.0 - r) / 16.7));
+      const heat = Math.max(0.0, Math.min(1.0, (6.5 - r) / 4.15));
       infallCol[i * 3]     = 1.0;
       infallCol[i * 3 + 1] = 0.40 + 0.58 * heat;
       infallCol[i * 3 + 2] = 0.12 + 0.78 * heat;
@@ -3739,7 +3823,7 @@
     infallGeo.setAttribute('color', new THREE.BufferAttribute(infallCol, 3));
 
     const infallMat = new THREE.PointsMaterial({
-      size: 2.1,
+      size: 0.60,
       map: Textures.createStarParticle(),
       vertexColors: true,
       transparent: true,
@@ -4155,7 +4239,7 @@
 
     const labelSgrA = {
       el: createHtmlLabel("Sagitario A* (4×10⁶ M☉)", "label-sgra"),
-      worldPos: new THREE.Vector3(0, -22, 0)
+      worldPos: new THREE.Vector3(0, -6.5, 0)
     };
     labelSgrA.el.onclick = () => {
       setCameraMode('sgra_focus');
@@ -4446,7 +4530,7 @@
         camera.position.copy(currentSunPos).add(normalOffset);
       } else if (mode === 'sgra_focus') {
         controls.target.set(0, 0, 0);
-        camera.position.set(0, 18, 54);
+        camera.position.set(0, 4.8, 14.5);
       }
       controls.update();
     }
@@ -4625,6 +4709,18 @@
           contrastDiscMesh.quaternion.copy(camera.quaternion);
         }
       }
+      // Orientación y atenuación por distancia del resplandor difuso del bulbo galáctico
+      if (typeof milkyWayGroup !== 'undefined' && milkyWayGroup.userData.bulgeGlowMats) {
+        if (milkyWayGroup.userData.bulgeHaloMesh) {
+          milkyWayGroup.userData.bulgeHaloMesh.quaternion.copy(camera.quaternion);
+        }
+        const camDistCore = camera.position.length();
+        const tGlow = Math.max(0.0, Math.min(1.0, (camDistCore - 26.0) / 94.0));
+        const smoothGlow = tGlow * tGlow * (3.0 - 2.0 * tGlow);
+        milkyWayGroup.userData.bulgeGlowMats.forEach(m => {
+          m.uniforms.uOpacity.value = smoothGlow;
+        });
+      }
       if (typeof sgrALight !== 'undefined' && State.isPlaying) {
         sgrALight.intensity = 3.6 + Math.sin(sgrAEhtMaterial.uniforms.uTime.value * 3.0) * 0.4;
       }
@@ -4653,14 +4749,14 @@
         if (infallDt > 0) {
           for (let i = 0; i < INFALL_COUNT; i++) {
             const inf = infallMeta[i];
-            const omega = 70.0 / Math.pow(inf.r, 1.45);
-            const vRad = 2.4 + 14.0 / Math.sqrt(inf.r);
+            const omega = 9.4 / Math.pow(inf.r, 1.45);
+            const vRad = 0.6 + 1.75 / Math.sqrt(inf.r);
             inf.theta += omega * infallDt;
             inf.r -= vRad * infallDt;
 
-            // Al cruzar el horizonte de sucesos (r <= 9.3), cae al agujero y reaparece fuera
-            if (inf.r <= 9.3) {
-              inf.r = 25.0 + Math.random() * 8.0;
+            // Al cruzar el horizonte de sucesos (r <= 2.35), cae al agujero y reaparece fuera
+            if (inf.r <= 2.35) {
+              inf.r = 6.2 + Math.random() * 2.0;
               inf.theta = Math.random() * Math.PI * 2;
               inf.tilt = (Math.random() - 0.5) * 0.40;
               inf.node = Math.random() * Math.PI * 2;
@@ -4677,7 +4773,7 @@
             infallPos[i * 3 + 1] = z0 * sinT;
             infallPos[i * 3 + 2] = x0 * sinN + (z0 * cosT) * cosN;
 
-            const heat = Math.max(0.0, Math.min(1.0, (26.0 - inf.r) / 16.7));
+            const heat = Math.max(0.0, Math.min(1.0, (6.5 - inf.r) / 4.15));
             infallCol[i * 3]     = 1.0;
             infallCol[i * 3 + 1] = 0.40 + 0.58 * heat;
             infallCol[i * 3 + 2] = 0.12 + 0.78 * heat;
