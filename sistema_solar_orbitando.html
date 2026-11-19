@@ -4253,7 +4253,7 @@
 
     const labelSgrA = {
       el: createHtmlLabel("Sagitario A* (4×10⁶ M☉)", "label-sgra"),
-      worldPos: new THREE.Vector3(0, -6.5, 0)
+      worldPos: new THREE.Vector3(0, 0, 0)
     };
     labelSgrA.el.onclick = () => {
       setCameraMode('sgra_focus');
@@ -4672,7 +4672,7 @@
               item.el.style.top = `${y}px`;
             }
           } else if (item.isGalaxyLabel) {
-            if (!State.layers.externalGalaxies) {
+            if (!State.layers.externalGalaxies || State.cameraMode === 'sgra_focus') {
               item.el.style.opacity = '0';
             } else {
               const camDistToOrigin = camera.position.length();
@@ -4684,9 +4684,31 @@
               item.el.style.left = `${x}px`;
               item.el.style.top = `${y}px`;
             }
+          } else if (item === labelSgrA) {
+            tempProjVec.set(0, 0, 0);
+            tempProjVec.project(camera);
+            if (tempProjVec.z < 1) {
+              const cx = (tempProjVec.x * 0.5 + 0.5) * window.innerWidth;
+              const cy = (-(tempProjVec.y * 0.5) + 0.5) * window.innerHeight;
+              const camDist = camera.position.length();
+
+              // Elevar el rótulo por encima del núcleo galáctico o del anillo del agujero negro para no taparlo
+              const coreRadiusWorld = (camDist < 60) ? 8.6 : 14.0;
+              const fovFactor = 1.0 / (2.0 * Math.tan((camera.fov * Math.PI / 360.0)));
+              const pixelRadius = (coreRadiusWorld / Math.max(camDist, 8.0)) * window.innerHeight * fovFactor;
+              const extraMargin = (camDist < 60) ? 24 : 14;
+              const yOffset = pixelRadius + extraMargin;
+              const targetY = (camDist < 60) ? Math.max(45, cy - yOffset) : (cy - yOffset);
+
+              item.el.style.opacity = '1';
+              item.el.style.left = `${cx}px`;
+              item.el.style.top = `${targetY}px`;
+            } else {
+              item.el.style.opacity = '0';
+            }
           } else {
             const dist = camera.position.distanceTo(item.worldPos);
-            if (dist > 950 && item !== labelSgrA && item !== labelSun) {
+            if (dist > 950 && item !== labelSun) {
               item.el.style.opacity = '0';
             } else {
               item.el.style.opacity = '1';
