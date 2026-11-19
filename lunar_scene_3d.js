@@ -1015,34 +1015,6 @@ var SUN_DIST = 149598.0;      // Distancia Tierra-Sol (1 UA): 149.597.870 km
                 console.error("Error al inicializar esfera celeste 3D:", err);
             }
 
-            function updateStarsSubordinatesState() {
-                const chkStars = document.getElementById('chk-show-stars');
-                const chkGraticule = document.getElementById('chk-show-celestial-graticule');
-                const lblGraticule = document.getElementById('lbl-show-celestial-graticule');
-                const chkConst = document.getElementById('chk-show-constellations');
-                const lblConst = document.getElementById('lbl-show-constellations');
-                if (!chkStars) return;
-
-                const isStars = chkStars.checked;
-                if (celestialSphereGroup3D) {
-                    celestialSphereGroup3D.visible = isStars;
-                    if (celestialSphereGroup3D.starfieldGroup) celestialSphereGroup3D.starfieldGroup.visible = isStars;
-                    if (celestialSphereGroup3D.refStarsGroup) celestialSphereGroup3D.refStarsGroup.visible = isStars;
-                    if (celestialGraticuleGroup3D) celestialGraticuleGroup3D.visible = isStars && (chkGraticule ? chkGraticule.checked : true);
-                    if (constellationsGroup3D) constellationsGroup3D.visible = isStars && (chkConst ? chkConst.checked : true);
-                }
-                if (chkGraticule) chkGraticule.disabled = !isStars;
-                if (lblGraticule) {
-                    lblGraticule.style.opacity = isStars ? '1' : '0.4';
-                    lblGraticule.style.pointerEvents = isStars ? 'auto' : 'none';
-                }
-                if (chkConst) chkConst.disabled = !isStars;
-                if (lblConst) {
-                    lblConst.style.opacity = isStars ? '1' : '0.4';
-                    lblConst.style.pointerEvents = isStars ? 'auto' : 'none';
-                }
-            }
-
             document.getElementById('chk-show-stars')?.addEventListener('change', () => {
                 updateStarsSubordinatesState();
                 scene3DNeedsRender = true;
@@ -1404,6 +1376,34 @@ var SUN_DIST = 149598.0;      // Distancia Tierra-Sol (1 UA): 149.597.870 km
             };
         }
 
+
+        function updateStarsSubordinatesState() {
+            const chkStars = document.getElementById('chk-show-stars');
+            const chkGraticule = document.getElementById('chk-show-celestial-graticule');
+            const lblGraticule = document.getElementById('lbl-show-celestial-graticule');
+            const chkConst = document.getElementById('chk-show-constellations');
+            const lblConst = document.getElementById('lbl-show-constellations');
+            if (!chkStars) return;
+
+            const isStars = chkStars.checked;
+            if (celestialSphereGroup3D) {
+                celestialSphereGroup3D.visible = isStars;
+                if (celestialSphereGroup3D.starfieldGroup) celestialSphereGroup3D.starfieldGroup.visible = isStars;
+                if (celestialSphereGroup3D.refStarsGroup) celestialSphereGroup3D.refStarsGroup.visible = isStars;
+                if (celestialGraticuleGroup3D) celestialGraticuleGroup3D.visible = isStars && (chkGraticule ? chkGraticule.checked : true);
+                if (constellationsGroup3D) constellationsGroup3D.visible = isStars && (chkConst ? chkConst.checked : true);
+            }
+            if (chkGraticule) chkGraticule.disabled = !isStars;
+            if (lblGraticule) {
+                lblGraticule.style.opacity = isStars ? '1' : '0.4';
+                lblGraticule.style.pointerEvents = isStars ? 'auto' : 'none';
+            }
+            if (chkConst) chkConst.disabled = !isStars;
+            if (lblConst) {
+                lblConst.style.opacity = isStars ? '1' : '0.4';
+                lblConst.style.pointerEvents = isStars ? 'auto' : 'none';
+            }
+        }
 
 // Exposición global
 if (typeof window !== 'undefined') {
