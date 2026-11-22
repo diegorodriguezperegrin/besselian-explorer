@@ -1319,13 +1319,6 @@
           </div>
         </label>
         <label class="toggle-row">
-          <span data-i18n="layerExternalGalaxies">Galaxias vecinas (Grupo Local)</span>
-          <div class="toggle-switch">
-            <input type="checkbox" id="toggle-external-galaxies" checked onchange="toggleLayer('externalGalaxies', this.checked)">
-            <span class="toggle-slider"></span>
-          </div>
-        </label>
-        <label class="toggle-row">
           <span data-i18n-html="layerEclipticPlane">Disco Eclíptico translúcido (60,2&deg;)</span>
           <div class="toggle-switch">
             <input type="checkbox" id="toggle-ecliptic-plane" checked onchange="toggleLayer('eclipticPlane', this.checked)">
@@ -2096,8 +2089,7 @@
         eclipticPlane: true,
         velocityVector: true,
         labels: true,
-        armLabels: true,
-        externalGalaxies: true
+        armLabels: true
       }
     };
 
@@ -4672,7 +4664,7 @@
               item.el.style.top = `${y}px`;
             }
           } else if (item.isGalaxyLabel) {
-            if (!State.layers.externalGalaxies || State.cameraMode === 'sgra_focus') {
+            if (State.cameraMode === 'sgra_focus') {
               item.el.style.opacity = '0';
             } else {
               const camDistToOrigin = camera.position.length();
@@ -4919,15 +4911,6 @@
         armLabelObjects.forEach(item => {
           item.el.style.display = isChecked ? 'block' : 'none';
         });
-      } else if (layerName === 'externalGalaxies') {
-        if (typeof externalGalaxiesGroup !== 'undefined') {
-          externalGalaxiesGroup.visible = isChecked;
-        }
-        if (typeof galaxyLabelObjects !== 'undefined') {
-          galaxyLabelObjects.forEach(item => {
-            item.el.style.display = isChecked ? 'block' : 'none';
-          });
-        }
       }
     }
 
