@@ -1148,7 +1148,6 @@ var SUN_DIST = 149598.0;      // Distancia Tierra-Sol (1 UA): 149.597.870 km
                 const enabled = chkMain ? chkMain.checked : true;
                 if (chkSub) chkSub.disabled = !enabled;
                 if (lblSub) {
-                    lblSub.classList.toggle('disabled', !enabled);
                     lblSub.style.opacity = enabled ? '1' : '0.4';
                     lblSub.style.pointerEvents = enabled ? 'auto' : 'none';
                 }

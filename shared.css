@@ -597,7 +597,6 @@ body.is-dragging-panel #lunar-limb-panel {
 
 .checkbox-row.disabled input {
     cursor: not-allowed;
-    opacity: 0.4;
 }
 
 select {

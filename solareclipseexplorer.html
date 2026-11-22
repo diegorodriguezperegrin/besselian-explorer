@@ -5483,14 +5483,12 @@
 
             chkLimits.disabled = !isOrbitActive;
             if (lblLimits) {
-                lblLimits.classList.toggle('disabled', !isOrbitActive);
                 lblLimits.style.opacity = isOrbitActive ? '1' : '0.4';
                 lblLimits.style.pointerEvents = isOrbitActive ? 'auto' : 'none';
             }
 
             chkLimitLabels.disabled = !isLimitsActive;
             if (lblLimitLabels) {
-                lblLimitLabels.classList.toggle('disabled', !isLimitsActive);
                 lblLimitLabels.style.opacity = isLimitsActive ? '1' : '0.4';
                 lblLimitLabels.style.pointerEvents = isLimitsActive ? 'auto' : 'none';
             }
