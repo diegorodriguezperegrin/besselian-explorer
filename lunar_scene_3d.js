@@ -13,6 +13,7 @@ var camera3D = null;
 var renderer3D = null;
 var controls3D = null;
 var earthMesh3D = null;
+var cloudsMesh3D = null;
 var moonMesh3D = null;
 var sunMesh3D = null;
 var observerMarkerGroup3D = null;
@@ -724,6 +725,97 @@ var SUN_DIST = 149598.0;      // Distancia Tierra-Sol (1 UA): 149.597.870 km
             atmosphereMesh3D = new THREE.Mesh(atmosphereGeometry, atmosphereMaterial);
             earthGroup.add(atmosphereMesh3D);
 
+            // Capa de nubes 3D opcional (Three.js Earth Clouds)
+            const CLOUDS_RADIUS = EARTH_RADIUS * 1.008;
+            const cloudsGeo = new THREE.SphereGeometry(CLOUDS_RADIUS, 96, 96);
+            const cloudsMat = new THREE.MeshPhongMaterial({
+                color: 0xffffff,
+                transparent: true,
+                opacity: 0.82,
+                depthWrite: false,
+                side: THREE.FrontSide
+            });
+            cloudsMesh3D = new THREE.Mesh(cloudsGeo, cloudsMat);
+            cloudsMesh3D.renderOrder = 20;
+            cloudsMesh3D.visible = false;
+            earthGroup.add(cloudsMesh3D);
+
+            const CLOUDS_TEX_LOCAL = 'earth_clouds_1024.png';
+            const CLOUDS_TEX_THREEJS = 'https://cdn.jsdelivr.net/gh/mrdoob/three.js@master/examples/textures/planets/earth_clouds_1024.png';
+            const CLOUDS_TEX_REPO = 'https://cdn.jsdelivr.net/gh/diegorodriguezperegrin/besselian-explorer@main/earth_clouds_1024.png';
+            let isCloudsTexLoaded = false;
+
+            function applyCloudsTexture(texture) {
+                if (!texture || isCloudsTexLoaded) return;
+                isCloudsTexLoaded = true;
+                texture.needsUpdate = true;
+                if (cloudsMat.map && cloudsMat.map !== texture && cloudsMat.map.dispose) {
+                    cloudsMat.map.dispose();
+                }
+                cloudsMat.map = texture;
+                cloudsMat.needsUpdate = true;
+                const chkClouds = document.getElementById('chk-show-clouds');
+                if (chkClouds && chkClouds.checked) {
+                    cloudsMesh3D.visible = true;
+                }
+                revealScene3D();
+            }
+
+            const preloadCloudsImg = document.getElementById('preload-earth-clouds');
+            const cloudsTexLoader = new THREE.TextureLoader();
+            cloudsTexLoader.setCrossOrigin('anonymous');
+
+            function loadCloudsTextureFallback() {
+                // Cargar desde Three.js CDN garantizado, y fallback a repo o local
+                cloudsTexLoader.load(CLOUDS_TEX_THREEJS, applyCloudsTexture, undefined, () => {
+                    cloudsTexLoader.load(CLOUDS_TEX_REPO, applyCloudsTexture, undefined, () => {
+                        cloudsTexLoader.load(CLOUDS_TEX_LOCAL, applyCloudsTexture);
+                    });
+                });
+            }
+
+            if (isLocalFile) {
+                // En protocolo file:/// Chromium bloquea imágenes locales en texImage2D; usamos CDN anónimo con CORS
+                loadCloudsTextureFallback();
+            } else if (preloadCloudsImg && preloadCloudsImg.complete && preloadCloudsImg.naturalWidth > 0) {
+                applyCloudsTexture(new THREE.Texture(preloadCloudsImg));
+            } else if (preloadCloudsImg) {
+                if (preloadCloudsImg.decode) {
+                    preloadCloudsImg.decode().then(() => {
+                        applyCloudsTexture(new THREE.Texture(preloadCloudsImg));
+                    }).catch(() => {
+                        cloudsTexLoader.load(CLOUDS_TEX_LOCAL, applyCloudsTexture, undefined, loadCloudsTextureFallback);
+                    });
+                } else {
+                    preloadCloudsImg.onload = function() {
+                        applyCloudsTexture(new THREE.Texture(preloadCloudsImg));
+                    };
+                    preloadCloudsImg.onerror = loadCloudsTextureFallback;
+                }
+            } else {
+                cloudsTexLoader.load(CLOUDS_TEX_LOCAL, applyCloudsTexture, undefined, loadCloudsTextureFallback);
+            }
+
+            function toggleCloudsVisibility(visible) {
+                if (!cloudsMesh3D) return;
+                const shouldShow = !!visible;
+                if (shouldShow) {
+                    // Solo mostrar si la textura ya está realmente cargada en el mapa
+                    if (isCloudsTexLoaded && cloudsMat.map) {
+                        cloudsMesh3D.visible = true;
+                    } else {
+                        // Evitar mostrar una esfera blanca sólida sin textura; esperar a que se cargue
+                        cloudsMesh3D.visible = false;
+                        loadCloudsTextureFallback();
+                    }
+                } else {
+                    cloudsMesh3D.visible = false;
+                }
+                if (typeof requestRender3D === 'function') requestRender3D();
+                else if (renderer3D && scene3D && camera3D) renderer3D.render(scene3D, camera3D);
+            }
+            window.toggleCloudsVisibility = toggleCloudsVisibility;
+
             // Marcador del Observador (📍 Posición Local) - anclado a la superficie terrestre
             observerMarkerGroup3D = createObserverMarker3D();
             observerMarkerGroup3D.position.copy(latLngToVector3(currentObserver.lat, currentObserver.lon, EARTH_RADIUS * 1.004));
@@ -988,6 +1080,9 @@ var SUN_DIST = 149598.0;      // Distancia Tierra-Sol (1 UA): 149.597.870 km
                 update3DEclipseGeometry();
                 scene3DNeedsRender = true;
                 if (renderer3D && scene3D && camera3D) renderer3D.render(scene3D, camera3D);
+            });
+            document.getElementById('chk-show-clouds')?.addEventListener('change', (e) => {
+                toggleCloudsVisibility(e.target.checked);
             });
 
             // Esfera Celeste 3D: Estrellas de referencia J2000, fondo cósmico, red astronómica y constelaciones (Estilo SEE)

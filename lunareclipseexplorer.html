@@ -53,8 +53,9 @@
     <script src="cosmos_fullscreen.js" defer></script>
     <script src="cosmos_i18n.js" defer></script>
     <script src="i18n_eclipses.js" defer></script>
-    <!-- Precarga de texturas terrestres y lunares 2K -->
+    <!-- Precarga de texturas terrestres, nubes y lunares 2K -->
     <link rel="preload" as="image" href="earth_topo_2048.jpg">
+    <link rel="preload" as="image" href="earth_clouds_1024.png">
     <link rel="preload" as="image" href="moon_topo_2048.jpg">
 
     <style>
@@ -246,6 +247,7 @@
 <body>
     <!-- Precarga nativa decodificada en paralelo para renderizado instantáneo sin boceto en fotograma 1 -->
     <img id="preload-earth-topo" src="earth_topo_2048.jpg" style="display:none;" alt="" decoding="async">
+    <img id="preload-earth-clouds" src="earth_clouds_1024.png" style="display:none;" alt="" decoding="async">
     <img id="preload-moon-topo" src="moon_topo_2048.jpg" style="display:none;" alt="" decoding="async">
 
     <!-- Capa de Viewports (3D Espacial y 2D Telescópico) -->
@@ -568,6 +570,10 @@
                     <label class="checkbox-row" id="lbl-show-limits-labels" style="padding-left: 24px;">
                         <input type="checkbox" id="chk-show-limits-labels">
                         <span>Rótulos de los límites</span>
+                    </label>
+                    <label class="checkbox-row" id="lbl-show-clouds" title="Capa de nubes atmosféricas en 3D sobre la superficie terrestre">
+                        <input type="checkbox" id="chk-show-clouds">
+                        <span>Capa de nubes</span>
                     </label>
                 </div>
             </div>
