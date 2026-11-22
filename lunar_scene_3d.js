@@ -1141,17 +1141,28 @@ var SUN_DIST = 149598.0;      // Distancia Tierra-Sol (1 UA): 149.597.870 km
             eclipseLimitsGroup3D.visible = showLimits;
             scene3D.add(eclipseLimitsGroup3D);
 
-            document.getElementById('chk-show-limits')?.addEventListener('change', (e) => {
-                const enabled = e.target.checked;
+            function updateLimitsSubordinateState() {
+                const chkMain = document.getElementById('chk-show-limits');
                 const chkSub = document.getElementById('chk-show-limits-labels');
                 const lblSub = document.getElementById('lbl-show-limits-labels');
+                const enabled = chkMain ? chkMain.checked : true;
                 if (chkSub) chkSub.disabled = !enabled;
-                if (lblSub) lblSub.classList.toggle('disabled', !enabled);
+                if (lblSub) {
+                    lblSub.classList.toggle('disabled', !enabled);
+                    lblSub.style.opacity = enabled ? '1' : '0.4';
+                    lblSub.style.pointerEvents = enabled ? 'auto' : 'none';
+                }
+            }
+
+            document.getElementById('chk-show-limits')?.addEventListener('change', (e) => {
+                const enabled = e.target.checked;
+                updateLimitsSubordinateState();
                 if (eclipseLimitsGroup3D) eclipseLimitsGroup3D.visible = enabled;
                 update3DEclipseGeometry();
                 scene3DNeedsRender = true;
                 if (renderer3D && scene3D && camera3D) renderer3D.render(scene3D, camera3D);
             });
+            updateLimitsSubordinateState();
 
             document.getElementById('chk-show-limits-labels')?.addEventListener('change', () => {
                 update3DEclipseGeometry();

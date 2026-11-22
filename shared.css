@@ -590,10 +590,9 @@ body.is-dragging-panel #lunar-limb-panel {
 }
 
 .checkbox-row.disabled {
-    opacity: 0.32;
+    opacity: 0.4;
     cursor: not-allowed;
     pointer-events: none;
-    color: var(--text-dim);
 }
 
 .checkbox-row.disabled input {
