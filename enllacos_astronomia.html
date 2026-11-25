@@ -995,7 +995,7 @@
             const filtered = linksData.links.filter(item => {
                 if (!q) return true;
                 const title = item.title.toLowerCase();
-                const desc = (item.desc || '').toLowerCase();
+                const desc = (item.desc_ca || item.desc || item.desc_es || '').toLowerCase();
                 const url = item.url.toLowerCase();
                 return title.includes(q) || desc.includes(q) || url.includes(q);
             });
@@ -1021,6 +1021,8 @@
                     statusHtml = `<span class="status-badge status-err"><i class="fa-solid fa-circle-xmark"></i> Inactiu</span>`;
                 }
 
+                const descText = item.desc_ca || item.desc || item.desc_es || '';
+
                 tr.innerHTML = `
                     <td class="col-num">${idx + 1}</td>
                     <td class="col-url" title="${item.url}">
@@ -1029,7 +1031,7 @@
                         </a>
                     </td>
                     <td class="col-title" title="${item.title}"><span class="link-title">${item.title}</span></td>
-                    <td class="col-desc" title="${item.desc || ''}"><span class="link-desc">${item.desc || ''}</span></td>
+                    <td class="col-desc" title="${descText}"><span class="link-desc">${descText}</span></td>
                     <td class="col-status">${statusHtml}</td>
                     <td class="col-latency"><span class="latency-badge" title="Latència de resposta"><i class="fa-solid fa-bolt"></i> ${item.latency_ms} ms</span></td>
                     <td class="col-copy">
