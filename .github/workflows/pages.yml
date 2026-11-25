@@ -3,6 +3,8 @@ name: Deploy static content to Pages
 on:
   push:
     branches: ["main"]
+  schedule:
+    - cron: '0 4 * * 1' # Cada dilluns a les 04:00 UTC
   workflow_dispatch:
 
 permissions:
@@ -23,6 +25,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Verify Astronomy Links Health
+        run: python check_astronomy_links.py
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact

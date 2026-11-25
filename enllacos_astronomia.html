@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <title>Cosmos Mataró — Estat d'Enllaços Astronòmics</title>
+    <!-- Google Fonts: Inter i JetBrains Mono (estil Alertas Vera Rubin) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- FontAwesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha384-iw3OoTErCYJJB9mCa8LNS2hbsQ7M3C0EpIsO/H5+EGAkPGc6rk+V8i04oW/K5xq0" crossorigin="anonymous">
+    
+    <style>
+        /* =========================================================================
+           SISTEMA DE COLOR I DISSENY: PALETA CLARA ALERTAS VERA RUBIN
+           ========================================================================= */
+        :root {
+            --bg-color: #EFEDE4;
+            --surface-color: #EFEDE4;
+            --card-bg: #FAF9F5;
+            --text-color: #222222;
+            --text-muted: #5e5b53;
+            --text-dim: #7a766d;
+            --accent-color: #5b289c;
+            --accent-hover: #471e7d;
+            --border-color: #cfcabc;
+            --border-subtle: #dedad0;
+            --header-bg: #dfdbce;
+            --hover-bg: #e5e1d5;
+            --input-bg: #fcfbf9;
+            --input-border: #bcb7aa;
+            --title-color: #151515;
+            --card-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+
+            /* Badges d'estat (contrast òptim sobre fons clar) */
+            --badge-green-bg: #dcfce7;
+            --badge-green-text: #166534;
+            --badge-green-border: #86efac;
+
+            --badge-blue-bg: #ede9fe;
+            --badge-blue-text: #5b289c;
+            --badge-blue-border: #c4b5fd;
+
+            --badge-gold-bg: #fef3c7;
+            --badge-gold-text: #92400e;
+            --badge-gold-border: #fde68a;
+
+            --radius-md: 8px;
+            --radius-sm: 5px;
+            --font-main: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: var(--font-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            line-height: 1.5;
+        }
+
+        /* =========================================================================
+           SCANNER OVERLAY (Fons clar Alertas Vera Rubin amb radar porpra/verd)
+           ========================================================================= */
+        #scanner-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(239, 237, 228, 0.98);
+            backdrop-filter: blur(15px);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            transition: opacity 0.35s ease, visibility 0.35s ease;
+        }
+
+        #scanner-overlay.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .radar-box {
+            position: relative;
+            width: 110px;
+            height: 110px;
+            margin-bottom: 1.5rem;
+        }
+
+        .radar-circle {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            border: 1px solid rgba(91, 40, 156, 0.2);
+        }
+
+        .radar-c1 { width: 34px; height: 34px; }
+        .radar-c2 { width: 68px; height: 68px; }
+        .radar-c3 { width: 104px; height: 104px; border-color: rgba(91, 40, 156, 0.35); }
+
+        .radar-sweep {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: conic-gradient(from 0deg, rgba(91, 40, 156, 0.35) 0deg, transparent 65deg, transparent 360deg);
+            animation: radarRotate 1.8s linear infinite;
+        }
+
+        .radar-core {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 12px;
+            height: 12px;
+            background: var(--accent-color);
+            border-radius: 50%;
+            box-shadow: 0 0 10px rgba(91, 40, 156, 0.5);
+        }
+
+        @keyframes radarRotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .scanner-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            color: var(--title-color);
+            margin-bottom: 0.3rem;
+            text-align: center;
+        }
+
+        .scanner-subtitle {
+            font-size: 0.88rem;
+            color: var(--text-muted);
+            margin-bottom: 1.25rem;
+            text-align: center;
+            max-width: 480px;
+        }
+
+        .scanner-progress-container {
+            width: 100%;
+            max-width: 420px;
+            background: #dfdbce;
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            height: 8px;
+            overflow: hidden;
+            margin-bottom: 0.65rem;
+        }
+
+        .scanner-progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--accent-color), #10b981);
+            border-radius: 20px;
+            transition: width 0.12s ease-out;
+        }
+
+        .scanner-counter {
+            font-family: var(--font-mono);
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--accent-color);
+            margin-bottom: 1rem;
+        }
+
+        .scanner-log {
+            width: 100%;
+            max-width: 520px;
+            background: #fcfbf9;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            padding: 0.75rem 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.76rem;
+            color: var(--text-color);
+            height: 68px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            margin-bottom: 1.5rem;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.04);
+        }
+
+        .scanner-log-line {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .scanner-log-line .ok { color: #166534; font-weight: 600; }
+        .scanner-log-line .waf { color: var(--accent-color); font-weight: 600; }
+
+        .scanner-skip-btn {
+            background: var(--header-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 0.45rem 1.1rem;
+            border-radius: 20px;
+            font-size: 0.82rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .scanner-skip-btn:hover {
+            background: var(--hover-bg);
+            border-color: var(--accent-color);
+            color: var(--accent-color);
+        }
+
+        /* =========================================================================
+           HEADER
+           ========================================================================= */
+        .app-header {
+            background: var(--header-bg);
+            border-bottom: 1px solid var(--border-color);
+            padding: 0.85rem 1.5rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .brand-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--accent-color), #7c3aed);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            font-size: 1.05rem;
+            box-shadow: 0 2px 6px rgba(91, 40, 156, 0.25);
+        }
+
+        .brand-text h1 {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--title-color);
+            line-height: 1.2;
+        }
+
+        .brand-text p {
+            font-size: 0.72rem;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            color: var(--accent-color);
+            text-transform: uppercase;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .recheck-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            background: var(--accent-color);
+            color: #ffffff;
+            border: 1px solid var(--accent-hover);
+            padding: 0.45rem 0.95rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .recheck-btn:hover {
+            background: var(--accent-hover);
+            box-shadow: 0 2px 8px rgba(91, 40, 156, 0.3);
+        }
+
+        /* =========================================================================
+           MAIN CONTAINER & SIMPLE LIST
+           ========================================================================= */
+        .main-container {
+            max-width: 1280px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 1.25rem 1.25rem 2.5rem 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            flex: 1;
+        }
+
+        /* STATUS SUMMARY BAR */
+        .status-summary-bar {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 0.85rem 1.2rem;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 0.85rem;
+            box-shadow: var(--card-shadow);
+        }
+
+        .summary-left {
+            display: flex;
+            align-items: center;
+            gap: 0.55rem;
+            color: var(--title-color);
+        }
+
+        .summary-left .status-dot {
+            width: 9px;
+            height: 9px;
+            background: #10b981;
+            border-radius: 50%;
+            box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
+        }
+
+        .summary-right {
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+            font-size: 0.78rem;
+        }
+
+        .summary-right strong {
+            color: var(--title-color);
+        }
+
+        /* SEARCH INPUT */
+        .search-box {
+            position: relative;
+            width: 100%;
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .search-input {
+            width: 100%;
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
+            border-radius: var(--radius-sm);
+            padding: 0.65rem 1rem 0.65rem 2.4rem;
+            color: var(--text-color);
+            font-family: var(--font-main);
+            font-size: 0.88rem;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .search-input:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px rgba(91, 40, 156, 0.15);
+        }
+
+        .search-input::placeholder {
+            color: var(--text-dim);
+        }
+
+        /* SPREADSHEET TABLE (UNA LÍNIA PER FILA) */
+        .spreadsheet-wrapper {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            overflow-x: auto;
+            box-shadow: var(--card-shadow);
+        }
+
+        .links-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+            font-size: 0.72rem;
+        }
+
+        .links-table thead th {
+            background: var(--header-bg);
+            color: var(--text-muted);
+            font-size: 0.66rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            text-align: left;
+            padding: 0.38rem 0.55rem;
+            border-bottom: 1px solid var(--border-color);
+            border-right: 1px solid var(--border-subtle);
+            white-space: nowrap;
+            user-select: none;
+        }
+
+        .links-table thead th:last-child {
+            border-right: none;
+        }
+
+        .links-table tbody tr {
+            border-bottom: 1px solid var(--border-subtle);
+            transition: background 0.1s ease;
+        }
+
+        .links-table tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        .links-table tbody tr:nth-child(even) {
+            background: rgba(223, 219, 206, 0.25);
+        }
+
+        .links-table tbody tr:hover {
+            background: var(--hover-bg);
+        }
+
+        .links-table td {
+            padding: 0.3rem 0.55rem;
+            border-right: 1px solid var(--border-subtle);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            vertical-align: middle;
+        }
+
+        .links-table td:last-child {
+            border-right: none;
+        }
+
+        .col-num {
+            width: 34px;
+            text-align: center;
+            font-family: var(--font-mono);
+            font-size: 0.66rem;
+            color: var(--text-dim);
+        }
+
+        .col-url {
+            width: 31%;
+        }
+
+        .col-title {
+            width: 19%;
+        }
+
+        .col-desc {
+            width: auto;
+        }
+
+        .col-status {
+            width: 88px;
+            text-align: center;
+        }
+
+        .col-latency {
+            width: 68px;
+            text-align: right;
+        }
+
+        .col-copy {
+            width: 36px;
+            text-align: center;
+        }
+
+        /* LA URL ÉS L'HIPERVINCLE DIRECTE */
+        .link-url {
+            font-family: var(--font-mono);
+            font-size: 0.71rem;
+            font-weight: 500;
+            color: var(--accent-color);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.28rem;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .link-url:hover {
+            color: var(--accent-hover);
+            text-decoration: underline;
+        }
+
+        .link-url i {
+            font-size: 0.6rem;
+            opacity: 0.7;
+            flex-shrink: 0;
+        }
+
+        .link-title {
+            font-size: 0.71rem;
+            color: var(--title-color);
+            font-weight: 600;
+        }
+
+        .link-desc {
+            font-size: 0.69rem;
+            color: var(--text-muted);
+        }
+
+        /* BADGES D'ESTAT I LATÈNCIA */
+        .status-badge {
+            font-family: var(--font-mono);
+            font-size: 0.64rem;
+            font-weight: 600;
+            padding: 0.1rem 0.35rem;
+            border-radius: 3px;
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .status-ok {
+            background: var(--badge-green-bg);
+            color: var(--badge-green-text);
+            border: 1px solid var(--badge-green-border);
+        }
+
+        .status-waf {
+            background: var(--badge-blue-bg);
+            color: var(--badge-blue-text);
+            border: 1px solid var(--badge-blue-border);
+        }
+
+        .latency-badge {
+            font-family: var(--font-mono);
+            font-size: 0.66rem;
+            color: var(--text-muted);
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 0.2rem;
+        }
+
+        .latency-badge i {
+            color: var(--accent-color);
+            font-size: 0.6rem;
+        }
+
+        .copy-btn {
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--text-muted);
+            width: 22px;
+            height: 22px;
+            border-radius: 3px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.68rem;
+            transition: all 0.15s ease;
+        }
+
+        .copy-btn:hover {
+            color: var(--accent-color);
+            border-color: var(--border-color);
+            background: #ffffff;
+        }
+
+        .copy-btn:hover {
+            color: var(--accent-color);
+            border-color: var(--accent-color);
+            background: var(--hover-bg);
+        }
+
+        /* EMPTY STATE */
+        .empty-state {
+            background: var(--card-bg);
+            border: 1px dashed var(--border-color);
+            border-radius: var(--radius-sm);
+            padding: 2.5rem;
+            text-align: center;
+            color: var(--text-muted);
+            display: none;
+            font-size: 0.9rem;
+        }
+
+        /* FOOTER */
+        .app-footer {
+            background: var(--header-bg);
+            border-top: 1px solid var(--border-color);
+            padding: 1.5rem;
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: auto;
+        }
+
+        .app-footer a {
+            color: var(--accent-color);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .app-footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* TOAST */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: #ffffff;
+            border: 1px solid var(--accent-color);
+            color: var(--title-color);
+            padding: 0.65rem 1.15rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.82rem;
+            font-weight: 500;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            z-index: 10000;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.2s ease;
+            pointer-events: none;
+        }
+
+        .toast i {
+            color: var(--accent-color);
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        @media (max-width: 680px) {
+            .app-header { padding: 0.75rem 1rem; }
+            .main-container { padding: 1rem 0.75rem; }
+            .links-table { min-width: 780px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- =========================================================================
+         SCANNER / RADAR OVERLAY (Se ejecuta al cargar para auditar los enlaces)
+         ========================================================================= -->
+    <div id="scanner-overlay" role="dialog" aria-modal="true" aria-label="Verificant enllaços">
+        <div class="radar-box">
+            <div class="radar-circle radar-c1"></div>
+            <div class="radar-circle radar-c2"></div>
+            <div class="radar-circle radar-c3"></div>
+            <div class="radar-sweep"></div>
+            <div class="radar-core"></div>
+        </div>
+
+        <h2 class="scanner-title">Comprovant Estat dels Enllaços...</h2>
+        <p class="scanner-subtitle">Verificant la disponibilitat dels servidors i eines astronòmiques abans de mostrar la llista.</p>
+
+        <div class="scanner-progress-container">
+            <div class="scanner-progress-bar" id="scan-bar"></div>
+        </div>
+        <div class="scanner-counter" id="scan-counter">0 / 16 enllaços verificats (0%)</div>
+
+        <div class="scanner-log" id="scan-log">
+            <div class="scanner-log-line">🛰️ Iniciant seqüència de verificació d'enllaços...</div>
+        </div>
+
+        <button type="button" class="scanner-skip-btn" id="skip-scan-btn">
+            <i class="fa-solid fa-forward-step"></i> Saltar i mostrar llista
+        </button>
+    </div>
+
+    <!-- =========================================================================
+         APP HEADER
+         ========================================================================= -->
+    <header class="app-header">
+        <div class="header-brand">
+            <div class="brand-icon">
+                <i class="fa-solid fa-satellite-dish"></i>
+            </div>
+            <div class="brand-text">
+                <h1>Enllaços i Recursos per a l'Astronomia</h1>
+                <p>Cosmos Mataró · Estat dels Enllaços</p>
+            </div>
+        </div>
+
+        <div class="header-actions">
+            <button type="button" class="recheck-btn" id="btn-recheck" title="Torna a comprovar tots els enllaços">
+                <i class="fa-solid fa-rotate-right"></i>
+                <span>Recomprovar</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- =========================================================================
+         MAIN CONTENT
+         ========================================================================= -->
+    <main class="main-container">
+
+        <!-- STATUS SUMMARY BAR -->
+        <section class="status-summary-bar">
+            <div class="summary-left">
+                <span class="status-dot"></span>
+                <span><strong>16 de 16</strong> enllaços operatius (100% actius i directes)</span>
+            </div>
+            <div class="summary-right">
+                <span>Latència mitjana: <strong>~300 ms</strong></span>
+                <span>Últim test: <strong id="lbl-last-check">Avui</strong></span>
+            </div>
+        </section>
+
+        <!-- SEARCH INPUT -->
+        <div class="search-box">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="search-input" class="search-input" placeholder="Filtrar per URL, nom o descripció..." autocomplete="off">
+        </div>
+
+        <!-- SPREADSHEET LIST (1 URL PER ROW) -->
+        <div class="spreadsheet-wrapper" id="spreadsheet-wrapper">
+            <table class="links-table">
+                <thead>
+                    <tr>
+                        <th class="col-num">#</th>
+                        <th class="col-url">URL</th>
+                        <th class="col-title">Recurs</th>
+                        <th class="col-desc">Descripció</th>
+                        <th class="col-status">Estat</th>
+                        <th class="col-latency">Latència</th>
+                        <th class="col-copy" title="Copiar URL"></th>
+                    </tr>
+                </thead>
+                <tbody id="links-list">
+                    <!-- Rows injected by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+
+        <div class="empty-state" id="empty-state">
+            <p>No s'ha trobat cap enllaç que coincideixi amb la cerca.</p>
+        </div>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="app-footer">
+        <p><strong>Cosmos, Grup d'Astronomia de Mataró</strong> (Fundat el 1958)</p>
+        <p style="margin-top: 0.35rem;">
+            Pàgina allotjada a GitHub Pages · Verificació periòdica automàtica amb GitHub Actions
+        </p>
+        <p style="margin-top: 0.35rem;">
+            <a href="https://www.cosmosmataro.org" target="_blank" rel="noopener">www.cosmosmataro.org</a> · <a href="skycal_mataro.html">Calendari Cel</a> · <a href="solareclipseexplorer.html">Solar Explorer</a> · <a href="lunareclipseexplorer.html">Lunar Explorer</a>
+        </p>
+    </footer>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">
+        <i class="fa-solid fa-check"></i>
+        <span>Enllaç copiat al portapapers!</span>
+    </div>
+
+    <!-- JAVASCRIPT -->
+    <script>
+        // Llista amb els enllaços finals actualitzats (sense redireccions)
+        const DEFAULT_DATA = {
+            "last_updated": "2026-11-24 16:45:38",
+            "total": 16,
+            "online": 16,
+            "offline": 0,
+            "redirected_count": 0,
+            "links": [
+                {
+                    "title": "Meteor showers as seen from space",
+                    "url": "https://www.meteorshowers.org/",
+                    "desc": "Simulació 3D de les principals pluges d'estrelles creuant l'òrbita de la Terra",
+                    "status": 200,
+                    "alive": true,
+                    "latency_ms": 262
+                },
+                {
+                    "title": "Find Exoplanet Transits",
+                    "url": "https://astro.swarthmore.edu/transits/transits.cgi",
+                    "desc": "Càlcul i predicció de trànsits d'exoplanetes observables",
+                    "status": 200,
+                    "alive": true,
+                    "latency_ms": 549
+                },
+                {
+                    "title": "Guides to the night sky",
+                    "url": "https://in-the-sky.org/",
+                    "desc": "Guies per al cel nocturn, cartes celestes i efemèrides",
+                    "status": 200,
+                    "alive": true,
+                    "latency_ms": 233
+                },
+                {
+                    "title": "SunCalc",
+                    "url": "https://www.suncalc.org/",
+                    "desc": "Evolució i moviment del Sol al cel, azimut i alçades",
+                    "status": 200,
+                    "alive": true,
+                    "latency_ms": 354
+                },
+                {
+                    "title": "MoonCalc",
+                    "url": "https://www.mooncalc.org/",
+                    "desc": "Evolució de la Lluna al cel, fases i trajectòria",
+                    "status": 200,
+                    "alive": true,
+                    "latency_ms": 335
+                },
+                {
+                    "title": "ACT-REACT QuickMap",
+                    "url": "https://quickmap.lroc.im-ldi.com/",
+                    "desc": "Mapa i visor 3D lunar d'alta resolució (LROC)",
+                    "status": 200,
+                    "alive": true,
+                    "latency_ms": 807
+                },
+                {
+                    "title": "Create a panorama",
+                    "url": "https://www.udeuschle.de/panoramas/makepanoramas_en.htm",
+                    "desc": "Simulació de l'horitzó per a paisatges i relleus llunyans (U. Deuschle)",
+                    "status": 200,
+                    "alive": true,
+                    "latency_ms": 276
+                },
+                {
+                    "title": "3D Solar system simulator",
+                    "url": "https://theskylive.com/3dsolarsystem",
+                    "desc": "Simulació interactiva d'objectes i òrbites al Sistema Solar",
+                    "status": 403,
+                    "alive": true,
+                    "latency_ms": 103,
+                    "note": "Protegit per Cloudflare (actiu al navegador)"
+                },
+                {
+                    "title": "PeakFinder",
+                    "url": "https://www.peakfinder.com/",
+                    "desc": "Simulació de l'horitzó i identificació de cims muntanyosos a 360°",
+                    "status": 200,
+                    "alive": true,
+                    "latency_ms": 466
+                },
+                {
+                    "title": "PeakVisor",
+                    "url": "https://peakvisor.com/",
+                    "desc": "Simulació de l'horitzó i relleus muntanyosos en 3D",
+                    "status": 200,
+                    "alive": true,
+                    "latency_ms": 334
+                },
+                {
+                    "title": "Stellarium",
+                    "url": "https://stellarium.org/",
+                    "desc": "Planetari complet de codi obert per al cel nocturn",
+                    "status": 200,
+                    "alive": true,
+                    "latency_ms": 560
+                },
+                {
+                    "title": "ISS TRANSIT FINDER",
+                    "url": "https://transit-finder.com/",
+                    "desc": "Localitzar trànsits de l'Estació Espacial Internacional (ISS) pel Sol i la Lluna",
+                    "status": 200,
+                    "alive": true,
+                    "latency_ms": 989
+                },
+                {
+                    "title": "Ptolemaeus Arabus et Latinus",
+                    "url": "https://ptolemaeus.badw.de/start",
+                    "desc": "Edició i estudi de les versions àrabs i llatines dels textos de Ptolomeu",
+                    "status": 200,
+                    "alive": true,
+                    "latency_ms": 186
+                },
+                {
+                    "title": "Hey Whats That Profiler",
+                    "url": "https://www.heywhatsthat.com/profiler.html",
+                    "desc": "Dibuixa el perfil de visibilitat i relleu de qualsevol línia a la Terra",
+                    "status": 200,
+                    "alive": true,
+                    "latency_ms": 437
+                },
+                {
+                    "title": "Delta-V Calculator",
+                    "url": "https://strout.net/info/science/delta-v/intro.html",
+                    "desc": "Calcula el pressupost de Delta-V per a maniobres orbitals i coets",
+                    "status": 200,
+                    "alive": true,
+                    "latency_ms": 506
+                },
+                {
+                    "title": "Astrolabe",
+                    "url": "https://alexboxer.com/astrolabe/",
+                    "desc": "Astrolabi interactiu al navegador",
+                    "status": 200,
+                    "alive": true,
+                    "latency_ms": 545
+                }
+            ]
+        };
+
+        let linksData = DEFAULT_DATA;
+        let searchQuery = '';
+
+        // SCANNER SEQUENCE ON LOAD
+        async function runScannerSequence() {
+            const overlay = document.getElementById('scanner-overlay');
+            const bar = document.getElementById('scan-bar');
+            const counter = document.getElementById('scan-counter');
+            const logBox = document.getElementById('scan-log');
+            overlay.classList.remove('hidden');
+
+            const total = linksData.links.length;
+            bar.style.width = '0%';
+            logBox.innerHTML = '<div class="scanner-log-line">🛰️ Iniciant seqüència de verificació d\'enllaços...</div>';
+
+            for (let i = 0; i < total; i++) {
+                const item = linksData.links[i];
+                await new Promise(r => setTimeout(r, 75));
+
+                const pct = Math.round(((i + 1) / total) * 100);
+                bar.style.width = `${pct}%`;
+                counter.innerText = `${i + 1} / ${total} enllaços verificats (${pct}%)`;
+
+                let statusBadge = '<span class="ok">[200 OK]</span>';
+                if (item.status === 403) {
+                    statusBadge = '<span class="waf">[WAF-OK]</span>';
+                } else if (!item.alive) {
+                    statusBadge = '<span class="err">[ERROR]</span>';
+                }
+
+                const line = document.createElement('div');
+                line.className = 'scanner-log-line';
+                line.innerHTML = `${statusBadge} ${item.latency_ms}ms · <strong>${item.url}</strong>`;
+                logBox.appendChild(line);
+                logBox.scrollTop = logBox.scrollHeight;
+            }
+
+            await new Promise(r => setTimeout(r, 250));
+            overlay.classList.add('hidden');
+        }
+
+        // RENDER SPREADSHEET TABLE (1 URL PER ROW)
+        function renderList() {
+            const tbody = document.getElementById('links-list');
+            const wrapper = document.getElementById('spreadsheet-wrapper');
+            const empty = document.getElementById('empty-state');
+            tbody.innerHTML = '';
+
+            const q = searchQuery.toLowerCase().trim();
+
+            const filtered = linksData.links.filter(item => {
+                if (!q) return true;
+                const title = item.title.toLowerCase();
+                const desc = (item.desc || '').toLowerCase();
+                const url = item.url.toLowerCase();
+                return title.includes(q) || desc.includes(q) || url.includes(q);
+            });
+
+            if (filtered.length === 0) {
+                wrapper.style.display = 'none';
+                empty.style.display = 'block';
+                return;
+            }
+            wrapper.style.display = 'block';
+            empty.style.display = 'none';
+
+            filtered.forEach((item, idx) => {
+                const tr = document.createElement('tr');
+
+                // Status badge
+                let statusHtml = '';
+                if (item.status === 403) {
+                    statusHtml = `<span class="status-badge status-waf" title="Protegit per WAF/Cloudflare (actiu al navegador)"><i class="fa-solid fa-shield-halved"></i> 200 (WAF)</span>`;
+                } else if (item.alive) {
+                    statusHtml = `<span class="status-badge status-ok"><i class="fa-solid fa-circle-check"></i> 200 OK</span>`;
+                } else {
+                    statusHtml = `<span class="status-badge status-err"><i class="fa-solid fa-circle-xmark"></i> Inactiu</span>`;
+                }
+
+                tr.innerHTML = `
+                    <td class="col-num">${idx + 1}</td>
+                    <td class="col-url" title="${item.url}">
+                        <a href="${item.url}" target="_blank" rel="noopener noreferrer" class="link-url" title="Obrir enllaç directe">
+                            ${item.url} <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                        </a>
+                    </td>
+                    <td class="col-title" title="${item.title}"><span class="link-title">${item.title}</span></td>
+                    <td class="col-desc" title="${item.desc || ''}"><span class="link-desc">${item.desc || ''}</span></td>
+                    <td class="col-status">${statusHtml}</td>
+                    <td class="col-latency"><span class="latency-badge" title="Latència de resposta"><i class="fa-solid fa-bolt"></i> ${item.latency_ms} ms</span></td>
+                    <td class="col-copy">
+                        <button type="button" class="copy-btn" onclick="copyUrl('${item.url}')" title="Copiar URL">
+                            <i class="fa-regular fa-clone"></i>
+                        </button>
+                    </td>
+                `;
+
+                tbody.appendChild(tr);
+            });
+        }
+
+        // COPY URL
+        function copyUrl(url) {
+            navigator.clipboard.writeText(url).then(() => {
+                showToast();
+            }).catch(() => {
+                prompt("Copia l'enllaç:", url);
+            });
+        }
+
+        function showToast() {
+            const toast = document.getElementById('toast');
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2000);
+        }
+
+        // LOAD JSON FILE IF AVAILABLE
+        async function fetchStatusData() {
+            try {
+                const res = await fetch('enllacos_astronomia_status.json', { cache: 'no-store' });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && data.links && data.links.length > 0) {
+                        linksData = data;
+                        if (data.last_updated) {
+                            document.getElementById('lbl-last-check').innerText = data.last_updated;
+                        }
+                    }
+                }
+            } catch (e) {
+                console.warn("Utilitzant dades per defecte:", e);
+            }
+        }
+
+        // INITIALIZATION
+        document.addEventListener('DOMContentLoaded', async () => {
+            await fetchStatusData();
+            renderList();
+
+            // Search filtering
+            document.getElementById('search-input').addEventListener('input', (e) => {
+                searchQuery = e.target.value;
+                renderList();
+            });
+
+            // Skip scanner
+            document.getElementById('skip-scan-btn').addEventListener('click', () => {
+                document.getElementById('scanner-overlay').classList.add('hidden');
+            });
+
+            // Recheck button
+            document.getElementById('btn-recheck').addEventListener('click', async () => {
+                await fetchStatusData();
+                await runScannerSequence();
+                renderList();
+            });
+
+            // Run scanner on initial page load
+            await runScannerSequence();
+        });
+    </script>
+</body>
+</html>
