@@ -95,7 +95,7 @@
             font-family: var(--font-heading);
             font-size: 1.15rem;
             font-weight: 700;
-            color: #f8fafc;
+            color: var(--text-main);
             line-height: 1.2;
             margin: 0;
         }
@@ -250,7 +250,7 @@
             font-family: var(--font-main);
             font-size: 0.95rem;
             font-weight: 600;
-            color: #fff;
+            color: var(--text-main);
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -340,7 +340,7 @@
             font-family: var(--font-main);
             font-size: 1.15rem;
             font-weight: 700;
-            color: #fff;
+            color: var(--text-main);
             min-width: 180px;
             text-align: center;
         }
@@ -433,17 +433,19 @@
         .calendar-grid {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
-            gap: 6px;
+            gap: 0;
+            padding: 0 1px 1px 0;
         }
 
         .calendar-day {
             background: #080d16;
             border: 1px solid var(--border-subtle);
             border-radius: var(--radius-sm);
+            margin: 0 -1px -1px 0;
             min-height: 118px;
             display: flex;
             flex-direction: column;
-            transition: all 0.2s ease;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
             position: relative;
             overflow: hidden;
             cursor: pointer;
@@ -461,16 +463,18 @@
         .calendar-day.today {
             border-color: var(--primary) !important;
             box-shadow: 0 0 12px rgba(56, 189, 248, 0.3) !important;
+            z-index: 2;
         }
 
         .calendar-day.selected {
             border-color: var(--primary) !important;
             box-shadow: inset 0 0 15px rgba(56, 189, 248, 0.25), 0 0 10px rgba(56, 189, 248, 0.25) !important;
+            z-index: 3;
         }
 
         .calendar-day:hover {
             border-color: rgba(255, 255, 255, 0.35);
-            transform: translateY(-1px);
+            z-index: 4;
         }
 
         .day-curve-canvas {
@@ -570,60 +574,66 @@
         .list-group {
             display: flex;
             flex-direction: column;
-            gap: 0.6rem;
+            gap: 0;
         }
 
         .list-month-header {
             font-family: var(--font-main);
-            font-size: 1.1rem;
+            font-size: 1.05rem;
             font-weight: 700;
             color: var(--primary);
-            padding-bottom: 0.4rem;
+            padding-bottom: 0.35rem;
             border-bottom: 1px solid var(--border-subtle);
-            margin-top: 0.5rem;
+            margin-top: 0.75rem;
         }
 
         .list-item {
-            background: var(--bg-card);
-            border: 1px solid var(--border-subtle);
-            border-radius: var(--radius-md);
-            padding: 0.85rem 1.1rem;
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid var(--border-subtle);
+            border-radius: 0;
+            padding: 0.48rem 0.65rem;
             display: flex;
             align-items: center;
             justify-content: space-between;
             gap: 1rem;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+        }
+
+        .list-item:last-child {
+            border-bottom: none;
         }
 
         .list-item:hover {
             background: var(--bg-card-hover);
-            border-color: var(--border-active);
+            border-bottom-color: var(--border-active);
             transform: translateX(3px);
         }
 
         .list-item-left {
             display: flex;
             align-items: center;
-            gap: 0.9rem;
+            gap: 0.65rem;
+            min-width: 0;
         }
 
         .list-item-icon {
-            font-size: 1.5rem;
-            width: 38px;
-            height: 38px;
+            font-size: 1.15rem;
+            width: 26px;
+            height: 26px;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: rgba(255, 255, 255, 0.04);
-            border-radius: 8px;
+            background: transparent;
+            flex-shrink: 0;
         }
 
         .list-item-title {
             font-family: var(--font-main);
             font-size: 0.95rem;
             font-weight: 600;
-            color: #fff;
+            color: var(--text-main);
         }
 
         .list-item-desc {
@@ -727,7 +737,7 @@
             font-family: var(--font-main);
             font-size: 1.25rem;
             font-weight: 700;
-            color: #fff;
+            color: var(--text-main);
         }
 
         .modal-title p {
@@ -771,7 +781,7 @@
         .meta-val {
             font-family: var(--font-mono);
             font-size: 0.85rem;
-            color: #fff;
+            color: var(--text-main);
             font-weight: 600;
         }
 
@@ -854,7 +864,7 @@
             font-family: var(--font-heading);
             font-size: 1.05rem;
             font-weight: 700;
-            color: #fff;
+            color: var(--text-main);
             display: flex;
             align-items: center;
             gap: 0.5rem;
@@ -1004,7 +1014,7 @@
 
         .ephem-val {
             font-family: var(--font-mono);
-            color: #fff;
+            color: var(--text-main);
             font-weight: 600;
         }
 
@@ -1082,6 +1092,292 @@
             font-weight: 700;
             box-shadow: none;
         }
+
+        /* Botón cambio tema Claro / Oscuro */
+        .theme-toggle-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.38rem;
+            padding: 0.32rem 0.65rem;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            color: var(--text-muted);
+            font-family: var(--font-heading);
+            font-size: 0.72rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            line-height: 1.25;
+        }
+
+        .theme-toggle-btn:hover {
+            color: var(--text-main);
+            border-color: var(--primary);
+            background: rgba(56, 189, 248, 0.12);
+        }
+
+        .theme-toggle-btn i {
+            color: var(--accent-gold);
+            font-size: 0.78rem;
+        }
+
+        /* =========================================================================
+           MODO CLARO: PALETA ALERTAS VERA RUBIN (#EFEDE4 / #FAF9F5 / #5b289c)
+           ========================================================================= */
+        html[data-theme="light"] {
+            color-scheme: light;
+            --bg-deep: #EFEDE4;
+            --bg-surface: #FAF9F5;
+            --bg-card: #ffffff;
+            --bg-card-hover: #f3f0e7;
+            --border-subtle: #cfcabc;
+            --border-active: rgba(91, 40, 156, 0.55);
+            --primary: #5b289c;
+            --primary-glow: rgba(91, 40, 156, 0.18);
+            --accent-gold: #b45309;
+            --accent-purple: #5b289c;
+            --accent-emerald: #15803d;
+            --accent-rose: #be123c;
+            --accent-orange: #c2410c;
+            --text-main: #151515;
+            --text-muted: #5e5b53;
+            --text-dim: #7a766d;
+            --cosmos-bg-space: #EFEDE4;
+            --cosmos-bg-panel: #FAF9F5;
+            --cosmos-bg-card: #ffffff;
+            --cosmos-border: #cfcabc;
+            --cosmos-text-primary: #151515;
+            --cosmos-text-secondary: #5e5b53;
+            --cosmos-text-dim: #7a766d;
+            --cosmos-accent-blue: #5b289c;
+        }
+
+        html[data-theme="light"] body {
+            background-color: #EFEDE4;
+            background-image: none;
+            color: #151515;
+        }
+
+        html[data-theme="light"] header.app-header {
+            background: #dfdbce;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+        }
+
+        html[data-theme="light"] .brand-title h1 {
+            color: #151515;
+        }
+
+        html[data-theme="light"] .location-badge {
+            background: rgba(91, 40, 156, 0.08);
+            border-color: rgba(91, 40, 156, 0.25);
+        }
+
+        html[data-theme="light"] .lang-btn-group,
+        html[data-theme="light"] .theme-toggle-btn {
+            background: #fcfbf9;
+            border-color: #bcb7aa;
+            color: #5e5b53;
+        }
+
+        html[data-theme="light"] .theme-toggle-btn:hover {
+            background: #ede9fe;
+            border-color: #5b289c;
+            color: #5b289c;
+        }
+
+        html[data-theme="light"] .theme-toggle-btn i {
+            color: #5b289c;
+        }
+
+        html[data-theme="light"] .lang-btn:hover:not(.active) {
+            background: #e5e1d5;
+            color: #151515;
+        }
+
+        html[data-theme="light"] .lang-btn.active {
+            color: #5b289c;
+            background: #ede9fe;
+            border-color: #c4b5fd;
+        }
+
+        html[data-theme="light"] .ticker-section,
+        html[data-theme="light"] .calendar-section,
+        html[data-theme="light"] .list-section,
+        html[data-theme="light"] .night-chart-section,
+        html[data-theme="light"] .controls-bar {
+            background: #FAF9F5;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        html[data-theme="light"] .ticker-card,
+        html[data-theme="light"] .ephem-card {
+            background: #ffffff;
+            border-color: #dedad0;
+        }
+
+        html[data-theme="light"] .ticker-card:hover {
+            background: #f5f3ec;
+            box-shadow: 0 4px 14px rgba(91, 40, 156, 0.1);
+        }
+
+        html[data-theme="light"] .list-item {
+            background: transparent;
+            border-bottom-color: #dedad0;
+        }
+
+        html[data-theme="light"] .list-item:hover {
+            background: #f3f0e7;
+            border-bottom-color: rgba(91, 40, 156, 0.45);
+        }
+
+        html[data-theme="light"] .ticker-icon,
+        html[data-theme="light"] .list-icon,
+        html[data-theme="light"] .view-switcher {
+            background: #efede4;
+            border-color: #cfcabc;
+        }
+
+        html[data-theme="light"] .ticker-name,
+        html[data-theme="light"] .list-name,
+        html[data-theme="light"] .current-month-display,
+        html[data-theme="light"] .ephem-val,
+        html[data-theme="light"] .modal-title,
+        html[data-theme="light"] .modal-detail-val {
+            color: #151515;
+        }
+
+        html[data-theme="light"] .nav-btn,
+        html[data-theme="light"] .month-nav-btn,
+        html[data-theme="light"] .chip-btn,
+        html[data-theme="light"] .chart-day-btn,
+        html[data-theme="light"] .view-btn {
+            background: #fcfbf9;
+            border-color: #bcb7aa;
+            color: #5e5b53;
+        }
+
+        html[data-theme="light"] .nav-btn:hover,
+        html[data-theme="light"] .month-nav-btn:hover,
+        html[data-theme="light"] .chip-btn:hover,
+        html[data-theme="light"] .chart-day-btn:hover,
+        html[data-theme="light"] .view-btn:hover {
+            background: #ede9fe;
+            border-color: #5b289c;
+            color: #5b289c;
+        }
+
+        html[data-theme="light"] .view-btn.active,
+        html[data-theme="light"] .chip-btn.active {
+            background: #5b289c;
+            border-color: #471e7d;
+            color: #ffffff;
+        }
+
+        html[data-theme="light"] .calendar-grid {
+            background: transparent;
+        }
+
+        html[data-theme="light"] .calendar-day {
+            background: #ffffff;
+            border-color: #cfcabc;
+        }
+
+        html[data-theme="light"] .calendar-day.padding-day {
+            background: #f2efe7;
+        }
+
+        html[data-theme="light"] .calendar-day:hover {
+            background: #faf7ff;
+            border-color: #5b289c;
+        }
+
+        html[data-theme="light"] .calendar-day.today {
+            background: #ede9fe;
+            border-color: #5b289c !important;
+            box-shadow: 0 0 10px rgba(91, 40, 156, 0.2) !important;
+        }
+
+        html[data-theme="light"] .calendar-day.selected {
+            background: #f5f3ff;
+            border-color: #5b289c !important;
+            box-shadow: inset 0 0 12px rgba(91, 40, 156, 0.16), 0 0 8px rgba(91, 40, 156, 0.2) !important;
+        }
+
+        html[data-theme="light"] .day-number {
+            color: #151515;
+            text-shadow: none;
+        }
+
+        html[data-theme="light"] .day-badge-moon {
+            color: #5e5b53;
+            text-shadow: none;
+        }
+
+        html[data-theme="light"] .event-pill {
+            background: rgba(255, 255, 255, 0.94);
+            color: #151515;
+            border-top-color: #cfcabc;
+            border-right-color: #cfcabc;
+            border-bottom-color: #cfcabc;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+        }
+
+        html[data-theme="light"] .chart-canvas-container {
+            background: #efede4;
+            border-color: #cfcabc;
+        }
+
+        html[data-theme="light"] .chart-hover-overlay {
+            background: rgba(250, 249, 245, 0.96);
+            border-color: #5b289c;
+            color: #151515;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+        }
+
+        html[data-theme="light"] .modal-card {
+            background: #FAF9F5;
+            border-color: #cfcabc;
+            color: #151515;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.22);
+        }
+
+        html[data-theme="light"] .modal-close-btn {
+            background: #efede4;
+            border-color: #cfcabc;
+            color: #5e5b53;
+        }
+
+        html[data-theme="light"] .modal-close-btn:hover {
+            background: #fee2e2;
+            border-color: #ef4444;
+            color: #991b1b;
+        }
+
+        html[data-theme="light"] .modal-meta-grid {
+            background: #ffffff;
+            border-color: #dedad0;
+        }
+
+        html[data-theme="light"] .btn-action.secondary {
+            background: #efede4;
+            border-color: #bcb7aa;
+            color: #151515;
+        }
+
+        html[data-theme="light"] .btn-action.secondary:hover {
+            background: #e5e1d5;
+            color: #151515;
+        }
+
+        html[data-theme="light"] .chart-legend-night-dot {
+            background: #e5e1d5 !important;
+            border-color: #7a766d !important;
+        }
+
+        html[data-theme="light"] .chart-legend-sun-dot {
+            color: #b45309 !important;
+        }
     </style>
 </head>
 <body>
@@ -1096,6 +1392,10 @@
                 </div>
             </div>
             <div class="header-nav-links">
+                <button type="button" class="theme-toggle-btn" id="btn-theme-toggle" onclick="toggleTheme()" title="Cambiar tema claro/oscuro" aria-label="Cambiar tema claro/oscuro">
+                    <i class="fa-solid fa-sun" id="theme-toggle-icon"></i>
+                    <span id="theme-toggle-label">Claro</span>
+                </button>
                 <div class="lang-btn-group" id="lang-selector" role="group" aria-label="Idioma">
                     <button type="button" class="lang-btn active" data-lang="es" onclick="setLanguage('es')" title="Español">ES</button>
                     <button type="button" class="lang-btn" data-lang="ca" onclick="setLanguage('ca')" title="Català">CA</button>
@@ -1169,7 +1469,7 @@
                 <div class="legend-item"><span class="legend-bar" style="background: #d97706;"></span> <span data-i18n="legendCivil">Crepúsculo Civil (0° a -6°)</span></div>
                 <div class="legend-item"><span class="legend-bar" style="background: #4338ca;"></span> <span data-i18n="legendNautical">Náutico (-6° a -12°)</span></div>
                 <div class="legend-item"><span class="legend-bar" style="background: #1e1b4b;"></span> <span data-i18n="legendAstro">Astronómico (-12° a -18°)</span></div>
-                <div class="legend-item"><span class="legend-bar" style="background: #050811; border: 1px solid rgba(255,255,255,0.2);"></span> <span data-i18n="legendDark">Noche Oscura (&lt;-18°)</span></div>
+                <div class="legend-item"><span class="legend-bar chart-legend-night-dot" style="background: #050811; border: 1px solid rgba(255,255,255,0.2);"></span> <span data-i18n="legendDark">Noche Oscura (&lt;-18°)</span></div>
             </div>
 
             <div class="chart-ephem-grid">
@@ -1204,7 +1504,7 @@
         <section class="calendar-section" id="calendar-view">
             <div class="calendar-legend-bar">
                 <div class="calendar-legend-items">
-                    <span style="display: flex; align-items: center; gap: 0.35rem; color: #fff; font-weight: 600;"><i class="fa-solid fa-water" style="color: var(--primary);"></i> <span data-i18n="calLegendWaves">Ondas Semanales (Mediodía a Mediodía):</span></span>
+                    <span style="display: flex; align-items: center; gap: 0.35rem; color: var(--text-main); font-weight: 600;"><i class="fa-solid fa-water" style="color: var(--primary);"></i> <span data-i18n="calLegendWaves">Ondas Semanales (Mediodía a Mediodía):</span></span>
                     <span style="display: flex; align-items: center; gap: 0.35rem;"><span style="display: inline-block; width: 14px; height: 3px; background: #facc15; border-radius: 2px;"></span> <span data-i18n="legendSun">Sol</span></span>
                     <span style="display: flex; align-items: center; gap: 0.35rem;"><span style="display: inline-block; width: 14px; height: 3px; background: #f43f5e; border-radius: 2px;"></span> <span data-i18n="calLegendMoon">Luna (brillo según fase)</span></span>
                     <span style="display: flex; align-items: center; gap: 0.35rem;"><span style="display: inline-block; width: 14px; height: 2px; border-top: 2px dashed #22c55e;"></span> <span data-i18n="calLegendHorizon">Horizonte (0°)</span></span>
@@ -1996,6 +2296,9 @@ const RAW_SKYCAL_EVENTS = [[2459215.7951,67,-25],[2459216,136,-202],[2459216.874
             if (activeSelectedEvent) {
                 openEventModal(activeSelectedEvent.jd, activeSelectedEvent.typeCode);
             }
+            if (typeof updateThemeToggleUI === 'function') {
+                updateThemeToggleUI();
+            }
 
             try {
                 localStorage.setItem('cosmos_lang', lang);
@@ -2168,10 +2471,10 @@ const RAW_SKYCAL_EVENTS = [[2459215.7951,67,-25],[2459216,136,-202],[2459216.874
             const eps = (23.439291 - 0.0130042 * T) * RAD;
             const ra = Math.atan2(Math.cos(eps) * Math.sin(sunLon), Math.cos(sunLon));
             const dec = Math.asin(Math.sin(eps) * Math.sin(sunLon));
-            return { ra: normalizeDeg(ra * DEG), dec: dec * DEG };
+            return { ra: normalizeDeg(ra * DEG), dec: dec * DEG, lon: sunLon };
         }
 
-        function getMoonPos(jd) {
+        function getMoonPos(jd, sunLonRad = null) {
             const T = (jd - 2451545.0) / 36525;
             const Lprime = normalizeDeg(218.3164477 + 481267.88123421 * T);
             const D = normalizeDeg(297.8501921 + 445267.1114034 * T) * RAD;
@@ -2188,9 +2491,11 @@ const RAW_SKYCAL_EVENTS = [[2459215.7951,67,-25],[2459216,136,-202],[2459216.874
             const y = Math.cos(moonLat) * Math.cos(eps) * Math.sin(moonLon) - Math.sin(moonLat) * Math.sin(eps);
             const x = Math.cos(moonLat) * Math.cos(moonLon);
             const ra = Math.atan2(y, x);
-            const phaseAngle = Math.acos(-Math.cos(D));
-            const illum = (1 + Math.cos(phaseAngle)) / 2;
-            return { ra: normalizeDeg(ra * DEG), dec: dec * DEG, illum: illum * 100 };
+            const parallax = 0.950724 + 0.051818 * Math.cos(Mprime) + 0.009531 * Math.cos(2 * D - Mprime) + 0.007843 * Math.cos(2 * D) + 0.002824 * Math.cos(2 * Mprime);
+            const illum = sunLonRad !== null
+                ? (1 - Math.cos(moonLon - sunLonRad) * Math.cos(moonLat)) / 2
+                : (1 - Math.cos(D)) / 2;
+            return { ra: normalizeDeg(ra * DEG), dec: dec * DEG, illum: illum * 100, parallax };
         }
 
         function getAltAz(ra, dec, jd, lat, lon) {
@@ -2201,39 +2506,63 @@ const RAW_SKYCAL_EVENTS = [[2459215.7951,67,-25],[2459216,136,-202],[2459216.874
             const delta = dec * RAD;
             const sinAlt = Math.sin(phi) * Math.sin(delta) + Math.cos(phi) * Math.cos(delta) * Math.cos(H);
             const alt = Math.asin(Math.max(-1, Math.min(1, sinAlt))) * DEG;
-            const cosAz = (Math.sin(delta) - Math.sin(phi) * Math.sin(alt * RAD)) / (Math.cos(phi) * Math.cos(alt * RAD) || 1e-6);
-            let az = Math.acos(Math.max(-1, Math.min(1, cosAz))) * DEG;
-            if (Math.sin(H) > 0) az = 360 - az;
-            return { alt, az };
+            const azRad = Math.atan2(-Math.sin(H), Math.tan(delta) * Math.cos(phi) - Math.sin(phi) * Math.cos(H));
+            return { alt, az: normalizeDeg(azRad * DEG) };
+        }
+
+        function getMadridOffsetMs(utcMs) {
+            const parts = DTF_LOCAL_PARTS.formatToParts(new Date(utcMs));
+            const map = {};
+            for (let i = 0; i < parts.length; i++) map[parts[i].type] = parseInt(parts[i].value, 10);
+            return Date.UTC(map.year, map.month - 1, map.day, map.hour, map.minute, 0) - utcMs;
+        }
+
+        function getMadridNoonUtcMs(year, month, day) {
+            const guess = Date.UTC(year, month, day, 12, 0, 0);
+            const off1 = getMadridOffsetMs(guess);
+            const off2 = getMadridOffsetMs(guess - off1);
+            return guess - off2;
+        }
+
+        function interpolateCrossing(tPrev, vPrev, tCurr, vCurr, threshold) {
+            const dv = vCurr - vPrev;
+            if (Math.abs(dv) < 1e-9) return tCurr;
+            const frac = Math.max(0, Math.min(1, (threshold - vPrev) / dv));
+            return new Date(tPrev.getTime() + frac * (tCurr.getTime() - tPrev.getTime()));
         }
 
         function computeDayEphemeris(targetDate, lat = MATARO_LAT, lon = MATARO_LON) {
-            const y = targetDate.getFullYear(), m = targetDate.getMonth(), d = targetDate.getDate();
-            const noonLocal = new Date(y, m, d, 12, 0, 0);
-            const startMs = noonLocal.getTime();
+            const { yearLocal: y, monthLocal: m, dayLocal: d } = formatMataroDateTime(targetDate);
+            const startMs = getMadridNoonUtcMs(y, m, d);
+            const endMs = getMadridNoonUtcMs(y, m, d + 1);
+            const spanMs = endMs - startMs;
             const samples = [], numSteps = 288;
             let sunSet = null, astroDusk = null, astroDawn = null, sunRise = null, moonRise = null, moonSet = null;
-            let moonCulm = { alt: -999, time: null, az: 0, illum: 0 }, sunMax = { alt: -999, time: null }, prevSunAlt = null, prevMoonAlt = null;
+            let moonCulm = { alt: -999, time: null, az: 0, illum: 0 }, sunMax = { alt: -999, time: null };
+            let prevSunAlt = null, prevMoonAlt = null, prevDate = null;
             for (let i = 0; i <= numSteps; i++) {
-                const tDate = new Date(startMs + i * 5 * 60000);
+                const frac = i / numSteps;
+                const tDate = new Date(startMs + frac * spanMs);
                 const jd = (tDate.getTime() / 86400000) + 2440587.5;
-                const sPos = getSunPos(jd), mPos = getMoonPos(jd);
+                const sPos = getSunPos(jd), mPos = getMoonPos(jd, sPos.lon);
                 const sAltAz = getAltAz(sPos.ra, sPos.dec, jd, lat, lon), mAltAz = getAltAz(mPos.ra, mPos.dec, jd, lat, lon);
-                const sAlt = sAltAz.alt, mAlt = mAltAz.alt;
+                const sAlt = sAltAz.alt;
+                const mAlt = mAltAz.alt - mPos.parallax * Math.cos(mAltAz.alt * RAD);
+                const mHorizonAlt = -(0.567 + 0.2725 * mPos.parallax);
                 if (mAlt > moonCulm.alt) moonCulm = { alt: mAlt, time: tDate, az: mAltAz.az, illum: mPos.illum };
                 if (sAlt > sunMax.alt) sunMax = { alt: sAlt, time: tDate };
                 if (prevSunAlt !== null) {
-                    if (prevSunAlt >= -0.833 && sAlt < -0.833 && !sunSet) sunSet = tDate;
-                    if (prevSunAlt >= -18.0 && sAlt < -18.0 && !astroDusk) astroDusk = tDate;
-                    if (prevSunAlt < -18.0 && sAlt >= -18.0 && !astroDawn) astroDawn = tDate;
-                    if (prevSunAlt < -0.833 && sAlt >= -0.833 && !sunRise) sunRise = tDate;
+                    if (prevSunAlt >= -0.833 && sAlt < -0.833 && !sunSet) sunSet = interpolateCrossing(prevDate, prevSunAlt, tDate, sAlt, -0.833);
+                    if (prevSunAlt >= -18.0 && sAlt < -18.0 && !astroDusk) astroDusk = interpolateCrossing(prevDate, prevSunAlt, tDate, sAlt, -18.0);
+                    if (prevSunAlt < -18.0 && sAlt >= -18.0 && !astroDawn) astroDawn = interpolateCrossing(prevDate, prevSunAlt, tDate, sAlt, -18.0);
+                    if (prevSunAlt < -0.833 && sAlt >= -0.833 && !sunRise) sunRise = interpolateCrossing(prevDate, prevSunAlt, tDate, sAlt, -0.833);
                 }
                 if (prevMoonAlt !== null) {
-                    if (prevMoonAlt < 0 && mAlt >= 0 && !moonRise) moonRise = tDate;
-                    if (prevMoonAlt >= 0 && mAlt < 0 && !moonSet) moonSet = tDate;
+                    if (prevMoonAlt < mHorizonAlt && mAlt >= mHorizonAlt && !moonRise) moonRise = interpolateCrossing(prevDate, prevMoonAlt, tDate, mAlt, mHorizonAlt);
+                    if (prevMoonAlt >= mHorizonAlt && mAlt < mHorizonAlt && !moonSet) moonSet = interpolateCrossing(prevDate, prevMoonAlt, tDate, mAlt, mHorizonAlt);
                 }
-                prevSunAlt = sAlt; prevMoonAlt = mAlt;
-                samples.push({ tDate, fraction: i / numSteps, sAlt, mAlt, sAz: sAltAz.az, mAz: mAltAz.az, mIllum: mPos.illum });
+                prevSunAlt = sAlt; prevMoonAlt = mAlt; prevDate = tDate;
+                samples.push({ tDate, fraction: frac, sAlt, mAlt, sAz: sAltAz.az, mAz: mAltAz.az, mIllum: mPos.illum });
             }
             return { targetDate, samples, sunSet, astroDusk, astroDawn, sunRise, moonRise, moonSet, moonCulm, sunMax };
         }
@@ -2263,47 +2592,59 @@ const RAW_SKYCAL_EVENTS = [[2459215.7951,67,-25],[2459216,136,-202],[2459216.874
                 const durMs = eph.astroDawn.getTime() - eph.astroDusk.getTime(), durHrs = Math.floor(durMs / 3600000), durMin = Math.round((durMs % 3600000) / 60000);
                 document.getElementById('ephem-dark-dur').textContent = `${durHrs} h ${durMin} min`;
             } else { document.getElementById('ephem-dark-start').textContent = t('noFullNight'); document.getElementById('ephem-dark-end').textContent = "--"; document.getElementById('ephem-dark-dur').textContent = t('continuousTwilight'); }
+            const isLight = document.documentElement.getAttribute('data-theme') === 'light';
             const padL = 36, padR = 20, padT = 18, padB = 24, plotW = w - padL - padR, plotH = h - padT - padB;
             const altToY = (alt) => padT + (90 - alt) / 180 * plotH, fractionToX = (frac) => padL + frac * plotW;
             const samples = eph.samples, stepW = plotW / (samples.length - 1);
             for (let i = 0; i < samples.length - 1; i++) {
                 const s = samples[i], x1 = padL + i * stepW, x2 = padL + (i + 1) * stepW, sAlt = s.sAlt;
-                ctx.fillStyle = sAlt <= -18 ? "#050811" : (sAlt <= -12 ? "#1e1b4b" : (sAlt <= -6 ? "#4338ca" : (sAlt <= 0 ? "#d97706" : "#1e3a5f")));
+                if (isLight) {
+                    ctx.fillStyle = sAlt <= -18 ? "#e5e1d5" : (sAlt <= -12 ? "#dcd6e8" : (sAlt <= -6 ? "#d0c8e8" : (sAlt <= 0 ? "#fde68a" : "#dbeafe")));
+                } else {
+                    ctx.fillStyle = sAlt <= -18 ? "#050811" : (sAlt <= -12 ? "#1e1b4b" : (sAlt <= -6 ? "#4338ca" : (sAlt <= 0 ? "#d97706" : "#1e3a5f")));
+                }
                 ctx.fillRect(x1, padT, (x2 - x1) + 0.5, plotH);
             }
             [-60, -30, 0, 30, 60].forEach(alt => {
                 const y = altToY(alt);
-                ctx.beginPath(); ctx.strokeStyle = alt === 0 ? "rgba(34, 197, 94, 0.85)" : "rgba(255, 255, 255, 0.08)"; ctx.lineWidth = alt === 0 ? 1.5 : 1;
+                ctx.beginPath();
+                ctx.strokeStyle = alt === 0 ? (isLight ? "rgba(21, 128, 61, 0.85)" : "rgba(34, 197, 94, 0.85)") : (isLight ? "rgba(21, 21, 21, 0.12)" : "rgba(255, 255, 255, 0.08)");
+                ctx.lineWidth = alt === 0 ? 1.5 : 1;
                 if (alt === 0) ctx.setLineDash([4, 4]); else ctx.setLineDash([2, 4]);
                 ctx.moveTo(padL, y); ctx.lineTo(w - padR, y); ctx.stroke(); ctx.setLineDash([]);
-                ctx.fillStyle = alt === 0 ? "rgba(34, 197, 94, 0.95)" : "rgba(255, 255, 255, 0.4)"; ctx.textAlign = "right"; ctx.fillText(`${alt > 0 ? '+' : ''}${alt}°`, padL - 6, y);
+                ctx.fillStyle = alt === 0 ? (isLight ? "rgba(21, 128, 61, 0.95)" : "rgba(34, 197, 94, 0.95)") : (isLight ? "rgba(21, 21, 21, 0.6)" : "rgba(255, 255, 255, 0.4)");
+                ctx.textAlign = "right"; ctx.fillText(`${alt > 0 ? '+' : ''}${alt}°`, padL - 6, y);
             });
             [{ frac: 0/8, label: "12:00" }, { frac: 1/8, label: "15:00" }, { frac: 2/8, label: "18:00" }, { frac: 3/8, label: "21:00" }, { frac: 4/8, label: "00:00" }, { frac: 5/8, label: "03:00" }, { frac: 6/8, label: "06:00" }, { frac: 7/8, label: "09:00" }, { frac: 8/8, label: "12:00" }].forEach(hl => {
                 const x = fractionToX(hl.frac);
-                ctx.beginPath(); ctx.strokeStyle = hl.label === "00:00" ? "rgba(255, 255, 255, 0.4)" : "rgba(255, 255, 255, 0.06)";
+                ctx.beginPath();
+                ctx.strokeStyle = hl.label === "00:00" ? (isLight ? "rgba(91, 40, 156, 0.4)" : "rgba(255, 255, 255, 0.4)") : (isLight ? "rgba(21, 21, 21, 0.08)" : "rgba(255, 255, 255, 0.06)");
                 if (hl.label === "00:00") ctx.setLineDash([3, 3]);
                 ctx.moveTo(x, padT); ctx.lineTo(x, padT + plotH); ctx.stroke(); ctx.setLineDash([]);
+                ctx.fillStyle = isLight ? "rgba(21, 21, 21, 0.65)" : "rgba(255, 255, 255, 0.45)";
                 ctx.textAlign = "center"; ctx.fillText(hl.label, x, padT + plotH + 6);
             });
-            ctx.beginPath(); ctx.strokeStyle = "#facc15"; ctx.lineWidth = 2.2; samples.forEach((s, idx) => idx === 0 ? ctx.moveTo(fractionToX(s.fraction), altToY(s.sAlt)) : ctx.lineTo(fractionToX(s.fraction), altToY(s.sAlt))); ctx.stroke();
+            const sunStroke = isLight ? "#d97706" : "#facc15";
+            const moonRgb = isLight ? "190, 18, 60" : "244, 63, 94";
+            ctx.beginPath(); ctx.strokeStyle = sunStroke; ctx.lineWidth = 2.2; samples.forEach((s, idx) => idx === 0 ? ctx.moveTo(fractionToX(s.fraction), altToY(s.sAlt)) : ctx.lineTo(fractionToX(s.fraction), altToY(s.sAlt))); ctx.stroke();
             const moonIllum = eph.moonCulm.illum;
-            const moonOpacity = 0.10 + 0.90 * (moonIllum / 100);
-            ctx.beginPath(); ctx.strokeStyle = `rgba(244, 63, 94, ${moonOpacity.toFixed(3)})`; ctx.lineWidth = 1.3 + 0.9 * (moonIllum / 100);
-            ctx.shadowColor = `rgba(244, 63, 94, ${(moonOpacity * 0.7).toFixed(3)})`; ctx.shadowBlur = Math.round(5 * (moonIllum / 100));
+            const moonOpacity = 0.12 + 0.88 * (moonIllum / 100);
+            ctx.beginPath(); ctx.strokeStyle = `rgba(${moonRgb}, ${moonOpacity.toFixed(3)})`; ctx.lineWidth = 1.3 + 0.9 * (moonIllum / 100);
+            ctx.shadowColor = `rgba(${moonRgb}, ${(moonOpacity * 0.6).toFixed(3)})`; ctx.shadowBlur = isLight ? 0 : Math.round(5 * (moonIllum / 100));
             samples.forEach((s, idx) => idx === 0 ? ctx.moveTo(fractionToX(s.fraction), altToY(s.mAlt)) : ctx.lineTo(fractionToX(s.fraction), altToY(s.mAlt))); ctx.stroke(); ctx.shadowBlur = 0;
             if (eph.moonCulm.alt > -90) {
                 const culmIdx = samples.findIndex(s => Math.abs(s.tDate.getTime() - eph.moonCulm.time.getTime()) < 180000);
                 if (culmIdx !== -1) {
                     const cx = fractionToX(samples[culmIdx].fraction), cy = altToY(eph.moonCulm.alt);
-                    ctx.beginPath(); ctx.fillStyle = `rgba(244, 63, 94, ${(moonOpacity * 0.4).toFixed(3)})`; ctx.arc(cx, cy, 8, 0, Math.PI * 2); ctx.fill();
-                    ctx.beginPath(); ctx.fillStyle = `rgba(255, 255, 255, ${moonOpacity.toFixed(3)})`; ctx.strokeStyle = `rgba(244, 63, 94, ${moonOpacity.toFixed(3)})`; ctx.lineWidth = 2.5; ctx.arc(cx, cy, 4.5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+                    ctx.beginPath(); ctx.fillStyle = `rgba(${moonRgb}, ${(moonOpacity * 0.35).toFixed(3)})`; ctx.arc(cx, cy, 8, 0, Math.PI * 2); ctx.fill();
+                    ctx.beginPath(); ctx.fillStyle = `rgba(255, 255, 255, ${moonOpacity.toFixed(3)})`; ctx.strokeStyle = `rgba(${moonRgb}, ${moonOpacity.toFixed(3)})`; ctx.lineWidth = 2.5; ctx.arc(cx, cy, 4.5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
                 }
             }
             if (hoveredSampleIndex >= 0 && hoveredSampleIndex < samples.length) {
                 const hs = samples[hoveredSampleIndex], hx = fractionToX(hs.fraction), sunY = altToY(hs.sAlt), moonY = altToY(hs.mAlt);
-                ctx.beginPath(); ctx.strokeStyle = "rgba(56, 189, 248, 0.75)"; ctx.lineWidth = 1.2; ctx.setLineDash([2, 2]); ctx.moveTo(hx, padT); ctx.lineTo(hx, padT + plotH); ctx.stroke(); ctx.setLineDash([]);
-                ctx.beginPath(); ctx.fillStyle = "#facc15"; ctx.arc(hx, sunY, 4, 0, Math.PI * 2); ctx.fill();
-                ctx.beginPath(); ctx.fillStyle = "#f43f5e"; ctx.arc(hx, moonY, 4, 0, Math.PI * 2); ctx.fill();
+                ctx.beginPath(); ctx.strokeStyle = isLight ? "rgba(91, 40, 156, 0.75)" : "rgba(56, 189, 248, 0.75)"; ctx.lineWidth = 1.2; ctx.setLineDash([2, 2]); ctx.moveTo(hx, padT); ctx.lineTo(hx, padT + plotH); ctx.stroke(); ctx.setLineDash([]);
+                ctx.beginPath(); ctx.fillStyle = sunStroke; ctx.arc(hx, sunY, 4, 0, Math.PI * 2); ctx.fill();
+                ctx.beginPath(); ctx.fillStyle = `rgb(${moonRgb})`; ctx.arc(hx, moonY, 4, 0, Math.PI * 2); ctx.fill();
                 const stateStr = hs.sAlt <= -18 ? t('stateDarkNight') : (hs.sAlt <= -12 ? t('stateAstroTwilight') : (hs.sAlt <= -6 ? t('stateNauticalTwilight') : (hs.sAlt <= 0 ? t('stateCivilTwilight') : t('stateDay'))));
                 const overlay = document.getElementById('chart-hover-overlay'); overlay.style.display = "block"; overlay.innerHTML = `<strong>${formatTimeHM(hs.tDate)} h</strong> &nbsp;•&nbsp; ☀️ ${t('legendSun')}: <strong>${hs.sAlt.toFixed(1)}°</strong> &nbsp;•&nbsp; 🌙 ${t('legendMoon')}: <strong>${hs.mAlt.toFixed(1)}°</strong> (${hs.mIllum.toFixed(0)}%) &nbsp;•&nbsp; <span style="color: var(--primary);">${stateStr}</span>`;
             } else document.getElementById('chart-hover-overlay').style.display = "none";
@@ -2311,7 +2652,7 @@ const RAW_SKYCAL_EVENTS = [[2459215.7951,67,-25],[2459216,136,-202],[2459216.874
 
         function navigateChartDay(delta) { selectedChartDate = new Date(selectedChartDate.getTime() + delta * 86400000); currentYear = selectedChartDate.getFullYear(); currentMonth = selectedChartDate.getMonth(); renderAltitudeChart(); renderCalendar(); }
         function navigateChartToday() { selectedChartDate = new Date(); currentYear = selectedChartDate.getFullYear(); currentMonth = selectedChartDate.getMonth(); renderAltitudeChart(); renderCalendar(); }
-        function selectCalendarDay(year, month, day) { selectedChartDate = new Date(year, month, day, 12, 0, 0); renderAltitudeChart(); renderCalendar(); if (window.innerWidth < 768) document.getElementById('night-chart-section').scrollIntoView({ behavior: 'smooth' }); }
+        function selectCalendarDay(year, month, day) { selectedChartDate = new Date(getMadridNoonUtcMs(year, month, day)); renderAltitudeChart(); renderCalendar(); if (window.innerWidth < 768) document.getElementById('night-chart-section').scrollIntoView({ behavior: 'smooth' }); }
 
         function setupCanvasHover() {
             const canvas = document.getElementById('sky-altitude-canvas'); if (!canvas) return;
@@ -2345,18 +2686,20 @@ const RAW_SKYCAL_EVENTS = [[2459215.7951,67,-25],[2459216,136,-202],[2459216.874
             }).join('');
         }
 
-        // Cálculo de muestras cada hora (Mediodía 12:00 a Mediodía 12:00 del día siguiente) centrando la noche de observación
+        // Cálculo de muestras cada hora (Mediodía 12:00 a Mediodía 12:00 del día siguiente en Europe/Madrid) centrando la noche de observación
         function computeDay24hSamples(year, month, day, lat = MATARO_LAT, lon = MATARO_LON, steps = 24) {
-            const startMs = new Date(year, month, day, 12, 0, 0).getTime();
+            const startMs = getMadridNoonUtcMs(year, month, day);
+            const spanMs = getMadridNoonUtcMs(year, month, day + 1) - startMs;
             const res = [];
             let maxMoonAlt = -999, maxMoonIdx = 0;
             for (let i = 0; i <= steps; i++) {
-                const t = new Date(startMs + (i / steps) * 86400000);
+                const t = new Date(startMs + (i / steps) * spanMs);
                 const jd = (t.getTime() / 86400000) + 2440587.5;
                 const sPos = getSunPos(jd);
-                const mPos = getMoonPos(jd);
+                const mPos = getMoonPos(jd, sPos.lon);
                 const sAlt = getAltAz(sPos.ra, sPos.dec, jd, lat, lon).alt;
-                const mAlt = getAltAz(mPos.ra, mPos.dec, jd, lat, lon).alt;
+                const mAltGeo = getAltAz(mPos.ra, mPos.dec, jd, lat, lon).alt;
+                const mAlt = mAltGeo - mPos.parallax * Math.cos(mAltGeo * RAD);
                 if (mAlt > maxMoonAlt) {
                     maxMoonAlt = mAlt;
                     maxMoonIdx = i;
@@ -2489,21 +2832,22 @@ const RAW_SKYCAL_EVENTS = [[2459215.7951,67,-25],[2459216,136,-202],[2459216.874
                 const fracToX = (frac) => frac * w;
 
                 // 1. Franjas crepusculares suaves de fondo
+                const isLight = document.documentElement.getAttribute('data-theme') === 'light';
                 const stepW = w / steps;
                 for (let i = 0; i < steps; i++) {
                     const sAlt = samples[i].sAlt;
                     const x1 = i * stepW;
                     const x2 = (i + 1) * stepW;
 
-                    let bgCol = "rgba(4, 7, 14, 0.95)";
+                    let bgCol = isLight ? "rgba(229, 225, 213, 0.55)" : "rgba(4, 7, 14, 0.95)";
                     if (sAlt > 0) {
-                        bgCol = "rgba(22, 44, 74, 0.38)";
+                        bgCol = isLight ? "rgba(219, 234, 254, 0.65)" : "rgba(22, 44, 74, 0.38)";
                     } else if (sAlt > -6) {
-                        bgCol = "rgba(180, 83, 9, 0.22)";
+                        bgCol = isLight ? "rgba(253, 230, 138, 0.45)" : "rgba(180, 83, 9, 0.22)";
                     } else if (sAlt > -12) {
-                        bgCol = "rgba(67, 56, 202, 0.22)";
+                        bgCol = isLight ? "rgba(208, 200, 232, 0.45)" : "rgba(67, 56, 202, 0.22)";
                     } else if (sAlt > -18) {
-                        bgCol = "rgba(30, 27, 75, 0.32)";
+                        bgCol = isLight ? "rgba(220, 214, 232, 0.5)" : "rgba(30, 27, 75, 0.32)";
                     }
 
                     ctx.fillStyle = bgCol;
@@ -2513,7 +2857,7 @@ const RAW_SKYCAL_EVENTS = [[2459215.7951,67,-25],[2459216,136,-202],[2459216.874
                 // 2. Línea del Horizonte (0°)
                 const horizY = altToY(0);
                 ctx.beginPath();
-                ctx.strokeStyle = "rgba(34, 197, 94, 0.40)";
+                ctx.strokeStyle = isLight ? "rgba(21, 128, 61, 0.45)" : "rgba(34, 197, 94, 0.40)";
                 ctx.lineWidth = 1;
                 ctx.setLineDash([3, 3]);
                 ctx.moveTo(0, horizY);
@@ -2523,7 +2867,7 @@ const RAW_SKYCAL_EVENTS = [[2459215.7951,67,-25],[2459216,136,-202],[2459216.874
 
                 // 2b. Línea vertical de medianoche (00:00 h) en el centro de la casilla
                 ctx.beginPath();
-                ctx.strokeStyle = "rgba(255, 255, 255, 0.08)";
+                ctx.strokeStyle = isLight ? "rgba(21, 21, 21, 0.12)" : "rgba(255, 255, 255, 0.08)";
                 ctx.lineWidth = 1;
                 ctx.setLineDash([2, 3]);
                 ctx.moveTo(w / 2, 0);
@@ -2531,12 +2875,12 @@ const RAW_SKYCAL_EVENTS = [[2459215.7951,67,-25],[2459216,136,-202],[2459216.874
                 ctx.stroke();
                 ctx.setLineDash([]);
 
-                // 3. Onda Amarilla del Sol (Mediodía a Mediodía siguiente)
+                // 3. Onda Amarilla/Ámbar del Sol (Mediodía a Mediodía siguiente)
                 ctx.beginPath();
-                ctx.strokeStyle = "#facc15";
+                ctx.strokeStyle = isLight ? "#d97706" : "#facc15";
                 ctx.lineWidth = 2.0;
-                ctx.shadowColor = "rgba(250, 204, 21, 0.5)";
-                ctx.shadowBlur = 3;
+                ctx.shadowColor = isLight ? "transparent" : "rgba(250, 204, 21, 0.5)";
+                ctx.shadowBlur = isLight ? 0 : 3;
                 samples.forEach((s, idx) => {
                     const x = fracToX(s.frac);
                     const y = altToY(s.sAlt);
@@ -2548,12 +2892,13 @@ const RAW_SKYCAL_EVENTS = [[2459215.7951,67,-25],[2459216,136,-202],[2459216.874
 
                 // 4. Onda Coral de la Luna (Mediodía a Mediodía siguiente, brillo según fase)
                 const moonIllum = dayData.moonIllum;
-                const moonOpacity = 0.10 + 0.90 * (moonIllum / 100);
+                const moonOpacity = 0.12 + 0.88 * (moonIllum / 100);
+                const moonRgb = isLight ? "190, 18, 60" : "244, 63, 94";
                 ctx.beginPath();
-                ctx.strokeStyle = `rgba(244, 63, 94, ${moonOpacity.toFixed(3)})`;
+                ctx.strokeStyle = `rgba(${moonRgb}, ${moonOpacity.toFixed(3)})`;
                 ctx.lineWidth = 1.1 + 0.9 * (moonIllum / 100);
-                ctx.shadowColor = `rgba(244, 63, 94, ${(moonOpacity * 0.6).toFixed(3)})`;
-                ctx.shadowBlur = Math.round(4 * (moonIllum / 100));
+                ctx.shadowColor = isLight ? "transparent" : `rgba(${moonRgb}, ${(moonOpacity * 0.6).toFixed(3)})`;
+                ctx.shadowBlur = isLight ? 0 : Math.round(4 * (moonIllum / 100));
                 samples.forEach((s, idx) => {
                     const x = fracToX(s.frac);
                     const y = altToY(s.mAlt);
@@ -2631,13 +2976,51 @@ const RAW_SKYCAL_EVENTS = [[2459215.7951,67,-25],[2459216,136,-202],[2459216.874
             const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = `${ev.name.replace(/[^a-z0-9]/g, '_')}.ics`; document.body.appendChild(link); link.click(); document.body.removeChild(link);
         }
 
+        function updateThemeToggleUI() {
+            const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+            const icon = document.getElementById('theme-toggle-icon');
+            const label = document.getElementById('theme-toggle-label');
+            const labels = {
+                es: isLight ? 'Oscuro' : 'Claro',
+                ca: isLight ? 'Fosc' : 'Clar',
+                en: isLight ? 'Dark' : 'Light'
+            };
+            if (icon) icon.className = isLight ? 'fa-solid fa-moon' : 'fa-solid fa-sun';
+            if (label) label.textContent = labels[currentLang] || labels.es;
+        }
+
+        function applyTheme(theme) {
+            if (theme === 'light') {
+                document.documentElement.setAttribute('data-theme', 'light');
+            } else {
+                document.documentElement.removeAttribute('data-theme');
+            }
+            try { localStorage.setItem('skycal_theme', theme); } catch (e) {}
+            updateThemeToggleUI();
+        }
+
+        function toggleTheme() {
+            const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+            applyTheme(isLight ? 'dark' : 'light');
+            renderAltitudeChart();
+            renderCalendar();
+        }
+
+        function initTheme() {
+            let saved = 'dark';
+            try { saved = localStorage.getItem('skycal_theme') || 'dark'; } catch (e) {}
+            applyTheme(saved);
+        }
+
         window.addEventListener('DOMContentLoaded', () => {
             if (new URLSearchParams(window.location.search).get('view') === 'banner') {
                 ['.app-header', '.controls-bar', '#night-chart-section', '#calendar-view', '#list-view', '.app-footer'].forEach(sel => document.querySelector(sel).style.display = 'none');
                 document.body.style.background = 'transparent'; document.querySelector('.app-container').style.padding = '0.5rem';
             }
+            initTheme();
             setupCanvasHover();
             initLanguage();
+            updateThemeToggleUI();
         });
 
         window.addEventListener('resize', () => {
