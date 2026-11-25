@@ -1848,6 +1848,7 @@ const RAW_SKYCAL_EVENTS = [[2459215.7951,67,-25],[2459216,136,-202],[2459216.874
                 navLunar: "Eclipses Lunares",
                 navLunarTitle: "Explorador 3D de Eclipses Lunares",
                 tickerTitle: "Próximos eventos celestes en Mataró",
+                tickerTitleTpl: "Próximos eventos celestes en {city}",
                 tickerRange: "Próximos 15 días",
                 tickerEmpty: "No hay eventos destacados en los próximos 15 días.",
                 badgeToday: "¡HOY!",
@@ -1912,6 +1913,22 @@ const RAW_SKYCAL_EVENTS = [[2459215.7951,67,-25],[2459216,136,-202],[2459216.874
                 modalClose: "Cerrar",
                 footerLine1: "Cosmos Mataró — Efemérides Astronómicas basadas en el algoritmo <strong>SKYCAL</strong> (NASA Goddard Space Flight Center / Fred Espenak &amp; Sumit Dutta).",
                 footerLine2: "Huso horario automático: <strong>Europe/Madrid (CET UTC+1 / CEST UTC+2)</strong>.",
+                cardSunTitleTpl: "Sol en {city}",
+                cardMoonTitleTpl: "Luna en {city}",
+                footerTzPrefix: "Huso horario automático:",
+                locPillTitle: "Cambiar ubicación o buscar municipio / coordenadas",
+                locSearchPlaceholder: "Municipio o lat, lon...",
+                locGpsTitle: "Detectar mi ubicación actual (GPS)",
+                locDefaultTitle: "Restablecer ubicación por defecto: Cosmos Mataró",
+                locCloseTitle: "Cerrar buscador",
+                locSearchOnline: "Buscar «{q}» online",
+                locTypeHint: "Escribe una ciudad o <code>lat, lon</code>.",
+                locSearching: "Buscando ubicación...",
+                locNoOnlineResults: "Sin resultados online. Prueba con coordenadas <code>lat, lon</code>.",
+                locOfflineError: "No se pudo buscar online (sin conexión). Introduce <code>lat, lon</code>.",
+                locGpsUnsupported: "Tu navegador no soporta geolocalización.",
+                locGpsError: "No se pudo obtener la ubicación GPS.",
+                locCoordsLabel: "Coordenadas",
                 unknownEventName: "Fenómeno Celeste ({code})",
                 unknownEventDesc: "Evento astronómico registrado en las efemérides de la NASA."
             },
@@ -1925,6 +1942,7 @@ const RAW_SKYCAL_EVENTS = [[2459215.7951,67,-25],[2459216,136,-202],[2459216.874
                 navLunar: "Eclipsis Lunars",
                 navLunarTitle: "Explorador 3D d'Eclipsis Lunars",
                 tickerTitle: "Propers esdeveniments celestes a Mataró",
+                tickerTitleTpl: "Propers esdeveniments celestes a {city}",
                 tickerRange: "Propers 15 dies",
                 tickerEmpty: "No hi ha esdeveniments destacats en els propers 15 dies.",
                 badgeToday: "AVUI!",
@@ -1989,6 +2007,22 @@ const RAW_SKYCAL_EVENTS = [[2459215.7951,67,-25],[2459216,136,-202],[2459216.874
                 modalClose: "Tancar",
                 footerLine1: "Cosmos Mataró — Efemèrides Astronòmiques basades en l'algoritme <strong>SKYCAL</strong> (NASA Goddard Space Flight Center / Fred Espenak &amp; Sumit Dutta).",
                 footerLine2: "Fus horari automàtic: <strong>Europe/Madrid (CET UTC+1 / CEST UTC+2)</strong>.",
+                cardSunTitleTpl: "Sol a {city}",
+                cardMoonTitleTpl: "Lluna a {city}",
+                footerTzPrefix: "Fus horari automàtic:",
+                locPillTitle: "Canviar ubicació o cercar municipi / coordenades",
+                locSearchPlaceholder: "Municipi o lat, lon...",
+                locGpsTitle: "Detectar la meva ubicació actual (GPS)",
+                locDefaultTitle: "Restablir ubicació per defecte: Cosmos Mataró",
+                locCloseTitle: "Tancar cercador",
+                locSearchOnline: "Cercar «{q}» en línia",
+                locTypeHint: "Escriu una ciutat o <code>lat, lon</code>.",
+                locSearching: "Cercant ubicació...",
+                locNoOnlineResults: "Sense resultats en línia. Prova amb coordenades <code>lat, lon</code>.",
+                locOfflineError: "No s'ha pogut cercar en línia (sense connexió). Introdueix <code>lat, lon</code>.",
+                locGpsUnsupported: "El teu navegador no admet geolocalització.",
+                locGpsError: "No s'ha pogut obtenir la ubicació GPS.",
+                locCoordsLabel: "Coordenades",
                 unknownEventName: "Fenomen Celest ({code})",
                 unknownEventDesc: "Esdeveniment astronòmic registrat a les efemèrides de la NASA."
             },
@@ -2002,6 +2036,7 @@ const RAW_SKYCAL_EVENTS = [[2459215.7951,67,-25],[2459216,136,-202],[2459216.874
                 navLunar: "Lunar Eclipses",
                 navLunarTitle: "3D Lunar Eclipse Explorer",
                 tickerTitle: "Upcoming celestial events in Mataró",
+                tickerTitleTpl: "Upcoming celestial events in {city}",
                 tickerRange: "Next 15 days",
                 tickerEmpty: "No featured events in the next 15 days.",
                 badgeToday: "TODAY!",
@@ -2066,6 +2101,22 @@ const RAW_SKYCAL_EVENTS = [[2459215.7951,67,-25],[2459216,136,-202],[2459216.874
                 modalClose: "Close",
                 footerLine1: "Cosmos Mataró — Astronomical Ephemerides powered by the <strong>SKYCAL</strong> algorithm (NASA Goddard Space Flight Center / Fred Espenak &amp; Sumit Dutta).",
                 footerLine2: "Automatic time zone: <strong>Europe/Madrid (CET UTC+1 / CEST UTC+2)</strong>.",
+                cardSunTitleTpl: "Sun in {city}",
+                cardMoonTitleTpl: "Moon in {city}",
+                footerTzPrefix: "Automatic time zone:",
+                locPillTitle: "Change location or search city / coordinates",
+                locSearchPlaceholder: "City or lat, lon...",
+                locGpsTitle: "Detect my current location (GPS)",
+                locDefaultTitle: "Reset to default location: Cosmos Mataró",
+                locCloseTitle: "Close search",
+                locSearchOnline: "Search «{q}» online",
+                locTypeHint: "Type a city or <code>lat, lon</code>.",
+                locSearching: "Searching location...",
+                locNoOnlineResults: "No online results. Try <code>lat, lon</code> coordinates.",
+                locOfflineError: "Online search failed (offline). Enter <code>lat, lon</code>.",
+                locGpsUnsupported: "Your browser does not support geolocation.",
+                locGpsError: "Could not retrieve GPS location.",
+                locCoordsLabel: "Coordinates",
                 unknownEventName: "Celestial Event ({code})",
                 unknownEventDesc: "Astronomical event recorded in NASA ephemerides."
             }
@@ -2539,6 +2590,9 @@ const RAW_SKYCAL_EVENTS = [[2459215.7951,67,-25],[2459216,136,-202],[2459216.874
             }
             if (typeof updateThemeToggleUI === 'function') {
                 updateThemeToggleUI();
+            }
+            if (typeof updateLocationUI === 'function') {
+                updateLocationUI();
             }
 
             try {
@@ -3282,12 +3336,22 @@ const RAW_SKYCAL_EVENTS = [[2459215.7951,67,-25],[2459216,136,-202],[2459216.874
             return `${Math.abs(lat).toFixed(2)}° ${latDir}, ${Math.abs(lon).toFixed(2)}° ${lonDir}`;
         }
 
+        function getShortCityName() {
+            const raw = (ACTIVE_LOC.name || 'Cosmos Mataró').replace(/\s*\([^)]*\)\s*$/, '').trim();
+            return raw || 'Cosmos Mataró';
+        }
+
         function updateLocationUI() {
             const pillLbl = document.getElementById('loc-pill-label');
             const badge = document.getElementById('location-coords-badge');
             const cmBtn = document.getElementById('btn-loc-mataro');
+            const pillBtn = document.getElementById('loc-pill-toggle');
+            const gpsBtn = document.getElementById('btn-loc-gps');
+            const closeBtn = document.querySelector('.loc-close-btn');
+            const searchInput = document.getElementById('loc-search-input');
+
+            const shortName = getShortCityName();
             if (pillLbl) {
-                const shortName = (ACTIVE_LOC.name || 'Cosmos Mataró').replace(/\s*\([^)]*\)\s*$/, '');
                 pillLbl.textContent = shortName.length > 22 ? shortName.slice(0, 20) + '…' : shortName;
             }
             if (badge) {
@@ -3295,7 +3359,22 @@ const RAW_SKYCAL_EVENTS = [[2459215.7951,67,-25],[2459216,136,-202],[2459216.874
             }
             if (cmBtn) {
                 cmBtn.classList.toggle('active', !!ACTIVE_LOC.isDefault);
+                cmBtn.title = t('locDefaultTitle');
             }
+            if (pillBtn) pillBtn.title = t('locPillTitle');
+            if (gpsBtn) gpsBtn.title = t('locGpsTitle');
+            if (closeBtn) closeBtn.title = t('locCloseTitle');
+            if (searchInput) searchInput.placeholder = t('locSearchPlaceholder');
+
+            const displayCity = ACTIVE_LOC.isDefault ? 'Mataró' : shortName;
+            const tickerEl = document.querySelector('[data-i18n="tickerTitle"]');
+            if (tickerEl) tickerEl.textContent = t('tickerTitleTpl').replace('{city}', displayCity);
+            const sunEl = document.querySelector('[data-i18n="cardSunTitle"]');
+            if (sunEl) sunEl.textContent = t('cardSunTitleTpl').replace('{city}', displayCity);
+            const moonEl = document.querySelector('[data-i18n="cardMoonTitle"]');
+            if (moonEl) moonEl.textContent = t('cardMoonTitleTpl').replace('{city}', displayCity);
+            const footerTzEl = document.querySelector('[data-i18n-html="footerLine2"]');
+            if (footerTzEl) footerTzEl.innerHTML = `${t('footerTzPrefix')} <strong>${ACTIVE_LOC.tz}</strong>.`;
         }
 
         function applyObserverLocation(loc, persist = true) {
@@ -3324,7 +3403,7 @@ const RAW_SKYCAL_EVENTS = [[2459215.7951,67,-25],[2459216,136,-202],[2459216.874
 
         function detectUserLocationGPS() {
             if (!navigator.geolocation) {
-                alert('Tu navegador no soporta geolocalización.');
+                alert(t('locGpsUnsupported'));
                 return;
             }
             const btn = document.getElementById('btn-loc-gps');
@@ -3344,7 +3423,7 @@ const RAW_SKYCAL_EVENTS = [[2459215.7951,67,-25],[2459216,136,-202],[2459216.874
                 },
                 () => {
                     if (btn) btn.innerHTML = '<i class="fa-solid fa-location-crosshairs"></i>';
-                    alert('No se pudo obtener la ubicación GPS.');
+                    alert(t('locGpsError'));
                 },
                 { enableHighAccuracy: false, timeout: 8000 }
             );
@@ -3388,7 +3467,7 @@ const RAW_SKYCAL_EVENTS = [[2459215.7951,67,-25],[2459216,136,-202],[2459216.874
                 if (lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180) {
                     const div = document.createElement('div');
                     div.className = 'loc-dropdown-item';
-                    div.innerHTML = `<span><i class="fa-solid fa-crosshairs" style="color:var(--primary);margin-right:6px;"></i>Coordenadas ${lat.toFixed(4)}, ${lon.toFixed(4)}</span><span class="loc-dropdown-cat">Custom</span>`;
+                    div.innerHTML = `<span><i class="fa-solid fa-crosshairs" style="color:var(--primary);margin-right:6px;"></i>${t('locCoordsLabel')} ${lat.toFixed(4)}, ${lon.toFixed(4)}</span><span class="loc-dropdown-cat">Custom</span>`;
                     div.onclick = () => {
                         applyObserverLocation({
                             name: `${lat.toFixed(2)}°, ${lon.toFixed(2)}°`,
@@ -3431,14 +3510,14 @@ const RAW_SKYCAL_EVENTS = [[2459215.7951,67,-25],[2459216,136,-202],[2459216.874
                 if (q.length >= 2) {
                     const onlineBtn = document.createElement('div');
                     onlineBtn.className = 'loc-dropdown-item';
-                    onlineBtn.innerHTML = `<span><i class="fa-solid fa-globe" style="color:var(--primary);margin-right:6px;"></i>Buscar «${q.replace(/</g, '&lt;')}» online</span><span class="loc-dropdown-cat">Open-Meteo</span>`;
+                    onlineBtn.innerHTML = `<span><i class="fa-solid fa-globe" style="color:var(--primary);margin-right:6px;"></i>${t('locSearchOnline').replace('{q}', q.replace(/</g, '&lt;'))}</span><span class="loc-dropdown-cat">Open-Meteo</span>`;
                     onlineBtn.onclick = (e) => {
                         e.stopPropagation();
                         searchLocationOnline(q);
                     };
                     dropdown.appendChild(onlineBtn);
                 } else {
-                    dropdown.innerHTML = '<div style="padding:8px 12px;color:var(--text-dim);">Escribe una ciudad o <code>lat, lon</code>.</div>';
+                    dropdown.innerHTML = `<div style="padding:8px 12px;color:var(--text-dim);">${t('locTypeHint')}</div>`;
                 }
             }
             dropdown.style.display = 'block';
@@ -3447,16 +3526,16 @@ const RAW_SKYCAL_EVENTS = [[2459215.7951,67,-25],[2459216,136,-202],[2459216.874
         async function searchLocationOnline(query) {
             const dropdown = document.getElementById('loc-search-dropdown');
             if (!dropdown) return;
-            dropdown.innerHTML = '<div style="padding:8px 12px;color:var(--text-muted);"><i class="fa-solid fa-spinner fa-spin"></i> Buscando ubicación...</div>';
+            dropdown.innerHTML = `<div style="padding:8px 12px;color:var(--text-muted);"><i class="fa-solid fa-spinner fa-spin"></i> ${t('locSearching')}</div>`;
             try {
-                const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=6&language=es&format=json`;
+                const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=6&language=${encodeURIComponent(currentLang)}&format=json`;
                 const res = await fetch(url);
                 if (!res.ok) throw new Error('HTTP ' + res.status);
                 const data = await res.json();
                 const results = data && Array.isArray(data.results) ? data.results : [];
                 dropdown.innerHTML = '';
                 if (results.length === 0) {
-                    dropdown.innerHTML = '<div style="padding:8px 12px;color:var(--text-dim);">Sin resultados online. Prueba con coordenadas <code>lat, lon</code>.</div>';
+                    dropdown.innerHTML = `<div style="padding:8px 12px;color:var(--text-dim);">${t('locNoOnlineResults')}</div>`;
                     return;
                 }
                 results.forEach(r => {
@@ -3477,7 +3556,7 @@ const RAW_SKYCAL_EVENTS = [[2459215.7951,67,-25],[2459216,136,-202],[2459216.874
                     dropdown.appendChild(div);
                 });
             } catch (err) {
-                dropdown.innerHTML = '<div style="padding:8px 12px;color:var(--text-dim);">No se pudo buscar online (sin conexión). Introduce <code>lat, lon</code>.</div>';
+                dropdown.innerHTML = `<div style="padding:8px 12px;color:var(--text-dim);">${t('locOfflineError')}</div>`;
             }
         }
 
