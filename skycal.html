@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -1393,8 +1393,8 @@
             </div>
             <div class="header-nav-links">
                 <button type="button" class="theme-toggle-btn" id="btn-theme-toggle" onclick="toggleTheme()" title="Cambiar tema claro/oscuro" aria-label="Cambiar tema claro/oscuro">
-                    <i class="fa-solid fa-sun" id="theme-toggle-icon"></i>
-                    <span id="theme-toggle-label">Claro</span>
+                    <i class="fa-solid fa-moon" id="theme-toggle-icon"></i>
+                    <span id="theme-toggle-label">Oscuro</span>
                 </button>
                 <div class="lang-btn-group" id="lang-selector" role="group" aria-label="Idioma">
                     <button type="button" class="lang-btn active" data-lang="es" onclick="setLanguage('es')" title="Español">ES</button>
@@ -3007,8 +3007,8 @@ const RAW_SKYCAL_EVENTS = [[2459215.7951,67,-25],[2459216,136,-202],[2459216.874
         }
 
         function initTheme() {
-            let saved = 'dark';
-            try { saved = localStorage.getItem('skycal_theme') || 'dark'; } catch (e) {}
+            let saved = 'light';
+            try { saved = localStorage.getItem('skycal_theme') || 'light'; } catch (e) {}
             applyTheme(saved);
         }
 
