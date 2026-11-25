@@ -743,10 +743,10 @@
         <section class="status-summary-bar">
             <div class="summary-left">
                 <span class="status-dot"></span>
-                <span><strong>16 de 16</strong> enllaços operatius (100% actius i directes)</span>
+                <span id="lbl-summary-status"><strong>18 de 18</strong> enllaços operatius (100% actius i directes)</span>
             </div>
             <div class="summary-right">
-                <span>Latència mitjana: <strong>~300 ms</strong></span>
+                <span>Latència mitjana: <strong id="lbl-avg-latency">~500 ms</strong></span>
                 <span>Últim test: <strong id="lbl-last-check">Avui</strong></span>
             </div>
         </section>
@@ -938,6 +938,22 @@
                     "status": 200,
                     "alive": true,
                     "latency_ms": 545
+                },
+                {
+                    "title": "Astrometry.net",
+                    "url": "https://nova.astrometry.net/",
+                    "desc": "Resolució astromètrica automàtica (plate solving) d'imatges del cel per identificar estrelles i objectes.",
+                    "status": 200,
+                    "alive": true,
+                    "latency_ms": 1456
+                },
+                {
+                    "title": "Telescopius",
+                    "url": "https://telescopius.com/",
+                    "desc": "Planificador d'astrofotografia i observació del cel profund, simulador de camp visual i mosaics.",
+                    "status": 200,
+                    "alive": true,
+                    "latency_ms": 652
                 }
             ]
         };
@@ -1080,9 +1096,26 @@
             }
         }
 
+        function updateSummary() {
+            const total = linksData.total || linksData.links.length;
+            const online = linksData.online != null ? linksData.online : linksData.links.filter(l => l.alive).length;
+            const pct = total > 0 ? Math.round((online / total) * 100) : 0;
+            const summaryEl = document.getElementById('lbl-summary-status');
+            if (summaryEl) {
+                summaryEl.innerHTML = `<strong>${online} de ${total}</strong> enllaços operatius (${pct}% actius)`;
+            }
+            const latencies = linksData.links.map(l => l.latency_ms).filter(v => typeof v === 'number' && v > 0);
+            const avgEl = document.getElementById('lbl-avg-latency');
+            if (avgEl && latencies.length > 0) {
+                const avg = Math.round(latencies.reduce((a, b) => a + b, 0) / latencies.length);
+                avgEl.innerText = `~${avg} ms`;
+            }
+        }
+
         // INITIALIZATION
         document.addEventListener('DOMContentLoaded', async () => {
             await fetchStatusData();
+            updateSummary();
             renderList();
 
             // Search filtering

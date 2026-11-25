@@ -150,6 +150,24 @@ links_meta = [
         "desc_es": "Astrolabio interactivo en el navegador: aprende a usar la red, el tímpano y la alidada para calcular la hora solar y estelar.",
         "category": "historia",
         "icon": "fa-ring"
+    },
+    {
+        "id": "astrometry_net",
+        "title": "Astrometry.net",
+        "url": "https://nova.astrometry.net/",
+        "desc_ca": "Resolució astromètrica automàtica (plate solving) d'imatges del cel per identificar estrelles i objectes.",
+        "desc_es": "Resolución astrométrica automática (plate solving) de imágenes del cielo para identificar estrellas y objetos.",
+        "category": "observacio",
+        "icon": "fa-crosshairs"
+    },
+    {
+        "id": "telescopius",
+        "title": "Telescopius",
+        "url": "https://telescopius.com/",
+        "desc_ca": "Planificador d'astrofotografia i observació del cel profund, simulador de camp visual i mosaics.",
+        "desc_es": "Planificador de astrofotografía y observación de cielo profundo, simulador de campo visual y mosaicos.",
+        "category": "observacio",
+        "icon": "fa-camera"
     }
 ]
 
