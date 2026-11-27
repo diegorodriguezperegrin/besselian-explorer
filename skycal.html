@@ -207,17 +207,6 @@
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
         }
 
-        .ticker-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 4px;
-            height: 100%;
-            background: var(--card-accent, var(--primary));
-            border-radius: 4px 0 0 4px;
-        }
-
         .ticker-icon {
             font-size: 1.75rem;
             min-width: 42px;
@@ -534,10 +523,7 @@
         .event-pill {
             background: rgba(15, 23, 42, 0.88);
             backdrop-filter: blur(4px);
-            border-left: 3px solid var(--pill-border, var(--primary));
-            border-top: 1px solid rgba(255, 255, 255, 0.08);
-            border-right: 1px solid rgba(255, 255, 255, 0.08);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.08);
             padding: 2px 5px;
             border-radius: 3px;
             font-size: 0.68rem;
@@ -889,6 +875,12 @@
             background: rgba(56, 189, 248, 0.15);
             border-color: var(--primary);
             color: #fff;
+        }
+
+        .chart-day-btn.active {
+            background: rgba(56, 189, 248, 0.22);
+            border-color: var(--primary);
+            color: var(--primary);
         }
 
         .chart-date-badge {
@@ -1260,7 +1252,8 @@
         }
 
         html[data-theme="light"] .view-btn.active,
-        html[data-theme="light"] .chip-btn.active {
+        html[data-theme="light"] .chip-btn.active,
+        html[data-theme="light"] .chart-day-btn.active {
             background: #5b289c;
             border-color: #471e7d;
             color: #ffffff;
@@ -1650,42 +1643,18 @@
             </div>
         </section>
 
-        <!-- Barra de Controles y Filtros -->
-        <div class="controls-bar">
-            <div class="view-switcher">
-                <button class="view-btn active" onclick="switchView('calendar')" id="btn-view-calendar" data-i18n="viewCalendar">Calendario</button>
-                <button class="view-btn" onclick="switchView('list')" id="btn-view-list" data-i18n="viewList">Agenda Anual</button>
-            </div>
-
-            <div class="month-selector">
-                <button class="month-nav-btn" onclick="changeMonth(-1)" data-i18n-title="prevMonthTitle" title="Mes anterior">◀</button>
-                <div class="current-month-display" id="current-month-label">Agosto 2026</div>
-                <button class="month-nav-btn" onclick="changeMonth(1)" data-i18n-title="nextMonthTitle" title="Mes siguiente">▶</button>
-                <button class="month-nav-btn" onclick="goToToday()" data-i18n-title="goTodayTitle" data-i18n="btnToday" title="Ir a hoy" style="font-size: 0.75rem; font-family: var(--font-main); font-weight: 700; width: auto; padding: 0 0.6rem;">Hoy</button>
-            </div>
-
-            <div class="category-chips">
-                <button class="chip-btn active" data-cat="all" data-i18n="catAll" onclick="filterCategory('all', this)">Todos</button>
-                <button class="chip-btn" data-cat="moon" data-i18n="catMoon" onclick="filterCategory('moon', this)">Fases Lunares</button>
-                <button class="chip-btn" data-cat="planet" data-i18n="catPlanet" onclick="filterCategory('planet', this)">Planetas</button>
-                <button class="chip-btn" data-cat="eclipse" data-i18n="catEclipse" onclick="filterCategory('eclipse', this)">Eclipses</button>
-                <button class="chip-btn" data-cat="season" data-i18n="catSeason" onclick="filterCategory('season', this)">Estaciones</button>
-                <button class="chip-btn" data-cat="shower" data-i18n="catShower" onclick="filterCategory('shower', this)">Meteoros</button>
-                <button class="chip-btn" data-cat="conjunction" data-i18n="catConjunction" onclick="filterCategory('conjunction', this)">Conjunciones</button>
-            </div>
-        </div>
-
         <!-- Sección Gráfico de Visibilidad y Altura (Estilo Telescopius) -->
         <section class="night-chart-section" id="night-chart-section">
             <div class="chart-header">
                 <div class="chart-title">
-                    <span data-i18n="chartTitle">Visibilidad Nocturna y Alturas (Sol y Luna)</span>
+                    <span data-i18n="chartTitle">Visibilidad nocturna y alturas (Sol y Luna)</span>
                 </div>
                 <div class="chart-day-controls">
                     <button class="chart-day-btn" onclick="navigateChartDay(-1)" data-i18n-title="prevDayTitle" data-i18n="btnPrevDay" title="Día anterior">◀ Anterior</button>
                     <span class="chart-date-badge" id="chart-date-label">20 Ago 2026</span>
                     <button class="chart-day-btn" onclick="navigateChartDay(1)" data-i18n-title="nextDayTitle" data-i18n="btnNextDay" title="Día siguiente">Siguiente ▶</button>
                     <button class="chart-day-btn" onclick="navigateChartToday()" data-i18n-title="goTodayTitle" data-i18n="btnToday" title="Ir a hoy">Hoy</button>
+                    <button class="chart-day-btn active" id="btn-toggle-clouds" onclick="toggleCloudBands()" data-i18n-title="toggleCloudsTitle" data-i18n="btnClouds" title="Mostrar u ocultar bandas de nubosidad" aria-pressed="true">Nubes</button>
                 </div>
             </div>
 
@@ -1698,33 +1667,34 @@
                 <div class="legend-item"><span class="legend-dot" style="background: #facc15;"></span> <span data-i18n="legendSun">Sol</span></div>
                 <div class="legend-item"><span class="legend-dot" style="background: #94a3b8;"></span> <span data-i18n="legendMoon">Luna</span></div>
                 <div class="legend-item"><span class="legend-bar" style="background: #1e3a5f;"></span> <span data-i18n="legendDay">Día</span></div>
-                <div class="legend-item"><span class="legend-bar" style="background: #d97706;"></span> <span data-i18n="legendCivil">Crepúsculo Civil (0° a -6°)</span></div>
+                <div class="legend-item"><span class="legend-bar" style="background: #d97706;"></span> <span data-i18n="legendCivil">Crepúsculo civil (0° a -6°)</span></div>
                 <div class="legend-item"><span class="legend-bar" style="background: #4338ca;"></span> <span data-i18n="legendNautical">Náutico (-6° a -12°)</span></div>
                 <div class="legend-item"><span class="legend-bar" style="background: #1e1b4b;"></span> <span data-i18n="legendAstro">Astronómico (-12° a -18°)</span></div>
-                <div class="legend-item"><span class="legend-bar chart-legend-night-dot" style="background: #050811; border: 1px solid rgba(255,255,255,0.2);"></span> <span data-i18n="legendDark">Noche Oscura (&lt;-18°)</span></div>
+                <div class="legend-item"><span class="legend-bar chart-legend-night-dot" style="background: #050811; border: 1px solid rgba(255,255,255,0.2);"></span> <span data-i18n="legendDark">Noche oscura (&lt;-18°)</span></div>
+                <div class="legend-item"><span class="legend-bar" style="background: linear-gradient(180deg, rgba(148,163,184,0.85), rgba(148,163,184,0.1)); border: 1px solid rgba(148,163,184,0.4);"></span> <span data-i18n="legendClouds">Nubes (alta / media / baja)</span></div>
             </div>
 
             <div class="chart-ephem-grid">
                 <div class="ephem-card">
                     <div class="ephem-card-title"><i class="fa-solid fa-sun" style="color: #facc15;"></i> <span data-i18n="cardSunTitle">Sol en Mataró</span></div>
                     <div class="ephem-card-values">
-                        <div class="ephem-row"><span class="ephem-label" data-i18n="lblSunset">Puesta (Ocaso):</span> <span class="ephem-val" id="ephem-sunset">--:-- h</span></div>
-                        <div class="ephem-row"><span class="ephem-label" data-i18n="lblSunrise">Salida (Amanecer):</span> <span class="ephem-val" id="ephem-sunrise">--:-- h</span></div>
-                        <div class="ephem-row"><span class="ephem-label" data-i18n="lblSunMax">Mediodía / Máx. Alt:</span> <span class="ephem-val" id="ephem-sunmax">--:-- h (--°)</span></div>
+                        <div class="ephem-row"><span class="ephem-label" data-i18n="lblSunset">Puesta (ocaso):</span> <span class="ephem-val" id="ephem-sunset">--:-- h</span></div>
+                        <div class="ephem-row"><span class="ephem-label" data-i18n="lblSunrise">Salida (amanecer):</span> <span class="ephem-val" id="ephem-sunrise">--:-- h</span></div>
+                        <div class="ephem-row"><span class="ephem-label" data-i18n="lblSunMax">Mediodía / máx. alt:</span> <span class="ephem-val" id="ephem-sunmax">--:-- h (--°)</span></div>
                     </div>
                 </div>
 
                 <div class="ephem-card">
                     <div class="ephem-card-title"><span data-i18n="cardMoonTitle">Luna en Mataró</span></div>
                     <div class="ephem-card-values">
-                        <div class="ephem-row"><span class="ephem-label" data-i18n="lblMoonIllum">Fase e Iluminación:</span> <span class="ephem-val" id="ephem-moon-illum">--%</span></div>
-                        <div class="ephem-row"><span class="ephem-label" data-i18n="lblMoonRiseSet">Salida / Puesta:</span> <span class="ephem-val" id="ephem-moon-rise-set">--:-- / --:--</span></div>
-                        <div class="ephem-row"><span class="ephem-label" data-i18n="lblMoonCulm">Culminación (Máx. Alt):</span> <span class="ephem-val" id="ephem-moon-culm">--:-- h (--°)</span></div>
+                        <div class="ephem-row"><span class="ephem-label" data-i18n="lblMoonIllum">Fase e iluminación:</span> <span class="ephem-val" id="ephem-moon-illum">--%</span></div>
+                        <div class="ephem-row"><span class="ephem-label" data-i18n="lblMoonRiseSet">Salida / puesta:</span> <span class="ephem-val" id="ephem-moon-rise-set">--:-- / --:--</span></div>
+                        <div class="ephem-row"><span class="ephem-label" data-i18n="lblMoonCulm">Culminación (máx. alt):</span> <span class="ephem-val" id="ephem-moon-culm">--:-- h (--°)</span></div>
                     </div>
                 </div>
 
                 <div class="ephem-card">
-                    <div class="ephem-card-title"><span data-i18n="cardDarkTitle">Ventana de Noche Oscura</span></div>
+                    <div class="ephem-card-title"><span data-i18n="cardDarkTitle">Ventana de noche oscura</span></div>
                     <div class="ephem-card-values">
                         <div class="ephem-row"><span class="ephem-label" data-i18n="lblDarkStart">Inicio noche (&lt;-18°):</span> <span class="ephem-val" id="ephem-dark-start">--:-- h</span></div>
                         <div class="ephem-row"><span class="ephem-label" data-i18n="lblDarkEnd">Fin noche (&lt;-18°):</span> <span class="ephem-val" id="ephem-dark-end">--:-- h</span></div>
@@ -1733,14 +1703,39 @@
                 </div>
             </div>
         </section>
+
+        <!-- Barra de Controles y Filtros -->
+        <div class="controls-bar">
+            <div class="view-switcher">
+                <button class="view-btn active" onclick="switchView('calendar')" id="btn-view-calendar" data-i18n="viewCalendar">Calendario</button>
+                <button class="view-btn" onclick="switchView('list')" id="btn-view-list" data-i18n="viewList">Agenda anual</button>
+            </div>
+
+            <div class="month-selector">
+                <button class="month-nav-btn" onclick="changeMonth(-1)" data-i18n-title="prevMonthTitle" title="Mes anterior">◀</button>
+                <div class="current-month-display" id="current-month-label">Agosto 2026</div>
+                <button class="month-nav-btn" onclick="changeMonth(1)" data-i18n-title="nextMonthTitle" title="Mes siguiente">▶</button>
+                <button class="month-nav-btn" onclick="goToToday()" data-i18n-title="goTodayTitle" data-i18n="btnToday" title="Ir a hoy" style="font-size: 0.75rem; font-family: var(--font-main); font-weight: 700; width: auto; padding: 0 0.6rem;">Hoy</button>
+            </div>
+
+            <div class="category-chips">
+                <button class="chip-btn active" data-cat="all" data-i18n="catAll" onclick="filterCategory('all', this)">Todos</button>
+                <button class="chip-btn" data-cat="moon" data-i18n="catMoon" onclick="filterCategory('moon', this)">Fases lunares</button>
+                <button class="chip-btn" data-cat="planet" data-i18n="catPlanet" onclick="filterCategory('planet', this)">Planetas</button>
+                <button class="chip-btn" data-cat="eclipse" data-i18n="catEclipse" onclick="filterCategory('eclipse', this)">Eclipses</button>
+                <button class="chip-btn" data-cat="season" data-i18n="catSeason" onclick="filterCategory('season', this)">Estaciones</button>
+                <button class="chip-btn" data-cat="shower" data-i18n="catShower" onclick="filterCategory('shower', this)">Meteoros</button>
+                <button class="chip-btn" data-cat="conjunction" data-i18n="catConjunction" onclick="filterCategory('conjunction', this)">Conjunciones</button>
+            </div>
+        </div>
         <section class="calendar-section" id="calendar-view">
             <div class="calendar-legend-bar">
                 <div class="calendar-legend-items">
-                    <span style="display: flex; align-items: center; gap: 0.35rem; color: var(--text-main); font-weight: 600;" data-i18n="calLegendWaves">Ondas Semanales (Mediodía a Mediodía):</span>
+                    <span style="display: flex; align-items: center; gap: 0.35rem; color: var(--text-main); font-weight: 600;" data-i18n="calLegendWaves">Ondas semanales (mediodía a mediodía):</span>
                     <span style="display: flex; align-items: center; gap: 0.35rem;"><span style="display: inline-block; width: 14px; height: 3px; background: #facc15; border-radius: 2px;"></span> <span data-i18n="legendSun">Sol</span></span>
                     <span style="display: flex; align-items: center; gap: 0.35rem;"><span style="display: inline-block; width: 14px; height: 3px; background: #94a3b8; border-radius: 2px;"></span> <span data-i18n="calLegendMoon">Luna (brillo según fase)</span></span>
                     <span style="display: flex; align-items: center; gap: 0.35rem;"><span style="display: inline-block; width: 14px; height: 2px; border-top: 2px dashed #22c55e;"></span> <span data-i18n="calLegendHorizon">Horizonte (0°)</span></span>
-                    <span style="display: flex; align-items: center; gap: 0.35rem;"><span style="display: inline-block; width: 10px; height: 10px; background: #04070e; border: 1px solid rgba(255,255,255,0.2); border-radius: 2px;"></span> <span data-i18n="calLegendDark">Noche Oscura (en el centro)</span></span>
+                    <span style="display: flex; align-items: center; gap: 0.35rem;"><span style="display: inline-block; width: 10px; height: 10px; background: #04070e; border: 1px solid rgba(255,255,255,0.2); border-radius: 2px;"></span> <span data-i18n="calLegendDark">Noche oscura (en el centro)</span></span>
                 </div>
                 <span style="font-size: 0.72rem; color: var(--text-dim);" data-i18n="calLegendHint">Haz clic en un día para ver su gráfica 24h</span>
             </div>
@@ -1798,7 +1793,7 @@
     </div>
 
     <footer class="app-footer">
-        <p data-i18n-html="footerLine1">Cosmos Mataró — Efemérides Astronómicas basadas en el algoritmo <strong>SKYCAL</strong> (NASA Goddard Space Flight Center / Fred Espenak &amp; Sumit Dutta).</p>
+        <p data-i18n-html="footerLine1">Cosmos Mataró — Efemérides astronómicas basadas en el algoritmo <strong>SKYCAL</strong> (NASA Goddard Space Flight Center / Fred Espenak &amp; Sumit Dutta) y <em>Astronomical Algorithms</em> (Jean Meeus). Previsión de nubosidad y geocodificación mediante <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer" style="color: var(--primary); text-decoration: none;">Open-Meteo</a>.</p>
         <p data-i18n-html="footerLine2" style="margin-top: 0.35rem; color: var(--text-dim);">Huso horario automático: <strong>Europe/Madrid (CET UTC+1 / CEST UTC+2)</strong>.</p>
     </footer>
 
@@ -1831,14 +1826,14 @@ const RAW_SKYCAL_EVENTS = [[2459215.7951,67,-25],[2459216,136,-202],[2459216.874
 
         const I18N = {
             es: {
-                pageTitle: "Cosmos Mataró — Calendario de Efemérides Celestes",
+                pageTitle: "Cosmos Mataró — Calendario de efemérides celestes",
                 appTitle: "Calendario de efemérides celestes",
                 navSolar: "Solar Eclipse Explorer",
-                navSolarTitle: "Explorador de Eclipses Solares 3D",
+                navSolarTitle: "Explorador de eclipses solares 3D",
                 navSim3d: "Simulador 3D",
-                navSim3dTitle: "Simulador Orbital 3D",
-                navLunar: "Eclipses Lunares",
-                navLunarTitle: "Explorador 3D de Eclipses Lunares",
+                navSim3dTitle: "Simulador orbital 3D",
+                navLunar: "Eclipses lunares",
+                navLunarTitle: "Explorador 3D de eclipses lunares",
                 tickerTitle: "Próximos eventos celestes en Mataró",
                 tickerTitleTpl: "Próximos eventos celestes en {city}",
                 tickerRange: "Próximos 15 días",
@@ -1849,63 +1844,68 @@ const RAW_SKYCAL_EVENTS = [[2459215.7951,67,-25],[2459216,136,-202],[2459216.874
                 badgeAgoMin: "Hace {n} min",
                 badgeAgoHours: "Hace {n} h",
                 viewCalendar: "Calendario",
-                viewList: "Agenda Anual",
+                viewList: "Agenda anual",
                 prevMonthTitle: "Mes anterior",
                 nextMonthTitle: "Mes siguiente",
                 goTodayTitle: "Ir a hoy",
                 btnToday: "Hoy",
                 catAll: "Todos",
-                catMoon: "Fases Lunares",
+                catMoon: "Fases lunares",
                 catPlanet: "Planetas",
                 catEclipse: "Eclipses",
                 catSeason: "Estaciones",
                 catShower: "Meteoros",
                 catConjunction: "Conjunciones",
-                chartTitle: "Visibilidad Nocturna y Alturas (Sol y Luna)",
+                chartTitle: "Visibilidad nocturna y alturas (Sol y Luna)",
                 prevDayTitle: "Día anterior",
                 nextDayTitle: "Día siguiente",
                 btnPrevDay: "◀ Anterior",
                 btnNextDay: "Siguiente ▶",
+                btnClouds: "Nubes",
+                toggleCloudsTitle: "Mostrar u ocultar bandas de nubosidad",
                 legendSun: "Sol",
                 legendMoon: "Luna",
                 legendDay: "Día",
-                legendCivil: "Crepúsculo Civil (0° a -6°)",
+                legendCivil: "Crepúsculo civil (0° a -6°)",
                 legendNautical: "Náutico (-6° a -12°)",
                 legendAstro: "Astronómico (-12° a -18°)",
-                legendDark: "Noche Oscura (<-18°)",
+                legendDark: "Noche oscura (<-18°)",
+                legendClouds: "Nubes (alta / media / baja)",
+                hoverClouds: "Nubes",
+                hoverCloudLayers: "B:{l}% M:{m}% A:{h}%",
                 cardSunTitle: "Sol en Mataró",
-                lblSunset: "Puesta (Ocaso):",
-                lblSunrise: "Salida (Amanecer):",
-                lblSunMax: "Mediodía / Máx. Alt:",
+                lblSunset: "Puesta (ocaso):",
+                lblSunrise: "Salida (amanecer):",
+                lblSunMax: "Mediodía / máx. alt:",
                 cardMoonTitle: "Luna en Mataró",
-                lblMoonIllum: "Fase e Iluminación:",
-                lblMoonRiseSet: "Salida / Puesta:",
-                lblMoonCulm: "Culminación (Máx. Alt):",
-                cardDarkTitle: "Ventana de Noche Oscura",
+                lblMoonIllum: "Fase e iluminación:",
+                lblMoonRiseSet: "Salida / puesta:",
+                lblMoonCulm: "Culminación (máx. alt):",
+                cardDarkTitle: "Ventana de noche oscura",
                 lblDarkStart: "Inicio noche (<-18°):",
                 lblDarkEnd: "Fin noche (<-18°):",
                 lblDarkDur: "Duración oscuridad:",
                 noFullNight: "No hay noche total",
                 continuousTwilight: "Crepúsculo continuo",
-                stateDarkNight: "Noche Astronómica Oscura",
-                stateAstroTwilight: "Crepúsculo Astronómico",
-                stateNauticalTwilight: "Crepúsculo Náutico",
-                stateCivilTwilight: "Crepúsculo Civil",
+                stateDarkNight: "Noche astronómica oscura",
+                stateAstroTwilight: "Crepúsculo astronómico",
+                stateNauticalTwilight: "Crepúsculo náutico",
+                stateCivilTwilight: "Crepúsculo civil",
                 stateDay: "Día",
-                calLegendWaves: "Ondas Semanales (Mediodía a Mediodía):",
+                calLegendWaves: "Ondas semanales (mediodía a mediodía):",
                 calLegendMoon: "Luna (brillo según fase)",
                 calLegendHorizon: "Horizonte (0°)",
-                calLegendDark: "Noche Oscura (en el centro)",
+                calLegendDark: "Noche oscura (en el centro)",
                 calLegendHint: "Haz clic en un día para ver su gráfica 24h",
                 wdMon: "Lun", wdTue: "Mar", wdWed: "Mié", wdThu: "Jue", wdFri: "Vie", wdSat: "Sáb", wdSun: "Dom",
                 calTodayBadge: "HOY",
                 moonIllumTitle: "Iluminación lunar:",
                 listEmpty: "No hay eventos registrados con el filtro seleccionado para el año {year}.",
-                modalLocalTime: "Fecha y Hora (Mataró)",
-                modalUtcTime: "Tiempo Universal (UTC)",
-                modalExportIcs: "Añadir a Calendario (.ics)",
+                modalLocalTime: "Fecha y hora (Mataró)",
+                modalUtcTime: "Tiempo universal (UTC)",
+                modalExportIcs: "Añadir a calendario (.ics)",
                 modalClose: "Cerrar",
-                footerLine1: "Cosmos Mataró — Efemérides Astronómicas basadas en el algoritmo <strong>SKYCAL</strong> (NASA Goddard Space Flight Center / Fred Espenak &amp; Sumit Dutta).",
+                footerLine1: "Cosmos Mataró — Efemérides astronómicas basadas en el algoritmo <strong>SKYCAL</strong> (NASA Goddard Space Flight Center / Fred Espenak &amp; Sumit Dutta) y <em>Astronomical Algorithms</em> (Jean Meeus). Previsión de nubosidad y geocodificación mediante <a href=\"https://open-meteo.com/\" target=\"_blank\" rel=\"noopener noreferrer\" style=\"color: var(--primary); text-decoration: none;\">Open-Meteo</a>.",
                 footerLine2: "Huso horario automático: <strong>Europe/Madrid (CET UTC+1 / CEST UTC+2)</strong>.",
                 cardSunTitleTpl: "Sol en {city}",
                 cardMoonTitleTpl: "Luna en {city}",
@@ -1923,18 +1923,18 @@ const RAW_SKYCAL_EVENTS = [[2459215.7951,67,-25],[2459216,136,-202],[2459216.874
                 locGpsUnsupported: "Tu navegador no soporta geolocalización.",
                 locGpsError: "No se pudo obtener la ubicación GPS.",
                 locCoordsLabel: "Coordenadas",
-                unknownEventName: "Fenómeno Celeste ({code})",
+                unknownEventName: "Fenómeno celeste ({code})",
                 unknownEventDesc: "Evento astronómico registrado en las efemérides de la NASA."
             },
             ca: {
-                pageTitle: "Cosmos Mataró — Calendari d'Efemèrides Celestes",
+                pageTitle: "Cosmos Mataró — Calendari d'efemèrides celestes",
                 appTitle: "Calendari d'efemèrides celestes",
                 navSolar: "Solar Eclipse Explorer",
-                navSolarTitle: "Explorador d'Eclipsis Solars 3D",
+                navSolarTitle: "Explorador d'eclipsis solars 3D",
                 navSim3d: "Simulador 3D",
-                navSim3dTitle: "Simulador Orbital 3D",
-                navLunar: "Eclipsis Lunars",
-                navLunarTitle: "Explorador 3D d'Eclipsis Lunars",
+                navSim3dTitle: "Simulador orbital 3D",
+                navLunar: "Eclipsis lunars",
+                navLunarTitle: "Explorador 3D d'eclipsis lunars",
                 tickerTitle: "Propers esdeveniments celestes a Mataró",
                 tickerTitleTpl: "Propers esdeveniments celestes a {city}",
                 tickerRange: "Propers 15 dies",
@@ -1945,63 +1945,68 @@ const RAW_SKYCAL_EVENTS = [[2459215.7951,67,-25],[2459216,136,-202],[2459216.874
                 badgeAgoMin: "Fa {n} min",
                 badgeAgoHours: "Fa {n} h",
                 viewCalendar: "Calendari",
-                viewList: "Agenda Anual",
+                viewList: "Agenda anual",
                 prevMonthTitle: "Mes anterior",
                 nextMonthTitle: "Mes següent",
                 goTodayTitle: "Anar a avui",
                 btnToday: "Avui",
                 catAll: "Tots",
-                catMoon: "Fases Lunars",
+                catMoon: "Fases lunars",
                 catPlanet: "Planetes",
                 catEclipse: "Eclipsis",
                 catSeason: "Estacions",
                 catShower: "Meteors",
                 catConjunction: "Conjuncions",
-                chartTitle: "Visibilitat Nocturna i Altituds (Sol i Lluna)",
+                chartTitle: "Visibilitat nocturna i altituds (Sol i Lluna)",
                 prevDayTitle: "Dia anterior",
                 nextDayTitle: "Dia següent",
                 btnPrevDay: "◀ Anterior",
                 btnNextDay: "Següent ▶",
+                btnClouds: "Núvols",
+                toggleCloudsTitle: "Mostrar o amagar bandes de nuvolositat",
                 legendSun: "Sol",
                 legendMoon: "Lluna",
                 legendDay: "Dia",
-                legendCivil: "Crepuscle Civil (0° a -6°)",
+                legendCivil: "Crepuscle civil (0° a -6°)",
                 legendNautical: "Nàutic (-6° a -12°)",
                 legendAstro: "Astronòmic (-12° a -18°)",
-                legendDark: "Nit Fosca (<-18°)",
+                legendDark: "Nit fosca (<-18°)",
+                legendClouds: "Núvols (alt / mitjà / baix)",
+                hoverClouds: "Núvols",
+                hoverCloudLayers: "B:{l}% M:{m}% A:{h}%",
                 cardSunTitle: "Sol a Mataró",
-                lblSunset: "Posta (Ocàs):",
-                lblSunrise: "Sortida (Alba):",
-                lblSunMax: "Migdia / Màx. Alt.:",
+                lblSunset: "Posta (ocàs):",
+                lblSunrise: "Sortida (alba):",
+                lblSunMax: "Migdia / màx. alt.:",
                 cardMoonTitle: "Lluna a Mataró",
-                lblMoonIllum: "Fase i Il·luminació:",
-                lblMoonRiseSet: "Sortida / Posta:",
-                lblMoonCulm: "Culminació (Màx. Alt.):",
-                cardDarkTitle: "Finestra de Nit Fosca",
+                lblMoonIllum: "Fase i il·luminació:",
+                lblMoonRiseSet: "Sortida / posta:",
+                lblMoonCulm: "Culminació (màx. alt.):",
+                cardDarkTitle: "Finestra de nit fosca",
                 lblDarkStart: "Inici nit (<-18°):",
                 lblDarkEnd: "Fi nit (<-18°):",
                 lblDarkDur: "Durada foscor:",
                 noFullNight: "No hi ha nit total",
                 continuousTwilight: "Crepuscle continu",
-                stateDarkNight: "Nit Astronòmica Fosca",
-                stateAstroTwilight: "Crepuscle Astronòmic",
-                stateNauticalTwilight: "Crepuscle Nàutic",
-                stateCivilTwilight: "Crepuscle Civil",
+                stateDarkNight: "Nit astronòmica fosca",
+                stateAstroTwilight: "Crepuscle astronòmic",
+                stateNauticalTwilight: "Crepuscle nàutic",
+                stateCivilTwilight: "Crepuscle civil",
                 stateDay: "Dia",
-                calLegendWaves: "Ones Setmanals (Migdia a Migdia):",
+                calLegendWaves: "Ones setmanals (migdia a migdia):",
                 calLegendMoon: "Lluna (brillantor segons fase)",
                 calLegendHorizon: "Horitzó (0°)",
-                calLegendDark: "Nit Fosca (al centre)",
+                calLegendDark: "Nit fosca (al centre)",
                 calLegendHint: "Fes clic en un dia per veure la seva gràfica 24h",
                 wdMon: "Dl", wdTue: "Dt", wdWed: "Dc", wdThu: "Dj", wdFri: "Dv", wdSat: "Ds", wdSun: "Dg",
                 calTodayBadge: "AVUI",
                 moonIllumTitle: "Il·luminació lunar:",
                 listEmpty: "No hi ha esdeveniments registrats amb el filtre seleccionat per a l'any {year}.",
-                modalLocalTime: "Data i Hora (Mataró)",
-                modalUtcTime: "Temps Universal (UTC)",
-                modalExportIcs: "Afegir al Calendari (.ics)",
+                modalLocalTime: "Data i hora (Mataró)",
+                modalUtcTime: "Temps universal (UTC)",
+                modalExportIcs: "Afegir al calendari (.ics)",
                 modalClose: "Tancar",
-                footerLine1: "Cosmos Mataró — Efemèrides Astronòmiques basades en l'algoritme <strong>SKYCAL</strong> (NASA Goddard Space Flight Center / Fred Espenak &amp; Sumit Dutta).",
+                footerLine1: "Cosmos Mataró — Efemèrides astronòmiques basades en l'algoritme <strong>SKYCAL</strong> (NASA Goddard Space Flight Center / Fred Espenak &amp; Sumit Dutta) i <em>Astronomical Algorithms</em> (Jean Meeus). Previsió de nuvolositat i geocodificació mitjançant <a href=\"https://open-meteo.com/\" target=\"_blank\" rel=\"noopener noreferrer\" style=\"color: var(--primary); text-decoration: none;\">Open-Meteo</a>.",
                 footerLine2: "Fus horari automàtic: <strong>Europe/Madrid (CET UTC+1 / CEST UTC+2)</strong>.",
                 cardSunTitleTpl: "Sol a {city}",
                 cardMoonTitleTpl: "Lluna a {city}",
@@ -2019,7 +2024,7 @@ const RAW_SKYCAL_EVENTS = [[2459215.7951,67,-25],[2459216,136,-202],[2459216.874
                 locGpsUnsupported: "El teu navegador no admet geolocalització.",
                 locGpsError: "No s'ha pogut obtenir la ubicació GPS.",
                 locCoordsLabel: "Coordenades",
-                unknownEventName: "Fenomen Celest ({code})",
+                unknownEventName: "Fenomen celest ({code})",
                 unknownEventDesc: "Esdeveniment astronòmic registrat a les efemèrides de la NASA."
             },
             en: {
@@ -2058,6 +2063,8 @@ const RAW_SKYCAL_EVENTS = [[2459215.7951,67,-25],[2459216,136,-202],[2459216.874
                 nextDayTitle: "Next day",
                 btnPrevDay: "◀ Prev",
                 btnNextDay: "Next ▶",
+                btnClouds: "Clouds",
+                toggleCloudsTitle: "Show or hide cloud cover bands",
                 legendSun: "Sun",
                 legendMoon: "Moon",
                 legendDay: "Day",
@@ -2065,6 +2072,9 @@ const RAW_SKYCAL_EVENTS = [[2459215.7951,67,-25],[2459216,136,-202],[2459216.874
                 legendNautical: "Nautical (-6° to -12°)",
                 legendAstro: "Astronomical (-12° to -18°)",
                 legendDark: "Dark Night (<-18°)",
+                legendClouds: "Clouds (High / Mid / Low)",
+                hoverClouds: "Clouds",
+                hoverCloudLayers: "L:{l}% M:{m}% H:{h}%",
                 cardSunTitle: "Sun in Mataró",
                 lblSunset: "Sunset:",
                 lblSunrise: "Sunrise:",
@@ -2097,7 +2107,7 @@ const RAW_SKYCAL_EVENTS = [[2459215.7951,67,-25],[2459216,136,-202],[2459216.874
                 modalUtcTime: "Universal Time (UTC)",
                 modalExportIcs: "Add to Calendar (.ics)",
                 modalClose: "Close",
-                footerLine1: "Cosmos Mataró — Astronomical Ephemerides powered by the <strong>SKYCAL</strong> algorithm (NASA Goddard Space Flight Center / Fred Espenak &amp; Sumit Dutta).",
+                footerLine1: "Cosmos Mataró — Astronomical ephemerides powered by the <strong>SKYCAL</strong> algorithm (NASA Goddard Space Flight Center / Fred Espenak &amp; Sumit Dutta) and <em>Astronomical Algorithms</em> (Jean Meeus). Cloud forecast and geocoding by <a href=\"https://open-meteo.com/\" target=\"_blank\" rel=\"noopener noreferrer\" style=\"color: var(--primary); text-decoration: none;\">Open-Meteo</a>.",
                 footerLine2: "Automatic time zone: <strong>Europe/Madrid (CET UTC+1 / CEST UTC+2)</strong>.",
                 cardSunTitleTpl: "Sun in {city}",
                 cardMoonTitleTpl: "Moon in {city}",
@@ -2149,172 +2159,172 @@ const RAW_SKYCAL_EVENTS = [[2459215.7951,67,-25],[2459216,136,-202],[2459216.874
         // Metadatos visuales y traducciones completas del catálogo NASA SKYCAL (ES / CA / EN)
         const EVENT_CATALOG = {
             1:  { cat: "season", icon: "", color: "#34d399",
-                  es: ["Equinoccio de Primavera", "El Sol cruza el ecuador celeste hacia el norte. Comienza la primavera astronómica en el hemisferio norte."],
-                  ca: ["Equinocci de Primavera", "El Sol creua l'equador celeste cap al nord. Comença la primavera astronòmica a l'hemisferi nord."],
+                  es: ["Equinoccio de primavera", "El Sol cruza el ecuador celeste hacia el norte. Comienza la primavera astronómica en el hemisferio norte."],
+                  ca: ["Equinocci de primavera", "El Sol creua l'equador celeste cap al nord. Comença la primavera astronòmica a l'hemisferi nord."],
                   en: ["Spring Equinox", "The Sun crosses the celestial equator heading north, marking the start of astronomical spring in the Northern Hemisphere."] },
             2:  { cat: "season", icon: "☀️", color: "#fbbf24",
-                  es: ["Solsticio de Verano", "El Sol alcanza su máxima declinación norte. Es el día más largo del año y da inicio al verano astronómico."],
-                  ca: ["Solstici d'Estiu", "El Sol assoleix la seva màxima declinació nord. És el dia més llarg de l'any i dona inici a l'estiu astronòmic."],
+                  es: ["Solsticio de verano", "El Sol alcanza su máxima declinación norte. Es el día más largo del año y da inicio al verano astronómico."],
+                  ca: ["Solstici d'estiu", "El Sol assoleix la seva màxima declinació nord. És el dia més llarg de l'any i dona inici a l'estiu astronòmic."],
                   en: ["Summer Solstice", "The Sun reaches its northernmost declination. Longest day of the year and start of astronomical summer."] },
             3:  { cat: "season", icon: "", color: "#fb923c",
-                  es: ["Equinoccio de Otoño", "El Sol cruza el ecuador celeste hacia el sur. Comienza el otoño astronómico en el hemisferio norte."],
-                  ca: ["Equinocci de Tardor", "El Sol creua l'equador celeste cap al sud. Comença la tardor astronòmica a l'hemisferi nord."],
+                  es: ["Equinoccio de otoño", "El Sol cruza el ecuador celeste hacia el sur. Comienza el otoño astronómico en el hemisferio norte."],
+                  ca: ["Equinocci de tardor", "El Sol creua l'equador celeste cap al sud. Comença la tardor astronòmica a l'hemisferi nord."],
                   en: ["Autumn Equinox", "The Sun crosses the celestial equator heading south, marking the start of astronomical autumn in the Northern Hemisphere."] },
             4:  { cat: "season", icon: "", color: "#38bdf8",
-                  es: ["Solsticio de Invierno", "El Sol alcanza su máxima declinación sur. Es la noche más larga del año y comienza el invierno astronómico."],
-                  ca: ["Solstici d'Hivern", "El Sol assoleix la seva màxima declinació sud. És la nit més llarga de l'any i comença l'hivern astronòmic."],
+                  es: ["Solsticio de invierno", "El Sol alcanza su máxima declinación sur. Es la noche más larga del año y comienza el invierno astronómico."],
+                  ca: ["Solstici d'hivern", "El Sol assoleix la seva màxima declinació sud. És la nit més llarga de l'any i comença l'hivern astronòmic."],
                   en: ["Winter Solstice", "The Sun reaches its southernmost declination. Longest night of the year and start of astronomical winter."] },
             5:  { cat: "season", icon: "♁", color: "#f43f5e",
-                  es: ["Perihelio Terrestre", "Punto de la órbita donde la Tierra se encuentra más cercana al Sol (~147 millones de km)."],
-                  ca: ["Periheli Terrestre", "Punt de l'òrbita on la Terra es troba més propera al Sol (~147 milions de km)."],
+                  es: ["Perihelio terrestre", "Punto de la órbita donde la Tierra se encuentra más cercana al Sol (~147 millones de km)."],
+                  ca: ["Periheli terrestre", "Punt de l'òrbita on la Terra es troba més propera al Sol (~147 milions de km)."],
                   en: ["Earth at Perihelion", "Orbital point where Earth is closest to the Sun (~147 million km)."] },
             6:  { cat: "season", icon: "♁", color: "#60a5fa",
-                  es: ["Afelio Terrestre", "Punto de la órbita donde la Tierra se encuentra más alejada del Sol (~152 millones de km)."],
-                  ca: ["Afeli Terrestre", "Punt de l'òrbita on la Terra es troba més allunyada del Sol (~152 milions de km)."],
+                  es: ["Afelio terrestre", "Punto de la órbita donde la Tierra se encuentra más alejada del Sol (~152 millones de km)."],
+                  ca: ["Afeli terrestre", "Punt de l'òrbita on la Terra es troba més allunyada del Sol (~152 milions de km)."],
                   en: ["Earth at Aphelion", "Orbital point where Earth is farthest from the Sun (~152 million km)."] },
 
             11: { cat: "moon", icon: MOON_SVG.new, color: "#94a3b8",
-                  es: ["Luna Nueva", "La Luna pasa entre la Tierra y el Sol. Ideal para observación de cielo profundo (sin contaminación lumínica natural)."],
-                  ca: ["Lluna Nova", "La Lluna passa entre la Terra i el Sol. Ideal per a l'observació de cel profund (sense contaminació lumínica natural)."],
+                  es: ["Luna nueva", "La Luna pasa entre la Tierra y el Sol. Ideal para observación de cielo profundo (sin contaminación lumínica natural)."],
+                  ca: ["Lluna nova", "La Lluna passa entre la Terra i el Sol. Ideal per a l'observació de cel profund (sense contaminació lumínica natural)."],
                   en: ["New Moon", "The Moon passes between Earth and the Sun. Ideal for deep-sky observing with no natural moonlight interference."] },
             12: { cat: "moon", icon: MOON_SVG.first, color: "#38bdf8",
-                  es: ["Cuarto Creciente", "El 50% de la cara visible de la Luna está iluminada. Excelente momento para observar cráteres en el terminador."],
-                  ca: ["Quart Creixent", "El 50% de la cara visible de la Lluna està il·luminada. Excel·lent moment per observar cràters al terminador."],
+                  es: ["Cuarto creciente", "El 50% de la cara visible de la Luna está iluminada. Excelente momento para observar cráteres en el terminador."],
+                  ca: ["Quart creixent", "El 50% de la cara visible de la Lluna està il·luminada. Excel·lent moment per observar cràters al terminador."],
                   en: ["First Quarter Moon", "50% of the Moon's visible face is illuminated. Excellent time to observe craters along the lunar terminator."] },
             13: { cat: "moon", icon: MOON_SVG.full, color: "#facc15",
-                  es: ["Luna Llena", "La cara visible de la Luna está 100% iluminada por el Sol. Gran brillo en el cielo nocturno."],
-                  ca: ["Lluna Plena", "La cara visible de la Lluna està 100% il·luminada pel Sol. Gran brillantor al cel nocturn."],
+                  es: ["Luna llena", "La cara visible de la Luna está 100% iluminada por el Sol. Gran brillo en el cielo nocturno."],
+                  ca: ["Lluna plena", "La cara visible de la Lluna està 100% il·luminada pel Sol. Gran brillantor al cel nocturn."],
                   en: ["Full Moon", "The Moon's visible face is 100% illuminated by the Sun, shining brightly through the night sky."] },
             14: { cat: "moon", icon: MOON_SVG.last, color: "#c084fc",
-                  es: ["Cuarto Menguante", "El 50% de la cara visible de la Luna mengua hacia la fase nueva. Visible durante la segunda mitad de la noche."],
-                  ca: ["Quart Minvant", "El 50% de la cara visible de la Lluna minva cap a la fase nova. Visible durant la segona meitat de la nit."],
+                  es: ["Cuarto menguante", "El 50% de la cara visible de la Luna mengua hacia la fase nueva. Visible durante la segunda mitad de la noche."],
+                  ca: ["Quart minvant", "El 50% de la cara visible de la Lluna minva cap a la fase nova. Visible durant la segona meitat de la nit."],
                   en: ["Last Quarter Moon", "50% of the Moon's visible face is illuminated as it wanes toward New Moon. Visible during the second half of the night."] },
             15: { cat: "moon", icon: "", color: "#34d399",
-                  es: ["Perigeo Lunar", "La Luna alcanza su punto más cercano a la Tierra en su órbita mensual (mayor tamaño aparente)."],
-                  ca: ["Perigeu Lunar", "La Lluna assoleix el punt més proper a la Terra en la seva òrbita mensual (mida aparent més gran)."],
+                  es: ["Perigeo lunar", "La Luna alcanza su punto más cercano a la Tierra en su órbita mensual (mayor tamaño aparente)."],
+                  ca: ["Perigeu lunar", "La Lluna assoleix el punt més proper a la Terra en la seva òrbita mensual (mida aparent més gran)."],
                   en: ["Lunar Perigee", "The Moon reaches its closest point to Earth in its monthly orbit (largest apparent size)."] },
             16: { cat: "moon", icon: "", color: "#94a3b8",
-                  es: ["Apogeo Lunar", "La Luna alcanza su punto más alejado de la Tierra en su órbita mensual (menor tamaño aparente)."],
-                  ca: ["Apogeu Lunar", "La Lluna assoleix el punt més allunyat de la Terra en la seva òrbita mensual (mida aparent més petita)."],
+                  es: ["Apogeo lunar", "La Luna alcanza su punto más alejado de la Tierra en su órbita mensual (menor tamaño aparente)."],
+                  ca: ["Apogeu lunar", "La Lluna assoleix el punt més allunyat de la Terra en la seva òrbita mensual (mida aparent més petita)."],
                   en: ["Lunar Apogee", "The Moon reaches its farthest point from Earth in its monthly orbit (smallest apparent size)."] },
             17: { cat: "moon", icon: "", color: "#a855f7",
-                  es: ["Nodo Ascendente Lunar", "La Luna cruza el plano de la eclíptica de sur a norte."],
-                  ca: ["Node Ascendent Lunar", "La Lluna creua el pla de l'eclíptica de sud a nord."],
+                  es: ["Nodo ascendente lunar", "La Luna cruza el plano de la eclíptica de sur a norte."],
+                  ca: ["Node ascendent lunar", "La Lluna creua el pla de l'eclíptica de sud a nord."],
                   en: ["Lunar Ascending Node", "The Moon crosses the ecliptic plane from south to north."] },
             18: { cat: "moon", icon: "", color: "#a855f7",
-                  es: ["Nodo Descendente Lunar", "La Luna cruza el plano de la eclíptica de norte a sur."],
-                  ca: ["Node Descendent Lunar", "La Lluna creua el pla de l'eclíptica de nord a sud."],
+                  es: ["Nodo descendente lunar", "La Luna cruza el plano de la eclíptica de norte a sur."],
+                  ca: ["Node descendent lunar", "La Lluna creua el pla de l'eclíptica de nord a sud."],
                   en: ["Lunar Descending Node", "The Moon crosses the ecliptic plane from north to south."] },
             19: { cat: "moon", icon: "", color: "#64748b",
-                  es: ["Máxima Declinación Sur Lunar", "La Luna alcanza su posición más baja en el cielo boreal."],
-                  ca: ["Màxima Declinació Sud Lunar", "La Lluna assoleix la seva posició més baixa al cel boreal."],
+                  es: ["Máxima declinación sur lunar", "La Luna alcanza su posición más baja en el cielo boreal."],
+                  ca: ["Màxima declinació sud lunar", "La Lluna assoleix la seva posició més baixa al cel boreal."],
                   en: ["Lunar Maximum South Declination", "The Moon reaches its lowest position in the northern sky."] },
             20: { cat: "moon", icon: "", color: "#64748b",
-                  es: ["Máxima Declinación Norte Lunar", "La Luna alcanza su posición más alta en el cielo boreal."],
-                  ca: ["Màxima Declinació Nord Lunar", "La Lluna assoleix la seva posició més alta al cel boreal."],
+                  es: ["Máxima declinación norte lunar", "La Luna alcanza su posición más alta en el cielo boreal."],
+                  ca: ["Màxima declinació nord lunar", "La Lluna assoleix la seva posició més alta al cel boreal."],
                   en: ["Lunar Maximum North Declination", "The Moon reaches its highest position in the northern sky."] },
 
             21: { cat: "eclipse", icon: MOON_SVG.new, color: "#f43f5e",
-                  es: ["Eclipse Total de Sol", "La Luna oculta completamente el disco solar. Fenómeno extraordinario visible a lo largo de la franja de totalidad."],
-                  ca: ["Eclipsi Total de Sol", "La Lluna oculta completament el disc solar. Fenomen extraordinari visible al llarg del recorregut de totalitat."],
+                  es: ["Eclipse total de Sol", "La Luna oculta completamente el disco solar. Fenómeno extraordinario visible a lo largo de la franja de totalidad."],
+                  ca: ["Eclipsi total de Sol", "La Lluna oculta completament el disc solar. Fenomen extraordinari visible al llarg del recorregut de totalitat."],
                   en: ["Total Solar Eclipse", "The Moon completely obscures the solar disk. An extraordinary event visible along the path of totality."] },
             22: { cat: "eclipse", icon: "☀️", color: "#fb923c",
-                  es: ["Eclipse Anular de Sol", "La Luna no cubre por completo el Sol, dejando un anillo de fuego visible alrededor del disco lunar."],
-                  ca: ["Eclipsi Anular de Sol", "La Lluna no cobreix completament el Sol, deixant visible un anell de foc al voltant del disc lunar."],
+                  es: ["Eclipse anular de Sol", "La Luna no cubre por completo el Sol, dejando un anillo de fuego visible alrededor del disco lunar."],
+                  ca: ["Eclipsi anular de Sol", "La Lluna no cobreix completament el Sol, deixant visible un anell de foc al voltant del disc lunar."],
                   en: ["Annular Solar Eclipse", "The Moon does not completely cover the Sun, leaving a bright 'ring of fire' around the lunar silhouette."] },
             23: { cat: "eclipse", icon: "☀️", color: "#facc15",
-                  es: ["Eclipse Híbrido de Sol", "Eclipse que transiciona entre anular y total a lo largo de su recorrido."],
-                  ca: ["Eclipsi Híbrid de Sol", "Eclipsi que transiciona entre anular i total al llarg del seu recorregut."],
+                  es: ["Eclipse híbrido de Sol", "Eclipse que transiciona entre anular y total a lo largo de su recorrido."],
+                  ca: ["Eclipsi híbrid de Sol", "Eclipsi que transiciona entre anular i total al llarg del seu recorregut."],
                   en: ["Hybrid Solar Eclipse", "A rare solar eclipse that transitions between annular and total along its path."] },
             24: { cat: "eclipse", icon: "☀️", color: "#fbbf24",
-                  es: ["Eclipse Parcial de Sol", "La Luna cubre una fracción del disco solar."],
-                  ca: ["Eclipsi Parcial de Sol", "La Lluna cobreix una fracció del disc solar."],
+                  es: ["Eclipse parcial de Sol", "La Luna cubre una fracción del disco solar."],
+                  ca: ["Eclipsi parcial de Sol", "La Lluna cobreix una fracció del disc solar."],
                   en: ["Partial Solar Eclipse", "The Moon covers a portion of the Sun's disk."] },
             26: { cat: "eclipse", icon: MOON_SVG.full, color: "#ef4444",
-                  es: ["Eclipse Total de Luna", "La Luna se sumerge totalmente en la sombra de la Tierra, adquiriendo un tono rojizo (Luna de Sangre)."],
-                  ca: ["Eclipsi Total de Lluna", "La Lluna se submergeix totalment a l'ombra de la Terra, adquirint un to rogenc (Lluna de Sang)."],
+                  es: ["Eclipse total de Luna", "La Luna se sumerge totalmente en la sombra de la Tierra, adquiriendo un tono rojizo (Luna de sangre)."],
+                  ca: ["Eclipsi total de Lluna", "La Lluna se submergeix totalment a l'ombra de la Terra, adquirint un to rogenc (Lluna de sang)."],
                   en: ["Total Lunar Eclipse", "The Moon passes completely into Earth's umbra, taking on a deep reddish glow (Blood Moon)."] },
             27: { cat: "eclipse", icon: MOON_SVG.last, color: "#f87171",
-                  es: ["Eclipse Parcial de Luna", "Una porción de la Luna entra en la umbra de la sombra terrestre."],
-                  ca: ["Eclipsi Parcial de Lluna", "Una porció de la Lluna entra a l'umbra de l'ombra terrestre."],
+                  es: ["Eclipse parcial de Luna", "Una porción de la Luna entra en la umbra de la sombra terrestre."],
+                  ca: ["Eclipsi parcial de Lluna", "Una porció de la Lluna entra a l'umbra de l'ombra terrestre."],
                   en: ["Partial Lunar Eclipse", "A portion of the Moon enters Earth's dark umbral shadow."] },
             28: { cat: "eclipse", icon: MOON_SVG.full, color: "#94a3b8",
-                  es: ["Eclipse Penumbral de Luna", "La Luna atraviesa la penumbra tenue de la Tierra, produciendo un sutil oscurecimiento."],
-                  ca: ["Eclipsi Penombral de Lluna", "La Lluna travessa la penombra tènue de la Terra, produint un subtil enfosquiment."],
+                  es: ["Eclipse penumbral de Luna", "La Luna atraviesa la penumbra tenue de la Tierra, produciendo un sutil oscurecimiento."],
+                  ca: ["Eclipsi penombral de Lluna", "La Lluna travessa la penombra tènue de la Terra, produint un subtil enfosquiment."],
                   en: ["Penumbral Lunar Eclipse", "The Moon passes through Earth's faint outer penumbra, causing a subtle shading."] },
 
-            31: { cat: "planet", icon: "☿️", color: "#94a3b8",
-                  es: ["Mercurio en Conjunción Inferior", "Mercurio pasa entre la Tierra y el Sol, no visible."],
-                  ca: ["Mercuri en Conjunció Inferior", "Mercuri passa entre la Terra i el Sol, no visible."],
+            31: { cat: "planet", icon: "☿", color: "#94a3b8",
+                  es: ["Mercurio en conjunción inferior", "Mercurio pasa entre la Tierra y el Sol, no visible."],
+                  ca: ["Mercuri en conjunció inferior", "Mercuri passa entre la Terra i el Sol, no visible."],
                   en: ["Mercury at Inferior Conjunction", "Mercury passes between Earth and the Sun and is not visible."] },
-            32: { cat: "planet", icon: "♀️", color: "#f472b6",
-                  es: ["Venus en Conjunción Inferior", "Venus pasa entre la Tierra y el Sol."],
-                  ca: ["Venus en Conjunció Inferior", "Venus passa entre la Terra i el Sol."],
+            32: { cat: "planet", icon: "♀", color: "#f472b6",
+                  es: ["Venus en conjunción inferior", "Venus pasa entre la Tierra y el Sol."],
+                  ca: ["Venus en conjunció inferior", "Venus passa entre la Terra i el Sol."],
                   en: ["Venus at Inferior Conjunction", "Venus passes between Earth and the Sun."] },
-            33: { cat: "planet", icon: "☿️", color: "#94a3b8",
-                  es: ["Mercurio en Conjunción Superior", "Mercurio pasa por detrás del Sol."],
-                  ca: ["Mercuri en Conjunció Superior", "Mercuri passa per darrere del Sol."],
+            33: { cat: "planet", icon: "☿", color: "#94a3b8",
+                  es: ["Mercurio en conjunción superior", "Mercurio pasa por detrás del Sol."],
+                  ca: ["Mercuri en conjunció superior", "Mercuri passa per darrere del Sol."],
                   en: ["Mercury at Superior Conjunction", "Mercury passes behind the Sun."] },
-            34: { cat: "planet", icon: "♀️", color: "#f472b6",
-                  es: ["Venus en Conjunción Superior", "Venus pasa por detrás del Sol."],
-                  ca: ["Venus en Conjunció Superior", "Venus passa per darrere del Sol."],
+            34: { cat: "planet", icon: "♀", color: "#f472b6",
+                  es: ["Venus en conjunción superior", "Venus pasa por detrás del Sol."],
+                  ca: ["Venus en conjunció superior", "Venus passa per darrere del Sol."],
                   en: ["Venus at Superior Conjunction", "Venus passes behind the Sun."] },
-            35: { cat: "planet", icon: "☿️", color: "#38bdf8",
-                  es: ["Mercurio en Máxima Elongación Este", "Mejor momento para observar Mercurio tras el atardecer (cielo vespertino al oeste)."],
-                  ca: ["Mercuri en Màxima Elongació Est", "Millor moment per observar Mercuri després del capvespre (cel vespertí a l'oest)."],
+            35: { cat: "planet", icon: "☿", color: "#38bdf8",
+                  es: ["Mercurio en máxima elongación este", "Mejor momento para observar Mercurio tras el atardecer (cielo vespertino al oeste)."],
+                  ca: ["Mercuri en màxima elongació est", "Millor moment per observar Mercuri després del capvespre (cel vespertí a l'oest)."],
                   en: ["Mercury at Greatest Eastern Elongation", "Best time to observe Mercury after sunset in the western evening sky."] },
-            36: { cat: "planet", icon: "☿️", color: "#38bdf8",
-                  es: ["Mercurio en Máxima Elongación Oeste", "Mejor momento para observar Mercurio antes del amanecer (cielo matutino al este)."],
-                  ca: ["Mercuri en Màxima Elongació Oest", "Millor moment per observar Mercuri abans de l'alba (cel matutí a l'est)."],
+            36: { cat: "planet", icon: "☿", color: "#38bdf8",
+                  es: ["Mercurio en máxima elongación oeste", "Mejor momento para observar Mercurio antes del amanecer (cielo matutino al este)."],
+                  ca: ["Mercuri en màxima elongació oest", "Millor moment per observar Mercuri abans de l'alba (cel matutí a l'est)."],
                   en: ["Mercury at Greatest Western Elongation", "Best time to observe Mercury before sunrise in the eastern morning sky."] },
-            37: { cat: "planet", icon: "♀️", color: "#f472b6",
-                  es: ["Venus en Máxima Elongación Este", "Venus brillante visible durante horas tras la puesta de Sol (el Lucero de la Tarde)."],
-                  ca: ["Venus en Màxima Elongació Est", "Venus brillant visible durant hores després de la posta de Sol (Estel del Vespre)."],
+            37: { cat: "planet", icon: "♀", color: "#f472b6",
+                  es: ["Venus en máxima elongación este", "Venus brillante visible durante horas tras la puesta de Sol (el lucero de la tarde)."],
+                  ca: ["Venus en màxima elongació est", "Venus brillant visible durant hores després de la posta de Sol (estel del vespre)."],
                   en: ["Venus at Greatest Eastern Elongation", "Bright Venus shines for hours after sunset as the Evening Star."] },
-            38: { cat: "planet", icon: "♀️", color: "#f472b6",
-                  es: ["Venus en Máxima Elongación Oeste", "Venus brillante visible antes del amanecer (el Lucero del Alba)."],
-                  ca: ["Venus en Màxima Elongació Oest", "Venus brillant visible abans de l'alba (Estel de l'Alba)."],
+            38: { cat: "planet", icon: "♀", color: "#f472b6",
+                  es: ["Venus en máxima elongación oeste", "Venus brillante visible antes del amanecer (el lucero del alba)."],
+                  ca: ["Venus en màxima elongació oest", "Venus brillant visible abans de l'alba (estel de l'alba)."],
                   en: ["Venus at Greatest Western Elongation", "Bright Venus shines prominently before sunrise as the Morning Star."] },
 
-            41: { cat: "planet", icon: "♂️", color: "#ef4444",
-                  es: ["Marte en Oposición", "Marte alineado con la Tierra y el Sol. Máximo brillo, mayor diámetro telescópico y visible toda la noche."],
-                  ca: ["Mart en Oposició", "Mart alineat amb la Terra i el Sol. Màxima brillantor, major diàmetre telescòpic i visible tota la nit."],
+            41: { cat: "planet", icon: "♂", color: "#ef4444",
+                  es: ["Marte en oposición", "Marte alineado con la Tierra y el Sol. Máximo brillo, mayor diámetro telescópico y visible toda la noche."],
+                  ca: ["Mart en oposició", "Mart alineat amb la Terra i el Sol. Màxima brillantor, major diàmetre telescòpic i visible tota la nit."],
                   en: ["Mars at Opposition", "Mars aligns opposite the Sun. Peak brightness, largest telescopic disk, and visible all night."] },
             42: { cat: "planet", icon: "♃", color: "#fb923c",
-                  es: ["Júpiter en Oposición", "Júpiter en su punto más cercano a la Tierra. Máximo brillo y excelente visión de bandas y lunas galileanas."],
-                  ca: ["Júpiter en Oposició", "Júpiter al punt més proper a la Terra. Màxima brillantor i excel·lent visió de bandes i llunes galileanes."],
+                  es: ["Júpiter en oposición", "Júpiter en su punto más cercano a la Tierra. Máximo brillo y excelente visión de bandas y lunas galileanas."],
+                  ca: ["Júpiter en oposició", "Júpiter al punt més proper a la Terra. Màxima brillantor i excel·lent visió de bandes i llunes galileanes."],
                   en: ["Jupiter at Opposition", "Jupiter at its closest approach to Earth. Peak brightness and superb views of cloud bands and Galilean moons."] },
             43: { cat: "planet", icon: "♄", color: "#facc15",
-                  es: ["Saturno en Oposición", "Saturno en su mejor momento del año. Sus anillos y lunas son visibles toda la noche con telescopio."],
-                  ca: ["Saturn en Oposició", "Saturn en el seu millor moment de l'any. Els seus anells i llunes són visibles tota la nit amb telescopi."],
+                  es: ["Saturno en oposición", "Saturno en su mejor momento del año. Sus anillos y lunas son visibles toda la noche con telescopio."],
+                  ca: ["Saturn en oposició", "Saturn en el seu millor moment de l'any. Els seus anells i llunes són visibles tota la nit amb telescopi."],
                   en: ["Saturn at Opposition", "Saturn at its yearly peak. Its rings and moons are visible all night through a telescope."] },
             44: { cat: "planet", icon: "♅", color: "#2dd4bf",
-                  es: ["Urano en Oposición", "Urano en su distancia mínima a la Tierra, visible con prismáticos en cielos oscuros."],
-                  ca: ["Urà en Oposició", "Urà a la distància mínima de la Terra, visible amb prismàtics en cels foscos."],
+                  es: ["Urano en oposición", "Urano en su distancia mínima a la Tierra, visible con prismáticos en cielos oscuros."],
+                  ca: ["Urà en oposició", "Urà a la distància mínima de la Terra, visible amb prismàtics en cels foscos."],
                   en: ["Uranus at Opposition", "Uranus at minimum distance from Earth, visible with binoculars under dark skies."] },
             45: { cat: "planet", icon: "♆", color: "#60a5fa",
-                  es: ["Neptuno en Oposición", "Neptuno en oposición, visible mediante telescopio como un diminuto disco azulado."],
-                  ca: ["Neptú en Oposició", "Neptú en oposició, visible mitjançant telescopi com un diminut disc blavós."],
+                  es: ["Neptuno en oposición", "Neptuno en oposición, visible mediante telescopio como un diminuto disco azulado."],
+                  ca: ["Neptú en oposició", "Neptú en oposició, visible mitjançant telescopi com un diminut disc blavós."],
                   en: ["Neptune at Opposition", "Neptune at opposition, visible through a telescope as a tiny bluish disk."] },
-            46: { cat: "planet", icon: "♂️", color: "#94a3b8",
-                  es: ["Marte en Conjunción Solar", "Marte pasa por detrás del Sol."],
-                  ca: ["Mart en Conjunció Solar", "Mart passa per darrere del Sol."],
+            46: { cat: "planet", icon: "♂", color: "#94a3b8",
+                  es: ["Marte en conjunción solar", "Marte pasa por detrás del Sol."],
+                  ca: ["Mart en conjunció solar", "Mart passa per darrere del Sol."],
                   en: ["Mars at Solar Conjunction", "Mars passes behind the Sun."] },
             47: { cat: "planet", icon: "♃", color: "#94a3b8",
-                  es: ["Júpiter en Conjunción Solar", "Júpiter pasa por detrás del Sol."],
-                  ca: ["Júpiter en Conjunció Solar", "Júpiter passa per darrere del Sol."],
+                  es: ["Júpiter en conjunción solar", "Júpiter pasa por detrás del Sol."],
+                  ca: ["Júpiter en conjunció solar", "Júpiter passa per darrere del Sol."],
                   en: ["Jupiter at Solar Conjunction", "Jupiter passes behind the Sun."] },
             48: { cat: "planet", icon: "♄", color: "#94a3b8",
-                  es: ["Saturno en Conjunción Solar", "Saturno pasa por detrás del Sol."],
-                  ca: ["Saturn en Conjunció Solar", "Saturn passa per darrere del Sol."],
+                  es: ["Saturno en conjunción solar", "Saturno pasa por detrás del Sol."],
+                  ca: ["Saturn en conjunció solar", "Saturn passa per darrere del Sol."],
                   en: ["Saturn at Solar Conjunction", "Saturn passes behind the Sun."] },
             49: { cat: "planet", icon: "♅", color: "#94a3b8",
-                  es: ["Urano en Conjunción Solar", "Urano pasa por detrás del Sol."],
-                  ca: ["Urà en Conjunció Solar", "Urà passa per darrere del Sol."],
+                  es: ["Urano en conjunción solar", "Urano pasa por detrás del Sol."],
+                  ca: ["Urà en conjunció solar", "Urà passa per darrere del Sol."],
                   en: ["Uranus at Solar Conjunction", "Uranus passes behind the Sun."] },
             50: { cat: "planet", icon: "♆", color: "#94a3b8",
-                  es: ["Neptuno en Conjunción Solar", "Neptuno pasa por detrás del Sol."],
-                  ca: ["Neptú en Conjunció Solar", "Neptú passa per darrere del Sol."],
+                  es: ["Neptuno en conjunción solar", "Neptuno pasa por detrás del Sol."],
+                  ca: ["Neptú en conjunció solar", "Neptú passa per darrere del Sol."],
                   en: ["Neptune at Solar Conjunction", "Neptune passes behind the Sun."] },
 
             51: { cat: "conjunction", icon: "☿", color: "#38bdf8",
@@ -2412,92 +2422,92 @@ const RAW_SKYCAL_EVENTS = [[2459215.7951,67,-25],[2459216,136,-202],[2459216.874
                    ca: ["Conjunció Mart - Saturn", "Pas proper entre Mart i Saturn."],
                    en: ["Mars - Saturn Conjunction", "Close pairing between Mars and Saturn."] },
             112: { cat: "conjunction", icon: "♃♄", color: "#facc15",
-                   es: ["Gran Conjunción Júpiter - Saturno", "Raro y espectacular encuentro cercano entre los dos gigantes del Sistema Solar."],
-                   ca: ["Gran Conjunció Júpiter - Saturn", "Rar i espectacular encontre proper entre els dos gegants del Sistema Solar."],
+                   es: ["Gran conjunción Júpiter - Saturno", "Raro y espectacular encuentro cercano entre los dos gigantes del sistema solar."],
+                   ca: ["Gran conjunció Júpiter - Saturn", "Rar i espectacular encontre proper entre els dos gegants del sistema solar."],
                    en: ["Great Conjunction: Jupiter - Saturn", "Rare and spectacular close encounter between the two gas giants of the Solar System."] },
 
-            135: { cat: "planet", icon: "☿️", color: "#38bdf8",
-                   es: ["Máxima Elongación de Mercurio", "Mercurio alcanza su máxima separación angular respecto al Sol, óptimo para su observación."],
-                   ca: ["Màxima Elongació de Mercuri", "Mercuri assoleix la màxima separació angular respecte al Sol, òptim per observar-lo."],
+            135: { cat: "planet", icon: "☿", color: "#38bdf8",
+                   es: ["Máxima elongación de Mercurio", "Mercurio alcanza su máxima separación angular respecto al Sol, óptimo para su observación."],
+                   ca: ["Màxima elongació de Mercuri", "Mercuri assoleix la màxima separació angular respecte al Sol, òptim per observar-lo."],
                    en: ["Mercury at Greatest Elongation", "Mercury reaches its widest angular separation from the Sun, optimal for viewing."] },
-            136: { cat: "planet", icon: "♀️", color: "#f472b6",
-                   es: ["Máxima Elongación de Venus", "Venus alcanza su máxima separación angular respecto al Sol, luciendo con gran altura e intensidad."],
-                   ca: ["Màxima Elongació de Venus", "Venus assoleix la màxima separació angular respecte al Sol, lluint amb gran alçada i intensitat."],
+            136: { cat: "planet", icon: "♀", color: "#f472b6",
+                   es: ["Máxima elongación de Venus", "Venus alcanza su máxima separación angular respecto al Sol, luciendo con gran altura e intensidad."],
+                   ca: ["Màxima elongació de Venus", "Venus assoleix la màxima separació angular respecte al Sol, lluint amb gran alçada i intensitat."],
                    en: ["Venus at Greatest Elongation", "Venus reaches its widest angular separation from the Sun, shining high and bright."] },
 
             120: { cat: "shower", icon: "🌠", color: "#38bdf8",
-                   es: ["Lluvia de Cuadrántidas (Pico)", "Pico de actividad de las Cuadrántidas (~120 meteoros/hora)."],
-                   ca: ["Pluja de Quadràntids (Pic)", "Pic d'activitat dels Quadràntids (~120 meteors/hora)."],
+                   es: ["Lluvia de Cuadrántidas (pico)", "Pico de actividad de las Cuadrántidas (~120 meteoros/hora)."],
+                   ca: ["Pluja de Quadràntids (pic)", "Pic d'activitat dels Quadràntids (~120 meteors/hora)."],
                    en: ["Quadrantids Meteor Shower (Peak)", "Peak activity of the Quadrantids (~120 meteors/hour)."] },
             121: { cat: "shower", icon: "🌠", color: "#34d399",
-                   es: ["Lluvia de Líridas (Pico)", "Lluvia de meteoros de primavera originada por el cometa Thatcher."],
-                   ca: ["Pluja de Lírids (Pic)", "Pluja de meteors de primavera originada pel cometa Thatcher."],
+                   es: ["Lluvia de Líridas (pico)", "Lluvia de meteoros de primavera originada por el cometa Thatcher."],
+                   ca: ["Pluja de Lírids (pic)", "Pluja de meteors de primavera originada pel cometa Thatcher."],
                    en: ["Lyrids Meteor Shower (Peak)", "Spring meteor shower produced by Comet Thatcher."] },
             122: { cat: "shower", icon: "🌠", color: "#2dd4bf",
-                   es: ["Lluvia de Eta Acuáridas (Pico)", "Meteoros procedentes de los restos del cometa Halley."],
-                   ca: ["Pluja d'Eta Aquàrids (Pic)", "Meteors procedents de les restes del cometa Halley."],
+                   es: ["Lluvia de Eta Acuáridas (pico)", "Meteoros procedentes de los restos del cometa Halley."],
+                   ca: ["Pluja d'Eta Aquàrids (pic)", "Meteors procedents de les restes del cometa Halley."],
                    en: ["Eta Aquariids Meteor Shower (Peak)", "Meteors originating from debris left by Halley's Comet."] },
             123: { cat: "shower", icon: "🌠", color: "#2dd4bf",
-                   es: ["Lluvia de Delta Acuáridas (Pico)", "Lluvia de meteoros estival visible en el cielo austral."],
-                   ca: ["Pluja de Delta Aquàrids (Pic)", "Pluja de meteors estival visible al cel austral."],
+                   es: ["Lluvia de Delta Acuáridas (pico)", "Lluvia de meteoros estival visible en el cielo austral."],
+                   ca: ["Pluja de Delta Aquàrids (pic)", "Pluja de meteors estival visible al cel austral."],
                    en: ["Delta Aquariids Meteor Shower (Peak)", "Summer meteor shower best seen toward the southern sky."] },
             124: { cat: "shower", icon: "🌠", color: "#facc15",
-                   es: ["Lluvia de Perseidas (Pico)", "Las famosas 'Lágrimas de San Lorenzo', una de las lluvias más intensas y populares del año (~100 meteoros/hora)."],
-                   ca: ["Pluja de Perseids (Pic)", "Les famoses 'Llàgrimes de Sant Llorenç', una de les pluges més intenses i populars de l'any (~100 meteors/hora)."],
+                   es: ["Lluvia de Perseidas (pico)", "Las famosas 'Lágrimas de San Lorenzo', una de las lluvias más intensas y populares del año (~100 meteoros/hora)."],
+                   ca: ["Pluja de Perseids (pic)", "Les famoses 'Llàgrimes de Sant Llorenç', una de les pluges més intenses i populars de l'any (~100 meteors/hora)."],
                    en: ["Perseids Meteor Shower (Peak)", "One of the richest and most popular meteor showers of the year (~100 meteors/hour)."] },
             125: { cat: "shower", icon: "🌠", color: "#fb923c",
-                   es: ["Lluvia de Oriónidas (Pico)", "Meteoros rápidos procedentes de restos del cometa Halley."],
-                   ca: ["Pluja d'Oriònids (Pic)", "Meteors ràpids procedents de restes del cometa Halley."],
+                   es: ["Lluvia de Oriónidas (pico)", "Meteoros rápidos procedentes de restos del cometa Halley."],
+                   ca: ["Pluja d'Oriònids (pic)", "Meteors ràpids procedents de restes del cometa Halley."],
                    en: ["Orionids Meteor Shower (Peak)", "Fast meteors produced by debris from Halley's Comet."] },
             126: { cat: "shower", icon: "🌠", color: "#fb923c",
-                   es: ["Lluvia de Táuridas del Sur (Pico)", "Lluvia otoñal conocida por sus brillantes bólidos de fuego."],
-                   ca: ["Pluja de Tàurids del Sud (Pic)", "Pluja tardoral coneguda pels seus brillants bòlids de foc."],
+                   es: ["Lluvia de Táuridas del Sur (pico)", "Lluvia otoñal conocida por sus brillantes bólidos de fuego."],
+                   ca: ["Pluja de Tàurids del Sud (pic)", "Pluja tardoral coneguda pels seus brillants bòlids de foc."],
                    en: ["Southern Taurids Meteor Shower (Peak)", "Autumn meteor shower famous for bright fireballs."] },
             127: { cat: "shower", icon: "🌠", color: "#fb923c",
-                   es: ["Lluvia de Táuridas del Norte (Pico)", "Meteoros procedentes del cometa Encke."],
-                   ca: ["Pluja de Tàurids del Nord (Pic)", "Meteors procedents del cometa Encke."],
+                   es: ["Lluvia de Táuridas del Norte (pico)", "Meteoros procedentes del cometa Encke."],
+                   ca: ["Pluja de Tàurids del Nord (pic)", "Meteors procedents del cometa Encke."],
                    en: ["Northern Taurids Meteor Shower (Peak)", "Meteors originating from Comet Encke."] },
             128: { cat: "shower", icon: "🌠", color: "#f472b6",
-                   es: ["Lluvia de Leónidas (Pico)", "Meteoros originados por el cometa Tempel-Tuttle."],
-                   ca: ["Pluja de Leònids (Pic)", "Meteors originats pel cometa Tempel-Tuttle."],
+                   es: ["Lluvia de Leónidas (pico)", "Meteoros originados por el cometa Tempel-Tuttle."],
+                   ca: ["Pluja de Leònids (pic)", "Meteors originats pel cometa Tempel-Tuttle."],
                    en: ["Leonids Meteor Shower (Peak)", "Meteors originating from Comet Tempel-Tuttle."] },
             129: { cat: "shower", icon: "🌠", color: "#38bdf8",
-                   es: ["Lluvia de Gemínidas (Pico)", "La lluvia más prolífica del año (~150 meteoros/hora), originada por el asteroide 3200 Faetón."],
-                   ca: ["Pluja de Gemínids (Pic)", "La pluja més prolífica de l'any (~150 meteors/hora), originada per l'asteroide 3200 Faetont."],
+                   es: ["Lluvia de Gemínidas (pico)", "La lluvia más prolífica del año (~150 meteoros/hora), originada por el asteroide 3200 Faetón."],
+                   ca: ["Pluja de Gemínids (pic)", "La pluja més prolífica de l'any (~150 meteors/hora), originada per l'asteroide 3200 Faetont."],
                    en: ["Geminids Meteor Shower (Peak)", "The year's most prolific shower (~150 meteors/hour), originating from asteroid 3200 Phaethon."] },
             130: { cat: "shower", icon: "🌠", color: "#c084fc",
-                   es: ["Lluvia de Úrsidas (Pico)", "Última lluvia destacada del año en torno al solsticio de invierno."],
-                   ca: ["Pluja d'Úrsids (Pic)", "Última pluja destacada de l'any entorn del solstici d'hivern."],
+                   es: ["Lluvia de Úrsidas (pico)", "Última lluvia destacada del año en torno al solsticio de invierno."],
+                   ca: ["Pluja d'Úrsids (pic)", "Última pluja destacada de l'any entorn del solstici d'hivern."],
                    en: ["Ursids Meteor Shower (Peak)", "Final major meteor shower of the year near the winter solstice."] },
 
             131: { cat: "season", icon: "", color: "#38bdf8",
-                   es: ["Cambio a Horario de Verano (CEST)", "Inicio del horario de verano: los relojes se adelantan una hora (UTC+2)."],
-                   ca: ["Canvi a Horari d'Estiu (CEST)", "Inici de l'horari d'estiu: els rellotges s'avancen una hora (UTC+2)."],
+                   es: ["Cambio a horario de verano (CEST)", "Inicio del horario de verano: los relojes se adelantan una hora (UTC+2)."],
+                   ca: ["Canvi a horari d'estiu (CEST)", "Inici de l'horari d'estiu: els rellotges s'avancen una hora (UTC+2)."],
                    en: ["Daylight Saving Time Begins (CEST)", "Summer time starts: clocks spring forward one hour (UTC+2)."] },
             132: { cat: "season", icon: "", color: "#38bdf8",
-                   es: ["Cambio a Horario de Invierno (CET)", "Fin del horario de verano: los relojes se retrasan una hora (UTC+1)."],
-                   ca: ["Canvi a Horari d'Hivern (CET)", "Fi de l'horari d'estiu: els rellotges s'endarrereixen una hora (UTC+1)."],
+                   es: ["Cambio a horario de invierno (CET)", "Fin del horario de verano: los relojes se retrasan una hora (UTC+1)."],
+                   ca: ["Canvi a horari d'hivern (CET)", "Fi de l'horari d'estiu: els rellotges s'endarrereixen una hora (UTC+1)."],
                    en: ["Standard Time Begins (CET)", "Summer time ends: clocks fall back one hour (UTC+1)."] },
             133: { cat: "season", icon: "", color: "#38bdf8",
-                   es: ["Cambio a Horario de Verano (CEST)", "Inicio del horario de verano en Europa."],
-                   ca: ["Canvi a Horari d'Estiu (CEST)", "Inici de l'horari d'estiu a Europa."],
+                   es: ["Cambio a horario de verano (CEST)", "Inicio del horario de verano en Europa."],
+                   ca: ["Canvi a horari d'estiu (CEST)", "Inici de l'horari d'estiu a Europa."],
                    en: ["Daylight Saving Time Begins (CEST)", "Start of European summer time."] },
             134: { cat: "season", icon: "", color: "#38bdf8",
-                   es: ["Cambio a Horario de Invierno (CET)", "Fin del horario de verano en Europa."],
-                   ca: ["Canvi a Horari d'Hivern (CET)", "Fi de l'horari d'estiu a Europa."],
+                   es: ["Cambio a horario de invierno (CET)", "Fin del horario de verano en Europa."],
+                   ca: ["Canvi a horari d'hivern (CET)", "Fi de l'horari d'estiu a Europa."],
                    en: ["Standard Time Begins (CET)", "End of European summer time."] },
 
             140: { cat: "moon", icon: MOON_SVG.waxingGibbous, color: "#fbbf24",
-                   es: ["Golden Handle Lunar", "El Sol ilumina con ángulo rasante las cumbres de los Montes Jura formando un arco dorado sobre el Sinus Iridum aún en sombra. Solo se listan los visibles sobre el horizonte desde la ubicación activa."],
-                   ca: ["Golden Handle Lunar", "El Sol il·lumina amb angle rasant els cims dels Montes Jura formant un arc daurat sobre el Sinus Iridum encara en ombra. Només es llisten els visibles sobre l'horitzó des de la ubicació activa."],
+                   es: ["Golden Handle lunar", "El Sol ilumina con ángulo rasante las cumbres de los Montes Jura formando un arco dorado sobre el Sinus Iridum aún en sombra. Solo se listan los visibles sobre el horizonte desde la ubicación activa."],
+                   ca: ["Golden Handle lunar", "El Sol il·lumina amb angle rasant els cims dels Montes Jura formant un arc daurat sobre el Sinus Iridum encara en ombra. Només es llisten els visibles sobre l'horitzó des de la ubicació activa."],
                    en: ["Lunar Golden Handle", "Low-angle sunlight illuminates the peaks of the Jura Mountains as a golden arc bordering the still-shadowed Sinus Iridum. Filtered to events above the horizon from the active location."] },
             141: { cat: "moon", icon: MOON_SVG.first, color: "#fbbf24",
-                   es: ["X Lunar", "Efecto de claroscuro cerca del Cuarto Creciente: el Sol rasante ilumina los bordes de los cráteres Blanchinus, La Caille y Purbach dibujando una 'X' luminosa junto al terminador. Solo se listan los visibles sobre el horizonte desde la ubicación activa."],
-                   ca: ["X Lunar", "Efecte de clarobscur prop del Quart Creixent: el Sol rasant il·lumina les vores dels cràters Blanchinus, La Caille i Purbach dibuixant una 'X' lluminosa al terminador. Només es llisten els visibles sobre l'horitzó des de la ubicació activa."],
+                   es: ["X lunar", "Efecto de claroscuro cerca del cuarto creciente: el Sol rasante ilumina los bordes de los cráteres Blanchinus, La Caille y Purbach dibujando una 'X' luminosa junto al terminador. Solo se listan los visibles sobre el horizonte desde la ubicación activa."],
+                   ca: ["X lunar", "Efecte de clarobscur prop del quart creixent: el Sol rasant il·lumina les vores dels cràters Blanchinus, La Caille i Purbach dibuixant una 'X' lluminosa al terminador. Només es llisten els visibles sobre l'horitzó des de la ubicació activa."],
                    en: ["Lunar X", "Clair-obscur effect near First Quarter: grazing sunlight illuminates the rims of craters Blanchinus, La Caille, and Purbach, forming a bright 'X' along the terminator. Filtered to events above the horizon from the active location."] },
             142: { cat: "moon", icon: MOON_SVG.first, color: "#fbbf24",
-                   es: ["V Lunar", "Efecto de claroscuro cerca del Cuarto Creciente: la luz rasante sobre la zona del cráter Ukert dibuja una 'V' brillante en el terminador lunar. Solo se listan los visibles sobre el horizonte desde la ubicación activa."],
-                   ca: ["V Lunar", "Efecte de clarobscur prop del Quart Creixent: la llum rasant sobre la zona del cràter Ukert dibuixa una 'V' brillant al terminador lunar. Només es llisten els visibles sobre l'horitzó des de la ubicació activa."],
+                   es: ["V lunar", "Efecto de claroscuro cerca del cuarto creciente: la luz rasante sobre la zona del cráter Ukert dibuja una 'V' brillante en el terminador lunar. Solo se listan los visibles sobre el horizonte desde la ubicación activa."],
+                   ca: ["V lunar", "Efecte de clarobscur prop del quart creixent: la llum rasant sobre la zona del cràter Ukert dibuixa una 'V' brillant al terminador lunar. Només es llisten els visibles sobre l'horitzó des de la ubicació activa."],
                    en: ["Lunar V", "Clair-obscur effect near First Quarter: grazing sunlight near crater Ukert forms a bright 'V' shape along the lunar terminator. Filtered to events above the horizon from the active location."] }
         };
 
@@ -3000,6 +3010,76 @@ const RAW_SKYCAL_EVENTS = [[2459215.7951,67,-25],[2459216,136,-202],[2459216.874
 
         function formatTimeHM(date) { return date ? getLocaleFormatters(getLocale()).time.format(date) : "--:--"; }
 
+        const WEATHER_CACHE = { key: '', fetchedAt: 0, hours: null, inFlightKey: '' };
+        let showCloudBands = true;
+
+        function toggleCloudBands() {
+            showCloudBands = !showCloudBands;
+            const btn = document.getElementById('btn-toggle-clouds');
+            if (btn) {
+                btn.classList.toggle('active', showCloudBands);
+                btn.setAttribute('aria-pressed', String(showCloudBands));
+            }
+            renderAltitudeChart();
+        }
+
+        function fetchCloudForecastForActiveLoc() {
+            const key = `${ACTIVE_LOC.lat.toFixed(3)},${ACTIVE_LOC.lon.toFixed(3)}`;
+            const now = Date.now();
+            if (WEATHER_CACHE.key === key && WEATHER_CACHE.hours && (now - WEATHER_CACHE.fetchedAt) < 1800000) return;
+            if (WEATHER_CACHE.inFlightKey === key) return;
+            WEATHER_CACHE.inFlightKey = key;
+            const url = `https://api.open-meteo.com/v1/forecast?latitude=${ACTIVE_LOC.lat.toFixed(4)}&longitude=${ACTIVE_LOC.lon.toFixed(4)}&hourly=cloud_cover,cloud_cover_low,cloud_cover_mid,cloud_cover_high&forecast_days=14&timezone=UTC`;
+            fetch(url)
+                .then(r => r.ok ? r.json() : null)
+                .then(data => {
+                    if (WEATHER_CACHE.inFlightKey === key) WEATHER_CACHE.inFlightKey = '';
+                    if (!data || !data.hourly || !Array.isArray(data.hourly.time) || !Array.isArray(data.hourly.cloud_cover)) return;
+                    const hours = new Map();
+                    const hLow = data.hourly.cloud_cover_low || [];
+                    const hMid = data.hourly.cloud_cover_mid || [];
+                    const hHigh = data.hourly.cloud_cover_high || [];
+                    for (let i = 0; i < data.hourly.time.length; i++) {
+                        const ms = Date.parse(data.hourly.time[i] + 'Z');
+                        const total = data.hourly.cloud_cover[i];
+                        if (Number.isFinite(ms) && typeof total === 'number') {
+                            hours.set(ms, {
+                                total,
+                                low: typeof hLow[i] === 'number' ? hLow[i] : 0,
+                                mid: typeof hMid[i] === 'number' ? hMid[i] : 0,
+                                high: typeof hHigh[i] === 'number' ? hHigh[i] : 0
+                            });
+                        }
+                    }
+                    WEATHER_CACHE.key = key;
+                    WEATHER_CACHE.fetchedAt = Date.now();
+                    WEATHER_CACHE.hours = hours;
+                    if (`${ACTIVE_LOC.lat.toFixed(3)},${ACTIVE_LOC.lon.toFixed(3)}` === key) {
+                        renderAltitudeChart();
+                    }
+                })
+                .catch(() => {
+                    if (WEATHER_CACHE.inFlightKey === key) WEATHER_CACHE.inFlightKey = '';
+                });
+        }
+
+        function getCloudCoverAtMs(tMs) {
+            const key = `${ACTIVE_LOC.lat.toFixed(3)},${ACTIVE_LOC.lon.toFixed(3)}`;
+            if (WEATHER_CACHE.key !== key || !WEATHER_CACHE.hours) return null;
+            const h0 = Math.floor(tMs / 3600000) * 3600000;
+            const v0 = WEATHER_CACHE.hours.get(h0);
+            if (!v0) return null;
+            const v1 = WEATHER_CACHE.hours.get(h0 + 3600000);
+            if (!v1) return v0;
+            const f = (tMs - h0) / 3600000;
+            return {
+                total: v0.total + (v1.total - v0.total) * f,
+                low:   v0.low   + (v1.low   - v0.low)   * f,
+                mid:   v0.mid   + (v1.mid   - v0.mid)   * f,
+                high:  v0.high  + (v1.high  - v0.high)  * f
+            };
+        }
+
         function getNightSkyColor(mAlt, mIllum, isLight, alpha = 1) {
             const moonGlow = mAlt > 0 ? (mIllum / 100) * Math.min(1, mAlt / 10) : 0;
             const r = isLight ? Math.round(148 + (218 - 148) * moonGlow) : Math.round(5 + (108 - 5) * moonGlow);
@@ -3010,6 +3090,7 @@ const RAW_SKYCAL_EVENTS = [[2459215.7951,67,-25],[2459216,136,-202],[2459216.874
 
         function renderAltitudeChart() {
             const canvas = document.getElementById('sky-altitude-canvas'); if (!canvas) return;
+            fetchCloudForecastForActiveLoc();
             const container = document.getElementById('chart-canvas-wrapper'), rect = container.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
             const w = rect.width || 800, h = rect.height || 190;
             canvas.width = w * dpr; canvas.height = h * dpr;
@@ -3043,6 +3124,21 @@ const RAW_SKYCAL_EVENTS = [[2459215.7951,67,-25],[2459216,136,-202],[2459216.874
                     ctx.fillStyle = sAlt <= -12 ? "#1e1b4b" : (sAlt <= -6 ? "#4338ca" : (sAlt <= 0 ? "#d97706" : "#1e3a5f"));
                 }
                 ctx.fillRect(x1, padT, (x2 - x1) + 0.5, plotH);
+                const cloud = showCloudBands ? getCloudCoverAtMs(s.tDate.getTime()) : null;
+                if (cloud !== null) {
+                    const bandH = (plotH * 0.5) / 3;
+                    const layers = [
+                        { pct: cloud.high, maxA: isLight ? 0.34 : 0.30, rgb: isLight ? "148, 163, 184" : "241, 245, 249" },
+                        { pct: cloud.mid,  maxA: isLight ? 0.46 : 0.40, rgb: isLight ? "100, 116, 139" : "203, 213, 225" },
+                        { pct: cloud.low,  maxA: isLight ? 0.60 : 0.52, rgb: isLight ? "71, 85, 105"   : "148, 163, 184" }
+                    ];
+                    for (let l = 0; l < 3; l++) {
+                        if (layers[l].pct <= 2) continue;
+                        const a = (layers[l].pct / 100) * layers[l].maxA;
+                        ctx.fillStyle = `rgba(${layers[l].rgb}, ${a.toFixed(3)})`;
+                        ctx.fillRect(x1, padT + l * bandH, (x2 - x1) + 0.5, bandH + 0.5);
+                    }
+                }
             }
             [-60, -30, 0, 30, 60].forEach(alt => {
                 const y = altToY(alt);
@@ -3167,7 +3263,12 @@ const RAW_SKYCAL_EVENTS = [[2459215.7951,67,-25],[2459216,136,-202],[2459216.874
                 ctx.beginPath(); ctx.fillStyle = sunStroke; ctx.arc(hx, sunY, 4, 0, Math.PI * 2); ctx.fill();
                 ctx.beginPath(); ctx.fillStyle = `rgb(${moonRgb})`; ctx.arc(hx, moonY, 4, 0, Math.PI * 2); ctx.fill();
                 const stateStr = hs.sAlt <= -18 ? t('stateDarkNight') : (hs.sAlt <= -12 ? t('stateAstroTwilight') : (hs.sAlt <= -6 ? t('stateNauticalTwilight') : (hs.sAlt <= 0 ? t('stateCivilTwilight') : t('stateDay'))));
-                const overlay = document.getElementById('chart-hover-overlay'); overlay.style.display = "block"; overlay.innerHTML = `<strong>${formatTimeHM(hs.tDate)} h</strong> &nbsp;•&nbsp; ☀️ ${t('legendSun')}: <strong>${hs.sAlt.toFixed(1)}°</strong> &nbsp;•&nbsp; ${MOON_SVG.full} ${t('legendMoon')}: <strong>${hs.mAlt.toFixed(1)}°</strong> (${hs.mIllum.toFixed(0)}%) &nbsp;•&nbsp; <span style="color: var(--primary);">${stateStr}</span>`;
+                const hoverCloud = getCloudCoverAtMs(hs.tDate.getTime());
+                const cloudDetail = hoverCloud !== null
+                    ? t('hoverCloudLayers').replace('{l}', Math.round(hoverCloud.low)).replace('{m}', Math.round(hoverCloud.mid)).replace('{h}', Math.round(hoverCloud.high))
+                    : '';
+                const cloudPart = hoverCloud !== null ? ` &nbsp;•&nbsp; ${t('hoverClouds')}: <strong>${Math.round(hoverCloud.total)}%</strong> (${cloudDetail})` : '';
+                const overlay = document.getElementById('chart-hover-overlay'); overlay.style.display = "block"; overlay.innerHTML = `<strong>${formatTimeHM(hs.tDate)} h</strong> &nbsp;•&nbsp; ☀️ ${t('legendSun')}: <strong>${hs.sAlt.toFixed(1)}°</strong> &nbsp;•&nbsp; ${MOON_SVG.full} ${t('legendMoon')}: <strong>${hs.mAlt.toFixed(1)}°</strong> (${hs.mIllum.toFixed(0)}%)${cloudPart} &nbsp;•&nbsp; <span style="color: var(--primary);">${stateStr}</span>`;
             } else document.getElementById('chart-hover-overlay').style.display = "none";
         }
 
