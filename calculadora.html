@@ -103,14 +103,16 @@
         .theme-toggle-btn {
             display: inline-flex;
             align-items: center;
-            gap: 0.4rem;
-            background: var(--bg-surface);
+            gap: 0.38rem;
+            padding: 0.32rem 0.65rem;
+            background: rgba(255, 255, 255, 0.04);
             border: 1px solid var(--border-subtle);
+            border-radius: 6px;
             color: var(--text-muted);
-            padding: 0.42rem 0.78rem;
-            border-radius: 999px;
-            font-size: 0.8rem;
+            font-family: var(--font-heading);
+            font-size: 0.72rem;
             font-weight: 600;
+            line-height: 1.25;
             text-decoration: none;
             cursor: pointer;
             transition: all 0.2s ease;
@@ -118,33 +120,46 @@
 
         .nav-pill-link:hover,
         .theme-toggle-btn:hover {
+            color: var(--text-main);
             border-color: var(--primary);
-            color: var(--primary);
+            background: rgba(56, 189, 248, 0.12);
+        }
+
+        .theme-toggle-btn i {
+            color: var(--accent-amber);
+            font-size: 0.78rem;
         }
 
         .lang-btn-group {
             display: inline-flex;
-            background: var(--bg-surface);
-            border: 1px solid var(--border-subtle);
-            border-radius: 999px;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 6px;
             padding: 2px;
+            gap: 2px;
         }
 
         .lang-btn {
             background: transparent;
-            border: none;
+            border: 1px solid transparent;
             color: var(--text-dim);
-            padding: 0.3rem 0.6rem;
-            border-radius: 999px;
-            font-size: 0.75rem;
-            font-weight: 700;
+            font-size: 0.65rem;
+            font-weight: 600;
+            padding: 2px 6px;
+            border-radius: 4px;
             cursor: pointer;
-            transition: all 0.2s ease;
+            line-height: 1.25;
+            transition: all 0.18s ease;
+            font-family: var(--font-main);
+            letter-spacing: 0.04em;
         }
 
         .lang-btn.active {
-            background: var(--primary);
-            color: #050811;
+            color: var(--primary);
+            background: rgba(56, 189, 248, 0.16);
+            border-color: rgba(56, 189, 248, 0.35);
+            font-weight: 700;
         }
 
         .calc-layout {
@@ -446,9 +461,14 @@
             color: #5b289c;
         }
 
+        html[data-theme="light"] .theme-toggle-btn i {
+            color: #5b289c;
+        }
+
         html[data-theme="light"] .lang-btn.active {
             color: #5b289c;
             background: #ede9fe;
+            border-color: #c4b5fd;
         }
 
         html[data-theme="light"] .preset-btn {
