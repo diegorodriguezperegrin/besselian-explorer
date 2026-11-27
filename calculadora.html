@@ -515,8 +515,15 @@
                     <label for="equipo_preset" data-i18n="lblEquipment">Configuración / equipo</label>
                     <select id="equipo_preset" class="form-select" onchange="applyEquipmentPreset()">
                         <option value="custom" selected data-i18n="eqCustom">Personalizado (telescopio + cámara)</option>
-                        <option value="s50">Smartscope: Seestar S50</option>
-                        <option value="s30pro">Smartscope: Dwarf Mini / S30 Pro</option>
+                        <option value="s50">Smartscope: Seestar S50 (Tele)</option>
+                        <option value="s50pro_tele">Smartscope: Seestar S50 Pro (Tele)</option>
+                        <option value="s50pro_wide">Smartscope: Seestar S50 Pro (Wide)</option>
+                        <option value="s30">Smartscope: Seestar S30 (Tele)</option>
+                        <option value="s30pro_tele">Smartscope: Seestar S30 Pro (Tele)</option>
+                        <option value="s30pro_wide">Smartscope: Seestar S30 Pro (Wide)</option>
+                        <option value="dwarf3_tele">Smartscope: Dwarf 3 (Tele)</option>
+                        <option value="dwarf3_wide">Smartscope: Dwarf 3 (Wide)</option>
+                        <option value="draco_tele">Smartscope: Dwarf Draco (Tele)</option>
                         <option value="vespera">Smartscope: Vaonis Vespera</option>
                         <option value="newton150" data-i18n="eqNewton150">Telescopio 150 / 750 mm (combinación base)</option>
                         <option value="sc200" data-i18n="eqSc200">Telescopio 200 / 2000 mm (combinación base)</option>
@@ -888,12 +895,30 @@
         }
 
         const EQUIPMENT_PRESETS = {
-            s50:       { isSmartscope: true,  name: 'Seestar S50',           ap: '50',  f: '250',  px: '2.90', bin: '1', factor: '1', w: '1080', h: '1920', sensor: 'Sony IMX462' },
-            s30pro:    { isSmartscope: true,  name: 'Dwarf Mini / S30 Pro',  ap: '30',  f: '150',  px: '2.90', bin: '1', factor: '1', w: '3840', h: '2160', sensor: 'Sony IMX585 / IMX662' },
-            vespera:   { isSmartscope: true,  name: 'Vaonis Vespera',        ap: '50',  f: '200',  px: '3.80', bin: '1', factor: '1', w: '1920', h: '1080', sensor: 'Sony IMX415' },
-            newton150: { isSmartscope: false, name: '150/750',               ap: '150', f: '750',  px: '2.90', bin: '1', factor: '1', w: '3840', h: '2160', sensor: '' },
-            sc200:     { isSmartscope: false, name: '200/2000',              ap: '200', f: '2000', px: '3.75', bin: '1', factor: '1', w: '1920', h: '1080', sensor: '' }
+            s50:         { isSmartscope: true,  name: 'Seestar S50 (Tele)',         ap: '50',  f: '250',  px: '2.90', bin: '1', factor: '1', w: '1080', h: '1920', sensor: 'Sony IMX462' },
+            s50pro_tele: { isSmartscope: true,  name: 'Seestar S50 Pro (Tele)',     ap: '50',  f: '260',  px: '2.90', bin: '1', factor: '1', w: '3840', h: '2160', sensor: 'OmniVision OS08B10' },
+            s50pro_wide: { isSmartscope: true,  name: 'Seestar S50 Pro (Wide)',     ap: '3.4', f: '6',    px: '1.60', bin: '1', factor: '1', w: '3840', h: '2160', sensor: 'Sony IMX586' },
+            s30:         { isSmartscope: true,  name: 'Seestar S30 (Tele)',         ap: '30',  f: '150',  px: '2.90', bin: '1', factor: '1', w: '1080', h: '1920', sensor: 'Sony IMX662' },
+            s30pro_tele: { isSmartscope: true,  name: 'Seestar S30 Pro (Tele)',     ap: '30',  f: '160',  px: '2.90', bin: '1', factor: '1', w: '3840', h: '2160', sensor: 'Sony IMX585' },
+            s30pro_wide: { isSmartscope: true,  name: 'Seestar S30 Pro (Wide)',     ap: '3.4', f: '6',    px: '1.60', bin: '1', factor: '1', w: '3840', h: '2160', sensor: 'Sony IMX586' },
+            dwarf3_tele: { isSmartscope: true,  name: 'Dwarf 3 (Tele)',             ap: '35',  f: '150',  px: '2.00', bin: '1', factor: '1', w: '3840', h: '2160', sensor: 'Sony IMX678' },
+            dwarf3_wide: { isSmartscope: true,  name: 'Dwarf 3 (Wide)',             ap: '3.4', f: '6.7',  px: '2.90', bin: '1', factor: '1', w: '1920', h: '1080', sensor: '1/2.8" CMOS' },
+            draco_tele:  { isSmartscope: true,  name: 'Dwarf Draco (Tele)',         ap: '90',  f: '340',  px: '1.20', bin: '2', factor: '1', w: '8192', h: '6144', sensor: 'OmniVision OV50Q40' },
+            vespera:     { isSmartscope: true,  name: 'Vaonis Vespera',             ap: '50',  f: '200',  px: '2.90', bin: '1', factor: '1', w: '1920', h: '1080', sensor: 'Sony IMX462' },
+            newton150:   { isSmartscope: false, name: '150/750',                    ap: '150', f: '750',  px: '2.90', bin: '1', factor: '1', w: '3840', h: '2160', sensor: '' },
+            sc200:       { isSmartscope: false, name: '200/2000',                   ap: '200', f: '2000', px: '3.75', bin: '1', factor: '1', w: '1920', h: '1080', sensor: '' }
         };
+
+        function setSelectOrCustom(selectId, customId, value) {
+            const sel = document.getElementById(selectId);
+            const hasOption = Array.from(sel.options).some(opt => opt.value === value);
+            if (hasOption) {
+                sel.value = value;
+            } else {
+                sel.value = 'custom';
+                document.getElementById(customId).value = value;
+            }
+        }
 
         function setHardwareLocked(locked) {
             ['apertura', 'apertura_custom', 'longitud_focal', 'focal_custom', 'factor_focal', 'tamano_pixel', 'pixel_custom', 'binning', 'sensor_w', 'sensor_h']
@@ -933,9 +958,9 @@
                 actualizarTodo();
                 return;
             }
-            document.getElementById('apertura').value = p.ap;
-            document.getElementById('longitud_focal').value = p.f;
-            document.getElementById('tamano_pixel').value = p.px;
+            setSelectOrCustom('apertura', 'apertura_custom', p.ap);
+            setSelectOrCustom('longitud_focal', 'focal_custom', p.f);
+            setSelectOrCustom('tamano_pixel', 'pixel_custom', p.px);
             document.getElementById('binning').value = p.bin;
             document.getElementById('factor_focal').value = p.factor;
             document.getElementById('sensor_w').value = p.w;
@@ -1026,19 +1051,20 @@
             const sw = parseFloat(document.getElementById('sensor_w').value);
             const sh = parseFloat(document.getElementById('sensor_h').value);
             const fovHtml = (sw > 0 && sh > 0)
-                ? `<div class="res-sub">${t('resFov').replace('{w}', formatArcminDeg(sw * resolucion)).replace('{h}', formatArcminDeg(sh * resolucion))}</div>`
+                ? `<div class="res-sub">${t('resFov').replace('{w}', formatArcminDeg((sw / binning) * resolucion)).replace('{h}', formatArcminDeg((sh / binning) * resolucion))}</div>`
                 : '';
 
             const limText = rayleigh > seeing
                 ? t('limOptic').replace('{ap}', apertura).replace('{ray}', rayleigh.toFixed(2)).replace('{see}', seeing.toFixed(2))
                 : t('limAtmos').replace('{see}', seeing.toFixed(2)).replace('{ray}', rayleigh.toFixed(2));
 
+            const resolucionRedondeada = Math.round(resolucion * 100) / 100;
             let statusClass = 'status-ok';
             let verdictText = t('verdictOk');
-            if (resolucion < min) {
+            if (resolucionRedondeada < min) {
                 statusClass = 'status-over';
                 verdictText = t('verdictOver');
-            } else if (resolucion > max) {
+            } else if (resolucionRedondeada > max) {
                 statusClass = 'status-under';
                 verdictText = t('verdictUnder');
             }
