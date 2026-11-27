@@ -422,7 +422,8 @@
         .calendar-grid {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
-            gap: 0;
+            row-gap: 8px;
+            column-gap: 0;
             padding: 0 1px 1px 0;
         }
 
@@ -430,7 +431,7 @@
             background: #080d16;
             border: 1px solid var(--border-subtle);
             border-radius: var(--radius-sm);
-            margin: 0 -1px -1px 0;
+            margin: 0 -1px 0 0;
             min-height: 118px;
             display: flex;
             flex-direction: column;
