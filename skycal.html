@@ -183,17 +183,17 @@
         .ticker-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 0.85rem;
+            gap: 0.55rem;
         }
 
         .ticker-card {
             background: var(--bg-card);
             border: 1px solid var(--border-subtle);
             border-radius: var(--radius-md);
-            padding: 0.9rem 1rem;
+            padding: 0.45rem 0.75rem;
             display: flex;
             align-items: center;
-            gap: 0.85rem;
+            gap: 0.65rem;
             transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
             cursor: pointer;
             position: relative;
@@ -208,14 +208,14 @@
         }
 
         .ticker-icon {
-            font-size: 1.75rem;
-            min-width: 42px;
-            height: 42px;
+            font-size: 1.35rem;
+            min-width: 32px;
+            height: 32px;
             display: flex;
             align-items: center;
             justify-content: center;
             background: rgba(255, 255, 255, 0.04);
-            border-radius: 10px;
+            border-radius: 8px;
         }
 
         .ticker-info {
@@ -226,15 +226,17 @@
         .ticker-time-badge {
             display: inline-block;
             font-family: var(--font-mono);
-            font-size: 0.72rem;
+            font-size: 0.68rem;
+            line-height: 1.15;
             color: var(--primary);
-            margin-bottom: 0.2rem;
+            margin-bottom: 0.05rem;
             font-weight: 600;
         }
 
         .ticker-name {
             font-family: var(--font-main);
-            font-size: 0.95rem;
+            font-size: 0.86rem;
+            line-height: 1.2;
             font-weight: 600;
             color: var(--text-main);
             white-space: nowrap;
@@ -243,9 +245,10 @@
         }
 
         .ticker-desc {
-            font-size: 0.76rem;
+            font-size: 0.72rem;
+            line-height: 1.15;
             color: var(--text-muted);
-            margin-top: 0.15rem;
+            margin-top: 0.05rem;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -871,7 +874,7 @@
             transition: all 0.2s ease;
         }
 
-        .chart-day-btn:hover {
+        .chart-day-btn:hover:not(:disabled) {
             background: rgba(56, 189, 248, 0.15);
             border-color: var(--primary);
             color: #fff;
@@ -881,6 +884,12 @@
             background: rgba(56, 189, 248, 0.22);
             border-color: var(--primary);
             color: var(--primary);
+        }
+
+        .chart-day-btn:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+            filter: grayscale(1);
         }
 
         .chart-date-badge {
@@ -1244,7 +1253,7 @@
         html[data-theme="light"] .nav-btn:hover,
         html[data-theme="light"] .month-nav-btn:hover,
         html[data-theme="light"] .chip-btn:hover,
-        html[data-theme="light"] .chart-day-btn:hover,
+        html[data-theme="light"] .chart-day-btn:hover:not(:disabled),
         html[data-theme="light"] .view-btn:hover {
             background: #ede9fe;
             border-color: #5b289c;
@@ -3114,6 +3123,19 @@ const RAW_SKYCAL_EVENTS = [[2459215.7951,67,-25],[2459216,136,-202],[2459216.874
             const padL = 36, padR = 20, padT = 18, padB = 38, plotW = w - padL - padR, plotH = h - padT - padB;
             const altToY = (alt) => padT + (90 - alt) / 180 * plotH, fractionToX = (frac) => padL + frac * plotW;
             const samples = eph.samples, stepW = plotW / (samples.length - 1);
+            let hasCloudData = false;
+            for (let i = 0; i < samples.length; i += 12) {
+                if (getCloudCoverAtMs(samples[i].tDate.getTime()) !== null) {
+                    hasCloudData = true;
+                    break;
+                }
+            }
+            const cloudsBtn = document.getElementById('btn-toggle-clouds');
+            if (cloudsBtn) {
+                cloudsBtn.disabled = !hasCloudData;
+                cloudsBtn.classList.toggle('active', hasCloudData && showCloudBands);
+                cloudsBtn.setAttribute('aria-pressed', String(hasCloudData && showCloudBands));
+            }
             for (let i = 0; i < samples.length - 1; i++) {
                 const s = samples[i], x1 = padL + i * stepW, x2 = padL + (i + 1) * stepW, sAlt = s.sAlt;
                 if (sAlt <= -18) {
