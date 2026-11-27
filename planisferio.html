@@ -1,0 +1,1765 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cosmos Mataró — El cielo en Mataró (Planisferio)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha384-iw3OoTErCYJJB9mCa8LNS2hbsQ7M3C0EpIsO/H5+EGAkPGc6rk+V8i04oW/K5xq0" crossorigin="anonymous" onerror="this.onerror=null;this.removeAttribute('integrity');this.href='vendor/fontawesome/css/all.min.css';">
+    <link rel="stylesheet" href="cosmos_theme.css">
+    <style>
+        :root {
+            --bg-deep: var(--cosmos-bg-space, #050811);
+            --bg-surface: var(--cosmos-bg-panel, rgba(12, 16, 25, 0.94));
+            --bg-card: var(--cosmos-bg-card, rgba(13, 18, 28, 0.85));
+            --border-subtle: var(--cosmos-border, rgba(255, 255, 255, 0.1));
+            --border-active: var(--cosmos-border-active, rgba(56, 189, 248, 0.5));
+            --primary: var(--cosmos-accent-blue, #38bdf8);
+            --accent-gold: var(--cosmos-accent-gold, #facc15);
+            --accent-emerald: var(--cosmos-accent-green, #34d399);
+            --accent-rose: var(--cosmos-accent-rose, #fb7185);
+            --text-main: var(--cosmos-text-primary, #f8fafc);
+            --text-muted: var(--cosmos-text-secondary, #94a3b8);
+            --text-dim: var(--cosmos-text-dim, #64748b);
+            --font-heading: var(--cosmos-font-heading, 'Outfit', sans-serif);
+            --font-main: var(--cosmos-font-heading, 'Outfit', sans-serif);
+            --font-body: var(--cosmos-font-body, 'Plus Jakarta Sans', sans-serif);
+            --font-mono: var(--cosmos-font-mono, 'JetBrains Mono', monospace);
+            --radius-lg: var(--cosmos-radius-panel, 16px);
+            --radius-md: var(--cosmos-radius-card, 12px);
+            --radius-sm: var(--cosmos-radius-control, 8px);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: var(--bg-deep);
+            background-image:
+                radial-gradient(circle at 15% 15%, rgba(56, 189, 248, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 85% 80%, rgba(192, 132, 252, 0.06) 0%, transparent 40%);
+            color: var(--text-main);
+            font-family: var(--font-body);
+            line-height: 1.5;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .app-container {
+            max-width: 1280px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 1.5rem 1.25rem 3rem 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        header.app-header {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem 1.25rem;
+            background: var(--bg-surface);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        .brand-title h1 {
+            font-family: var(--font-heading);
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--text-main);
+            line-height: 1.2;
+        }
+
+        .brand-title p {
+            font-family: var(--font-heading);
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--primary);
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            margin-top: 2px;
+        }
+
+        .header-nav-links {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .nav-pill-link,
+        .theme-toggle-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.38rem;
+            padding: 0.32rem 0.65rem;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            color: var(--text-muted);
+            font-family: var(--font-heading);
+            font-size: 0.72rem;
+            font-weight: 600;
+            line-height: 1.25;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .nav-pill-link:hover,
+        .theme-toggle-btn:hover {
+            color: var(--text-main);
+            border-color: var(--primary);
+            background: rgba(56, 189, 248, 0.12);
+        }
+
+        .theme-toggle-btn i {
+            color: var(--accent-gold);
+            font-size: 0.78rem;
+        }
+
+        .lang-btn-group {
+            display: inline-flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 6px;
+            padding: 2px;
+            gap: 2px;
+        }
+
+        .lang-btn {
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--text-dim);
+            font-size: 0.65rem;
+            font-weight: 600;
+            padding: 2px 6px;
+            border-radius: 4px;
+            cursor: pointer;
+            line-height: 1.25;
+            transition: all 0.18s ease;
+            font-family: var(--font-main);
+            letter-spacing: 0.04em;
+        }
+
+        .lang-btn.active {
+            color: var(--primary);
+            background: rgba(56, 189, 248, 0.16);
+            border-color: rgba(56, 189, 248, 0.35);
+            font-weight: 700;
+        }
+
+        /* Selector de ubicación compacto */
+        .loc-pill-container { position: relative; display: inline-flex; align-items: center; }
+        .loc-pill-box {
+            display: inline-flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        .loc-pill-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.38rem;
+            padding: 0.32rem 0.6rem;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-family: var(--font-heading);
+            font-size: 0.72rem;
+            font-weight: 600;
+            line-height: 1.25;
+            cursor: pointer;
+        }
+        .loc-pill-toggle .loc-pin { color: var(--primary); }
+        .loc-input-wrapper { display: none; align-items: center; gap: 0.35rem; padding: 0.2rem 0.5rem; }
+        .loc-pill-container.expanded .loc-pill-toggle { display: none; }
+        .loc-pill-container.expanded .loc-input-wrapper { display: inline-flex; }
+        .loc-input-wrapper input {
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--text-main);
+            font-size: 0.74rem;
+            width: 155px;
+        }
+        .loc-actions-group { display: inline-flex; border-left: 1px solid var(--border-subtle); }
+        .loc-action-btn, .loc-close-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 0.32rem 0.48rem;
+            font-size: 0.7rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .loc-action-btn.active { background: var(--primary); color: #050811; }
+        .loc-close-btn { display: none; border-left: 1px solid var(--border-subtle); }
+        .loc-pill-container.expanded .loc-close-btn { display: inline-flex; }
+        .loc-dropdown {
+            display: none;
+            position: absolute;
+            top: calc(100% + 6px);
+            right: 0;
+            width: 280px;
+            max-height: 280px;
+            overflow-y: auto;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-active);
+            border-radius: var(--radius-md);
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+            z-index: 50;
+        }
+        .loc-dropdown.open { display: block; }
+        .loc-dropdown-item {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.78rem;
+            color: var(--text-main);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            gap: 0.5rem;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+        .loc-dropdown-item:hover { background: rgba(56, 189, 248, 0.14); }
+        .loc-dropdown-cat { font-size: 0.68rem; color: var(--text-dim); }
+
+        /* Panel único del planisferio */
+        .panel-card {
+            background: var(--bg-surface);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 1.15rem 1.25rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+            min-width: 0;
+        }
+
+        .sky-top-bar {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.65rem 1rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .sky-meta-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.15rem;
+        }
+
+        .sky-meta-line {
+            font-family: var(--font-mono);
+            font-size: 0.76rem;
+            color: var(--text-dim);
+        }
+
+        .sky-clock-pill {
+            font-family: var(--font-mono);
+            font-size: 0.84rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .sky-time-controls {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.35rem;
+        }
+
+        .dome-stage {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .dome-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 660px;
+            aspect-ratio: 1 / 1;
+            margin: 0 auto;
+            user-select: none;
+            touch-action: none;
+        }
+
+        .layers-corner-row {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0.35rem;
+            max-width: 780px;
+        }
+
+        .weather-compact-bar {
+            margin-top: 0.9rem;
+            padding-top: 0.85rem;
+            border-top: 1px solid var(--border-subtle);
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 0.85rem;
+            align-items: center;
+        }
+
+        #sky-dome-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            cursor: grab;
+            border-radius: 50%;
+        }
+
+        #sky-dome-canvas:active {
+            cursor: grabbing;
+        }
+
+        .sky-tooltip {
+            position: absolute;
+            pointer-events: none;
+            display: none;
+            background: rgba(5, 8, 17, 0.92);
+            color: #f8fafc;
+            border: 1px solid rgba(56, 189, 248, 0.45);
+            border-radius: 8px;
+            padding: 0.45rem 0.65rem;
+            font-size: 0.75rem;
+            line-height: 1.35;
+            z-index: 20;
+            max-width: 240px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .sky-tooltip strong {
+            color: #38bdf8;
+        }
+
+        .sky-hint {
+            text-align: center;
+            font-size: 0.74rem;
+            color: var(--text-dim);
+            margin-top: 0.65rem;
+        }
+
+        /* Panel lateral */
+        .sidebar-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .section-heading {
+            font-family: var(--font-heading);
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 0.7rem;
+        }
+
+        .btn-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+        }
+
+        .ctrl-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-muted);
+            padding: 0.34rem 0.6rem;
+            border-radius: 6px;
+            font-family: var(--font-heading);
+            font-size: 0.74rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.18s ease;
+        }
+
+        .ctrl-btn:hover {
+            border-color: var(--primary);
+            color: var(--text-main);
+        }
+
+        .ctrl-btn.active {
+            background: rgba(56, 189, 248, 0.2);
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .dt-input {
+            width: auto;
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            color: var(--text-main);
+            padding: 0.28rem 0.5rem;
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+        }
+
+        .weather-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 0.45rem;
+        }
+
+        .weather-metric {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
+            padding: 0.48rem 0.6rem;
+        }
+
+        .weather-metric-lbl {
+            font-size: 0.68rem;
+            color: var(--text-dim);
+        }
+
+        .weather-metric-val {
+            font-family: var(--font-mono);
+            font-size: 0.84rem;
+            font-weight: 600;
+            color: var(--text-main);
+            margin-top: 1px;
+        }
+
+        .weather-strip-title {
+            font-size: 0.72rem;
+            color: var(--text-dim);
+            margin-bottom: 0.4rem;
+        }
+
+        .weather-strip {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 0.3rem;
+        }
+
+        .weather-hour-cell {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            padding: 0.35rem 0.2rem;
+            text-align: center;
+            font-family: var(--font-mono);
+            font-size: 0.66rem;
+        }
+
+        .weather-hour-bar {
+            height: 4px;
+            border-radius: 2px;
+            margin: 3px 4px;
+            background: rgba(148, 163, 184, 0.25);
+            overflow: hidden;
+        }
+
+        .weather-hour-fill {
+            height: 100%;
+            background: #64748b;
+        }
+
+        .app-footer {
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-subtle);
+            text-align: center;
+            font-size: 0.75rem;
+            color: var(--text-dim);
+        }
+
+        /* Modo claro Cosmos Mataró */
+        html[data-theme="light"] {
+            color-scheme: light;
+            --bg-deep: #EFEDE4;
+            --bg-surface: #FAF9F5;
+            --bg-card: #ffffff;
+            --border-subtle: #cfcabc;
+            --primary: #5b289c;
+            --text-main: #151515;
+            --text-muted: #5e5b53;
+            --text-dim: #7a766d;
+        }
+
+        html[data-theme="light"] body {
+            background-color: #EFEDE4;
+            background-image: none;
+            color: #151515;
+        }
+
+        html[data-theme="light"] header.app-header {
+            background: #dfdbce;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+        }
+
+        html[data-theme="light"] .panel-card {
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+        }
+
+        html[data-theme="light"] .nav-pill-link,
+        html[data-theme="light"] .lang-btn-group,
+        html[data-theme="light"] .theme-toggle-btn,
+        html[data-theme="light"] .loc-pill-box,
+        html[data-theme="light"] .ctrl-btn {
+            background: #fcfbf9;
+            border-color: #bcb7aa;
+            color: #5e5b53;
+        }
+
+        html[data-theme="light"] .nav-pill-link:hover,
+        html[data-theme="light"] .theme-toggle-btn:hover,
+        html[data-theme="light"] .ctrl-btn:hover {
+            background: #ede9fe;
+            border-color: #5b289c;
+            color: #5b289c;
+        }
+
+        html[data-theme="light"] .theme-toggle-btn i {
+            color: #5b289c;
+        }
+
+        html[data-theme="light"] .lang-btn.active,
+        html[data-theme="light"] .ctrl-btn.active {
+            color: #5b289c;
+            background: #ede9fe;
+            border-color: #c4b5fd;
+        }
+
+        html[data-theme="light"] .loc-action-btn.active {
+            color: #ffffff;
+            background: #5b289c;
+        }
+
+        html[data-theme="light"] .loc-dropdown {
+            background: #FAF9F5;
+            border-color: #5b289c;
+        }
+
+        @media (max-width: 980px) {
+            .weather-compact-bar {
+                grid-template-columns: 1fr;
+            }
+            .weather-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .app-container {
+                padding: 0.75rem 0.65rem 2rem 0.65rem;
+            }
+            .panel-card {
+                padding: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <div class="brand-title">
+                <h1 id="page-heading" data-i18n="appTitle">El cielo en Mataró</h1>
+                <p>COSMOS MATARÓ</p>
+            </div>
+            <div class="header-nav-links">
+                <a class="nav-pill-link" href="skycal.html" data-i18n="navSkycal">Efemérides</a>
+                <a class="nav-pill-link" href="calculadora.html" data-i18n="navCalc">Calculadora</a>
+                <div id="loc-pill-container" class="loc-pill-container">
+                    <div class="loc-pill-box">
+                        <button type="button" class="loc-pill-toggle" id="loc-pill-toggle" onclick="expandLocSearch()">
+                            <i class="fa-solid fa-location-dot loc-pin" aria-hidden="true"></i>
+                            <span id="loc-pill-label">Cosmos Mataró</span>
+                            <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                        </button>
+                        <div class="loc-input-wrapper">
+                            <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                            <input type="text" id="loc-search-input" placeholder="Municipio o lat, lon..." autocomplete="off">
+                        </div>
+                        <div class="loc-actions-group">
+                            <button type="button" class="loc-action-btn" id="btn-loc-gps" onclick="detectUserLocationGPS()" title="GPS"><i class="fa-solid fa-location-crosshairs"></i></button>
+                            <button type="button" class="loc-action-btn active" id="btn-loc-mataro" onclick="resetToCosmosMataro()" title="Cosmos Mataró">CM</button>
+                        </div>
+                        <button type="button" class="loc-close-btn" onclick="collapseLocSearch()" title="Cerrar"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                    <div class="loc-dropdown" id="loc-search-dropdown"></div>
+                </div>
+                <button type="button" class="theme-toggle-btn" id="btn-theme-toggle" onclick="toggleTheme()" aria-label="Tema">
+                    <i class="fa-solid fa-moon" id="theme-toggle-icon"></i>
+                    <span id="theme-toggle-label">Oscuro</span>
+                </button>
+                <div class="lang-btn-group" role="group" aria-label="Idioma">
+                    <button type="button" class="lang-btn active" data-lang="es" onclick="setLanguage('es')">ES</button>
+                    <button type="button" class="lang-btn" data-lang="ca" onclick="setLanguage('ca')">CA</button>
+                    <button type="button" class="lang-btn" data-lang="en" onclick="setLanguage('en')">EN</button>
+                </div>
+            </div>
+        </header>
+
+        <main class="panel-card">
+            <div class="sky-top-bar">
+                <div class="sky-meta-group">
+                    <span class="sky-clock-pill" id="sky-clock-label">--:-- h</span>
+                    <span class="sky-meta-line" id="loc-coords-line">Cosmos Mataró (41.54° N, 2.45° E) · Europe/Madrid · CET (UTC+1)</span>
+                </div>
+                <div class="sky-time-controls">
+                    <button type="button" class="ctrl-btn active" id="btn-live" onclick="toggleLive()" data-i18n="btnLive">En directo</button>
+                    <button type="button" class="ctrl-btn" onclick="shiftTime(-86400000)">-1 d</button>
+                    <button type="button" class="ctrl-btn" onclick="shiftTime(-3600000)">-1 h</button>
+                    <button type="button" class="ctrl-btn" onclick="resetNow()" data-i18n="btnNow">Ahora</button>
+                    <button type="button" class="ctrl-btn" onclick="shiftTime(3600000)">+1 h</button>
+                    <button type="button" class="ctrl-btn" onclick="shiftTime(86400000)">+1 d</button>
+                    <input type="datetime-local" id="dt-picker" class="dt-input" onchange="onDatetimePicked(this.value)">
+                </div>
+            </div>
+
+            <div class="dome-stage">
+                <div class="dome-wrapper" id="dome-wrapper">
+                    <canvas id="sky-dome-canvas"></canvas>
+                    <div class="sky-tooltip" id="sky-tooltip"></div>
+                </div>
+                <div class="layers-corner-row">
+                    <button type="button" class="ctrl-btn active" data-layer="stars" onclick="toggleLayer('stars', this)" data-i18n="layStars">Estrellas</button>
+                    <button type="button" class="ctrl-btn active" data-layer="constellations" onclick="toggleLayer('constellations', this)" data-i18n="layConst">Constelaciones</button>
+                    <button type="button" class="ctrl-btn active" data-layer="labels" onclick="toggleLayer('labels', this)" data-i18n="layLabels">Nombres</button>
+                    <button type="button" class="ctrl-btn active" data-layer="planets" onclick="toggleLayer('planets', this)" data-i18n="layPlanets">Planetas</button>
+                    <button type="button" class="ctrl-btn active" data-layer="ecliptic" onclick="toggleLayer('ecliptic', this)" data-i18n="layEcliptic">Eclíptica</button>
+                    <button type="button" class="ctrl-btn active" data-layer="atmosphere" onclick="toggleLayer('atmosphere', this)" data-i18n="layAtmos">Atmósfera</button>
+                    <button type="button" class="ctrl-btn" data-layer="azGrid" onclick="toggleLayer('azGrid', this)" data-i18n="layAzGrid">Rejilla acimutal</button>
+                    <button type="button" class="ctrl-btn" data-layer="eqGrid" onclick="toggleLayer('eqGrid', this)" data-i18n="layEqGrid">Rejilla ecuatorial</button>
+                </div>
+                <p class="sky-hint" data-i18n="skyHint">Arrastra el cielo para rotar el acimut · Pasa o toca un astro para ver sus coordenadas</p>
+            </div>
+
+            <div id="weather-content" class="weather-compact-bar">
+                <div class="sky-meta-line" data-i18n="weatherLoading">Cargando previsión meteorológica...</div>
+            </div>
+        </main>
+
+        <footer class="app-footer">
+            <p data-i18n-html="footerText">Cosmos Mataró — Planisferio celeste interactivo con efemérides propias (Meeus / JPL). Previsión meteorológica y geocodificación mediante <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer" style="color: var(--primary); text-decoration: none;">Open-Meteo</a>.</p>
+        </footer>
+    </div>
+
+    <script src="observer_locations.js"></script>
+    <script>
+        const I18N = {
+            es: {
+                pageTitle: "Cosmos Mataró — El cielo en {city}",
+                appTitleTpl: "El cielo en {city}",
+                navSkycal: "Efemérides",
+                navCalc: "Calculadora",
+                skyHint: "Arrastra el cielo para rotar el acimut · Pasa o toca un astro para ver sus coordenadas",
+                secTime: "Fecha y hora",
+                btnLive: "En directo",
+                btnNow: "Ahora",
+                secLayers: "Capas y orientación",
+                layStars: "Estrellas",
+                layConst: "Constelaciones",
+                layLabels: "Nombres",
+                layPlanets: "Planetas",
+                layEcliptic: "Eclíptica",
+                layAtmos: "Atmósfera",
+                layAzGrid: "Rejilla acimutal",
+                layEqGrid: "Rejilla ecuatorial",
+                orientN: "N arriba",
+                orientS: "S arriba",
+                orientE: "E arriba",
+                orientW: "O arriba",
+                secWeather: "Condiciones de observación",
+                weatherLoading: "Cargando previsión meteorológica...",
+                weatherUnavailable: "Previsión meteorológica no disponible en este momento.",
+                wClouds: "Nubosidad (B/M/A)",
+                wTemp: "Temp. / rocío",
+                wHum: "Humedad",
+                wWind: "Viento / vis.",
+                wNext12: "Nubosidad próximas 12 h",
+                wDewWarn: "Riesgo de rocío en óptica",
+                cardinals: { N: "N", NE: "NE", E: "E", SE: "SE", S: "S", SW: "SO", W: "O", NW: "NO" },
+                sunName: "Sol",
+                moonName: "Luna",
+                illumLbl: "Ilum.",
+                planets: { Mercury: "Mercurio", Venus: "Venus", Mars: "Marte", Jupiter: "Júpiter", Saturn: "Saturno", Uranus: "Urano", Neptune: "Neptuno" },
+                footerText: "Cosmos Mataró — Planisferio celeste interactivo con efemérides propias (Meeus / JPL). Previsión meteorológica y geocodificación mediante <a href=\"https://open-meteo.com/\" target=\"_blank\" rel=\"noopener noreferrer\" style=\"color: var(--primary); text-decoration: none;\">Open-Meteo</a>."
+            },
+            ca: {
+                pageTitle: "Cosmos Mataró — El cel a {city}",
+                appTitleTpl: "El cel a {city}",
+                navSkycal: "Efemèrides",
+                navCalc: "Calculadora",
+                skyHint: "Arrossega el cel per rotar l'azimut · Passa o toca un astre per veure les coordenades",
+                secTime: "Data i hora",
+                btnLive: "En directe",
+                btnNow: "Ara",
+                secLayers: "Capes i orientació",
+                layStars: "Estrelles",
+                layConst: "Constel·lacions",
+                layLabels: "Noms",
+                layPlanets: "Planetes",
+                layEcliptic: "Eclíptica",
+                layAtmos: "Atmosfera",
+                layAzGrid: "Graella azimutal",
+                layEqGrid: "Graella equatorial",
+                orientN: "N dalt",
+                orientS: "S dalt",
+                orientE: "E dalt",
+                orientW: "O dalt",
+                secWeather: "Condicions d'observació",
+                weatherLoading: "Carregant previsió meteorològica...",
+                weatherUnavailable: "Previsió meteorològica no disponible ara mateix.",
+                wClouds: "Nuvolositat (B/M/A)",
+                wTemp: "Temp. / rosada",
+                wHum: "Humitat",
+                wWind: "Vent / vis.",
+                wNext12: "Nuvolositat properes 12 h",
+                wDewWarn: "Risc de rosada a l'òptica",
+                cardinals: { N: "N", NE: "NE", E: "E", SE: "SE", S: "S", SW: "SO", W: "O", NW: "NO" },
+                sunName: "Sol",
+                moonName: "Lluna",
+                illumLbl: "Il·lum.",
+                planets: { Mercury: "Mercuri", Venus: "Venus", Mars: "Mart", Jupiter: "Júpiter", Saturn: "Saturn", Uranus: "Urà", Neptune: "Neptú" },
+                footerText: "Cosmos Mataró — Planisferi celest interactiu amb efemèrides pròpies (Meeus / JPL). Previsió meteorològica i geocodificació mitjançant <a href=\"https://open-meteo.com/\" target=\"_blank\" rel=\"noopener noreferrer\" style=\"color: var(--primary); text-decoration: none;\">Open-Meteo</a>."
+            },
+            en: {
+                pageTitle: "Cosmos Mataró — The Sky over {city}",
+                appTitleTpl: "The Sky over {city}",
+                navSkycal: "Ephemeris",
+                navCalc: "Calculator",
+                skyHint: "Drag the sky to rotate azimuth · Hover or tap any object for coordinates",
+                secTime: "Date & Time",
+                btnLive: "Live",
+                btnNow: "Now",
+                secLayers: "Layers & Orientation",
+                layStars: "Stars",
+                layConst: "Constellations",
+                layLabels: "Labels",
+                layPlanets: "Planets",
+                layEcliptic: "Ecliptic",
+                layAtmos: "Atmosphere",
+                layAzGrid: "Azimuthal grid",
+                layEqGrid: "Equatorial grid",
+                orientN: "N up",
+                orientS: "S up",
+                orientE: "E up",
+                orientW: "W up",
+                secWeather: "Observing Conditions",
+                weatherLoading: "Loading weather forecast...",
+                weatherUnavailable: "Weather forecast unavailable right now.",
+                wClouds: "Clouds (L/M/H)",
+                wTemp: "Temp / dew pt",
+                wHum: "Humidity",
+                wWind: "Wind / vis.",
+                wNext12: "Cloud cover next 12 h",
+                wDewWarn: "Dew risk on optics",
+                cardinals: { N: "N", NE: "NE", E: "E", SE: "SE", S: "S", SW: "SW", W: "W", NW: "NW" },
+                sunName: "Sun",
+                moonName: "Moon",
+                illumLbl: "Illum.",
+                planets: { Mercury: "Mercury", Venus: "Venus", Mars: "Mars", Jupiter: "Jupiter", Saturn: "Saturn", Uranus: "Uranus", Neptune: "Neptune" },
+                footerText: "Cosmos Mataró — Interactive celestial planisphere powered by custom ephemerides (Meeus / JPL). Weather forecast & geocoding by <a href=\"https://open-meteo.com/\" target=\"_blank\" rel=\"noopener noreferrer\" style=\"color: var(--primary); text-decoration: none;\">Open-Meteo</a>."
+            }
+        };
+
+        const RAD = Math.PI / 180, DEG = 180 / Math.PI;
+        let currentLang = 'es';
+        const DEFAULT_LOC = { name: "Cosmos Mataró", lat: 41.5418, lon: 2.44482, tz: "Europe/Madrid", isDefault: true };
+        let ACTIVE_LOC = { ...DEFAULT_LOC };
+
+        let simDate = new Date();
+        let isLive = true;
+        let azOffsetDeg = 180; // 180 => Sur arriba (vista estándar hacia el sur en el hemisferio norte)
+        const layers = {
+            stars: true,
+            constellations: true,
+            labels: true,
+            planets: true,
+            ecliptic: true,
+            atmosphere: true,
+            azGrid: false,
+            eqGrid: false
+        };
+
+        let renderedObjects = [];
+
+        function t(k) {
+            return (I18N[currentLang] && I18N[currentLang][k] !== undefined)
+                ? I18N[currentLang][k]
+                : (I18N.es[k] !== undefined ? I18N.es[k] : k);
+        }
+        function getLocale() { return currentLang === 'ca' ? 'ca-ES' : (currentLang === 'en' ? 'en-US' : 'es-ES'); }
+        function normalizeDeg(d) { d = d % 360; return d < 0 ? d + 360 : d; }
+
+        // =========================================================================
+        // CATÁLOGO DE ESTRELLAS BRILLANTES (RA°, Dec°, mag, color espectral, nombre)
+        // =========================================================================
+        const STARS_CATALOG = [
+            [101.29,-16.72,-1.46,"#99d1ff","Sirio"],[95.99,-52.70,-0.74,"#eef4ff","Canopo"],[219.90,-60.83,-0.27,"#ffe699","Alfa Cen"],
+            [213.91,19.18,-0.05,"#ffb469","Arturo"],[279.23,38.78,0.03,"#cce8ff","Vega"],[79.17,45.99,0.08,"#ffe082","Capella"],
+            [78.63,-8.20,0.13,"#bcdcff","Rígel"],[114.82,5.22,0.34,"#fff0d4","Proción"],[24.43,-57.24,0.45,"#aed5ff","Achernar"],
+            [88.79,7.41,0.50,"#ff7043","Betelgeuse"],[210.95,-60.37,0.61,"#bcdcff","Hadar"],[297.69,8.87,0.77,"#eef6ff","Altair"],
+            [186.65,-63.10,0.77,"#bcdcff","Acrux"],[68.98,16.51,0.85,"#ffa257","Aldebarán"],[201.30,-11.16,0.98,"#a8d4ff","Espiga"],
+            [247.35,-26.43,1.06,"#ff5232","Antares"],[116.33,28.03,1.14,"#ffc272","Pólux"],[344.41,-29.62,1.17,"#d9e8ff","Fomalhaut"],
+            [310.36,45.28,1.25,"#d9e8ff","Deneb"],[191.93,-59.69,1.25,"#bcdcff","Mimosa"],[152.09,11.97,1.36,"#bfe0ff","Régulo"],
+            [104.66,-28.97,1.50,"#b8dbff","Adhara"],[113.65,31.89,1.58,"#e3f0ff","Cástor"],[187.79,-57.11,1.59,"#ff8a5c","Gacrux"],
+            [263.40,-37.10,1.62,"#b8dbff","Shaula"],[81.28,6.35,1.64,"#b8dbff","Bellatrix"],[81.57,28.61,1.65,"#c2e0ff","Elnath"],
+            [138.30,-69.72,1.67,"#d9e8ff","Miaplacidus"],[84.05,-1.20,1.69,"#b8dbff","Alnilam"],[332.06,-46.96,1.73,"#b8dbff","Alnair"],
+            [193.51,55.96,1.77,"#e8f2ff","Alioth"],[85.19,-1.94,1.74,"#b8dbff","Alnitak"],[165.93,61.75,1.79,"#ffcc66","Dubhe"],
+            [51.08,49.86,1.79,"#fff0d4","Mirfak"],[107.10,-26.39,1.83,"#ffe6b0","Wezen"],[276.04,-34.38,1.79,"#b8dbff","Kaus Australis"],
+            [206.88,49.31,1.86,"#c8e2ff","Alkaid"],[264.33,-42.99,1.86,"#ffe6b0","Sargas"],[89.88,44.95,1.90,"#e3f0ff","Menkalinan"],
+            [252.17,-69.03,1.91,"#ffb469","Atria"],[99.43,16.40,1.93,"#e3f0ff","Alhena"],[306.41,-56.73,1.94,"#b8dbff","Peacock"],
+            [95.67,-17.96,1.98,"#b8dbff","Mirzam"],[141.90,-8.66,1.99,"#ffb469","Alphard"],[31.79,23.46,2.01,"#ffb469","Hamal"],
+            [154.99,19.84,2.01,"#ffb469","Algieba"],[10.89,-17.99,2.04,"#ffc272","Diphda"],[37.95,89.26,1.98,"#fff9ea","Polaris"],
+            [283.82,-26.30,2.05,"#b8dbff","Nunki"],[86.94,-9.67,2.07,"#b8dbff","Saiph"],[222.68,74.16,2.07,"#ff9a57","Kochab"],
+            [17.43,35.62,2.07,"#cfe4ff","Mirach"],[177.26,14.57,2.14,"#e3f0ff","Denebola"],[47.04,40.96,2.09,"#b8dbff","Algol"],
+            [311.55,33.97,2.48,"#ffd699",""],[305.56,40.26,2.23,"#ffe8b0","Sadr"],[263.73,12.56,2.08,"#e8f2ff","Rasalhague"],
+            [2.10,29.09,2.07,"#cfe4ff","Alpheratz"],[29.47,42.33,2.10,"#ffb469","Almach"],[10.13,56.54,2.24,"#ffba66","Schedar"],
+            [14.18,60.72,2.15,"#b8dbff","Navi"],[2.30,59.15,2.28,"#fff0d4","Caph"],[20.20,60.23,2.66,"#e3f0ff","Ruchbah"],
+            [26.70,63.67,3.35,"#b8dbff","Segin"],[269.15,51.49,2.24,"#ffa257","Eltanin"],[233.67,26.71,2.22,"#e8f2ff","Alphecca"],
+            [200.98,54.92,2.23,"#e8f2ff","Mizar"],[165.46,56.38,2.37,"#dceaff","Merak"],[178.46,53.69,2.41,"#dceaff","Phecda"],
+            [183.86,57.03,3.32,"#e8f2ff","Megrez"],[83.00,-0.30,2.25,"#b8dbff","Mintaka"],[83.78,9.93,3.39,"#b8dbff","Meissa"],
+            [218.02,38.31,3.03,"#ffc272","Seginus"],[221.25,27.07,2.38,"#ffb469","Izar"],[208.67,18.40,2.68,"#fff0d4","Muphrid"],
+            [218.88,13.73,3.84,"#b8dbff","Zeta Boo"],[168.53,20.52,2.56,"#e8f2ff","Zosma"],[168.56,15.43,3.33,"#e8f2ff","Chertan"],
+            [154.17,23.42,3.44,"#fff0d4","Adhafera"],[148.19,26.01,2.98,"#ffd699","Rasalas"],[146.46,23.77,2.97,"#ffb469","Alterf"],
+            [240.08,-22.62,2.29,"#b8dbff","Dschubba"],[241.36,-19.81,2.56,"#b8dbff","Acrab"],[239.22,-26.11,2.89,"#b8dbff","Fang"],
+            [252.54,-34.29,2.29,"#ffc272","Larawag"],[264.33,-37.30,2.70,"#b8dbff","Lesath"],[265.62,-39.03,1.86,"#ffe8b0","Sargas"],
+            [253.08,-38.05,2.99,"#b8dbff","Mu1 Sco"],[267.92,-40.13,2.39,"#ffe8b0","Girtab"],[280.17,-26.99,2.81,"#ffd699","Kaus Media"],
+            [276.99,-29.83,2.82,"#ffb469","Kaus Borealis"],[273.44,-21.06,3.84,"#b8dbff","Polis"],[286.35,-21.02,2.60,"#dceaff","Ascella"],
+            [292.68,27.96,3.05,"#ffd699","Albireo"],[296.24,45.13,2.86,"#e3f0ff","Fawaris"],[282.52,33.36,3.52,"#b8dbff","Sheliak"],
+            [284.74,32.69,3.25,"#b8dbff","Sulafat"],[281.20,37.60,4.36,"#e8f2ff","Zeta Lyr"],[283.61,36.87,4.22,"#ff9a57","Delta Lyr"],
+            [296.54,10.61,2.72,"#ff9a57","Tarazed"],[298.83,6.41,3.71,"#fff0d4","Alshain"],[286.35,15.07,2.99,"#e3f0ff","Okab"],
+            [346.19,15.21,2.42,"#ffb469","Markab"],[345.94,28.08,2.44,"#ff9a57","Scheat"],[3.31,15.18,2.83,"#b8dbff","Algenib"],
+            [326.05,9.87,2.38,"#ffb469","Enif"],[341.67,24.60,2.93,"#fff0d4","Matar"],[331.45,-0.32,2.95,"#ffe8b0","Sadalmelik"],
+            [322.89,-5.57,2.90,"#ffe8b0","Sadalsuud"],[343.66,-15.82,3.27,"#ff9a57","Skat"],[45.57,4.09,2.54,"#ff9a57","Menkar"],
+            [56.87,24.11,2.87,"#b8dbff","Alcyone"],[74.25,33.17,2.69,"#ffb469","Hassaleh"],[89.93,37.21,2.65,"#e3f0ff","Mahasim"],
+            [111.79,-29.30,2.45,"#b8dbff","Aludra"],[105.76,-23.83,3.02,"#e8f2ff","Omi2 CMa"],[114.37,5.22,2.89,"#ffd699","Gomeisa"],
+            [194.01,38.32,2.89,"#dceaff","Cor Caroli"],[229.25,-9.38,2.61,"#b8dbff","Zubeneschamali"],[222.72,-16.04,2.75,"#e3f0ff","Zubenelgenubi"],
+            [258.59,14.39,3.12,"#ff8a5c","Rasalgethi"],[247.55,21.49,2.78,"#ffc272","Kornephoros"],[275.25,-2.90,3.26,"#ffb469","Eta Ser"],
+            [236.07,6.43,2.63,"#ffb469","Unukalhai"],[308.30,15.91,3.77,"#e3f0ff","Sualocin"],[309.39,14.60,3.63,"#e3f0ff","Rotanev"],
+            [319.64,62.59,2.45,"#e8f2ff","Alderamin"],[322.16,70.56,3.23,"#b8dbff","Alfirk"],[332.71,58.20,3.39,"#ffc272","Zeta Cep"],
+            [354.84,77.63,3.21,"#ffb469","Errai"],[262.61,52.30,2.79,"#fff0d4","Rastaban"],[246.00,61.51,2.74,"#ffd699","Eta Dra"],
+            [231.23,58.97,3.29,"#ffb469","Edasich"],[211.10,64.38,3.67,"#dceaff","Thuban"],[244.60,77.79,4.32,"#e8f2ff","Anwar"],
+            [230.18,71.83,3.00,"#e3f0ff","Pherkad"],[261.27,86.59,4.35,"#e3f0ff","Yildun"],[58.53,31.88,2.85,"#b8dbff","Atik"],
+            [59.46,40.01,2.89,"#b8dbff","Epsilon Per"],[42.68,55.90,3.76,"#ff9a57","Eta Per"],[28.66,20.81,2.64,"#e3f0ff","Sheratan"]
+        ];
+
+        const CONSTELLATIONS = [
+            { name: { es: "Orión", ca: "Orió", en: "Orion" }, lines: [[[88.79,7.41],[83.78,9.93]],[[81.28,6.35],[83.78,9.93]],[[88.79,7.41],[85.19,-1.94]],[[81.28,6.35],[83.00,-0.30]],[[83.00,-0.30],[84.05,-1.20]],[[84.05,-1.20],[85.19,-1.94]],[[85.19,-1.94],[86.94,-9.67]],[[83.00,-0.30],[78.63,-8.20]],[[86.94,-9.67],[78.63,-8.20]]] },
+            { name: { es: "Osa Mayor", ca: "Óssa Major", en: "Ursa Major" }, lines: [[[165.93,61.75],[165.46,56.38]],[[165.46,56.38],[178.46,53.69]],[[178.46,53.69],[183.86,57.03]],[[183.86,57.03],[165.93,61.75]],[[183.86,57.03],[193.51,55.96]],[[193.51,55.96],[200.98,54.92]],[[200.98,54.92],[206.88,49.31]]] },
+            { name: { es: "Osa Menor", ca: "Óssa Menor", en: "Ursa Minor" }, lines: [[[37.95,89.26],[261.27,86.59]],[[261.27,86.59],[244.60,77.79]],[[244.60,77.79],[222.68,74.16]],[[222.68,74.16],[230.18,71.83]],[[230.18,71.83],[244.60,77.79]]] },
+            { name: { es: "Casiopea", ca: "Cassiopea", en: "Cassiopeia" }, lines: [[[2.30,59.15],[10.13,56.54]],[[10.13,56.54],[14.18,60.72]],[[14.18,60.72],[20.20,60.23]],[[20.20,60.23],[26.70,63.67]]] },
+            { name: { es: "Cisne", ca: "Cigne", en: "Cygnus" }, lines: [[[310.36,45.28],[305.56,40.26]],[[305.56,40.26],[292.68,27.96]],[[296.24,45.13],[305.56,40.26]],[[305.56,40.26],[311.55,33.97]]] },
+            { name: { es: "Lira", ca: "Lira", en: "Lyra" }, lines: [[[279.23,38.78],[281.20,37.60]],[[281.20,37.60],[283.61,36.87]],[[283.61,36.87],[284.74,32.69]],[[284.74,32.69],[282.52,33.36]],[[282.52,33.36],[281.20,37.60]]] },
+            { name: { es: "Águila", ca: "Àguila", en: "Aquila" }, lines: [[[296.54,10.61],[297.69,8.87]],[[297.69,8.87],[298.83,6.41]],[[297.69,8.87],[286.35,15.07]]] },
+            { name: { es: "Pegaso", ca: "Pegàs", en: "Pegasus" }, lines: [[[2.10,29.09],[345.94,28.08]],[[345.94,28.08],[346.19,15.21]],[[346.19,15.21],[3.31,15.18]],[[3.31,15.18],[2.10,29.09]],[[346.19,15.21],[326.05,9.87]]] },
+            { name: { es: "Andrómeda", ca: "Andròmeda", en: "Andromeda" }, lines: [[[2.10,29.09],[17.43,35.62]],[[17.43,35.62],[29.47,42.33]]] },
+            { name: { es: "Perseo", ca: "Perseu", en: "Perseus" }, lines: [[[42.68,55.90],[51.08,49.86]],[[51.08,49.86],[59.46,40.01]],[[51.08,49.86],[47.04,40.96]],[[59.46,40.01],[58.53,31.88]]] },
+            { name: { es: "Auriga", ca: "Cotxer", en: "Auriga" }, lines: [[[79.17,45.99],[89.88,44.95]],[[89.88,44.95],[89.93,37.21]],[[89.93,37.21],[81.57,28.61]],[[81.57,28.61],[74.25,33.17]],[[74.25,33.17],[79.17,45.99]]] },
+            { name: { es: "Tauro", ca: "Taure", en: "Taurus" }, lines: [[[68.98,16.51],[81.57,28.61]],[[68.98,16.51],[84.41,21.14]],[[68.98,16.51],[56.87,24.11]]] },
+            { name: { es: "Géminis", ca: "Bessons", en: "Gemini" }, lines: [[[113.65,31.89],[116.33,28.03]],[[116.33,28.03],[99.43,16.40]],[[113.65,31.89],[95.74,22.51]]] },
+            { name: { es: "Leo", ca: "Lleó", en: "Leo" }, lines: [[[152.09,11.97],[154.99,19.84]],[[154.99,19.84],[154.17,23.42]],[[154.17,23.42],[148.19,26.01]],[[148.19,26.01],[146.46,23.77]],[[152.09,11.97],[168.56,15.43]],[[168.56,15.43],[177.26,14.57]],[[177.26,14.57],[168.53,20.52]],[[168.53,20.52],[154.99,19.84]]] },
+            { name: { es: "Boyero", ca: "Bover", en: "Boötes" }, lines: [[[213.91,19.18],[221.25,27.07]],[[213.91,19.18],[208.67,18.40]],[[213.91,19.18],[218.02,38.31]],[[218.02,38.31],[225.49,40.39]],[[225.49,40.39],[221.25,27.07]]] },
+            { name: { es: "Escorpio", ca: "Escorpí", en: "Scorpius" }, lines: [[[240.08,-22.62],[247.35,-26.43]],[[241.36,-19.81],[240.08,-22.62]],[[239.22,-26.11],[240.08,-22.62]],[[247.35,-26.43],[252.54,-34.29]],[[252.54,-34.29],[253.08,-38.05]],[[253.08,-38.05],[264.33,-42.99]],[[264.33,-42.99],[267.92,-40.13]],[[267.92,-40.13],[263.40,-37.10]]] },
+            { name: { es: "Sagitario", ca: "Sagitari", en: "Sagittarius" }, lines: [[[276.04,-34.38],[280.17,-26.99]],[[280.17,-26.99],[276.99,-29.83]],[[276.99,-29.83],[276.04,-34.38]],[[280.17,-26.99],[286.35,-21.02]],[[286.35,-21.02],[283.82,-26.30]],[[283.82,-26.30],[276.04,-34.38]]] },
+            { name: { es: "Can Mayor", ca: "Ca Major", en: "Canis Major" }, lines: [[[101.29,-16.72],[95.67,-17.96]],[[101.29,-16.72],[105.76,-23.83]],[[105.76,-23.83],[107.10,-26.39]],[[107.10,-26.39],[104.66,-28.97]],[[107.10,-26.39],[111.79,-29.30]]] },
+            { name: { es: "Cefeo", ca: "Cefeu", en: "Cepheus" }, lines: [[[319.64,62.59],[322.16,70.56]],[[322.16,70.56],[354.84,77.63]],[[354.84,77.63],[332.71,58.20]],[[332.71,58.20],[319.64,62.59]]] },
+            { name: { es: "Dragón", ca: "Drac", en: "Draco" }, lines: [[[269.15,51.49],[262.61,52.30]],[[262.61,52.30],[246.00,61.51]],[[246.00,61.51],[231.23,58.97]],[[231.23,58.97],[211.10,64.38]]] }
+        ];
+
+        // Radiantes de lluvias de meteoros (mes 1-12, día pico, RA°, Dec°, nombre)
+        const METEOR_RADIANTS = [
+            { m: 1,  d: 3,  ra: 230, dec: 49,  name: { es: "Cuadrántidas", ca: "Quadràntids", en: "Quadrantids" } },
+            { m: 4,  d: 22, ra: 271, dec: 34,  name: { es: "Líridas", ca: "Lírids", en: "Lyrids" } },
+            { m: 5,  d: 6,  ra: 338, dec: -1,  name: { es: "Eta Acuáridas", ca: "Eta Aquàrids", en: "Eta Aquariids" } },
+            { m: 8,  d: 12, ra: 48,  dec: 58,  name: { es: "Perseidas", ca: "Perseids", en: "Perseids" } },
+            { m: 10, d: 21, ra: 95,  dec: 16,  name: { es: "Oriónidas", ca: "Oriònids", en: "Orionids" } },
+            { m: 11, d: 17, ra: 152, dec: 22,  name: { es: "Leónidas", ca: "Leònids", en: "Leonids" } },
+            { m: 12, d: 14, ra: 112, dec: 33,  name: { es: "Gemínidas", ca: "Gemínids", en: "Geminids" } }
+        ];
+
+        // =========================================================================
+        // MOTOR ASTRONÓMICO (SOL, LUNA Y PLANETAS J2000 JPL / MEEUS)
+        // =========================================================================
+        function dateToJd(d) { return (d.getTime() / 86400000) + 2440587.5; }
+
+        function getSunPos(jd) {
+            const T = (jd - 2451545.0) / 36525;
+            const L0 = normalizeDeg(280.46646 + 36000.76983 * T);
+            const M = normalizeDeg(357.52911 + 35999.05029 * T) * RAD;
+            const C = (1.914602 - 0.004817 * T) * Math.sin(M) + (0.019993 - 0.000101 * T) * Math.sin(2 * M) + 0.000289 * Math.sin(3 * M);
+            const sunLon = normalizeDeg(L0 + C) * RAD;
+            const eps = (23.439291 - 0.0130042 * T) * RAD;
+            const ra = Math.atan2(Math.cos(eps) * Math.sin(sunLon), Math.cos(sunLon));
+            const dec = Math.asin(Math.sin(eps) * Math.sin(sunLon));
+            return { ra: normalizeDeg(ra * DEG), dec: dec * DEG, lon: sunLon, mag: -26.7 };
+        }
+
+        function getMoonPos(jd, sunLonRad) {
+            const T = (jd - 2451545.0) / 36525;
+            const Lprime = normalizeDeg(218.3164477 + 481267.88123421 * T);
+            const D = normalizeDeg(297.8501921 + 445267.1114034 * T) * RAD;
+            const M = normalizeDeg(357.5291092 + 35999.0502909 * T) * RAD;
+            const Mprime = normalizeDeg(134.9633964 + 477198.8675055 * T) * RAD;
+            const F = normalizeDeg(93.2720950 + 483202.0175233 * T) * RAD;
+            const dLon = 6.288774 * Math.sin(Mprime) + 1.274027 * Math.sin(2 * D - Mprime) + 0.658309 * Math.sin(2 * D) + 0.213618 * Math.sin(2 * Mprime) - 0.185116 * Math.sin(M) - 0.114332 * Math.sin(2 * F);
+            const dLat = 5.128122 * Math.sin(F) + 0.280602 * Math.sin(Mprime + F) + 0.277693 * Math.sin(F - Mprime);
+            const moonLon = normalizeDeg(Lprime + dLon) * RAD;
+            const moonLat = dLat * RAD;
+            const eps = (23.439291 - 0.0130042 * T) * RAD;
+            const dec = Math.asin(Math.sin(moonLat) * Math.cos(eps) + Math.cos(moonLat) * Math.sin(eps) * Math.sin(moonLon));
+            const ra = Math.atan2(Math.cos(moonLat) * Math.cos(eps) * Math.sin(moonLon) - Math.sin(moonLat) * Math.sin(eps), Math.cos(moonLat) * Math.cos(moonLon));
+            const parallax = 0.950724 + 0.051818 * Math.cos(Mprime);
+            const illum = (1 - Math.cos(moonLon - sunLonRad) * Math.cos(moonLat)) / 2;
+            const isWaxing = Math.sin(moonLon - sunLonRad) > 0;
+            return { ra: normalizeDeg(ra * DEG), dec: dec * DEG, illum: illum * 100, isWaxing, parallax };
+        }
+
+        // Elementos keplerianos JPL J2000 (1800-2050)
+        const PLANET_ELEMENTS = {
+            Earth:   { a: 1.00000261, da: 0.00000562, e: 0.01671123, de: -0.00004392, I: -0.00001531, dI: -0.01294668, L: 100.46457166, dL: 35999.37244981, w: 102.93768193, dw: 0.32327364, O: 0.0, dO: 0.0 },
+            Mercury: { a: 0.38709927, da: 0.00000037, e: 0.20563593, de:  0.00001906, I:  7.00497902, dI: -0.00594749, L: 252.25032350, dL: 149472.67411175, w:  77.45779628, dw: 0.16047689, O:  48.33076593, dO: -0.12534081, sym: "☿", color: "#94a3b8", mag: 0.0 },
+            Venus:   { a: 0.72333566, da: 0.00000390, e: 0.00677672, de: -0.00004107, I:  3.39467605, dI: -0.00078890, L: 181.97909950, dL: 58517.81538729,  w: 131.60246718, dw: 0.00268329, O:  76.67984255, dO: -0.27769418, sym: "♀", color: "#f8fafc", mag: -4.0 },
+            Mars:    { a: 1.52371034, da: 0.00001847, e: 0.09339410, de:  0.00007882, I:  1.84969142, dI: -0.00813131, L:  -4.55343205, dL: 19140.30268499,  w: -23.94362959, dw: 0.44441088, O:  49.55953891, dO: -0.29257343, sym: "♂", color: "#f87171", mag: 0.5 },
+            Jupiter: { a: 5.20288700, da:-0.00011607, e: 0.04838624, de: -0.00013253, I:  1.30439695, dI: -0.00183714, L:  34.39644051, dL:  3034.74612775,  w:  14.72847983, dw: 0.21252668, O: 100.47390909, dO:  0.20469106, sym: "♃", color: "#fbbf24", mag: -2.2 },
+            Saturn:  { a: 9.53667594, da:-0.00125060, e: 0.05386179, de: -0.00050991, I:  2.48599187, dI:  0.00193609, L:  49.95424423, dL:  1222.49362201,  w:  92.59887831, dw:-0.41897216, O: 113.66242448, dO: -0.28867794, sym: "♄", color: "#fde047", mag: 0.6 },
+            Uranus:  { a:19.18916464, da:-0.00196176, e: 0.04725744, de: -0.00004397, I:  0.77263783, dI: -0.00242939, L: 313.23810451, dL:   428.48202785,  w: 170.95427630, dw: 0.40805281, O:  74.01692503, dO:  0.04240589, sym: "♅", color: "#2dd4bf", mag: 5.7 },
+            Neptune: { a:30.06992276, da: 0.00026291, e: 0.00859048, de:  0.00005105, I:  1.77004347, dI:  0.00035372, L: -55.12002969, dL:   218.45945325,  w:  44.96476227, dw:-0.32241464, O: 131.78422574, dO: -0.00508664, sym: "♆", color: "#60a5fa", mag: 7.8 }
+        };
+
+        function helioEclipticXYZ(el, T) {
+            const a = el.a + el.da * T;
+            const e = el.e + el.de * T;
+            const I = (el.I + el.dI * T) * RAD;
+            const L = normalizeDeg(el.L + el.dL * T);
+            const wBar = normalizeDeg(el.w + el.dw * T);
+            const O = normalizeDeg(el.O + el.dO * T) * RAD;
+            const omega = (wBar - el.O - el.dO * T) * RAD;
+            const M = normalizeDeg(L - wBar) * RAD;
+            let E = M + e * Math.sin(M);
+            for (let k = 0; k < 5; k++) {
+                E = E - (E - e * Math.sin(E) - M) / (1 - e * Math.cos(E));
+            }
+            const xp = a * (Math.cos(E) - e);
+            const yp = a * Math.sqrt(1 - e * e) * Math.sin(E);
+            const cosO = Math.cos(O), sinO = Math.sin(O), cosW = Math.cos(omega), sinW = Math.sin(omega), cosI = Math.cos(I), sinI = Math.sin(I);
+            const x = (cosW * cosO - sinW * sinO * cosI) * xp + (-sinW * cosO - cosW * sinO * cosI) * yp;
+            const y = (cosW * sinO + sinW * cosO * cosI) * xp + (-sinW * sinO + cosW * cosO * cosI) * yp;
+            const z = (sinW * sinI) * xp + (cosW * sinI) * yp;
+            return { x, y, z };
+        }
+
+        function getPlanetRaDec(key, jd) {
+            const T = (jd - 2451545.0) / 36525;
+            const eXYZ = helioEclipticXYZ(PLANET_ELEMENTS.Earth, T);
+            const pXYZ = helioEclipticXYZ(PLANET_ELEMENTS[key], T);
+            const dx = pXYZ.x - eXYZ.x, dy = pXYZ.y - eXYZ.y, dz = pXYZ.z - eXYZ.z;
+            const eps = (23.439291 - 0.0130042 * T) * RAD;
+            const xeq = dx;
+            const yeq = dy * Math.cos(eps) - dz * Math.sin(eps);
+            const zeq = dy * Math.sin(eps) + dz * Math.cos(eps);
+            const r = Math.sqrt(xeq * xeq + yeq * yeq + zeq * zeq);
+            const ra = normalizeDeg(Math.atan2(yeq, xeq) * DEG);
+            const dec = Math.asin(Math.max(-1, Math.min(1, zeq / r))) * DEG;
+            return { ra, dec };
+        }
+
+        function getAltAz(ra, dec, jd, lat, lon) {
+            const GMST = normalizeDeg(280.46061837 + 360.98564736629 * (jd - 2451545.0));
+            const LST = normalizeDeg(GMST + lon);
+            const H = (LST - ra) * RAD;
+            const phi = lat * RAD;
+            const delta = dec * RAD;
+            const sinAlt = Math.sin(phi) * Math.sin(delta) + Math.cos(phi) * Math.cos(delta) * Math.cos(H);
+            const alt = Math.asin(Math.max(-1, Math.min(1, sinAlt))) * DEG;
+            const azRad = Math.atan2(-Math.sin(H), Math.tan(delta) * Math.cos(phi) - Math.sin(phi) * Math.cos(H));
+            return { alt, az: normalizeDeg(azRad * DEG) };
+        }
+
+        // Proyección estereográfica cenital: centro = cenit (Alt=90), borde = horizonte (Alt=0)
+        function projectSky(alt, az, cx, cy, R) {
+            if (alt < -2) return null;
+            const r = R * Math.tan(((90 - alt) * RAD) / 2);
+            const theta = (az - azOffsetDeg) * RAD; // az=azOffsetDeg arriba (y negativo), este a la izquierda si miramos al sur
+            // Convención mapa celeste mirando hacia arriba:
+            // Si Norte arriba (azOffset=0): Norte arriba (y-), Este a la IZQUIERDA (x-), Oeste a la DERECHA (x+)
+            const x = cx - r * Math.sin(theta);
+            const y = cy - r * Math.cos(theta);
+            return { x, y, r };
+        }
+
+        function formatRaHms(raDeg) {
+            const hTotal = raDeg / 15;
+            const h = Math.floor(hTotal);
+            const m = Math.floor((hTotal - h) * 60);
+            return `${String(h).padStart(2, '0')}h ${String(m).padStart(2, '0')}m`;
+        }
+
+        function formatDecDms(decDeg) {
+            const sign = decDeg >= 0 ? '+' : '-';
+            const abs = Math.abs(decDeg);
+            const d = Math.floor(abs);
+            const m = Math.floor((abs - d) * 60);
+            return `${sign}${d}° ${String(m).padStart(2, '0')}'`;
+        }
+
+        // =========================================================================
+        // RENDER DEL PLANISFERIO
+        // =========================================================================
+        function getSkyBackgroundColor(sunAlt) {
+            if (!layers.atmosphere) return "#040711";
+            if (sunAlt > 3) return "#1e4b85";
+            if (sunAlt > -2) return "#1b3668";
+            if (sunAlt > -6) return "#16244f";
+            if (sunAlt > -12) return "#0d1536";
+            if (sunAlt > -18) return "#070b1e";
+            return "#040711";
+        }
+
+        function drawMoonPhaseCanvas(ctx, x, y, r, illumPct, isWaxing) {
+            const k = Math.max(0, Math.min(1, illumPct / 100));
+            ctx.save();
+            ctx.beginPath();
+            ctx.fillStyle = '#1e293b';
+            ctx.arc(x, y, r, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, Math.PI * 2);
+            ctx.clip();
+
+            if (k > 0.99) {
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(x - r, y - r, r * 2, r * 2);
+            } else if (k >= 0.01) {
+                ctx.beginPath();
+                ctx.fillStyle = '#ffffff';
+                if (isWaxing) ctx.arc(x, y, r, -Math.PI / 2, Math.PI / 2, false);
+                else ctx.arc(x, y, r, Math.PI / 2, Math.PI * 1.5, false);
+                ctx.closePath();
+                ctx.fill();
+
+                const rx = r * Math.abs(2 * k - 1);
+                if (rx > 0.2) {
+                    ctx.beginPath();
+                    ctx.fillStyle = k > 0.5 ? '#ffffff' : '#1e293b';
+                    ctx.ellipse(x, y, rx, r, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+            ctx.restore();
+            ctx.beginPath();
+            ctx.strokeStyle = '#94a3b8';
+            ctx.lineWidth = 1;
+            ctx.arc(x, y, r, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+
+        function renderSkyDome() {
+            const canvas = document.getElementById('sky-dome-canvas');
+            const wrapper = document.getElementById('dome-wrapper');
+            if (!canvas || !wrapper) return;
+
+            const rect = wrapper.getBoundingClientRect();
+            const size = Math.max(280, Math.round(rect.width));
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = size * dpr;
+            canvas.height = size * dpr;
+            const ctx = canvas.getContext('2d');
+            ctx.scale(dpr, dpr);
+
+            const cx = size / 2, cy = size / 2;
+            const R = size * 0.44;
+            const jd = dateToJd(simDate);
+            const lat = ACTIVE_LOC.lat, lon = ACTIVE_LOC.lon;
+
+            const sunPos = getSunPos(jd);
+            const sunAltAz = getAltAz(sunPos.ra, sunPos.dec, jd, lat, lon);
+            const moonPos = getMoonPos(jd, sunPos.lon);
+            const moonAltAzGeo = getAltAz(moonPos.ra, moonPos.dec, jd, lat, lon);
+            const moonAlt = moonAltAzGeo.alt - moonPos.parallax * Math.cos(moonAltAzGeo.alt * RAD);
+
+            renderedObjects = [];
+
+            // Fondo exterior del canvas
+            ctx.clearRect(0, 0, size, size);
+
+            // Disco del cielo
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(cx, cy, R, 0, Math.PI * 2);
+            ctx.fillStyle = getSkyBackgroundColor(sunAltAz.alt);
+            ctx.fill();
+            ctx.clip();
+
+            // Rejilla acimutal
+            if (layers.azGrid) {
+                ctx.strokeStyle = "rgba(56, 189, 248, 0.22)";
+                ctx.lineWidth = 1;
+                [30, 60].forEach(alt => {
+                    const rg = R * Math.tan(((90 - alt) * RAD) / 2);
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, rg, 0, Math.PI * 2);
+                    ctx.stroke();
+                });
+                for (let a = 0; a < 360; a += 45) {
+                    const p = projectSky(0, a, cx, cy, R);
+                    if (p) {
+                        ctx.beginPath();
+                        ctx.moveTo(cx, cy);
+                        ctx.lineTo(p.x, p.y);
+                        ctx.stroke();
+                    }
+                }
+            }
+
+            // Rejilla ecuatorial
+            if (layers.eqGrid) {
+                ctx.strokeStyle = "rgba(168, 85, 247, 0.24)";
+                ctx.lineWidth = 1;
+                [-30, 0, 30, 60].forEach(dec => {
+                    ctx.beginPath();
+                    let started = false;
+                    for (let ra = 0; ra <= 360; ra += 6) {
+                        const aa = getAltAz(ra, dec, jd, lat, lon);
+                        if (aa.alt >= 0) {
+                            const p = projectSky(aa.alt, aa.az, cx, cy, R);
+                            if (!started) { ctx.moveTo(p.x, p.y); started = true; }
+                            else ctx.lineTo(p.x, p.y);
+                        } else {
+                            started = false;
+                        }
+                    }
+                    ctx.stroke();
+                });
+                for (let ra = 0; ra < 360; ra += 30) {
+                    ctx.beginPath();
+                    let started = false;
+                    for (let dec = -80; dec <= 88; dec += 4) {
+                        const aa = getAltAz(ra, dec, jd, lat, lon);
+                        if (aa.alt >= 0) {
+                            const p = projectSky(aa.alt, aa.az, cx, cy, R);
+                            if (!started) { ctx.moveTo(p.x, p.y); started = true; }
+                            else ctx.lineTo(p.x, p.y);
+                        } else {
+                            started = false;
+                        }
+                    }
+                    ctx.stroke();
+                }
+            }
+
+            // Eclíptica
+            if (layers.ecliptic) {
+                const T = (jd - 2451545.0) / 36525;
+                const eps = (23.439291 - 0.0130042 * T) * RAD;
+                ctx.beginPath();
+                ctx.strokeStyle = "rgba(250, 204, 21, 0.35)";
+                ctx.lineWidth = 1.2;
+                ctx.setLineDash([4, 4]);
+                let started = false;
+                for (let lam = 0; lam <= 360; lam += 4) {
+                    const lRad = lam * RAD;
+                    const ra = normalizeDeg(Math.atan2(Math.cos(eps) * Math.sin(lRad), Math.cos(lRad)) * DEG);
+                    const dec = Math.asin(Math.sin(eps) * Math.sin(lRad)) * DEG;
+                    const aa = getAltAz(ra, dec, jd, lat, lon);
+                    if (aa.alt >= 0) {
+                        const p = projectSky(aa.alt, aa.az, cx, cy, R);
+                        if (!started) { ctx.moveTo(p.x, p.y); started = true; }
+                        else ctx.lineTo(p.x, p.y);
+                    } else {
+                        started = false;
+                    }
+                }
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+
+            // Constelaciones
+            if (layers.constellations) {
+                ctx.strokeStyle = "rgba(148, 163, 184, 0.38)";
+                ctx.lineWidth = 1;
+                CONSTELLATIONS.forEach(c => {
+                    let sumX = 0, sumY = 0, count = 0;
+                    c.lines.forEach(seg => {
+                        const aa1 = getAltAz(seg[0][0], seg[0][1], jd, lat, lon);
+                        const aa2 = getAltAz(seg[1][0], seg[1][1], jd, lat, lon);
+                        if (aa1.alt >= -2 && aa2.alt >= -2) {
+                            const p1 = projectSky(Math.max(0, aa1.alt), aa1.az, cx, cy, R);
+                            const p2 = projectSky(Math.max(0, aa2.alt), aa2.az, cx, cy, R);
+                            if (p1 && p2) {
+                                ctx.beginPath();
+                                ctx.moveTo(p1.x, p1.y);
+                                ctx.lineTo(p2.x, p2.y);
+                                ctx.stroke();
+                                sumX += (p1.x + p2.x) * 0.5;
+                                sumY += (p1.y + p2.y) * 0.5;
+                                count++;
+                            }
+                        }
+                    });
+                    if (layers.labels && count > 0) {
+                        ctx.fillStyle = "rgba(148, 163, 184, 0.72)";
+                        ctx.font = "500 10px 'Outfit', sans-serif";
+                        ctx.textAlign = "center";
+                        ctx.textBaseline = "middle";
+                        ctx.fillText(c.name[currentLang] || c.name.es, sumX / count, sumY / count);
+                    }
+                });
+            }
+
+            // Estrellas
+            if (layers.stars) {
+                const dimFactor = (layers.atmosphere && sunAltAz.alt > -4) ? 0.25 : 1.0;
+                STARS_CATALOG.forEach(st => {
+                    const [ra, dec, mag, color, name] = st;
+                    const aa = getAltAz(ra, dec, jd, lat, lon);
+                    if (aa.alt < 0) return;
+                    const p = projectSky(aa.alt, aa.az, cx, cy, R);
+                    if (!p) return;
+                    const radius = Math.max(0.9, 3.3 - mag * 0.55);
+                    ctx.save();
+                    ctx.globalAlpha = dimFactor;
+                    ctx.beginPath();
+                    ctx.fillStyle = color;
+                    ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
+                    ctx.fill();
+                    if (layers.labels && name && mag < 1.35 && dimFactor > 0.5) {
+                        ctx.fillStyle = "rgba(241, 245, 249, 0.78)";
+                        ctx.font = "500 9.5px 'Plus Jakarta Sans', sans-serif";
+                        ctx.textAlign = "left";
+                        ctx.textBaseline = "middle";
+                        ctx.fillText(name, p.x + radius + 3, p.y);
+                    }
+                    ctx.restore();
+                    if (name) {
+                        renderedObjects.push({ x: p.x, y: p.y, r: Math.max(8, radius + 5), name, info: `mag ${mag.toFixed(2)}`, alt: aa.alt, az: aa.az, ra, dec });
+                    }
+                });
+            }
+
+            // Radiantes de lluvias de meteoros activas (±7 días)
+            const curMonth = simDate.getUTCMonth() + 1;
+            const curDay = simDate.getUTCDate();
+            METEOR_RADIANTS.forEach(rad => {
+                const peakDate = new Date(Date.UTC(simDate.getUTCFullYear(), rad.m - 1, rad.d));
+                const diffDays = Math.abs((simDate.getTime() - peakDate.getTime()) / 86400000);
+                if (diffDays <= 7) {
+                    const aa = getAltAz(rad.ra, rad.dec, jd, lat, lon);
+                    if (aa.alt >= 0) {
+                        const p = projectSky(aa.alt, aa.az, cx, cy, R);
+                        if (p) {
+                            ctx.strokeStyle = "rgba(56, 189, 248, 0.85)";
+                            ctx.lineWidth = 1.2;
+                            ctx.beginPath();
+                            ctx.moveTo(p.x - 5, p.y); ctx.lineTo(p.x + 5, p.y);
+                            ctx.moveTo(p.x, p.y - 5); ctx.lineTo(p.x, p.y + 5);
+                            ctx.stroke();
+                            if (layers.labels) {
+                                ctx.fillStyle = "#38bdf8";
+                                ctx.font = "600 9.5px 'Plus Jakarta Sans', sans-serif";
+                                ctx.textAlign = "left";
+                                ctx.fillText(rad.name[currentLang] || rad.name.es, p.x + 7, p.y);
+                            }
+                            renderedObjects.push({ x: p.x, y: p.y, r: 10, name: rad.name[currentLang] || rad.name.es, info: "Radiante", alt: aa.alt, az: aa.az, ra: rad.ra, dec: rad.dec });
+                        }
+                    }
+                }
+            });
+
+            // Planetas
+            if (layers.planets) {
+                const pNames = t('planets');
+                ['Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune'].forEach(key => {
+                    const el = PLANET_ELEMENTS[key];
+                    const pos = getPlanetRaDec(key, jd);
+                    const aa = getAltAz(pos.ra, pos.dec, jd, lat, lon);
+                    if (aa.alt < 0) return;
+                    const p = projectSky(aa.alt, aa.az, cx, cy, R);
+                    if (!p) return;
+                    const label = (pNames && pNames[key]) || key;
+                    ctx.beginPath();
+                    ctx.fillStyle = el.color;
+                    ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+                    ctx.fill();
+                    if (layers.labels) {
+                        ctx.fillStyle = el.color;
+                        ctx.font = "600 10.5px 'Outfit', sans-serif";
+                        ctx.textAlign = "left";
+                        ctx.textBaseline = "middle";
+                        ctx.fillText(`${el.sym} ${label}`, p.x + 6, p.y);
+                    }
+                    renderedObjects.push({ x: p.x, y: p.y, r: 11, name: `${el.sym} ${label}`, info: `mag ~${el.mag.toFixed(1)}`, alt: aa.alt, az: aa.az, ra: pos.ra, dec: pos.dec });
+                });
+            }
+
+            // Sol
+            if (sunAltAz.alt >= -1) {
+                const ps = projectSky(Math.max(0, sunAltAz.alt), sunAltAz.az, cx, cy, R);
+                if (ps) {
+                    ctx.beginPath();
+                    ctx.fillStyle = "rgba(250, 204, 21, 0.25)";
+                    ctx.arc(ps.x, ps.y, 12, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.fillStyle = "#facc15";
+                    ctx.arc(ps.x, ps.y, 6.5, 0, Math.PI * 2);
+                    ctx.fill();
+                    if (layers.labels) {
+                        ctx.fillStyle = "#fde047";
+                        ctx.font = "700 11px 'Outfit', sans-serif";
+                        ctx.textAlign = "left";
+                        ctx.fillText(t('sunName'), ps.x + 9, ps.y);
+                    }
+                    renderedObjects.push({ x: ps.x, y: ps.y, r: 14, name: t('sunName'), info: "mag -26.7", alt: sunAltAz.alt, az: sunAltAz.az, ra: sunPos.ra, dec: sunPos.dec });
+                }
+            }
+
+            // Luna (con fase en blanco puro)
+            if (moonAlt >= -1) {
+                const pm = projectSky(Math.max(0, moonAlt), moonAltAzGeo.az, cx, cy, R);
+                if (pm) {
+                    drawMoonPhaseCanvas(ctx, pm.x, pm.y, 6.5, moonPos.illum, moonPos.isWaxing);
+                    if (layers.labels) {
+                        ctx.fillStyle = "#f8fafc";
+                        ctx.font = "700 11px 'Outfit', sans-serif";
+                        ctx.textAlign = "left";
+                        ctx.textBaseline = "middle";
+                        ctx.fillText(t('moonName'), pm.x + 9, pm.y);
+                    }
+                    renderedObjects.push({ x: pm.x, y: pm.y, r: 14, name: t('moonName'), info: `${t('illumLbl')} ${moonPos.illum.toFixed(0)}%`, alt: moonAlt, az: moonAltAzGeo.az, ra: moonPos.ra, dec: moonPos.dec });
+                }
+            }
+
+            ctx.restore();
+
+            // Borde del horizonte
+            ctx.beginPath();
+            ctx.strokeStyle = "rgba(148, 163, 184, 0.55)";
+            ctx.lineWidth = 2;
+            ctx.arc(cx, cy, R, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Puntos cardinales alrededor del disco
+            const cards = t('cardinals');
+            const dirs = [
+                { az: 0,   lbl: cards.N, main: true },
+                { az: 45,  lbl: cards.NE, main: false },
+                { az: 90,  lbl: cards.E, main: true },
+                { az: 135, lbl: cards.SE, main: false },
+                { az: 180, lbl: cards.S, main: true },
+                { az: 225, lbl: cards.SW, main: false },
+                { az: 270, lbl: cards.W, main: true },
+                { az: 315, lbl: cards.NW, main: false }
+            ];
+            const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+            dirs.forEach(d => {
+                const theta = (d.az - azOffsetDeg) * RAD;
+                const rLbl = R + 14;
+                const x = cx - rLbl * Math.sin(theta);
+                const y = cy - rLbl * Math.cos(theta);
+                ctx.fillStyle = d.main ? (isLight ? "#5b289c" : "#38bdf8") : (isLight ? "#7a766d" : "#64748b");
+                ctx.font = d.main ? "700 12px 'Outfit', sans-serif" : "600 10px 'Outfit', sans-serif";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText(d.lbl, x, y);
+            });
+
+            updateClockUI();
+        }
+
+        // =========================================================================
+        // INTERACCIÓN RATÓN / TÁCTIL (ROTACIÓN Y TOOLTIP)
+        // =========================================================================
+        function setupDomeInteraction() {
+            const canvas = document.getElementById('sky-dome-canvas');
+            const tooltip = document.getElementById('sky-tooltip');
+            let dragging = false, startAngle = 0, startAz = 0;
+
+            function pointerAngle(ev) {
+                const rect = canvas.getBoundingClientRect();
+                const cx = rect.left + rect.width / 2;
+                const cy = rect.top + rect.height / 2;
+                const clientX = ev.touches ? ev.touches[0].clientX : ev.clientX;
+                const clientY = ev.touches ? ev.touches[0].clientY : ev.clientY;
+                return Math.atan2(clientY - cy, clientX - cx) * DEG;
+            }
+
+            function handleHover(clientX, clientY) {
+                const rect = canvas.getBoundingClientRect();
+                const x = clientX - rect.left;
+                const y = clientY - rect.top;
+                let best = null, bestDist = 18;
+                for (let i = 0; i < renderedObjects.length; i++) {
+                    const obj = renderedObjects[i];
+                    const d = Math.hypot(x - obj.x, y - obj.y);
+                    if (d <= obj.r && d < bestDist) {
+                        bestDist = d;
+                        best = obj;
+                    }
+                }
+                if (best) {
+                    tooltip.style.display = 'block';
+                    tooltip.style.left = `${Math.min(rect.width - 170, Math.max(8, x + 12))}px`;
+                    tooltip.style.top = `${Math.max(8, y - 48)}px`;
+                    tooltip.innerHTML = `<strong>${best.name}</strong> · ${best.info}<br>Alt: ${best.alt.toFixed(1)}° · Az: ${best.az.toFixed(1)}°<br>AR: ${formatRaHms(best.ra)} · Dec: ${formatDecDms(best.dec)}`;
+                } else {
+                    tooltip.style.display = 'none';
+                }
+            }
+
+            canvas.addEventListener('mousedown', e => {
+                dragging = true;
+                startAngle = pointerAngle(e);
+                startAz = azOffsetDeg;
+                tooltip.style.display = 'none';
+            });
+            window.addEventListener('mousemove', e => {
+                if (dragging) {
+                    const cur = pointerAngle(e);
+                    azOffsetDeg = normalizeDeg(startAz + (cur - startAngle));
+                    renderSkyDome();
+                } else if (e.target === canvas) {
+                    handleHover(e.clientX, e.clientY);
+                }
+            });
+            window.addEventListener('mouseup', () => { dragging = false; });
+            canvas.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
+
+            canvas.addEventListener('touchstart', e => {
+                if (e.touches.length === 1) {
+                    dragging = true;
+                    startAngle = pointerAngle(e);
+                    startAz = azOffsetDeg;
+                    const rect = canvas.getBoundingClientRect();
+                    handleHover(e.touches[0].clientX, e.touches[0].clientY);
+                }
+            }, { passive: true });
+            canvas.addEventListener('touchmove', e => {
+                if (dragging && e.touches.length === 1) {
+                    const cur = pointerAngle(e);
+                    azOffsetDeg = normalizeDeg(startAz + (cur - startAngle));
+                    tooltip.style.display = 'none';
+                    renderSkyDome();
+                }
+            }, { passive: true });
+            canvas.addEventListener('touchend', () => { dragging = false; });
+            window.addEventListener('resize', () => renderSkyDome());
+        }
+
+        // =========================================================================
+        // CONTROLES DE TIEMPO, CAPAS Y METEOROLOGÍA (OPEN-METEO)
+        // =========================================================================
+        function updateClockUI() {
+            const loc = getLocale();
+            const fmt = new Intl.DateTimeFormat(loc, {
+                timeZone: ACTIVE_LOC.tz,
+                weekday: 'short', day: 'numeric', month: 'short', year: 'numeric',
+                hour: '2-digit', minute: '2-digit', hour12: false
+            });
+            document.getElementById('sky-clock-label').textContent = fmt.format(simDate) + ' h';
+
+            const parts = new Intl.DateTimeFormat('en-US', {
+                timeZone: ACTIVE_LOC.tz,
+                year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
+            }).formatToParts(simDate);
+            const map = {};
+            parts.forEach(p => { map[p.type] = p.value; });
+            const picker = document.getElementById('dt-picker');
+            if (picker && document.activeElement !== picker) {
+                picker.value = `${map.year}-${map.month}-${map.day}T${map.hour}:${map.minute}`;
+            }
+        }
+
+        function toggleLive() {
+            isLive = !isLive;
+            document.getElementById('btn-live').classList.toggle('active', isLive);
+            if (isLive) { simDate = new Date(); renderSkyDome(); }
+        }
+
+        function resetNow() {
+            isLive = true;
+            document.getElementById('btn-live').classList.add('active');
+            simDate = new Date();
+            renderSkyDome();
+        }
+
+        function shiftTime(deltaMs) {
+            isLive = false;
+            document.getElementById('btn-live').classList.remove('active');
+            simDate = new Date(simDate.getTime() + deltaMs);
+            renderSkyDome();
+        }
+
+        function onDatetimePicked(val) {
+            if (!val) return;
+            isLive = false;
+            document.getElementById('btn-live').classList.remove('active');
+            const parsed = new Date(val);
+            if (!isNaN(parsed.getTime())) {
+                simDate = parsed;
+                renderSkyDome();
+            }
+        }
+
+        function toggleLayer(name, btn) {
+            layers[name] = !layers[name];
+            if (btn) btn.classList.toggle('active', layers[name]);
+            renderSkyDome();
+        }
+
+        function setAzOffset(deg) {
+            azOffsetDeg = deg;
+            renderSkyDome();
+        }
+
+        function fetchWeatherSummary() {
+            const el = document.getElementById('weather-content');
+            if (!el) return;
+            el.innerHTML = `<div class="sky-meta-line">${t('weatherLoading')}</div>`;
+            const url = `https://api.open-meteo.com/v1/forecast?latitude=${ACTIVE_LOC.lat.toFixed(4)}&longitude=${ACTIVE_LOC.lon.toFixed(4)}&current=temperature_2m,relative_humidity_2m,dew_point_2m,cloud_cover,wind_speed_10m,visibility&hourly=cloud_cover,cloud_cover_low,cloud_cover_mid,cloud_cover_high&forecast_days=2&timezone=UTC`;
+            fetch(url)
+                .then(r => r.ok ? r.json() : null)
+                .then(data => {
+                    if (!data || !data.current) {
+                        el.innerHTML = `<div class="sky-meta-line">${t('weatherUnavailable')}</div>`;
+                        return;
+                    }
+                    const c = data.current;
+                    const nowHourMs = Math.floor(Date.now() / 3600000) * 3600000;
+                    let low = 0, mid = 0, high = 0;
+                    const nextCells = [];
+                    if (data.hourly && Array.isArray(data.hourly.time)) {
+                        for (let i = 0; i < data.hourly.time.length; i++) {
+                            const ms = Date.parse(data.hourly.time[i] + 'Z');
+                            if (ms === nowHourMs) {
+                                low = Math.round(data.hourly.cloud_cover_low?.[i] || 0);
+                                mid = Math.round(data.hourly.cloud_cover_mid?.[i] || 0);
+                                high = Math.round(data.hourly.cloud_cover_high?.[i] || 0);
+                            }
+                            if (ms >= nowHourMs && nextCells.length < 6 && ((ms - nowHourMs) % 7200000 === 0)) {
+                                const hrFmt = new Intl.DateTimeFormat(getLocale(), { timeZone: ACTIVE_LOC.tz, hour: '2-digit', hour12: false }).format(new Date(ms));
+                                const pct = Math.round(data.hourly.cloud_cover?.[i] || 0);
+                                nextCells.push({ hr: hrFmt + 'h', pct });
+                            }
+                        }
+                    }
+                    const dewDiff = (c.temperature_2m ?? 10) - (c.dew_point_2m ?? 0);
+                    const dewWarn = dewDiff < 2.0 ? `<div class="sky-meta-line" style="color: var(--accent-rose); margin-bottom:0.5rem;">${t('wDewWarn')}</div>` : '';
+                    const visKm = typeof c.visibility === 'number' ? `${(c.visibility / 1000).toFixed(0)} km` : '--';
+
+                    el.innerHTML = `
+                        <div>
+                            <div class="weather-grid">
+                                <div class="weather-metric"><div class="weather-metric-lbl">${t('wClouds')}</div><div class="weather-metric-val">${Math.round(c.cloud_cover)}% (${low}/${mid}/${high})</div></div>
+                                <div class="weather-metric"><div class="weather-metric-lbl">${t('wTemp')}</div><div class="weather-metric-val">${c.temperature_2m.toFixed(1)}° / ${c.dew_point_2m.toFixed(1)}°C</div></div>
+                                <div class="weather-metric"><div class="weather-metric-lbl">${t('wHum')}</div><div class="weather-metric-val">${Math.round(c.relative_humidity_2m)}%</div></div>
+                                <div class="weather-metric"><div class="weather-metric-lbl">${t('wWind')}</div><div class="weather-metric-val">${Math.round(c.wind_speed_10m)} km/h · ${visKm}</div></div>
+                            </div>
+                            ${dewWarn}
+                        </div>
+                        <div>
+                            <div class="weather-strip-title">${t('wNext12')}</div>
+                            <div class="weather-strip">
+                                ${nextCells.map(cell => `<div class="weather-hour-cell"><div>${cell.hr}</div><div class="weather-hour-bar"><div class="weather-hour-fill" style="width:${cell.pct}%"></div></div><div>${cell.pct}%</div></div>`).join('')}
+                            </div>
+                        </div>
+                    `;
+                })
+                .catch(() => {
+                    el.innerHTML = `<div class="sky-meta-line">${t('weatherUnavailable')}</div>`;
+                });
+        }
+
+        // =========================================================================
+        // UBICACIÓN, TEMA E IDIOMA
+        // =========================================================================
+        function getTimezoneDisplayLabel(tz, date = new Date(), loc = getLocale()) {
+            const offsetRaw = new Intl.DateTimeFormat(loc, { timeZone: tz, timeZoneName: 'shortOffset' }).formatToParts(date).find(p => p.type === 'timeZoneName')?.value || 'GMT';
+            const offsetStr = offsetRaw.replace(/\bGMT([+-]\d+(?::\d+)?)?/gi, (m, off) => off ? `UTC${off}` : 'UTC');
+            const tryLocales = [loc, 'en-US', 'es-ES'];
+            let abbr = '';
+            for (let i = 0; i < tryLocales.length; i++) {
+                const val = new Intl.DateTimeFormat(tryLocales[i], { timeZone: tz, timeZoneName: 'short' }).formatToParts(date).find(p => p.type === 'timeZoneName')?.value || '';
+                if (val && !/^(GMT|UTC)([+-]|$)/i.test(val)) { abbr = val; break; }
+            }
+            return abbr ? `${abbr} (${offsetStr})` : offsetStr;
+        }
+
+        function formatLatLonDMS(lat, lon) {
+            return `${Math.abs(lat).toFixed(2)}° ${lat >= 0 ? 'N' : 'S'}, ${Math.abs(lon).toFixed(2)}° ${lon >= 0 ? 'E' : 'O'}`;
+        }
+
+        function getShortCityName() {
+            return (ACTIVE_LOC.name || 'Cosmos Mataró').replace(/\s*\([^)]*\)\s*$/, '').trim() || 'Cosmos Mataró';
+        }
+
+        function updateLocationUI() {
+            const shortName = getShortCityName();
+            const displayCity = ACTIVE_LOC.isDefault ? 'Mataró' : shortName;
+            document.title = t('pageTitle').replace('{city}', displayCity);
+            document.getElementById('page-heading').textContent = t('appTitleTpl').replace('{city}', displayCity);
+            document.getElementById('loc-pill-label').textContent = shortName.length > 20 ? shortName.slice(0, 18) + '…' : shortName;
+            document.getElementById('btn-loc-mataro').classList.toggle('active', !!ACTIVE_LOC.isDefault);
+            document.getElementById('loc-coords-line').textContent = `${ACTIVE_LOC.name} (${formatLatLonDMS(ACTIVE_LOC.lat, ACTIVE_LOC.lon)}) · ${ACTIVE_LOC.tz} · ${getTimezoneDisplayLabel(ACTIVE_LOC.tz)}`;
+        }
+
+        function applyObserverLocation(loc, persist = true) {
+            ACTIVE_LOC = {
+                name: loc.name || 'Ubicación',
+                lat: Number(loc.lat),
+                lon: Number(loc.lon),
+                tz: loc.tz || Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Madrid',
+                isDefault: !!loc.isDefault
+            };
+            if (persist) {
+                try { localStorage.setItem('skycal_location', JSON.stringify(ACTIVE_LOC)); } catch (e) {}
+            }
+            updateLocationUI();
+            renderSkyDome();
+            fetchWeatherSummary();
+        }
+
+        function resetToCosmosMataro() {
+            applyObserverLocation({ ...DEFAULT_LOC });
+            collapseLocSearch();
+        }
+
+        function detectUserLocationGPS() {
+            if (!navigator.geolocation) return;
+            navigator.geolocation.getCurrentPosition(pos => {
+                applyObserverLocation({
+                    name: 'Mi ubicación (GPS)',
+                    lat: pos.coords.latitude,
+                    lon: pos.coords.longitude,
+                    tz: Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Madrid',
+                    isDefault: false
+                });
+                collapseLocSearch();
+            });
+        }
+
+        function expandLocSearch() {
+            document.getElementById('loc-pill-container').classList.add('expanded');
+            const inp = document.getElementById('loc-search-input');
+            inp.value = '';
+            inp.focus();
+            renderLocDropdown('');
+        }
+
+        function collapseLocSearch() {
+            document.getElementById('loc-pill-container').classList.remove('expanded');
+            document.getElementById('loc-search-dropdown').classList.remove('open');
+        }
+
+        function renderLocDropdown(q) {
+            const dd = document.getElementById('loc-search-dropdown');
+            const query = (q || '').trim().toLowerCase();
+            const list = (typeof OBSERVER_LOCATIONS_CATALOG !== 'undefined' ? OBSERVER_LOCATIONS_CATALOG : [])
+                .filter(it => !query || it.name.toLowerCase().includes(query) || it.category.toLowerCase().includes(query))
+                .slice(0, 12);
+            dd.innerHTML = '';
+            list.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'loc-dropdown-item';
+                div.innerHTML = `<span>${item.name}</span><span class="loc-dropdown-cat">${item.category}</span>`;
+                div.onclick = () => {
+                    applyObserverLocation({ name: item.name, lat: item.lat, lon: item.lon, tz: item.tz, isDefault: item.name.includes('Cosmos Mataró') });
+                    collapseLocSearch();
+                };
+                dd.appendChild(div);
+            });
+            dd.classList.toggle('open', list.length > 0);
+        }
+
+        function setLanguage(lang) {
+            if (!I18N[lang]) lang = 'es';
+            currentLang = lang;
+            document.documentElement.lang = lang;
+            document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.dataset.lang === lang));
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const k = el.getAttribute('data-i18n');
+                if (I18N[lang][k] !== undefined) el.textContent = I18N[lang][k];
+            });
+            document.querySelectorAll('[data-i18n-html]').forEach(el => {
+                const k = el.getAttribute('data-i18n-html');
+                if (I18N[lang][k] !== undefined) el.innerHTML = I18N[lang][k];
+            });
+            try { localStorage.setItem('skycal_lang', lang); } catch (e) {}
+            updateThemeToggleUI();
+            updateLocationUI();
+            renderSkyDome();
+            fetchWeatherSummary();
+        }
+
+        function updateThemeToggleUI() {
+            const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+            const icon = document.getElementById('theme-toggle-icon');
+            const label = document.getElementById('theme-toggle-label');
+            const labels = { es: isLight ? 'Oscuro' : 'Claro', ca: isLight ? 'Fosc' : 'Clar', en: isLight ? 'Dark' : 'Light' };
+            if (icon) icon.className = isLight ? 'fa-solid fa-moon' : 'fa-solid fa-sun';
+            if (label) label.textContent = labels[currentLang] || labels.es;
+        }
+
+        function applyTheme(theme) {
+            if (theme === 'light') document.documentElement.setAttribute('data-theme', 'light');
+            else document.documentElement.removeAttribute('data-theme');
+            try { localStorage.setItem('planisferio_theme', theme); } catch (e) {}
+            updateThemeToggleUI();
+        }
+
+        function toggleTheme() {
+            const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+            applyTheme(isLight ? 'dark' : 'light');
+            renderSkyDome();
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            let savedTheme = 'light';
+            try { savedTheme = localStorage.getItem('planisferio_theme') || 'light'; } catch (e) {}
+            applyTheme(savedTheme);
+
+            try {
+                const rawLoc = localStorage.getItem('skycal_location');
+                if (rawLoc) {
+                    const parsed = JSON.parse(rawLoc);
+                    if (parsed && Number.isFinite(Number(parsed.lat)) && Number.isFinite(Number(parsed.lon))) {
+                        ACTIVE_LOC = parsed;
+                    }
+                }
+            } catch (e) {}
+
+            let savedLang = 'es';
+            try { savedLang = localStorage.getItem('skycal_lang') || 'es'; } catch (e) {}
+
+            const inp = document.getElementById('loc-search-input');
+            if (inp) inp.addEventListener('input', e => renderLocDropdown(e.target.value));
+            document.addEventListener('click', e => {
+                const box = document.getElementById('loc-pill-container');
+                if (box && !box.contains(e.target)) collapseLocSearch();
+            });
+
+            setupDomeInteraction();
+            setLanguage(savedLang);
+
+            setInterval(() => {
+                if (isLive) {
+                    simDate = new Date();
+                    renderSkyDome();
+                }
+            }, 30000);
+        });
+    </script>
+</body>
+</html>
