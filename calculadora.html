@@ -884,7 +884,7 @@
         function applyTheme(theme) {
             if (theme === 'light') document.documentElement.setAttribute('data-theme', 'light');
             else document.documentElement.removeAttribute('data-theme');
-            try { localStorage.setItem('skycal_theme', theme); } catch (e) {}
+            try { localStorage.setItem('calc_theme', theme); } catch (e) {}
             updateThemeToggleUI();
         }
 
@@ -1078,7 +1078,7 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             let savedTheme = 'light';
-            try { savedTheme = localStorage.getItem('skycal_theme') || 'light'; } catch (e) {}
+            try { savedTheme = localStorage.getItem('calc_theme') || 'light'; } catch (e) {}
             applyTheme(savedTheme);
 
             let savedLang = 'es';
