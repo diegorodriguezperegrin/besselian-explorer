@@ -130,38 +130,6 @@
             font-size: 0.78rem;
         }
 
-        .lang-btn-group {
-            display: inline-flex;
-            align-items: center;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 6px;
-            padding: 2px;
-            gap: 2px;
-        }
-
-        .lang-btn {
-            background: transparent;
-            border: 1px solid transparent;
-            color: var(--text-dim);
-            font-size: 0.65rem;
-            font-weight: 600;
-            padding: 2px 6px;
-            border-radius: 4px;
-            cursor: pointer;
-            line-height: 1.25;
-            transition: all 0.18s ease;
-            font-family: var(--font-main);
-            letter-spacing: 0.04em;
-        }
-
-        .lang-btn.active {
-            color: var(--primary);
-            background: rgba(56, 189, 248, 0.16);
-            border-color: rgba(56, 189, 248, 0.35);
-            font-weight: 700;
-        }
-
         .calc-layout {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -447,7 +415,7 @@
         }
 
         html[data-theme="light"] .nav-pill-link,
-        html[data-theme="light"] .lang-btn-group,
+        html[data-theme="light"] .cosmos-lang-group,
         html[data-theme="light"] .theme-toggle-btn {
             background: #fcfbf9;
             border-color: #bcb7aa;
@@ -461,11 +429,17 @@
             color: #5b289c;
         }
 
-        html[data-theme="light"] .theme-toggle-btn i {
+        html[data-theme="light"] .theme-toggle-btn i,
+        html[data-theme="light"] .cosmos-lang-icon {
             color: #5b289c;
         }
 
-        html[data-theme="light"] .lang-btn.active {
+        html[data-theme="light"] .cosmos-lang-btn:hover:not(.active) {
+            background: #e5e1d5;
+            color: #151515;
+        }
+
+        html[data-theme="light"] .cosmos-lang-btn.active {
             color: #5b289c;
             background: #ede9fe;
             border-color: #c4b5fd;
@@ -518,10 +492,11 @@
                     <i class="fa-solid fa-moon" id="theme-toggle-icon"></i>
                     <span id="theme-toggle-label">Oscuro</span>
                 </button>
-                <div class="lang-btn-group" id="lang-selector" role="group" aria-label="Idioma">
-                    <button type="button" class="lang-btn active" data-lang="es" onclick="setLanguage('es')" title="Español">ES</button>
-                    <button type="button" class="lang-btn" data-lang="ca" onclick="setLanguage('ca')" title="Català">CA</button>
-                    <button type="button" class="lang-btn" data-lang="en" onclick="setLanguage('en')" title="English">EN</button>
+                <div class="cosmos-lang-group" id="lang-selector" role="group" aria-label="Idioma">
+                    <i class="fa-solid fa-globe cosmos-lang-icon" aria-hidden="true"></i>
+                    <button type="button" class="cosmos-lang-btn lang-btn active" data-lang="es" onclick="setLanguage('es')" title="Español">ES</button>
+                    <button type="button" class="cosmos-lang-btn lang-btn" data-lang="ca" onclick="setLanguage('ca')" title="Català">CA</button>
+                    <button type="button" class="cosmos-lang-btn lang-btn" data-lang="en" onclick="setLanguage('en')" title="English">EN</button>
                 </div>
             </div>
         </header>
