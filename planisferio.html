@@ -9,6 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha384-iw3OoTErCYJJB9mCa8LNS2hbsQ7M3C0EpIsO/H5+EGAkPGc6rk+V8i04oW/K5xq0" crossorigin="anonymous" onerror="this.onerror=null;this.removeAttribute('integrity');this.href='vendor/fontawesome/css/all.min.css';">
     <link rel="stylesheet" href="cosmos_theme.css">
+    <script src="cosmos_fullscreen.js" defer></script>
     <style>
         :root {
             --bg-deep: var(--cosmos-bg-space, #050811);
@@ -514,7 +515,8 @@
         html[data-theme="light"] .lang-btn-group,
         html[data-theme="light"] .theme-toggle-btn,
         html[data-theme="light"] .loc-pill-box,
-        html[data-theme="light"] .ctrl-btn {
+        html[data-theme="light"] .ctrl-btn,
+        html[data-theme="light"] .cosmos-fs-btn {
             background: #fcfbf9;
             border-color: #bcb7aa;
             color: #5e5b53;
@@ -522,7 +524,8 @@
 
         html[data-theme="light"] .nav-pill-link:hover,
         html[data-theme="light"] .theme-toggle-btn:hover,
-        html[data-theme="light"] .ctrl-btn:hover {
+        html[data-theme="light"] .ctrl-btn:hover,
+        html[data-theme="light"] .cosmos-fs-btn:hover {
             background: #ede9fe;
             border-color: #5b289c;
             color: #5b289c;
@@ -533,7 +536,8 @@
         }
 
         html[data-theme="light"] .lang-btn.active,
-        html[data-theme="light"] .ctrl-btn.active {
+        html[data-theme="light"] .ctrl-btn.active,
+        html[data-theme="light"] .cosmos-fs-btn.is-fullscreen {
             color: #5b289c;
             background: #ede9fe;
             border-color: #c4b5fd;
@@ -609,6 +613,7 @@
                     <button type="button" class="lang-btn" data-lang="ca" onclick="setLanguage('ca')">CA</button>
                     <button type="button" class="lang-btn" data-lang="en" onclick="setLanguage('en')">EN</button>
                 </div>
+                <button type="button" class="cosmos-fs-btn" onclick="toggleCosmosFullscreen(event)" title="Pantalla completa" aria-label="Pantalla completa"></button>
             </div>
         </header>
 
@@ -1745,6 +1750,8 @@
 
             let savedLang = 'es';
             try { savedLang = localStorage.getItem('skycal_lang') || 'es'; } catch (e) {}
+            const urlLang = new URLSearchParams(window.location.search).get('lang');
+            if (urlLang && I18N[urlLang]) savedLang = urlLang;
 
             const inp = document.getElementById('loc-search-input');
             if (inp) inp.addEventListener('input', e => renderLocDropdown(e.target.value));

@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha384-iw3OoTErCYJJB9mCa8LNS2hbsQ7M3C0EpIsO/H5+EGAkPGc6rk+V8i04oW/K5xq0" crossorigin="anonymous" onerror="this.onerror=null;this.removeAttribute('integrity');this.href='vendor/fontawesome/css/all.min.css';">
     <!-- Sistema de diseño unificado Cosmos Mataró -->
     <link rel="stylesheet" href="cosmos_theme.css">
+    <script src="cosmos_fullscreen.js" defer></script>
     <style>
         :root {
             --bg-deep: var(--cosmos-bg-space, #050811);
@@ -1168,13 +1169,15 @@
         }
 
         html[data-theme="light"] .lang-btn-group,
-        html[data-theme="light"] .theme-toggle-btn {
+        html[data-theme="light"] .theme-toggle-btn,
+        html[data-theme="light"] .cosmos-fs-btn {
             background: #fcfbf9;
             border-color: #bcb7aa;
             color: #5e5b53;
         }
 
-        html[data-theme="light"] .theme-toggle-btn:hover {
+        html[data-theme="light"] .theme-toggle-btn:hover,
+        html[data-theme="light"] .cosmos-fs-btn:hover {
             background: #ede9fe;
             border-color: #5b289c;
             color: #5b289c;
@@ -1189,7 +1192,8 @@
             color: #151515;
         }
 
-        html[data-theme="light"] .lang-btn.active {
+        html[data-theme="light"] .lang-btn.active,
+        html[data-theme="light"] .cosmos-fs-btn.is-fullscreen {
             color: #5b289c;
             background: #ede9fe;
             border-color: #c4b5fd;
@@ -1636,6 +1640,7 @@
                     <button type="button" class="lang-btn" data-lang="ca" onclick="setLanguage('ca')" title="Català">CA</button>
                     <button type="button" class="lang-btn" data-lang="en" onclick="setLanguage('en')" title="English">EN</button>
                 </div>
+                <button type="button" class="cosmos-fs-btn" onclick="toggleCosmosFullscreen(event)" title="Pantalla completa" aria-label="Pantalla completa"></button>
             </div>
         </header>
 
